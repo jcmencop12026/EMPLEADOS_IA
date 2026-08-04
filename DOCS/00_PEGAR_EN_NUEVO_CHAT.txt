@@ -1,0 +1,8 @@
+Proyecto: EMPLEADOS_IA (independiente)
+Ruta Windows: D:\EMPLEADOS_IA
+Documentación: leer TODO en D:\EMPLEADOS_IA\DOCS\
+NO usar ni mezclar: PROAUDITORX, auditoria-medica-web, MERKEPLACE, F:\AUDITORIAMEDICA
+PostgreSQL: servicio Windows localhost:5432, base dedicada empleados_ia (ver 00_ENTORNO_WINDOWS_USUARIO.md)
+
+Tarea:
+Organizar la idea en resumen, fases (MVP primero), stack propuesto y primer sprint.

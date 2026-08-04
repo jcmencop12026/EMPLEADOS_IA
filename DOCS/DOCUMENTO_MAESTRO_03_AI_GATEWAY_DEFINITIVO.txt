@@ -1,0 +1,63 @@
+DOCUMENTO MAESTRO 03
+AI GATEWAY - ARQUITECTURA DEFINITIVA
+Documento definitivo que establece la arquitectura única del AI Gateway de Enterprise AI OS. El objetivo es desacoplar completamente la plataforma de cualquier proveedor o modelo de IA.
+1. Objetivo
+Centralizar todas las interacciones con modelos de IA mediante una única capa de servicios, permitiendo sustituir motores sin modificar el resto de la plataforma.
+2. Principios
+No depender de un proveedor específico.
+Soportar modelos locales y en la nube.
+Seleccionar automáticamente el motor adecuado según la tarea.
+Registrar consumo, tiempos, errores y calidad.
+Permitir activar o desactivar motores desde configuración.
+3. Motores soportados
+Sin IA (reglas tradicionales).
+Ollama.
+LM Studio.
+llama.cpp.
+OpenAI.
+Google Gemini.
+Anthropic Claude.
+Otros motores compatibles mediante adaptadores.
+4. Flujo
+Solicitud → AI Gateway → Selección de motor → Ejecución → Validación → Respuesta → Auditoría → Registro de métricas.
+5. Tipos de tareas
+Clasificación documental.
+Extracción de información.
+Resumen.
+Comparación.
+Análisis.
+Generación de texto.
+Consultas sobre conocimiento empresarial.
+Apoyo a decisiones supervisadas.
+6. Configuración
+Motor predeterminado.
+Motor por capacidad.
+Modelo por tarea.
+Temperatura.
+Tokens máximos.
+Timeout.
+Reintentos.
+Límites de consumo.
+Prioridad de motores.
+7. Reglas
+Las capacidades nunca invocan directamente un proveedor.
+Todas las llamadas pasan por el AI Gateway.
+Cada respuesta queda auditada.
+Los errores generan fallback cuando exista un motor alternativo.
+La IA nunca ejecuta acciones irreversibles sin reglas o aprobación cuando aplique.
+8. Seguridad
+Cifrado de credenciales.
+Registro de accesos.
+Anonimización configurable.
+Control de envío de información sensible.
+Políticas por organización.
+9. Métricas
+Tiempo de respuesta.
+Costo estimado.
+Modelo utilizado.
+Consumo de tokens cuando aplique.
+Nivel de confianza.
+Tasa de errores.
+Disponibilidad.
+10. Estado
+El AI Gateway constituye la única puerta de acceso a modelos de IA dentro de Enterprise AI OS. Su arquitectura queda aprobada como estándar permanente.

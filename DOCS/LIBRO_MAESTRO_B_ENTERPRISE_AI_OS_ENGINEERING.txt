@@ -1,0 +1,59 @@
+LIBRO MAESTRO B
+ENTERPRISE AI OS ENGINEERING
+Consolidación definitiva de las normas de ingeniería, calidad, seguridad y operación del producto.
+1. Ingeniería del Software
+Arquitectura limpia.
+Desarrollo por capacidades.
+Separación estricta entre núcleo y especializaciones.
+Interfaces estables.
+Código reutilizable.
+2. Modelo de Datos
+Modelo global único.
+Versionado de base de datos.
+Migraciones controladas.
+Integridad referencial.
+Auditoría de cambios.
+3. Seguridad
+Autenticación.
+Autorización por roles.
+Permisos por organización.
+Cifrado de secretos.
+Políticas de acceso.
+4. Configuración
+Configuración global.
+Configuración por organización.
+Configuración por capacidad.
+Configuración por empleado IA.
+Configuración dinámica sin recompilar.
+5. Auditoría
+Auditoría funcional.
+Auditoría técnica.
+Auditoría IA.
+Historial completo.
+Trazabilidad extremo a extremo.
+6. Logs
+Logs estructurados.
+Niveles INFO/WARN/ERROR/DEBUG.
+Correlación por proceso.
+Retención configurable.
+Exportación.
+7. Framework de Pruebas
+Unitarias.
+Integración.
+Automatización.
+Rendimiento.
+Regresión.
+Validación IA.
+8. Framework de Instalación
+Instalación local.
+Actualizaciones.
+Reparación.
+Backups.
+Rollback.
+9. Calidad
+Cobertura mínima.
+Revisión de código.
+Documentación obligatoria.
+Sin deuda técnica crítica antes de liberar.
+10. Estado
+Este libro define las reglas permanentes de ingeniería de Enterprise AI OS.

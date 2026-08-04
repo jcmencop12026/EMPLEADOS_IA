@@ -1,0 +1,141 @@
+DOCUMENTO MAESTRO 02
+ENTERPRISE CAPABILITY FRAMEWORK (ECF)
+Documento definitivo. Este marco define el estándar único para diseñar, desarrollar, configurar, probar, versionar y reutilizar todas las Capacidades IA de Enterprise AI OS.
+1. Objetivo
+Crear un marco único para que cualquier funcionalidad del sistema nazca como una Capacidad IA reutilizable. Ningún desarrollo podrá implementarse fuera de este estándar.
+2. Regla de Oro
+Todo desarrollo debe convertirse en una Capacidad IA reutilizable, configurable, documentada, versionable, instalable, auditable y combinable con otras capacidades.
+3. Jerarquía
+Empresa IA
+ └─ Departamentos IA
+    └─ Empleados IA
+       └─ Capacidades IA
+          └─ Servicios
+             └─ Funciones
+                └─ Acciones
+4. Definición de Capacidad IA
+Unidad funcional independiente que realiza una tarea específica y puede ser utilizada por múltiples Empleados IA, Departamentos IA y especializaciones sin modificar su implementación.
+5. Estructura obligatoria de una Capacidad
+Identificador único.
+Nombre.
+Descripción.
+Categoría.
+Objetivo.
+Entradas.
+Salidas.
+Parámetros configurables.
+Dependencias.
+Permisos requeridos.
+Eventos que genera.
+Eventos que consume.
+Manejo de errores.
+Logs.
+Pruebas obligatorias.
+Versión.
+Estado (Experimental, Beta, Estable, Obsoleta).
+6. Ciclo de Vida
+Diseño.
+Desarrollo.
+Pruebas unitarias.
+Pruebas funcionales.
+Aprobación.
+Publicación en Biblioteca.
+Uso por Empleados IA.
+Actualización.
+Retiro.
+7. Clasificación Oficial de Capacidades
+Documentos
+PDF
+Word
+Excel
+XML
+CSV
+Imágenes
+OCR
+Firmas
+Clasificación
+Extracción
+Comparación
+Comunicación
+Correo
+WhatsApp
+SMS
+Teams
+Telegram
+Notificaciones
+Datos
+SQLite
+PostgreSQL
+SQL
+JSON
+XML
+APIs
+Power BI
+IA
+Clasificación
+Resumen
+Extracción
+Razonamiento
+Generación
+Traducción
+Análisis
+Automatización
+Eventos
+Programador
+Reglas
+Colas
+Reintentos
+Flujos
+Seguridad
+Usuarios
+Roles
+Permisos
+Credenciales
+Auditoría
+Cifrado
+Sistema
+Diagnóstico
+Instalación
+Actualización
+Monitoreo
+Backups
+Restauración
+Negocio
+KPIs
+Indicadores
+Reportes
+Alertas
+Dashboards
+Integraciones
+ERP
+CRM
+HIS
+DIAN
+Google
+Microsoft
+SAP
+Odoo
+Siigo
+8. Reglas de Desarrollo
+No duplicar capacidades.
+Una capacidad debe resolver un único propósito.
+Todo comportamiento configurable desde la plataforma.
+Sin dependencias cíclicas.
+Sin lógica específica de un cliente.
+Las especializaciones solo reutilizan capacidades existentes o agregan nuevas capacidades reutilizables.
+9. Reglas de Configuración
+Activar o desactivar capacidades.
+Configurar parámetros sin modificar código.
+Asignar capacidades a Empleados IA.
+Asignar capacidades a Departamentos IA.
+Controlar permisos por rol y organización.
+10. Reglas de Calidad
+Documentación obligatoria.
+Pruebas antes de publicarse.
+Registro de errores.
+Compatibilidad hacia atrás cuando sea posible.
+No romper capacidades existentes.
+11. Objetivo del Catálogo
+El catálogo oficial contendrá cientos de capacidades organizadas por categoría. Cada nueva funcionalidad del sistema deberá incorporarse al catálogo siguiendo este marco.
+12. Resultado Esperado
+Este documento establece el estándar permanente de ingeniería para Enterprise AI OS. A partir de él se construirán el AI Gateway, el Administrador de Componentes, los Empleados IA, las Especializaciones y el resto del ecosistema.

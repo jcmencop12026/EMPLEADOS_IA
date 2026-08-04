@@ -1,0 +1,58 @@
+DOCUMENTO MAESTRO 11
+MOTOR DE AUTOMATIZACIÓN Y ORQUESTACIÓN (AUTOMATION ENGINE)
+Documento definitivo. Define el funcionamiento del motor responsable de ejecutar, coordinar, supervisar y auditar todas las automatizaciones de Enterprise AI OS.
+1. Objetivo
+Proveer un motor único para ejecutar procesos mediante eventos, reglas, capacidades IA y conectores, garantizando trazabilidad, reutilización y escalabilidad.
+2. Arquitectura
+Motor de eventos.
+Motor de reglas.
+Cola de ejecución.
+Planificador de tareas.
+Gestor de prioridades.
+Administrador de reintentos.
+Auditoría de procesos.
+Monitoreo en tiempo real.
+3. Disparadores
+Correo recibido.
+Archivo creado o modificado.
+Horario programado.
+Webhook.
+Acción del usuario.
+API externa.
+Evento interno.
+Cambio en base de datos.
+4. Flujo Oficial
+Disparador → Validación → Reglas → Capacidades IA → Conectores → AI Gateway (si aplica) → Resultado → Auditoría → Notificación.
+5. Modos de Ejecución
+Manual.
+Asistido.
+Automático.
+Simulación.
+Pruebas.
+6. Administración
+Pausar procesos.
+Reanudar.
+Cancelar.
+Reintentar.
+Duplicar automatizaciones.
+Versionar flujos.
+7. Seguridad
+Permisos por organización.
+Validación antes de acciones críticas.
+Registro de todas las ejecuciones.
+Protección frente a ejecuciones duplicadas.
+8. Indicadores
+Tiempo de ejecución.
+Éxitos.
+Errores.
+Reintentos.
+Procesos activos.
+Capacidades más utilizadas.
+Conectores utilizados.
+9. Reglas Permanentes
+Toda automatización es configurable.
+Toda automatización es auditable.
+Toda automatización puede ejecutarse en modo simulación.
+El motor nunca contendrá lógica específica de una industria.
+10. Estado
+Este documento establece el estándar permanente del Motor de Automatización de Enterprise AI OS.

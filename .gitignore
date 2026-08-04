@@ -1,0 +1,15 @@
+﻿# Python / Node (cuando existan)
+.venv/
+venv/
+node_modules/
+
+# Secretos
+.env
+.env.local
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Word temporales
+~$*

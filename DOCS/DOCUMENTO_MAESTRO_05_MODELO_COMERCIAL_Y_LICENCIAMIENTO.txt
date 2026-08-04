@@ -1,0 +1,53 @@
+DOCUMENTO MAESTRO 05
+MODELO COMERCIAL Y LICENCIAMIENTO
+Documento definitivo. Define el modelo de negocio, monetización, licenciamiento y estrategia comercial de Enterprise AI OS.
+1. Objetivo
+Construir un negocio de ingresos recurrentes basado en licencias, reutilización y configuración, evitando depender del desarrollo a medida como fuente principal de ingresos.
+2. Líneas de negocio
+Licencias de Enterprise AI OS.
+Venta de especializaciones por industria.
+Implementación y parametrización.
+Soporte y mantenimiento.
+Capacitación y certificaciones.
+Marketplace (fase futura).
+3. Modelo de licenciamiento
+Licencia Base.
+Especializaciones adicionales.
+Capacidades Premium.
+Empleados IA.
+Departamentos IA.
+Servicios profesionales opcionales.
+4. Estrategia comercial
+No reemplazar el software existente.
+Integrarse con ERP, HIS, CRM y demás plataformas.
+Implementaciones remotas.
+Configuración antes que desarrollo.
+Catálogo reutilizable.
+5. Modelo de ingresos
+Suscripción mensual.
+Suscripción anual.
+Implementación inicial.
+Soporte avanzado.
+Marketplace (comisiones futuras).
+6. Segmentos objetivo
+Salud.
+Contabilidad.
+Inventarios.
+Logística.
+Jurídico.
+Recursos Humanos.
+Comercio.
+Empresas de servicios.
+7. Principios económicos
+Inicio con inversión cercana a cero.
+Desarrollo local.
+Migración a SaaS cuando exista validación comercial.
+Maximizar reutilización de capacidades.
+Reducir personalización mediante configuración.
+8. Escalabilidad
+Una capacidad desarrollada se vende múltiples veces.
+Un Empleado IA reutiliza capacidades.
+Una especialización reutiliza empleados.
+Cada nuevo cliente incrementa ingresos sin reconstruir el producto.
+9. Estado
+Este documento establece el modelo comercial oficial para Enterprise AI OS.

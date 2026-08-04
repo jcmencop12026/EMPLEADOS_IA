@@ -1,0 +1,40 @@
+DOCUMENTO MAESTRO 07
+ENTERPRISE KNOWLEDGE (EK)
+Documento definitivo. Define el sistema de conocimiento corporativo que utilizarán todas las Capacidades IA, Empleados IA y Departamentos IA de Enterprise AI OS.
+1. Objetivo
+Centralizar el conocimiento empresarial en un único repositorio estructurado, versionado y auditable para que los Empleados IA consulten información confiable antes de responder o ejecutar procesos.
+2. Principios
+Una única fuente oficial de conocimiento.
+Separación entre conocimiento general y conocimiento por organización.
+Versionado completo.
+Auditoría de cambios.
+Control de acceso por roles.
+Actualización sin modificar código.
+3. Tipos de conocimiento
+4. Uso por los Empleados IA
+Consultar antes de responder.
+Fundamentar respuestas.
+Aplicar políticas y reglas vigentes.
+Utilizar únicamente versiones aprobadas.
+Registrar las fuentes utilizadas.
+5. Administración
+Carga masiva de documentos.
+Versionado automático.
+Etiquetas y categorías.
+Búsqueda avanzada.
+Historial de cambios.
+Aprobación antes de publicar.
+6. Integración
+AI Gateway.
+Capacidades IA.
+Especializaciones.
+Biblioteca.
+Motor de Automatización.
+Conectores documentales.
+7. Seguridad
+Permisos por organización.
+Control por rol.
+Documentos privados y públicos.
+Registro completo de accesos.
+8. Estado
+Enterprise Knowledge será el repositorio oficial de conocimiento de Enterprise AI OS y la única fuente autorizada para consultas documentales.
