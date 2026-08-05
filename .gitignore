@@ -1,15 +1,18 @@
-﻿# Python / Node (cuando existan)
-.venv/
-venv/
-node_modules/
 
-# Secretos
+~$*
+desktop.ini
 .env
 .env.local
-
-# Windows
+frontend/dist/
+frontend/node_modules/
+node_modules/
+*.pyc
+**/__pycache__/
+﻿# Python / Node (cuando existan)
+# Secretos
 Thumbs.db
-desktop.ini
-
+.venv/
+venv/
+# Windows
 # Word temporales
-~$*
+frontend/tsconfig.tsbuildinfo
