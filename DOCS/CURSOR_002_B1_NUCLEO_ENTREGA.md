@@ -8,6 +8,7 @@
 | Login JWT + `/api/auth/me` | CI cloud |
 | Frontend `npm run build` | CI cloud |
 | Windows ARRANCAR.bat | Pendiente usuario |
+| Push GitHub desde agente cloud | Bloqueado (403 cursor bot) — usar `RECIBIR_B1_OFFLINE.ps1` o agente local |
 
 ## Credenciales bootstrap (solo local)
 
