@@ -1,0 +1,31 @@
+DOCUMENTO MAESTRO 06
+ESPECIALIZACIONES POR INDUSTRIA
+Documento definitivo. Define el modelo para construir soluciones verticales reutilizando el núcleo de Enterprise AI OS. Ninguna especialización modifica el núcleo; todas se ensamblan mediante Capacidades IA, Empleados IA y Departamentos IA.
+1. Objetivo
+Permitir crear soluciones para diferentes industrias reutilizando el mismo motor, la misma arquitectura y las mismas capacidades.
+2. Arquitectura
+Enterprise AI OS
+        │
+        ├── Capacidades IA
+        ├── Empleados IA
+        ├── Departamentos IA
+        └── Especialización
+3. Componentes de una Especialización
+Capacidades reutilizadas.
+Capacidades nuevas (si aportan valor general).
+Base de conocimiento específica.
+Empleados IA especializados.
+Departamentos IA.
+Configuraciones predeterminadas.
+Indicadores y reportes.
+Conectores propios.
+4. Especializaciones iniciales
+5. Reglas
+Las especializaciones nunca duplican capacidades existentes.
+Todo conocimiento específico se incorpora como base de conocimiento o nuevas capacidades reutilizables.
+El núcleo permanece independiente del sector.
+Una organización puede instalar varias especializaciones simultáneamente.
+6. Estrategia
+Cada especialización será un paquete instalable y configurable. La venta se realizará mediante licencias adicionales sobre Enterprise AI OS, evitando crear productos independientes.
+7. Estado
+Este documento establece el modelo oficial para el crecimiento vertical de Enterprise AI OS.

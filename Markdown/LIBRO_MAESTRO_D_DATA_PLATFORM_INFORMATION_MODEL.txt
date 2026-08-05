@@ -1,0 +1,52 @@
+LIBRO MAESTRO D
+ENTERPRISE AI OS DATA PLATFORM & INFORMATION MODEL
+Documento definitivo que establece la arquitectura de datos, gobierno de la información y estándares de persistencia de Enterprise AI OS.
+1. Objetivo
+Definir un modelo único de datos para todas las organizaciones, capacidades, empleados IA y especializaciones.
+2. Principios
+Una sola fuente de verdad.
+Modelo extensible.
+Separación entre núcleo y especializaciones.
+Auditoría en todas las entidades.
+Compatibilidad entre versiones.
+3. Entidades Maestras
+Organizaciones
+Usuarios
+Roles
+Permisos
+Capacidades IA
+Empleados IA
+Departamentos IA
+Especializaciones
+Conectores
+Automatizaciones
+Conocimiento
+Licencias
+Configuraciones
+Eventos
+Logs
+4. Gobierno del Dato
+Versionado de esquemas.
+Migraciones controladas.
+Integridad referencial.
+Catálogo de datos.
+Trazabilidad completa.
+5. Persistencia
+SQLite para desarrollo local.
+PostgreSQL para producción.
+Almacenamiento documental desacoplado.
+Índices optimizados.
+Backups automáticos.
+6. Reglas
+No duplicar información.
+Todas las tablas con auditoría.
+Claves UUID.
+Soft delete configurable.
+Histórico cuando aplique.
+7. Calidad
+Validaciones de integridad.
+Monitoreo.
+Optimización periódica.
+Pruebas de migración.
+8. Estado
+Este libro define el estándar permanente de gestión de datos de Enterprise AI OS.

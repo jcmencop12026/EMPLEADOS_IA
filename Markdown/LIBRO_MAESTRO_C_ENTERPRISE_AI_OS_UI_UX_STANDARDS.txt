@@ -1,0 +1,52 @@
+LIBRO MAESTRO C
+ENTERPRISE AI OS UI / UX STANDARDS
+Manual definitivo de diseño visual, experiencia de usuario y estándares de interfaz.
+1. Filosofía
+Interfaz empresarial compacta.
+Máxima información con mínimo desplazamiento.
+Consistencia en todas las pantallas.
+Prioridad a productividad sobre efectos visuales.
+2. Layout
+Menú lateral contraíble.
+Barra superior fija.
+Área central de trabajo.
+Paneles acoplables.
+Pestañas para procesos relacionados.
+3. Componentes
+DataGrid como componente principal.
+Filtros rápidos.
+Búsqueda integrada.
+Mostrar/Ocultar columnas.
+Exportar Excel, PDF y CSV.
+Acciones mediante iconos consistentes.
+4. Formularios
+Edición en ventanas modales cuando sea conveniente.
+Validación en tiempo real.
+Autoguardado configurable.
+Mensajes claros y no intrusivos.
+5. Colores
+Paleta corporativa centralizada.
+Semáforos normalizados.
+Modo claro y oscuro.
+Colores definidos mediante variables globales.
+6. Iconografía
+Biblioteca única.
+Un mismo icono siempre representa la misma acción.
+Tooltips obligatorios.
+7. Responsive
+Desktop como prioridad.
+Adaptación a portátil.
+Soporte para tablet.
+Modo móvil para operaciones esenciales.
+8. Accesibilidad
+Navegación por teclado.
+Contraste adecuado.
+Escalado de fuentes.
+Atajos configurables.
+9. Reglas Permanentes
+No rediseñar pantallas sin actualizar este libro.
+No crear componentes duplicados.
+Todo componente será reutilizable.
+Cada vista seguirá la misma estructura visual.
+10. Estado
+Este libro define el estándar visual permanente de Enterprise AI OS.

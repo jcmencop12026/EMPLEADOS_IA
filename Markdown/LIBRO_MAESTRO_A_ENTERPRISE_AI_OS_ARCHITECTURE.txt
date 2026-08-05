@@ -1,0 +1,62 @@
+LIBRO MAESTRO A
+ENTERPRISE AI OS ARCHITECTURE
+Consolidación técnica definitiva de la arquitectura base del producto.
+1. Objetivo
+Definir la arquitectura técnica única sobre la cual se desarrollará todo Enterprise AI OS.
+2. Arquitectura Física
+backend/
+frontend/
+core/
+capabilities/
+employees/
+departments/
+knowledge/
+gateway/
+connectors/
+automation/
+config/
+plugins/
+database/
+logs/
+tests/
+docs/
+3. Capas
+Presentación
+API
+Core
+Capacidades
+Conectores
+Persistencia
+Infraestructura
+4. Componentes Permanentes
+Core Engine
+Capability Manager
+Automation Engine
+AI Gateway
+Connector Hub
+Enterprise Knowledge
+Configuration Engine
+Security Engine
+Audit Engine
+Notification Engine
+5. Flujo
+Usuario → API → Core → Capacidades → AI Gateway/Conectores → Persistencia → Auditoría → Respuesta.
+6. Convenciones
+Arquitectura modular.
+Bajo acoplamiento.
+Alta cohesión.
+Todo configurable.
+Sin lógica de cliente en el núcleo.
+Cada funcionalidad es una Capacidad.
+7. Versionado
+Major.Minor.Patch
+Compatibilidad hacia atrás cuando sea posible.
+Documentación obligatoria por cambio.
+8. Calidad
+Pruebas unitarias.
+Pruebas funcionales.
+Cobertura mínima definida.
+Logs estructurados.
+Auditoría obligatoria.
+9. Estado
+Este libro constituye la referencia técnica principal para el desarrollo del producto.

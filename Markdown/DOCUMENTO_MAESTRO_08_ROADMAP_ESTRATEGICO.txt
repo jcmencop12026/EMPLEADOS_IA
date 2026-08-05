@@ -1,0 +1,28 @@
+DOCUMENTO MAESTRO 08
+ROADMAP ESTRATÉGICO DE DESARROLLO
+Documento definitivo. Define la secuencia oficial de construcción de Enterprise AI OS, desde el desarrollo local hasta la operación SaaS.
+1. Objetivo
+Construir el producto minimizando riesgo, evitando retrabajo y validando cada etapa antes de avanzar.
+2. Principios
+Desarrollo local primero.
+Costo inicial cercano a cero.
+Arquitectura preparada para SaaS.
+Entregas por bloques completos.
+Cada bloque debe quedar probado antes del siguiente.
+3. Fases oficiales
+4. Criterios para avanzar
+Arquitectura aprobada.
+Código estable.
+Pruebas funcionales superadas.
+Documentación actualizada.
+Sin defectos críticos abiertos.
+5. Estrategia comercial
+Validación con cliente piloto.
+Implementaciones remotas.
+Reutilización máxima.
+Especializaciones sobre el mismo núcleo.
+Migración a SaaS únicamente cuando el producto esté consolidado.
+6. Visión a largo plazo
+Enterprise AI OS evolucionará como plataforma central de Capacidades IA, permitiendo incorporar nuevas industrias, nuevos Empleados IA y nuevos Departamentos IA sin rediseñar el núcleo.
+7. Estado
+Con este documento concluye la definición estratégica inicial del proyecto. La siguiente etapa corresponde al inicio del desarrollo del núcleo.

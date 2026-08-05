@@ -1,0 +1,57 @@
+DOCUMENTO MAESTRO 04
+ADMINISTRADOR INTELIGENTE DE COMPONENTES (AIC)
+Documento definitivo. Define el subsistema encargado de detectar, instalar, configurar, actualizar, activar, desactivar, reparar y supervisar todos los componentes tecnológicos de Enterprise AI OS.
+1. Objetivo
+Eliminar la dependencia de configuraciones manuales. Toda la infraestructura técnica debe administrarse desde la plataforma cuando sea técnicamente posible.
+2. Componentes administrados
+Python y entornos virtuales.
+Node.js y npm.
+Motores IA locales.
+AI Gateway.
+n8n Community.
+OCR.
+Bases de datos.
+Servicios internos.
+Conectores.
+Modelos IA.
+Backups.
+Logs.
+3. Capacidades obligatorias
+Detectar componentes instalados.
+Validar versiones.
+Instalar componentes faltantes.
+Actualizar componentes.
+Activar y desactivar servicios.
+Diagnóstico automático.
+Reparación asistida.
+Prueba de funcionamiento.
+Inventario técnico completo.
+4. Flujo de operación
+Descubrimiento → Validación → Instalación/Actualización → Configuración → Prueba → Activación → Monitoreo → Auditoría.
+5. Configuración
+Rutas de instalación.
+Unidades de almacenamiento.
+Puertos.
+Variables de entorno.
+Prioridades.
+Actualizaciones automáticas configurables.
+Políticas de respaldo.
+6. Reglas
+Nunca sobrescribir configuraciones sin respaldo.
+Toda modificación debe quedar registrada.
+Permitir reversión cuando sea posible.
+No eliminar componentes sin confirmación.
+Toda instalación debe finalizar con una prueba.
+7. Seguridad
+Permisos por rol.
+Registro de acciones.
+Protección de credenciales.
+Auditoría completa.
+8. Indicadores
+Estado de cada componente.
+Última actualización.
+Disponibilidad.
+Errores.
+Tiempo de recuperación.
+9. Estado
+El Administrador Inteligente de Componentes será el único responsable de la administración técnica del entorno de Enterprise AI OS.

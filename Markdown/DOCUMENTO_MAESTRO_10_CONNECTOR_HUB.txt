@@ -1,0 +1,43 @@
+DOCUMENTO MAESTRO 10
+ARQUITECTURA DE CONECTORES (CONNECTOR HUB)
+Documento definitivo. Establece el estándar para integrar Enterprise AI OS con aplicaciones, servicios, dispositivos y plataformas externas sin modificar el núcleo.
+1. Objetivo
+Crear una arquitectura única para conectar cualquier sistema mediante conectores reutilizables, configurables y desacoplados.
+2. Principios
+El núcleo nunca se conecta directamente con sistemas externos.
+Toda integración se realiza mediante un Conector.
+Los conectores son instalables, actualizables y versionables.
+Cada conector funciona como una Capacidad IA reutilizable.
+3. Tipos de Conectores
+4. Estructura de un Conector
+Identificador único.
+Proveedor.
+Versión.
+Método de autenticación.
+Configuración.
+Capacidades soportadas.
+Eventos generados.
+Manejo de errores.
+Pruebas de conectividad.
+Estado de salud.
+5. Ciclo de Vida
+Instalación.
+Configuración.
+Prueba.
+Activación.
+Monitoreo.
+Actualización.
+Desactivación.
+Retiro.
+6. Seguridad
+Credenciales cifradas.
+Rotación de secretos.
+Permisos por organización.
+Auditoría completa.
+Límites de consumo configurables.
+7. Reglas
+Un fallo de un conector no afecta el núcleo.
+Los conectores pueden reemplazarse sin modificar capacidades.
+Todo conector debe exponer métricas y estado.
+8. Estado
+Este documento establece el estándar oficial para todas las integraciones presentes y futuras de Enterprise AI OS.

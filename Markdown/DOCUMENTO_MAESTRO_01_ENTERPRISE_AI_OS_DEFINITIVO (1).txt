@@ -1,0 +1,53 @@
+DOCUMENTO MAESTRO 01
+ENTERPRISE AI OS – VISIÓN DEFINITIVA DEL PROYECTO
+Estado: APROBADO Y CONGELADO PARA EL MVP
+Objetivo: Definir la visión única del proyecto para evitar cambios de dirección durante el desarrollo.
+1. Visión
+Enterprise AI OS será una plataforma para construir Capacidades IA reutilizables. Las capacidades forman Empleados IA; los empleados forman Departamentos IA; los departamentos conforman una Empresa IA. La plataforma potenciará los sistemas existentes y no buscará reemplazarlos.
+2. Principios aprobados
+Desarrollo local primero con costo inicial cercano a cero.
+Arquitectura preparada desde el inicio para migración SaaS.
+Todo configurable desde la plataforma.
+No reemplazar ERP, HIS, CRM ni software existente; integrarse con ellos.
+Desarrollo por capacidades reutilizables.
+Entregas completas, no parches.
+Diseño UI congelado durante cada versión.
+Nuevas ideas se registran para versiones futuras sin alterar el alcance vigente.
+3. Arquitectura conceptual
+Empresa IA
+    └── Departamentos IA
+            └── Empleados IA
+                    └── Capacidades IA
+                            └── Núcleo
+                                   ├── Configuración
+                                   ├── Servicios
+                                   ├── Conectores
+                                   ├── AI Gateway
+                                   └── Motor de Automatización
+4. Definiciones
+Capacidad IA: habilidad reutilizable (OCR, leer PDF, correo, Excel, reglas, APIs, IA, etc.).
+Empleado IA: combinación de capacidades para ejecutar un rol.
+Departamento IA: conjunto de empleados especializados.
+Empresa IA: conjunto de departamentos configurados para una organización.
+5. Modelo comercial
+Producto principal: Enterprise AI OS.
+Servicios profesionales para implementación y soporte.
+Especializaciones por industria construidas sobre el mismo núcleo.
+Marketplace como proyecto independiente en una etapa posterior.
+6. Tecnología base
+Frontend: React + TypeScript.
+Backend: FastAPI + Python.
+Base de datos: SQLite migrable a PostgreSQL.
+AI Gateway desacoplado.
+n8n Community como orquestador interno opcional.
+PaddleOCR y Docling para documentos.
+Modelos IA locales y remotos intercambiables.
+7. Decisiones cerradas
+No se utilizará Codex como ejecutor principal del proyecto.
+No se iniciará en la nube; primero versión local estable.
+No se rediseñará la arquitectura durante el MVP.
+El desarrollo será modular, por capacidades.
+Cada entrega incluirá código completo, changelog, pruebas y logs.
+8. Documentos maestros pendientes
+9. Cierre
+Este documento constituye la base estratégica oficial del proyecto. Las decisiones aquí contenidas se consideran aprobadas para el desarrollo del MVP.

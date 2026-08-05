@@ -1,0 +1,50 @@
+DOCUMENTO MAESTRO 09
+ARQUITECTURA DEL NÚCLEO (CORE ENGINE)
+Documento definitivo. Define la arquitectura funcional y técnica del núcleo de Enterprise AI OS. Todo el ecosistema dependerá de este núcleo y ninguna especialización podrá modificarlo.
+1. Objetivo
+Establecer el conjunto mínimo de componentes permanentes que soportarán Capacidades IA, Empleados IA, Departamentos IA y Especializaciones.
+2. Componentes del Núcleo
+Motor de Automatización.
+Motor de Eventos.
+Gestor de Capacidades.
+AI Gateway.
+Enterprise Knowledge.
+Administrador Inteligente de Componentes.
+Seguridad y Autenticación.
+Configuración Global.
+Auditoría y Logs.
+Programador de tareas.
+Motor de notificaciones.
+API pública e interna.
+3. Responsabilidades
+Administrar organizaciones.
+Administrar usuarios y permisos.
+Registrar capacidades.
+Ejecutar automatizaciones.
+Administrar configuraciones.
+Gestionar auditoría.
+Controlar conectores.
+Gestionar licencias.
+4. Reglas del Núcleo
+Nunca contendrá lógica específica de una industria.
+Nunca contendrá reglas exclusivas de un cliente.
+Toda funcionalidad adicional será implementada como Capacidad IA o Especialización.
+Las interfaces públicas deberán mantener compatibilidad entre versiones.
+5. Modelo de comunicación
+Eventos -> Capacidades -> AI Gateway / Enterprise Knowledge -> Respuesta -> Auditoría -> Notificaciones.
+6. Configuración
+Configuración por organización.
+Configuración por usuario.
+Configuración por capacidad.
+Configuración por empleado IA.
+Configuración por departamento.
+Configuración global.
+7. Calidad
+Arquitectura modular.
+Escalabilidad.
+Bajo acoplamiento.
+Alta reutilización.
+Pruebas automáticas.
+Registro completo de errores.
+8. Estado
+Este documento establece la arquitectura permanente del núcleo de Enterprise AI OS y será la base del desarrollo del producto.

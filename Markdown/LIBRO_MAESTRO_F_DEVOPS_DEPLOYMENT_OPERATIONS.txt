@@ -1,0 +1,53 @@
+LIBRO MAESTRO F
+ENTERPRISE AI OS DEVOPS, DEPLOYMENT & OPERATIONS
+Documento definitivo que establece los estándares de desarrollo, integración continua, despliegue, operación y mantenimiento de Enterprise AI OS.
+1. Objetivo
+Definir un proceso único para construir, probar, desplegar, actualizar y operar la plataforma en entornos locales y SaaS.
+2. Entornos
+Desarrollo Local
+Pruebas
+Preproducción
+Producción
+Laboratorio / Sandbox
+3. Gestión del Código
+Repositorio único.
+Ramas main/develop/features.
+Revisión obligatoria.
+Versionado semántico.
+Changelog automático.
+4. Integración Continua
+Compilación automática.
+Pruebas automáticas.
+Análisis estático.
+Validación de dependencias.
+Generación de artefactos.
+5. Despliegue
+Instalador local.
+Actualización incremental.
+Rollback.
+Migraciones automáticas.
+Validación posterior al despliegue.
+6. Operación
+Monitoreo de servicios.
+Estado de conectores.
+Estado de IA.
+Estado de automatizaciones.
+Panel de salud del sistema.
+7. Continuidad
+Backups programados.
+Recuperación ante fallos.
+Alta disponibilidad preparada.
+Restauración verificada.
+8. Mantenimiento
+Actualizaciones controladas.
+Correcciones acumulativas.
+Auditoría de versiones.
+Política de soporte.
+9. Indicadores
+Disponibilidad.
+Tiempo de despliegue.
+Tiempo de recuperación.
+Errores por versión.
+Éxito de actualizaciones.
+10. Estado
+Este libro define el estándar permanente de operación e infraestructura de Enterprise AI OS.
