@@ -58,7 +58,14 @@ def _employee_config_snapshot(db: Session, employee: AIEmployee) -> dict[str, An
         .filter(EmployeeToolGrant.employee_id == employee.id)
         .all()
     )
-    knowledge = db.query(EmployeeKnowledgeSource).filter(EmployeeKnowledgeSource.employee_id == employee.id).all()
+    knowledge = (
+        db.query(EmployeeKnowledgeSource)
+        .filter(
+            EmployeeKnowledgeSource.employee_id == employee.id,
+            EmployeeKnowledgeSource.organization_id == employee.organization_id,
+        )
+        .all()
+    )
     policy = db.query(EmployeeModelPolicy).filter(EmployeeModelPolicy.employee_id == employee.id).first()
     limits = db.query(EmployeeLimits).filter(EmployeeLimits.employee_id == employee.id).first()
     instructions = db.query(EmployeeInstructions).filter(EmployeeInstructions.employee_id == employee.id).first()

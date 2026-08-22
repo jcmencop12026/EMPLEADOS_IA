@@ -171,3 +171,80 @@ def test_regression_orchestrator_rips(token):
     )
     assert res.status_code == 200
     assert res.json()["plan_id"]
+
+
+def test_draft_employee_not_selected_by_orchestrator(token):
+    caps = client.get("/api/agent-factory/capabilities", headers=_h(token)).json()
+    tools = client.get("/api/agent-factory/tools", headers=_h(token)).json()
+    docint_cap = next(c for c in caps if c["code"] == "docint")
+    docint_tool = next(t for t in tools if t["code"] == "docint")
+
+    for e in client.get("/api/agent-factory/employees", headers=_h(token)).json():
+        if e.get("lifecycle_status") == "ACTIVE" and "DOCINT" in e.get("specialty", ""):
+            client.post(f"/api/agent-factory/employees/{e['id']}/pause", headers=_h(token))
+
+    draft = client.post(
+        "/api/agent-factory/employees",
+        headers=_h(token),
+        json={"name": "Solo Draft Audit", "specialty": "DOCINT"},
+    ).json()
+    client.patch(
+        f"/api/agent-factory/employees/{draft['id']}",
+        headers=_h(token),
+        json={"capability_ids": [docint_cap["id"]], "tools": [{"tool_id": docint_tool["id"], "permission": "ALLOW"}]},
+    )
+    assert draft["lifecycle_status"] == "DRAFT"
+
+    orch = client.post(
+        "/api/assistant/ask",
+        headers=_h(token),
+        json={"message": "audit draft only", "context": {"tool": "docint", "documents": []}},
+    ).json()
+    detail = client.get(f"/api/operations/executions/{orch['plan_id']}", headers=_h(token)).json()
+    assert detail.get("tasks")
+    from app.orchestration_models import EmployeeTask
+    db = TestingSessionLocal()
+    task = db.query(EmployeeTask).filter(EmployeeTask.work_plan_id == orch["plan_id"]).first()
+    db.close()
+    assert task is not None
+    assert task.employee_id is None or task.employee_id != draft["id"]
+    assert draft["lifecycle_status"] == "DRAFT"
+
+
+def test_deny_blocks_orchestrator_execution(token):
+    caps = client.get("/api/agent-factory/capabilities", headers=_h(token)).json()
+    tools = client.get("/api/agent-factory/tools", headers=_h(token)).json()
+    docint_cap = next(c for c in caps if c["code"] == "docint")
+    docint_tool = next(t for t in tools if t["code"] == "docint")
+
+    for e in client.get("/api/agent-factory/employees", headers=_h(token)).json():
+        if e.get("lifecycle_status") == "ACTIVE" and "DOCINT" in e.get("specialty", ""):
+            client.post(f"/api/agent-factory/employees/{e['id']}/pause", headers=_h(token))
+
+    created = client.post(
+        "/api/agent-factory/employees",
+        headers=_h(token),
+        json={"name": "Deny Orch Audit", "specialty": "DOCINT"},
+    ).json()
+    emp_id = created["id"]
+    client.patch(
+        f"/api/agent-factory/employees/{emp_id}",
+        headers=_h(token),
+        json={
+            "capability_ids": [docint_cap["id"]],
+            "tools": [{"tool_id": docint_tool["id"], "permission": "DENY"}],
+        },
+    )
+    client.post(f"/api/agent-factory/employees/{emp_id}/test", headers=_h(token))
+    client.post(f"/api/agent-factory/employees/{emp_id}/certify", headers=_h(token))
+    client.post(f"/api/agent-factory/employees/{emp_id}/publish", headers=_h(token))
+    client.post(f"/api/agent-factory/employees/{emp_id}/activate", headers=_h(token))
+
+    orch = client.post(
+        "/api/assistant/ask",
+        headers=_h(token),
+        json={"message": "deny orch audit", "context": {"tool": "docint", "documents": []}},
+    ).json()
+    assert orch["status"] == "FAILED"
+    assert "denegada" in (orch.get("error") or "").lower()
+
