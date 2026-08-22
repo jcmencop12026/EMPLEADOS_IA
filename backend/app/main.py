@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import Base, SessionLocal, engine
-from app.routers import audit, auth, organization
+from app import orchestration_models  # noqa: F401 — registra tablas
+from app.routers import agent_factory, assistant, audit, auth, operations, organization
 from app.seed import bootstrap
 
 
@@ -38,6 +39,9 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(organization.router)
 app.include_router(audit.router)
+app.include_router(assistant.router)
+app.include_router(agent_factory.router)
+app.include_router(operations.router)
 
 
 @app.get("/health")
@@ -46,7 +50,7 @@ def health():
         "status": "ok",
         "app": settings.app_name,
         "version": settings.app_version,
-        "phase": "B1",
+        "phase": "B2-orchestrator",
     }
 
 

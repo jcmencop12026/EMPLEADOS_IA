@@ -2,8 +2,12 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./AppShell";
 import { RequireAuth } from "./RequireAuth";
 import { AuditPage } from "./pages/AuditPage";
+import { DirectoryPage } from "./pages/DirectoryPage";
+import { ExecutionDetailPage } from "./pages/ExecutionDetailPage";
+import { ExecutionsPage } from "./pages/ExecutionsPage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
+import { OperationsCenterPage } from "./pages/OperationsCenterPage";
 import { OrganizationPage } from "./pages/OrganizationPage";
 import { getToken } from "./api";
 
@@ -17,6 +21,10 @@ export default function App() {
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route index element={<HomePage />} />
+          <Route path="operaciones" element={<OperationsCenterPage />} />
+          <Route path="ejecuciones" element={<ExecutionsPage />} />
+          <Route path="ejecuciones/:planId" element={<ExecutionDetailPage />} />
+          <Route path="directorio" element={<DirectoryPage />} />
           <Route path="organizacion" element={<OrganizationPage />} />
           <Route path="auditoria" element={<AuditPage />} />
         </Route>
