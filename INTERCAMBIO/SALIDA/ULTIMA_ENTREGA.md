@@ -1,72 +1,47 @@
-# CURSOR-801 — Orquestador E2E Real
+# CURSOR-802 — Agent Factory Real + Publicación Empleados IA
 
 **Fecha:** 2026-08-22  
 **Repositorio:** jcmencop12026/EMPLEADOS_IA  
-**Rama:** cursor/orquestador-e2e-12b6  
-**HEAD base:** bea0058
+**Rama:** cursor/agent-factory-802-12b6  
+**HEAD base:** 3b2913c (post CURSOR-801)
 
 ## Objetivo
 
-Cerrar el primer circuito real:
+Evolucionar CURSOR-801 con Agent Factory real:
 
-`USUARIO → ORQUESTADOR → PLAN → EmployeeTask → EMPLEADO/CAPABILITY → TOOL → EJECUCIÓN → VALIDACIÓN → APROBACIÓN → RESULTADO → TRAZABILIDAD`
+`CREAR → CONFIGURAR → PROBAR → CERTIFICAR → PUBLICAR → ACTIVAR → ORQUESTADOR SELECCIONA → EJECUTAR`
 
 ## Implementado
 
-### Backend
-- `coordinator.route_task` — enrutamiento por reglas a DOCINT/RIPS
-- `POST /api/agent-factory/coordinator/route`
-- `POST /api/assistant/ask` — entrada desde Centro de Operaciones
-- Modelos: `WorkPlan`, `EmployeeTask`, `AIEmployee`, `Capability`, `Tool`, `ApprovalRequest`, `WorkEvent`, `FinOpsRecord`
-- Event bus in-process con persistencia en `work_events` y auditoría
-- Herramientas reales: `tools/docint.py`, `tools/rips.py` (RULE/PYTHON, sin mocks)
-- Aprobación humana vía `POST /api/operations/approvals/{id}/decide`
-- Migración Alembic: `4355c73adcb8_orchestration_work_plans_tasks`
+### Backend (reutiliza AIEmployee, Capability, Tool — sin duplicar)
+- Ciclo de vida: DRAFT → CONFIGURING → TESTING → CERTIFIED → PUBLISHED → ACTIVE
+- Modelos: EmployeeVersion, EmployeeToolGrant, EmployeeKnowledgeSource, EmployeeModelPolicy, EmployeeLimits, EmployeeInstructions, EmployeeTestCase, EmployeeTestRun, EmployeeCertification, EmployeeTemplate
+- API `/api/agent-factory/employees/*` — list, detail, create, update, test, certify, publish, activate, pause, metrics
+- Permisos: employee.view/create/edit/test/certify/publish/activate/admin
+- Eventos: employee.created/updated/tested/certified/published/activated/paused/version_changed
+- Coordinator filtra empleados ACTIVE/PUBLISHED para route_task
+- Empleados Salud existentes (DOCINT/RIPS) migrados a ACTIVE sin duplicar
+- Plantillas: analista-documental, auditor-rips, analista-datos, asistente-investigacion
+- Migración Alembic: `5b2eb2437398_agent_factory_802`
 
 ### Frontend
-- Centro de Operaciones (`/operaciones`) — campo «¿Qué necesita hacer hoy?»
-- Ejecuciones (`/ejecuciones`) con drill-down (`/ejecuciones/:planId`)
-- Directorio Operacional (`/directorio`)
-- Sidebar colapsable, estilos compactos empresariales
-
-### E2E Salud
-- Caso: «Analiza estos documentos/RIPS y dime qué problemas existen»
-- RIPS → validación estructural + hallazgos + aprobación cuando aplica
-- DOCINT → validación documental + hallazgos
+- Wizard `/empleados/nuevo` (identidad → capabilities → tools → modelo → revisión)
+- Detalle `/empleados/:id` con tabs (Resumen, Pruebas, Certificación, Versiones, Actividad)
+- Directorio evolucionado con filtros y columnas extendidas
+- Centro Operaciones: botón «Crear empleado» operativo
 
 ## Pruebas
 
 ```
-10 passed — tests/test_orchestrator_e2e.py
+17 passed — test_orchestrator_e2e.py (10) + test_agent_factory_e2e.py (7)
 ```
 
-Cubre: routing, plan, EmployeeTask, execute, tool, validation, approval (accept/reject), tenant isolation, permission denied, DOCINT/RIPS E2E, traceability.
+Incluye E2E completo: crear → configurar → test → certificar → publicar → activar → orquestador.
 
 ## Build
 
-```
-npm run build — OK
-```
+`npm run build` — OK
 
-## Verificación visual
-
-Navegador: Inicio, Centro Operaciones, Ejecuciones, Directorio, sidebar colapsable — PASS.
-
-## Cómo probar
-
-```bash
-# Backend
-cd backend && pip install -r requirements.txt
-PYTHONPATH=. alembic upgrade head
-PYTHONPATH=. uvicorn app.main:app --host 127.0.0.1 --port 8010
-
-# Frontend
-cd frontend && npm ci && npm run dev
-
-# Login: admin / Admin2026*
-# Ir a Centro de Operaciones → Ejecutar análisis RIPS o DOCINT
-```
-
-## CURSOR-801
+## CURSOR-802
 
 **PASS**

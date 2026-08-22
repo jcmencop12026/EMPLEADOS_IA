@@ -4,22 +4,17 @@ from sqlalchemy.orm import Session
 from app.deps import get_current_user
 from app.database import get_db
 from app.models import User
-from app.orchestration_models import AIEmployee, ApprovalRequest, EmployeeTask, FinOpsRecord, WorkEvent, WorkPlan
-from app.schemas_orchestration import ApprovalDecisionRequest, ApprovalOut, EmployeeOut, ExecutionOut, PlanResponse, WorkEventOut
+from app.orchestration_models import ApprovalRequest, EmployeeTask, FinOpsRecord, WorkEvent, WorkPlan
+from app.schemas_orchestration import ApprovalDecisionRequest, ApprovalOut, ExecutionOut, PlanResponse, WorkEventOut
+from app.services import agent_factory
 from app.services.coordinator import decide_approval, execute_plan
 
 router = APIRouter(prefix="/api/operations", tags=["operations"])
 
 
-@router.get("/employees", response_model=list[EmployeeOut])
+@router.get("/employees")
 def list_employees(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    rows = (
-        db.query(AIEmployee)
-        .filter(AIEmployee.organization_id == user.organization_id, AIEmployee.is_active.is_(True))
-        .order_by(AIEmployee.name)
-        .all()
-    )
-    return rows
+    return agent_factory.list_employees(db, user.organization_id)
 
 
 @router.get("/executions", response_model=list[ExecutionOut])

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.enums import (
     ApprovalStatus,
+    EmployeeLifecycleStatus,
     EmployeeStatus,
     EmployeeTaskStatus,
     ExecutorType,
@@ -64,6 +65,10 @@ def _find_employee_for_capability(db: Session, org_id: str, capability_id: str) 
             AIEmployee.id == link.employee_id,
             AIEmployee.organization_id == org_id,
             AIEmployee.is_active.is_(True),
+            AIEmployee.lifecycle_status.in_([
+                EmployeeLifecycleStatus.ACTIVE,
+                EmployeeLifecycleStatus.PUBLISHED,
+            ]),
         )
         .first()
     )

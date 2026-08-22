@@ -65,3 +65,64 @@ class WorkEventType(StrEnum):
     APPROVAL_COMPLETED = "approval.completed"
     WORK_COMPLETED = "work.completed"
     WORK_FAILED = "work.failed"
+
+
+class EmployeeLifecycleStatus(StrEnum):
+    DRAFT = "DRAFT"
+    CONFIGURING = "CONFIGURING"
+    READY_FOR_TEST = "READY_FOR_TEST"
+    TESTING = "TESTING"
+    FAILED_TEST = "FAILED_TEST"
+    READY_FOR_CERTIFICATION = "READY_FOR_CERTIFICATION"
+    CERTIFIED = "CERTIFIED"
+    PUBLISHED = "PUBLISHED"
+    ACTIVE = "ACTIVE"
+    PAUSED = "PAUSED"
+    RETIRED = "RETIRED"
+
+
+class EmployeeMaturity(StrEnum):
+    DRAFT = "DRAFT"
+    LAB = "LAB"
+    SHADOW = "SHADOW"
+    SUPERVISED = "SUPERVISED"
+    AUTONOMOUS_CONTROLLED = "AUTONOMOUS_CONTROLLED"
+
+
+class RiskLevel(StrEnum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+
+
+class ToolPermission(StrEnum):
+    ALLOW = "ALLOW"
+    DENY = "DENY"
+    REQUIRES_APPROVAL = "REQUIRES_APPROVAL"
+
+
+class TestType(StrEnum):
+    SMOKE = "SMOKE"
+    FUNCTIONAL = "FUNCTIONAL"
+    NEGATIVE = "NEGATIVE"
+    SECURITY = "SECURITY"
+    BOUNDARY = "BOUNDARY"
+
+
+class CertificationResult(StrEnum):
+    PASS = "PASS"
+    PASS_WITH_WARNINGS = "PASS_WITH_WARNINGS"
+    FAIL = "FAIL"
+
+
+class EmployeeEventType(StrEnum):
+    EMPLOYEE_CREATED = "employee.created"
+    EMPLOYEE_UPDATED = "employee.updated"
+    EMPLOYEE_TESTED = "employee.tested"
+    EMPLOYEE_CERTIFIED = "employee.certified"
+    EMPLOYEE_CERTIFICATION_FAILED = "employee.certification_failed"
+    EMPLOYEE_PUBLISHED = "employee.published"
+    EMPLOYEE_ACTIVATED = "employee.activated"
+    EMPLOYEE_PAUSED = "employee.paused"
+    EMPLOYEE_VERSION_CHANGED = "employee.version_changed"
