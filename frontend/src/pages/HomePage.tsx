@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api, UserMe } from "../api";
 
 export function HomePage() {
@@ -9,7 +10,7 @@ export function HomePage() {
   }, []);
 
   return (
-    <div>
+    <div className="ops-page">
       <h2>Inicio</h2>
       {user ? (
         <p>
@@ -19,8 +20,19 @@ export function HomePage() {
       ) : (
         <p>Cargando…</p>
       )}
+      <div className="home-links">
+        <Link className="btn primary" to="/operaciones">
+          Centro de Operaciones
+        </Link>
+        <Link className="btn" to="/ejecuciones">
+          Ejecuciones
+        </Link>
+        <Link className="btn" to="/directorio">
+          Directorio Empleados IA
+        </Link>
+      </div>
       <p className="muted">
-        Siguiente: B2 capacidades · B3 AI Gateway (Ollama) · B4 Empleados IA
+        Orquestador E2E · DOCINT · RIPS · Workspace Salud
       </p>
     </div>
   );

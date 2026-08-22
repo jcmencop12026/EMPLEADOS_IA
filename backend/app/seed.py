@@ -4,6 +4,7 @@ from app.audit import write_audit
 from app.config import settings
 from app.models import Organization, User
 from app.security import hash_password
+from app.seed_orchestration import bootstrap_orchestration
 
 
 def bootstrap(db: Session) -> None:
@@ -32,3 +33,5 @@ def bootstrap(db: Session) -> None:
         )
     else:
         db.commit()
+
+    bootstrap_orchestration(db, org.id)
