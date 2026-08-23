@@ -4,6 +4,8 @@
 **Repositorio:** jcmencop12026/EMPLEADOS_IA
 **Rama:** cursor/sqlite-alembic-repair-805
 **HEAD base main:** 02a0e0f
+**HEAD final:** d49c1e8
+**PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/5
 **Evidencia:** `INTERCAMBIO/SALIDA/CURSOR_805_SQLITE_ALEMBIC_REPAIR.md`
 
 ## Estado MVP
