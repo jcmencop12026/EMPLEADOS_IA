@@ -1,47 +1,35 @@
-# CURSOR-802 — Agent Factory Real + Publicación Empleados IA
+# Última entrega — EMPLEADOS_IA
 
-**Fecha:** 2026-08-22  
-**Repositorio:** jcmencop12026/EMPLEADOS_IA  
-**Rama:** cursor/agent-factory-802-12b6  
-**HEAD base:** 3b2913c (post CURSOR-801)
+**Actualizado:** CURSOR-803 (2026-08-23)
+**Repositorio:** jcmencop12026/EMPLEADOS_IA
+**Rama certificación:** cursor/certificacion-mvp-803
+**HEAD base main:** fb269e7
+**HEAD final:** 5622a6c
+**PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/4
 
-## Objetivo
+## Estado MVP
 
-Evolucionar CURSOR-801 con Agent Factory real:
+**MVP CERTIFICADO** — ver `INTERCAMBIO/SALIDA/CURSOR_803_CERTIFICACION_MVP.md`
 
-`CREAR → CONFIGURAR → PROBAR → CERTIFICAR → PUBLICAR → ACTIVAR → ORQUESTADOR SELECCIONA → EJECUTAR`
+## Componentes certificados
 
-## Implementado
+- Autenticación JWT
+- Tenant isolation (Org A/B)
+- Agent Factory (crear → certificar → publicar → activar)
+- Orquestador E2E (WorkPlan → Task → Tool → Result)
+- DOCINT y RIPS con aprobación humana
+- DENY / ALLOW / REQUIRES_APPROVAL
+- Centro de Operaciones, Directorio, Ejecuciones
+- 25 tests automatizados PASS
+- Build frontend OK
 
-### Backend (reutiliza AIEmployee, Capability, Tool — sin duplicar)
-- Ciclo de vida: DRAFT → CONFIGURING → TESTING → CERTIFIED → PUBLISHED → ACTIVE
-- Modelos: EmployeeVersion, EmployeeToolGrant, EmployeeKnowledgeSource, EmployeeModelPolicy, EmployeeLimits, EmployeeInstructions, EmployeeTestCase, EmployeeTestRun, EmployeeCertification, EmployeeTemplate
-- API `/api/agent-factory/employees/*` — list, detail, create, update, test, certify, publish, activate, pause, metrics
-- Permisos: employee.view/create/edit/test/certify/publish/activate/admin
-- Eventos: employee.created/updated/tested/certified/published/activated/paused/version_changed
-- Coordinator filtra empleados ACTIVE/PUBLISHED para route_task
-- Empleados Salud existentes (DOCINT/RIPS) migrados a ACTIVE sin duplicar
-- Plantillas: analista-documental, auditor-rips, analista-datos, asistente-investigacion
-- Migración Alembic: `5b2eb2437398_agent_factory_802`
+## Pendientes producción (B)
 
-### Frontend
-- Wizard `/empleados/nuevo` (identidad → capabilities → tools → modelo → revisión)
-- Detalle `/empleados/:id` con tabs (Resumen, Pruebas, Certificación, Versiones, Actividad)
-- Directorio evolucionado con filtros y columnas extendidas
-- Centro Operaciones: botón «Crear empleado» operativo
+- PostgreSQL + migración Alembic en entorno real
+- Validar ejecución sin empleado ACTIVE en política operativa
 
-## Pruebas
+## Mejoras posteriores (C)
 
-```
-17 passed — test_orchestrator_e2e.py (10) + test_agent_factory_e2e.py (7)
-```
-
-Incluye E2E completo: crear → configurar → test → certificar → publicar → activar → orquestador.
-
-## Build
-
-`npm run build` — OK
-
-## CURSOR-802
-
-**PASS**
+- Shadow Mode avanzado
+- Model Router multi-provider
+- Grillas avanzadas
