@@ -4,6 +4,8 @@
 **Repositorio:** jcmencop12026/EMPLEADOS_IA
 **Rama certificación:** cursor/certificacion-mvp-803
 **HEAD base main:** fb269e7
+**HEAD final:** 5622a6c
+**PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/4
 
 ## Estado MVP
 

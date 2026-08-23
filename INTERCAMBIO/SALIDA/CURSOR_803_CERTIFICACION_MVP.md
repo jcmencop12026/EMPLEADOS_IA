@@ -4,6 +4,8 @@
 **Repositorio:** jcmencop12026/EMPLEADOS_IA
 **Rama:** cursor/certificacion-mvp-803
 **HEAD inicial:** fb269e7815764498d695c544d86716bdb2d407e1
+**HEAD final:** 5622a6c0da09f1ecfc0ff9093f82d06d0fa4a5c1
+**PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/4
 **Base:** main (801+802 fusionados)
 
 ## Resumen ejecutivo
