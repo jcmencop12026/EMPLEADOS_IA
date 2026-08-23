@@ -1,15 +1,24 @@
 # Última entrega — EMPLEADOS_IA
 
-**Actualizado:** CURSOR-803 (2026-08-23)
+**Actualizado:** CURSOR-805 (2026-08-23)
 **Repositorio:** jcmencop12026/EMPLEADOS_IA
-**Rama certificación:** cursor/certificacion-mvp-803
-**HEAD base main:** fb269e7
-**HEAD final:** 5622a6c
-**PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/4
+**Rama:** cursor/sqlite-alembic-repair-805
+**HEAD base main:** 02a0e0f
+**Evidencia:** `INTERCAMBIO/SALIDA/CURSOR_805_SQLITE_ALEMBIC_REPAIR.md`
 
 ## Estado MVP
 
 **MVP CERTIFICADO** — ver `INTERCAMBIO/SALIDA/CURSOR_803_CERTIFICACION_MVP.md`
+
+## CURSOR-805 — SQLite + Alembic + Arranque
+
+**CURSOR-805: PASS**
+
+- Reparación idempotente SQLite legacy (`backend/scripts/repair_legacy_database.py`)
+- Alembic sincronizado: CURRENT = HEAD = `5b2eb2437398`
+- Arranque backend/frontend verificado
+- Scripts `INICIAR_EMPLEADOS_IA.bat` / `DETENER_EMPLEADOS_IA.bat`
+- 25/25 tests PASS, build OK
 
 ## Componentes certificados
 
@@ -22,10 +31,11 @@
 - Centro de Operaciones, Directorio, Ejecuciones
 - 25 tests automatizados PASS
 - Build frontend OK
+- SQLite local + Alembic alineados
 
 ## Pendientes producción (B)
 
-- PostgreSQL + migración Alembic en entorno real
+- PostgreSQL productivo + migración Alembic en entorno real
 - Validar ejecución sin empleado ACTIVE en política operativa
 
 ## Mejoras posteriores (C)
