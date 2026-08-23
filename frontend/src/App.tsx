@@ -3,6 +3,8 @@ import { AppShell } from "./AppShell";
 import { RequireAuth } from "./RequireAuth";
 import { AuditPage } from "./pages/AuditPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
+import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
+import { EmployeeWizardPage } from "./pages/EmployeeWizardPage";
 import { ExecutionDetailPage } from "./pages/ExecutionDetailPage";
 import { ExecutionsPage } from "./pages/ExecutionsPage";
 import { HomePage } from "./pages/HomePage";
@@ -25,6 +27,8 @@ export default function App() {
           <Route path="ejecuciones" element={<ExecutionsPage />} />
           <Route path="ejecuciones/:planId" element={<ExecutionDetailPage />} />
           <Route path="directorio" element={<DirectoryPage />} />
+          <Route path="empleados/nuevo" element={<EmployeeWizardPage />} />
+          <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />
           <Route path="organizacion" element={<OrganizationPage />} />
           <Route path="auditoria" element={<AuditPage />} />
         </Route>

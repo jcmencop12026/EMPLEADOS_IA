@@ -67,6 +67,9 @@ export function OperationsCenterPage() {
           <button type="button" className="btn primary" disabled={loading} onClick={() => runRequest()}>
             {loading ? "Ejecutando…" : "Ejecutar análisis"}
           </button>
+          <Link className="btn" to="/empleados/nuevo" title="Crear empleado IA">
+            Crear empleado
+          </Link>
           <button
             type="button"
             className={`btn ${mode === "rips" ? "active" : ""}`}

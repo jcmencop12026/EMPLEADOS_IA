@@ -50,7 +50,7 @@ def health():
         "status": "ok",
         "app": settings.app_name,
         "version": settings.app_version,
-        "phase": "B2-orchestrator",
+        "phase": "B2-agent-factory",
     }
 
 

@@ -99,11 +99,21 @@ export type ExecutionDetail = PlanResult;
 
 export type EmployeeItem = {
   id: string;
+  code: string;
   name: string;
   specialty: string;
+  lifecycle_status: string;
+  maturity: string;
+  risk_level: string;
   status: string;
+  version: number;
+  capabilities: string[];
   model_provider?: string;
   model_name?: string;
+  last_certification?: string;
+  shadow_mode?: boolean;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type ApprovalItem = {
@@ -164,4 +174,54 @@ export async function decideApproval(
 
 export async function fetchEvents(): Promise<WorkEventItem[]> {
   return api<WorkEventItem[]>("/api/operations/events");
+}
+
+export type EmployeeTemplate = { code: string; name: string; description?: string; specialty: string };
+export type CapabilityItem = { id: string; code: string; name: string; risk_level: string };
+export type ToolItem = { id: string; code: string; name: string; executor_type: string; risk_level: string };
+
+export async function fetchTemplates(): Promise<EmployeeTemplate[]> {
+  return api<EmployeeTemplate[]>("/api/agent-factory/templates");
+}
+
+export async function fetchCapabilities(): Promise<CapabilityItem[]> {
+  return api<CapabilityItem[]>("/api/agent-factory/capabilities");
+}
+
+export async function fetchTools(): Promise<ToolItem[]> {
+  return api<ToolItem[]>("/api/agent-factory/tools");
+}
+
+export async function fetchEmployeeDetail(id: string): Promise<Record<string, unknown>> {
+  return api<Record<string, unknown>>(`/api/agent-factory/employees/${id}`);
+}
+
+export async function createEmployee(data: {
+  name: string;
+  specialty: string;
+  role?: string;
+  objective?: string;
+  template_code?: string;
+}): Promise<Record<string, unknown>> {
+  return api("/api/agent-factory/employees", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateEmployee(id: string, data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function testEmployee(id: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${id}/test`, { method: "POST" });
+}
+
+export async function certifyEmployee(id: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${id}/certify`, { method: "POST" });
+}
+
+export async function publishEmployee(id: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${id}/publish`, { method: "POST" });
+}
+
+export async function activateEmployee(id: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${id}/activate`, { method: "POST" });
 }

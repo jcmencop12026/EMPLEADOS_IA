@@ -10,9 +10,11 @@ from sqlalchemy.orm import Session
 
 from app.enums import (
     ApprovalStatus,
+    EmployeeLifecycleStatus,
     EmployeeStatus,
     EmployeeTaskStatus,
     ExecutorType,
+    ToolPermission,
     WorkEventType,
     WorkPlanStatus,
 )
@@ -23,6 +25,7 @@ from app.orchestration_models import (
     Capability,
     EmployeeCapability,
     EmployeeTask,
+    EmployeeToolGrant,
     FinOpsRecord,
     Tool,
     WorkPlan,
@@ -51,20 +54,36 @@ def _detect_route(request: str, context: dict[str, Any] | None) -> tuple[str, st
 
 
 def _find_employee_for_capability(db: Session, org_id: str, capability_id: str) -> AIEmployee | None:
-    link = (
+    links = (
         db.query(EmployeeCapability)
         .filter(EmployeeCapability.capability_id == capability_id)
-        .first()
+        .all()
     )
-    if not link:
+    for link in links:
+        employee = (
+            db.query(AIEmployee)
+            .filter(
+                AIEmployee.id == link.employee_id,
+                AIEmployee.organization_id == org_id,
+                AIEmployee.is_active.is_(True),
+                AIEmployee.lifecycle_status.in_([
+                    EmployeeLifecycleStatus.ACTIVE,
+                    EmployeeLifecycleStatus.PUBLISHED,
+                ]),
+            )
+            .first()
+        )
+        if employee:
+            return employee
+    return None
+
+
+def _tool_grant_for_employee(db: Session, employee_id: str | None, tool_id: str | None) -> EmployeeToolGrant | None:
+    if not employee_id or not tool_id:
         return None
     return (
-        db.query(AIEmployee)
-        .filter(
-            AIEmployee.id == link.employee_id,
-            AIEmployee.organization_id == org_id,
-            AIEmployee.is_active.is_(True),
-        )
+        db.query(EmployeeToolGrant)
+        .filter(EmployeeToolGrant.employee_id == employee_id, EmployeeToolGrant.tool_id == tool_id)
         .first()
     )
 
@@ -240,6 +259,10 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
 
     start_ms = time.monotonic()
     try:
+        grant = _tool_grant_for_employee(db, task.employee_id, task.tool_id)
+        if grant and grant.permission == ToolPermission.DENY:
+            raise PermissionError("Herramienta denegada para el empleado asignado")
+
         inputs = json.loads(task.inputs_json or "{}")
         inputs["request"] = plan.request
         output = _run_tool(tool.code if tool else "docint", inputs)
@@ -247,7 +270,11 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
 
         task.outputs_json = json.dumps(output, ensure_ascii=False)
         task.confidence = output.get("confidence")
-        requires_approval = (tool and tool.requires_approval) or output.get("confidence", 1.0) < 0.7
+        requires_approval = (
+            (tool and tool.requires_approval)
+            or (grant and grant.permission == ToolPermission.REQUIRES_APPROVAL)
+            or output.get("confidence", 1.0) < 0.7
+        )
 
         if requires_approval:
             task.status = EmployeeTaskStatus.WAITING_APPROVAL
