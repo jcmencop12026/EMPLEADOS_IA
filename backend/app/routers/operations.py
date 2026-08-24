@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.deps import get_current_user
 from app.database import get_db
 from app.models import User
+from app.permissions import check_permission
 from app.orchestration_models import ApprovalRequest, EmployeeTask, FinOpsRecord, WorkEvent, WorkPlan
 from app.schemas_orchestration import ApprovalDecisionRequest, ApprovalOut, ExecutionOut, PlanResponse, WorkEventOut
 from app.services import agent_factory
@@ -98,6 +99,7 @@ def approval_decide(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    check_permission(user, "operations.approve")
     result = decide_approval(
         db,
         approval_id=approval_id,
@@ -106,6 +108,8 @@ def approval_decide(
         decision=body.decision,
         comment=body.comment,
     )
+    if result.get("error") == "Aprobación no encontrada":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result["error"])
     if result.get("error") and "plan_id" not in result:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
     return PlanResponse(**result)

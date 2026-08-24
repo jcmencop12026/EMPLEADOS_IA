@@ -80,6 +80,7 @@ export function EmployeeDetailPage() {
             <p><strong>Riesgo:</strong> {label(RISK_LEVEL, String(detail?.risk_level))} · <strong>Madurez:</strong> {label(MATURITY, String(detail?.maturity))}</p>
             <p><strong>Capabilities:</strong> {caps.map((c) => c.code || c).join(", ") || (detail?.capabilities as string[])?.join(", ")}</p>
             <div className="ops-actions">
+              <Link className="btn" to={`/empleados/${employeeId}/editar`}>Editar configuración</Link>
               <button type="button" className="btn" disabled={loading} onClick={() => runAction("test")}>Ejecutar pruebas</button>
               <button type="button" className="btn" disabled={loading} onClick={() => runAction("certify")}>Certificar</button>
               <button type="button" className="btn primary" disabled={loading || lifecycle !== "CERTIFIED"} onClick={() => runAction("publish")}>Publicar</button>

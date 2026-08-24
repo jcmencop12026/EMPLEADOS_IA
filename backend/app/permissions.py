@@ -1,5 +1,6 @@
 from fastapi import Depends, HTTPException, status
 
+from app.deps import get_current_user
 from app.models import User
 
 EMPLOYEE_PERMISSIONS = {
@@ -13,28 +14,32 @@ EMPLOYEE_PERMISSIONS = {
     "employee.admin",
 }
 
+OPERATIONS_PERMISSIONS = {
+    "operations.view",
+    "operations.execute",
+    "operations.approve",
+}
+
 ROLE_PERMISSIONS: dict[str, set[str]] = {
-    "admin": EMPLOYEE_PERMISSIONS,
+    "admin": EMPLOYEE_PERMISSIONS | OPERATIONS_PERMISSIONS,
     "operator": {
         "employee.view",
         "employee.create",
         "employee.edit",
         "employee.test",
+        "operations.view",
+        "operations.execute",
+        "operations.approve",
     },
-    "viewer": {"employee.view"},
+    "viewer": {
+        "employee.view",
+        "operations.view",
+    },
 }
 
 
 def user_permissions(user: User) -> set[str]:
     return ROLE_PERMISSIONS.get(user.role, {"employee.view"})
-
-
-def require_permission(permission: str):
-    def checker(user: User = Depends(lambda: None)) -> User:
-        from app.deps import get_current_user
-        raise NotImplementedError
-
-    return checker
 
 
 def check_permission(user: User, permission: str) -> None:
@@ -43,3 +48,11 @@ def check_permission(user: User, permission: str) -> None:
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Permiso denegado: {permission}",
         )
+
+
+def require_permission(permission: str):
+    def checker(user: User = Depends(get_current_user)) -> User:
+        check_permission(user, permission)
+        return user
+
+    return checker

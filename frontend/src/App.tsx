@@ -30,6 +30,7 @@ export default function App() {
           <Route path="aprobaciones" element={<ApprovalsPage />} />
           <Route path="directorio" element={<DirectoryPage />} />
           <Route path="empleados/nuevo" element={<EmployeeWizardPage />} />
+          <Route path="empleados/:employeeId/editar" element={<EmployeeWizardPage />} />
           <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />
           <Route path="organizacion" element={<OrganizationPage />} />
           <Route path="auditoria" element={<AuditPage />} />
