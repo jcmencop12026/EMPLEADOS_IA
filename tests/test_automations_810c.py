@@ -272,3 +272,203 @@ def test_wizard_edit_recurrence_preserved(client, auth_headers):
     assert detail["recurrence"]["hour"] == 14
     assert detail["recurrence"]["minute"] == 30
     assert detail["timezone"] == "America/Bogota"
+
+
+def test_timeout_no_post_timeout_side_effects():
+    """TEST A/D: tras timeout no deben aparecer efectos posteriores."""
+    db = TestingSessionLocal()
+    try:
+        org, user = _create_org_user(db, "No Side Effects")
+        auto = create_automation(
+            db,
+            org_id=org.id,
+            user_id=user.id,
+            data=_payload(timeout_seconds=1, max_retries=0),
+        )
+        activate_automation(db, auto, user.id)
+        side_effects: list[str] = []
+        external_calls: list[str] = []
+
+        def slow_route(*_args, **_kwargs):
+            from app.services.execution_guard import ExecutionCancelledError, require_execution_allowed
+
+            time.sleep(1.2)
+            try:
+                require_execution_allowed()
+                side_effects.append("persist-after-timeout")
+            except ExecutionCancelledError:
+                pass
+            try:
+                require_execution_allowed()
+                external_calls.append("external-call")
+            except ExecutionCancelledError:
+                pass
+            return {"plan_id": "late", "status": WorkPlanStatus.COMPLETED}
+
+        with patch("app.services.automation_service.route_task", side_effect=slow_route):
+            run = run_now(db, auto, user.id)
+        assert run.status == AutomationRunStatus.FAILED
+        assert side_effects == []
+        assert external_calls == []
+        time.sleep(2.5)
+        assert side_effects == []
+        assert external_calls == []
+    finally:
+        db.close()
+
+
+def test_timeout_blocks_post_timeout_persist():
+    """TEST B: intento de persistir tras timeout → 0 cambios posteriores."""
+    db = TestingSessionLocal()
+    try:
+        org, user = _create_org_user(db, "Block Persist")
+        auto = create_automation(
+            db,
+            org_id=org.id,
+            user_id=user.id,
+            data=_payload(timeout_seconds=1, max_retries=0),
+        )
+        activate_automation(db, auto, user.id)
+        writes: list[str] = []
+
+        def route_with_late_write(*_args, **_kwargs):
+            from app.services.execution_guard import ExecutionCancelledError, require_execution_allowed
+
+            time.sleep(1.2)
+            try:
+                require_execution_allowed()
+                writes.append("would-persist")
+            except ExecutionCancelledError:
+                pass
+            return {"plan_id": "p", "status": WorkPlanStatus.COMPLETED}
+
+        with patch("app.services.automation_service.route_task", side_effect=route_with_late_write):
+            run = run_now(db, auto, user.id)
+        assert run.status == AutomationRunStatus.FAILED
+        assert writes == []
+        time.sleep(2)
+        assert writes == []
+    finally:
+        db.close()
+
+
+def test_timeout_stops_multi_step_execution():
+    """TEST C: pasos posteriores al timeout no se ejecutan."""
+    db = TestingSessionLocal()
+    try:
+        org, user = _create_org_user(db, "Multi Step")
+        auto = create_automation(
+            db,
+            org_id=org.id,
+            user_id=user.id,
+            data=_payload(timeout_seconds=1, max_retries=0),
+        )
+        activate_automation(db, auto, user.id)
+        steps: list[int] = []
+
+        def multi_step_route(*_args, **_kwargs):
+            from app.services.execution_guard import ExecutionCancelledError, require_execution_allowed
+
+            require_execution_allowed()
+            steps.append(1)
+            time.sleep(1.2)
+            try:
+                require_execution_allowed()
+                steps.append(2)
+            except ExecutionCancelledError:
+                pass
+            return {"plan_id": "ms", "status": WorkPlanStatus.COMPLETED}
+
+        with patch("app.services.automation_service.route_task", side_effect=multi_step_route):
+            run = run_now(db, auto, user.id)
+        assert run.status == AutomationRunStatus.FAILED
+        assert steps == [1]
+        time.sleep(2)
+        assert steps == [1]
+    finally:
+        db.close()
+
+
+def test_wizard_partial_name_preserves_nested_workflow(client, auth_headers):
+    """TEST A/B: solo name cambia; workflow anidado intacto."""
+    body = _payload(
+        workflow={
+            "tool": "docint",
+            "estimated_cost": 1.25,
+            "advanced": {"reasoning": True, "depth": 3},
+        },
+    ).model_dump(mode="json")
+    created = client.post("/api/automations", headers=auth_headers, json=body)
+    auto_id = created.json()["id"]
+
+    updated = client.put(
+        f"/api/automations/{auto_id}",
+        headers=auth_headers,
+        json={"name": "Solo nombre cambiado"},
+    )
+    assert updated.status_code == 200
+    detail = client.get(f"/api/automations/{auto_id}", headers=auth_headers).json()
+    assert detail["name"] == "Solo nombre cambiado"
+    assert detail["workflow"]["tool"] == "docint"
+    assert detail["workflow"]["estimated_cost"] == 1.25
+    assert detail["workflow"]["advanced"]["reasoning"] is True
+    assert detail["workflow"]["advanced"]["depth"] == 3
+
+
+def test_wizard_partial_nested_workflow_merge(client, auth_headers):
+    """TEST B: modificar campo interno sin borrar hermanos."""
+    body = _payload(
+        workflow={
+            "tool": "rips",
+            "estimated_cost": 2.0,
+            "advanced": {"reasoning": True, "depth": 2},
+        },
+    ).model_dump(mode="json")
+    created = client.post("/api/automations", headers=auth_headers, json=body)
+    auto_id = created.json()["id"]
+
+    client.put(
+        f"/api/automations/{auto_id}",
+        headers=auth_headers,
+        json={"workflow": {"estimated_cost": 3.5}},
+    )
+    detail = client.get(f"/api/automations/{auto_id}", headers=auth_headers).json()
+    assert detail["workflow"]["tool"] == "rips"
+    assert detail["workflow"]["estimated_cost"] == 3.5
+    assert detail["workflow"]["advanced"]["reasoning"] is True
+    assert detail["workflow"]["advanced"]["depth"] == 2
+
+
+def test_wizard_omitted_workflow_fields_preserved(client, auth_headers):
+    """TEST C: no enviar workflow conserva arrays/campos existentes."""
+    body = _payload(
+        workflow={"tool": "docint", "tags": ["audit", "validate"], "options": ["a", "b"]},
+    ).model_dump(mode="json")
+    created = client.post("/api/automations", headers=auth_headers, json=body)
+    auto_id = created.json()["id"]
+
+    client.put(
+        f"/api/automations/{auto_id}",
+        headers=auth_headers,
+        json={"description": "sin tocar workflow"},
+    )
+    detail = client.get(f"/api/automations/{auto_id}", headers=auth_headers).json()
+    assert detail["workflow"]["tool"] == "docint"
+    assert detail["workflow"]["tags"] == ["audit", "validate"]
+    assert detail["workflow"]["options"] == ["a", "b"]
+
+
+def test_wizard_explicit_null_clears_workflow(client, auth_headers):
+    """TEST D: null explícito limpia; campo omitido se preserva."""
+    body = _payload(workflow={"tool": "docint", "estimated_cost": 1.0}).model_dump(mode="json")
+    created = client.post("/api/automations", headers=auth_headers, json=body)
+    auto_id = created.json()["id"]
+
+    cleared = client.put(
+        f"/api/automations/{auto_id}",
+        headers=auth_headers,
+        json={"workflow": None},
+    )
+    assert cleared.status_code == 200
+    detail = client.get(f"/api/automations/{auto_id}", headers=auth_headers).json()
+    assert detail["workflow"] is None

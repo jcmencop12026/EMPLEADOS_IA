@@ -105,6 +105,7 @@ export function AutomationWizardPage() {
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
   const [form, setForm] = useState<FormState>(defaultForm);
+  const [originalForm, setOriginalForm] = useState<FormState | null>(null);
 
   useEffect(() => {
     fetchEmployees().then(setEmployees).catch(() => setEmployees([]));
@@ -113,7 +114,11 @@ export function AutomationWizardPage() {
   useEffect(() => {
     if (!automationId) return;
     fetchAutomation(automationId)
-      .then((auto) => setForm(automationToForm(auto)))
+      .then((auto) => {
+        const loaded = automationToForm(auto);
+        setForm(loaded);
+        setOriginalForm(loaded);
+      })
       .catch((e) => setError(e instanceof Error ? e.message : "No se pudo cargar la automatización"));
   }, [automationId]);
 
@@ -177,6 +182,56 @@ export function AutomationWizardPage() {
     };
   }
 
+  function buildPartialPayload(): Record<string, unknown> {
+    if (!isEdit || !originalForm) return buildPayload();
+    const payload: Record<string, unknown> = {};
+    const cur = form;
+    const orig = originalForm;
+
+    if (cur.name.trim() !== orig.name) payload.name = cur.name.trim();
+    if ((cur.description.trim() || null) !== (orig.description.trim() || null)) {
+      payload.description = cur.description.trim() || null;
+    }
+    if (cur.objective.trim() !== orig.objective) payload.objective = cur.objective.trim();
+    if (cur.trigger_type !== orig.trigger_type) payload.trigger_type = cur.trigger_type;
+    if (cur.trigger_type === "SCHEDULE" && cur.schedule_type !== orig.schedule_type) {
+      payload.schedule_type = cur.schedule_type;
+    }
+    if (cur.timezone !== orig.timezone) payload.timezone = cur.timezone;
+    const startIso = cur.start_at ? new Date(cur.start_at).toISOString() : null;
+    const origStartIso = orig.start_at ? new Date(orig.start_at).toISOString() : null;
+    if (startIso !== origStartIso) payload.start_at = startIso;
+    if (JSON.stringify(buildRecurrence()) !== JSON.stringify(buildRecurrenceFor(orig))) {
+      payload.recurrence = buildRecurrence();
+    }
+    if ((cur.employee_id || null) !== (orig.employee_id || null)) payload.employee_id = cur.employee_id || null;
+    if (cur.requires_approval !== orig.requires_approval) payload.requires_approval = cur.requires_approval;
+    if (cur.max_runs_per_day !== orig.max_runs_per_day) payload.max_runs_per_day = cur.max_runs_per_day;
+    if (cur.max_retries !== orig.max_retries) payload.max_retries = cur.max_retries;
+    if (cur.retry_delay_seconds !== orig.retry_delay_seconds) payload.retry_delay_seconds = cur.retry_delay_seconds;
+    const timeoutVal = cur.timeout_seconds ? Number(cur.timeout_seconds) : null;
+    const origTimeout = orig.timeout_seconds ? Number(orig.timeout_seconds) : null;
+    if (timeoutVal !== origTimeout) payload.timeout_seconds = timeoutVal;
+    const costVal = cur.max_cost_per_run ? Number(cur.max_cost_per_run) : null;
+    const origCost = orig.max_cost_per_run ? Number(orig.max_cost_per_run) : null;
+    if (costVal !== origCost) payload.max_cost_per_run = costVal;
+
+    const wfPatch: Record<string, unknown> = {};
+    if (cur.workflow_tool !== orig.workflow_tool) wfPatch.tool = cur.workflow_tool;
+    const est = cur.estimated_cost ? Number(cur.estimated_cost) : null;
+    const origEst = orig.estimated_cost ? Number(orig.estimated_cost) : null;
+    if (est !== origEst) wfPatch.estimated_cost = est;
+    if (Object.keys(wfPatch).length > 0) payload.workflow = wfPatch;
+
+    return payload;
+  }
+
+  function buildRecurrenceFor(state: FormState) {
+    if (state.trigger_type === "INTERNAL_EVENT") return { event_type: state.event_type.trim() };
+    if (state.schedule_type === "INTERVAL") return { interval_minutes: state.interval_minutes };
+    return { hour: state.hour, minute: state.minute };
+  }
+
   async function submit(activate: boolean) {
     for (let i = 0; i <= 4; i += 1) {
       const msg = validateStep(i);
@@ -189,10 +244,10 @@ export function AutomationWizardPage() {
     setLoading(true);
     setError(null);
     try {
-      const payload = buildPayload();
+      const payload = isEdit ? buildPartialPayload() : buildPayload();
       const saved = isEdit && automationId
         ? await updateAutomation(automationId, payload)
-        : await createAutomation(payload);
+        : await createAutomation(payload as ReturnType<typeof buildPayload>);
       if (activate) await activateAutomation(saved.id);
       navigate("/automatizaciones");
     } catch (e) {
