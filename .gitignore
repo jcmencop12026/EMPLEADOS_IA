@@ -16,3 +16,10 @@ venv/
 # Windows
 # Word temporales
 frontend/tsconfig.tsbuildinfo
+# Bases de datos locales y backups
+data/*.db
+data/*_PRE_REPAIR_*.db
+data/LEGACY/
+data/empleados_ia.pids
+data/backend.log
+data/frontend.log
