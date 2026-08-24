@@ -20,14 +20,17 @@ from scripts.db_startup import (  # noqa: E402
 )
 from scripts.legacy_preservation import build_full_inventory, preserve_legacy_database  # noqa: E402
 from scripts.schema_repair import validate_schema_strict  # noqa: E402
-from sqlalchemy import create_engine  # noqa: E402
+from scripts.sqlite_lifecycle import release_all_sqlite_handles, sqlite_engine  # noqa: E402
 
 
 def cmd_audit(database_url: str) -> int:
     db_path = database_url_to_path(database_url)
     scenario = detect_db_scenario(db_path)
-    engine = create_engine(database_url, connect_args={"check_same_thread": False}) if db_path.exists() else None
-    validation = validate_schema_strict(engine) if engine else None
+    if db_path.exists():
+        with sqlite_engine(db_path) as engine:
+            validation = validate_schema_strict(engine)
+    else:
+        validation = None
     inventory = build_full_inventory(db_path) if db_path.exists() else {"tables": [], "summary": {}}
     output = {
         "scenario": scenario,

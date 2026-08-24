@@ -197,14 +197,58 @@ def export_legacy_tables(db_path: Path, export_dir: Path, inventory: dict[str, A
     return exported
 
 
+def find_preserved_legacy_by_sha256(data_dir: Path, sha256: str) -> Path | None:
+    legacy_dir = legacy_root(data_dir)
+    if not legacy_dir.exists():
+        return None
+    target = sha256.lower()
+    for candidate in legacy_dir.glob("*_LEGACY_*.db"):
+        if _sha256_file(candidate).lower() == target:
+            return candidate
+    return None
+
+
+def _load_existing_inventory(legacy_dir: Path) -> dict[str, Any] | None:
+    json_path = legacy_dir / "LEGACY_INVENTORY.json"
+    if not json_path.exists():
+        return None
+    return json.loads(json_path.read_text(encoding="utf-8"))
+
+
 def preserve_legacy_database(source_path: Path, data_dir: Path | None = None) -> PreservationReport:
-    """Copia verificada a data/LEGACY/, inventario y export. No modifica el original."""
+    """Copia verificada a data/LEGACY/, inventario y export. Idempotente por SHA256."""
     if not source_path.exists() or source_path.stat().st_size == 0:
         raise LegacyPreservationError(f"BD legacy no existe o está vacía: {source_path}")
 
     base_data = data_dir or source_path.parent
     legacy_dir = legacy_root(base_data)
     legacy_dir.mkdir(parents=True, exist_ok=True)
+
+    source_sha = _sha256_file(source_path)
+    existing = find_preserved_legacy_by_sha256(base_data, source_sha)
+    if existing:
+        verify_info = verify_backup_file(existing, source_path)
+        inventory = _load_existing_inventory(legacy_dir) or build_full_inventory(existing)
+        json_path = legacy_dir / "LEGACY_INVENTORY.json"
+        csv_path = legacy_dir / "LEGACY_INVENTORY.csv"
+        if not json_path.exists() or not csv_path.exists():
+            json_path, csv_path = write_inventory_files(inventory, legacy_dir)
+        exported = [
+            p.stem
+            for p in legacy_export_dir(base_data).glob("*.json")
+        ]
+        summary = inventory.get("summary", {})
+        return PreservationReport(
+            legacy_path=str(existing),
+            sha256=verify_info["sha256"],
+            size_bytes=verify_info["size"],
+            integrity=verify_info["integrity"],
+            inventory_path=str(json_path),
+            inventory_csv_path=str(csv_path),
+            export_dir=str(legacy_export_dir(base_data)),
+            tables_with_data=exported,
+            total_records=summary.get("total_records", 0),
+        )
 
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     dest = legacy_dir / f"{source_path.stem}_LEGACY_{ts}.db"

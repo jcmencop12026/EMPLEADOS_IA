@@ -17,6 +17,7 @@ from scripts.db_startup import (  # noqa: E402
     database_url_to_path,
     prepare_database,
 )
+from scripts.sqlite_lifecycle import release_all_sqlite_handles  # noqa: E402
 from scripts.service_manager import (  # noqa: E402
     load_pid_registry,
     save_pid_registry,
@@ -42,6 +43,7 @@ def cmd_prepare(database_url: str) -> int:
         return 3
 
     try:
+        release_all_sqlite_handles(database_url)
         result = prepare_database(database_url)
         print(json.dumps({"status": "ok", "result": result}))
         return 0

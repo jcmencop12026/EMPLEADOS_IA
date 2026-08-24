@@ -3,7 +3,7 @@ setlocal EnableExtensions EnableDelayedExpansion
 chcp 65001 >nul
 
 REM ============================================================
-REM EMPLEADOS_IA — Arranque integrado (CURSOR-805D)
+REM EMPLEADOS_IA — Arranque integrado (CURSOR-805E)
 REM ============================================================
 
 set "ROOT=%~dp0"
@@ -17,8 +17,10 @@ set "BACKEND=%ROOT%\backend"
 set "FRONTEND=%ROOT%\frontend"
 set "DATA=%ROOT%\data"
 set "VENV=%BACKEND%\.venv"
+set "PIDFILE=%DATA%\empleados_ia.pids"
 set "BACKEND_PORT=8010"
 set "FRONTEND_PORT=5180"
+set "START_RC=1"
 
 echo.
 echo ============================================================
@@ -71,15 +73,20 @@ if not exist "%FRONTEND%\node_modules" (
   popd
 )
 
+if exist "%PIDFILE%" (
+  echo [INFO] Deteniendo instancia previa registrada...
+  "%PY%" "%BACKEND%\scripts\launch_services.py" stop
+)
+
 echo [INFO] Iniciando servicios (BD + backend + frontend)...
 pushd "%BACKEND%"
 "%PY%" scripts\launch_services.py start --backend-port %BACKEND_PORT% --frontend-port %FRONTEND_PORT%
-set "START_RC=%ERRORLEVEL%"
+set "START_RC=!ERRORLEVEL!"
 popd
 
-if not "%START_RC%"=="0" (
-  echo [ERROR] Arranque fallido (codigo %START_RC%).
-  exit /b %START_RC%
+if !START_RC! neq 0 (
+  echo [ERROR] Arranque fallido (codigo !START_RC!).
+  exit /b !START_RC!
 )
 
 echo [INFO] Abriendo navegador...
@@ -94,5 +101,4 @@ echo  Para detener: DETENER_EMPLEADOS_IA.bat
 echo ============================================================
 echo.
 
-endlocal
 exit /b 0

@@ -1,14 +1,14 @@
 # Última entrega — EMPLEADOS_IA
 
-**Actualizado:** CURSOR-805D (2026-08-24)
+**Actualizado:** CURSOR-805E (2026-08-24)
 **Repositorio:** jcmencop12026/EMPLEADOS_IA
 **Rama:** cursor/sqlite-alembic-repair-805
 **PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/5
-**Evidencia:** `INTERCAMBIO/SALIDA/CURSOR_805D_CIERRE_SQLITE.md`
+**Evidencia:** `INTERCAMBIO/SALIDA/CURSOR_805E_WINDOWS_FIX.md`
 
 ## Estado
 
-**CURSOR-805D: PASS** — cierre definitivo SQLite local / Windows
+**CURSOR-805E: PASS** — corrección WinError 32 + BAT exit 255 + idempotencia preservación
 
 ### BD LEGACY
 **PRESERVADA** en `data/LEGACY/` con inventario y export
@@ -23,7 +23,7 @@
 **INVENTARIADOS/EXPORTADOS** en `data/LEGACY/`
 
 ### Tests
-42 PASSED, 0 FAILED, 0 SKIPPED
+46 PASSED, 0 FAILED, 0 SKIPPED
 
 ## MVP
 
