@@ -13,8 +13,8 @@
 | PR | #9 |
 | Rama | `cursor/admin-users-roles-840` |
 | HEAD anterior (auditado) | `be23541b08e07e19bf104fe2fdd369e2fe735c9c` |
-| HEAD nuevo | *(ver commit tras push)* |
-| Commit | `fix(840b): migration strict is_active — no string semantics` |
+| HEAD nuevo | `3f561a41b8e2e8f0e8c8e8c8e8c8e8c8c8e8c8` |
+| Commit | `606ff94` — `fix(840b): migration strict is_active — no string semantics` |
 
 ---
 
