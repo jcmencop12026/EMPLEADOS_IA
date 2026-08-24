@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 
 from fastapi import Depends, HTTPException, status
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -113,9 +114,23 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
 }
 
 
-def is_role_strictly_active(role: Role) -> bool:
-    """Solo True booleano inequívoco cuenta como activo."""
-    return role.is_active is True
+def is_canonical_active_value(raw) -> bool:
+    """Solo valores canónicos persistidos equivalen a ACTIVE."""
+    return raw is True or raw == 1
+
+
+def read_role_is_active_raw(db: Session, role_id: str):
+    return db.execute(
+        text("SELECT is_active FROM roles WHERE id = :role_id"),
+        {"role_id": role_id},
+    ).scalar()
+
+
+def is_role_strictly_active(role: Role, db: Session | None = None) -> bool:
+    """Validación estricta desde valor persistido — corrupción SQLite → DENY."""
+    if db is not None and role.id:
+        return is_canonical_active_value(read_role_is_active_raw(db, role.id))
+    return is_canonical_active_value(role.is_active)
 
 
 def find_role_candidates_for_user(db: Session, user: User) -> list[Role]:
@@ -160,14 +175,14 @@ def resolve_authoritative_role(db: Session, user: User) -> Role | None:
             logger.warning("roles_ambiguous org=%s code=%s count=%s", user.organization_id, user.role, len(org_roles))
             return None
         role = org_roles[0]
-        return role if is_role_strictly_active(role) else None
+        return role if is_role_strictly_active(role, db) else None
 
     global_roles = [r for r in candidates if r.organization_id is None]
     if len(global_roles) != 1:
         logger.warning("roles_ambiguous_global code=%s count=%s", user.role, len(global_roles))
         return None
     role = global_roles[0]
-    return role if is_role_strictly_active(role) else None
+    return role if is_role_strictly_active(role, db) else None
 
 
 def resolve_role_for_assignable(db: Session, role_code: str, org_id: str) -> Role | None:
@@ -179,12 +194,12 @@ def resolve_role_for_assignable(db: Session, role_code: str, org_id: str) -> Rol
         if len(org_roles) > 1:
             return None
         role = org_roles[0]
-        return role if is_role_strictly_active(role) else None
+        return role if is_role_strictly_active(role, db) else None
     global_roles = [r for r in candidates if r.organization_id is None]
     if len(global_roles) != 1:
         return None
     role = global_roles[0]
-    return role if is_role_strictly_active(role) else None
+    return role if is_role_strictly_active(role, db) else None
 
 
 def find_role_record_for_user(db: Session, user: User) -> Role | None:

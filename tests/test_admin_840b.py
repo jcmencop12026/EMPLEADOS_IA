@@ -529,14 +529,24 @@ def test_duplicate_global_role_denies(client: TestClient):
     assert res.status_code == 403
 
 
-@pytest.mark.parametrize("bad_active", [False, 0, None, "yes", 1])
-def test_corrupt_is_active_denies(bad_active):
-    """is_active corrupto/no booleano True → DENY."""
+@pytest.mark.parametrize(
+    "bad_active,expected",
+    [
+        (True, True),
+        (1, True),
+        (False, False),
+        (0, False),
+        (None, False),
+        ("yes", False),
+    ],
+)
+def test_corrupt_is_active_denies(bad_active, expected):
+    """is_active corrupto/no canónico → DENY (solo True/1 ALLOW)."""
     from app.permissions import is_role_strictly_active
 
     role = Role(code="x", name="x", is_active=True)
     object.__setattr__(role, "is_active", bad_active)
-    assert is_role_strictly_active(role) is False
+    assert is_role_strictly_active(role) is expected
 
 
 def test_corrupt_is_active_in_db_denies(client: TestClient):
