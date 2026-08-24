@@ -34,12 +34,21 @@ def _tick() -> None:
         )
         for automation in due:
             try:
+                from app.audit import write_audit
+
                 automation_service.trigger_run(
                     db,
                     automation=automation,
                     user_id=automation.created_by_id,
                     trigger_source=AutomationTriggerType.SCHEDULE,
                     scheduled_for=automation.next_run_at,
+                )
+                write_audit(
+                    db,
+                    action="automation.scheduler_run",
+                    organization_id=automation.organization_id,
+                    user_id=automation.created_by_id,
+                    detail=automation.name,
                 )
             except Exception:
                 logger.exception("Scheduler error automation=%s", automation.id)

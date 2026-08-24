@@ -10,6 +10,7 @@ from app import automation_models  # noqa: F401
 from app.routers import agent_factory, assistant, audit, auth, automations, operations, organization
 from app.seed import bootstrap
 from app.services.automation_scheduler import start_scheduler, stop_scheduler
+from app.services.automation_events import register_automation_event_handlers
 
 
 @asynccontextmanager
@@ -20,6 +21,7 @@ async def lifespan(_app: FastAPI):
         bootstrap(db)
     finally:
         db.close()
+    register_automation_event_handlers()
     start_scheduler()
     yield
     stop_scheduler()

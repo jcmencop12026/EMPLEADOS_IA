@@ -32,6 +32,7 @@ export default function App() {
           <Route path="directorio" element={<DirectoryPage />} />
           <Route path="automatizaciones" element={<AutomationsPage />} />
           <Route path="automatizaciones/nueva" element={<AutomationWizardPage />} />
+          <Route path="automatizaciones/:automationId/editar" element={<AutomationWizardPage />} />
           <Route path="automatizaciones/:automationId/ejecuciones" element={<AutomationRunsPage />} />
           <Route path="empleados/nuevo" element={<EmployeeWizardPage />} />
           <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />

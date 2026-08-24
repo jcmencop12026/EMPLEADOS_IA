@@ -263,8 +263,16 @@ export async function fetchAutomations(): Promise<AutomationItem[]> {
   return api<AutomationItem[]>("/api/automations");
 }
 
+export async function fetchAutomation(id: string): Promise<AutomationItem> {
+  return api<AutomationItem>(`/api/automations/${id}`);
+}
+
 export async function createAutomation(data: Record<string, unknown>): Promise<AutomationItem> {
   return api<AutomationItem>("/api/automations", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateAutomation(id: string, data: Record<string, unknown>): Promise<AutomationItem> {
+  return api<AutomationItem>(`/api/automations/${id}`, { method: "PUT", body: JSON.stringify(data) });
 }
 
 export async function activateAutomation(id: string): Promise<AutomationItem> {
@@ -273,6 +281,18 @@ export async function activateAutomation(id: string): Promise<AutomationItem> {
 
 export async function pauseAutomation(id: string): Promise<AutomationItem> {
   return api<AutomationItem>(`/api/automations/${id}/pause`, { method: "POST" });
+}
+
+export async function disableAutomation(id: string): Promise<AutomationItem> {
+  return api<AutomationItem>(`/api/automations/${id}/disable`, { method: "POST" });
+}
+
+export async function duplicateAutomation(id: string): Promise<AutomationItem> {
+  return api<AutomationItem>(`/api/automations/${id}/duplicate`, { method: "POST" });
+}
+
+export async function deleteAutomation(id: string): Promise<void> {
+  return api<void>(`/api/automations/${id}`, { method: "DELETE" });
 }
 
 export async function runAutomationNow(id: string): Promise<AutomationRunItem> {

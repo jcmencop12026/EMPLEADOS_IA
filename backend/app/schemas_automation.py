@@ -28,7 +28,7 @@ class AutomationBase(BaseModel):
     employee_id: str | None = None
     workflow: dict[str, Any] | None = None
     priority: int = 5
-    max_retries: int = 0
+    max_retries: int = Field(default=0, ge=0, le=10, description="Reintentos después del intento inicial")
     retry_delay_seconds: int = 60
     timeout_seconds: int | None = None
     requires_approval: bool = False

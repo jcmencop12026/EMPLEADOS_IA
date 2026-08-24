@@ -148,7 +148,20 @@ def route_task(
         .filter(Tool.organization_id == organization_id, Tool.capability_id == capability.id, Tool.is_active.is_(True))
         .first()
     )
-    employee = _find_employee_for_capability(db, organization_id, capability.id)
+    preferred_employee_id = (context or {}).get("employee_id")
+    employee: AIEmployee | None = None
+    if preferred_employee_id:
+        employee = (
+            db.query(AIEmployee)
+            .filter(
+                AIEmployee.id == preferred_employee_id,
+                AIEmployee.organization_id == organization_id,
+                AIEmployee.is_active.is_(True),
+            )
+            .first()
+        )
+    if not employee:
+        employee = _find_employee_for_capability(db, organization_id, capability.id)
 
     plan.capability_id = capability.id
     plan.employee_id = employee.id if employee else None
@@ -452,6 +465,41 @@ def decide_approval(
 
     if decision == "approve":
         approval.status = "APPROVED"
+        tasks = (
+            db.query(EmployeeTask).filter(EmployeeTask.work_plan_id == plan.id).all()
+            if plan
+            else []
+        )
+        needs_execution = (
+            plan
+            and plan.status == WorkPlanStatus.WAITING_APPROVAL
+            and (not tasks or any(t.status == EmployeeTaskStatus.READY for t in tasks))
+        )
+        if needs_execution:
+            db.commit()
+            execute_plan(db, plan_id=plan.id, user_id=user_id)
+            db.refresh(plan)
+            from app.services.automation_service import sync_run_from_work_plan
+
+            sync_run_from_work_plan(
+                db,
+                work_plan_id=plan.id,
+                plan_status=plan.status,
+                error=plan.error,
+            )
+            publish(
+                EventMessage(
+                    event_type=WorkEventType.APPROVAL_COMPLETED,
+                    organization_id=organization_id,
+                    work_plan_id=plan.id,
+                    task_id=task.id if task else None,
+                    user_id=user_id,
+                    payload={"decision": decision, "approval_id": approval_id},
+                ),
+                db,
+            )
+            return _build_plan_response(db, plan)
+
         if task:
             task.status = EmployeeTaskStatus.COMPLETED
             task.approval_status = ApprovalStatus.APPROVED

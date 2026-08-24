@@ -4,8 +4,9 @@ from __future__ import annotations
 import json
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, Callable
 
 from fastapi import HTTPException, status
 from sqlalchemy import func
@@ -14,11 +15,19 @@ from sqlalchemy.orm import Session
 
 from app.audit import write_audit
 from app.automation_models import Automation, AutomationRun
-from app.enums import AutomationRunStatus, AutomationStatus, AutomationTriggerType, WorkPlanStatus
-from app.orchestration_models import FinOpsRecord, WorkPlan
+from app.enums import (
+    ApprovalStatus,
+    AutomationRunStatus,
+    AutomationStatus,
+    AutomationTriggerType,
+    WorkPlanStatus,
+)
+from app.orchestration_models import AIEmployee, ApprovalRequest, FinOpsRecord, WorkPlan
 from app.schemas_automation import AutomationCreate, AutomationUpdate
 from app.services.coordinator import execute_plan, route_task
 from app.services.recurrence import compute_next_run, occurrence_key, parse_recurrence
+
+MAX_RETRIES_LIMIT = 10
 
 
 def _utcnow() -> datetime:
@@ -39,6 +48,62 @@ def _dump_recurrence(data: dict[str, Any] | None) -> str | None:
 
 def _load_recurrence(raw: str | None) -> dict[str, Any] | None:
     return parse_recurrence(raw) if raw else None
+
+
+def _validate_employee_id(db: Session, *, org_id: str, employee_id: str | None) -> None:
+    if not employee_id:
+        return
+    employee = (
+        db.query(AIEmployee)
+        .filter(AIEmployee.id == employee_id, AIEmployee.organization_id == org_id)
+        .first()
+    )
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="El empleado no pertenece a la organización o no existe",
+        )
+
+
+def _assert_employee_tenant(db: Session, automation: Automation) -> None:
+    if not automation.employee_id:
+        return
+    employee = (
+        db.query(AIEmployee)
+        .filter(
+            AIEmployee.id == automation.employee_id,
+            AIEmployee.organization_id == automation.organization_id,
+        )
+        .first()
+    )
+    if not employee:
+        raise ValueError("Empleado cross-tenant o inexistente — ejecución rechazada")
+
+
+def _validate_retries(max_retries: int) -> None:
+    if max_retries < 0 or max_retries > MAX_RETRIES_LIMIT:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"max_retries debe estar entre 0 y {MAX_RETRIES_LIMIT} (reintentos tras el intento inicial)",
+        )
+
+
+def _precheck_cost_limit(automation: Automation, workflow: dict[str, Any]) -> str | None:
+    """Valida costo previo solo cuando existe estimación fiable en workflow."""
+    if automation.max_cost_per_run is None:
+        return None
+    estimated = workflow.get("estimated_cost")
+    if estimated is None:
+        return None
+    try:
+        estimated_value = float(estimated)
+    except (TypeError, ValueError):
+        return None
+    if estimated_value > automation.max_cost_per_run:
+        return (
+            f"Costo estimado ({estimated_value}) excede max_cost_per_run ({automation.max_cost_per_run})"
+        )
+    return None
 
 
 def _serialize_automation(row: Automation) -> dict[str, Any]:
@@ -131,6 +196,8 @@ def refresh_next_run(db: Session, automation: Automation) -> None:
 
 
 def create_automation(db: Session, *, org_id: str, user_id: str, data: AutomationCreate) -> Automation:
+    _validate_employee_id(db, org_id=org_id, employee_id=data.employee_id)
+    _validate_retries(data.max_retries)
     row = Automation(
         organization_id=org_id,
         name=data.name,
@@ -166,6 +233,10 @@ def create_automation(db: Session, *, org_id: str, user_id: str, data: Automatio
 
 def update_automation(db: Session, *, automation: Automation, user_id: str, data: AutomationUpdate) -> Automation:
     payload = data.model_dump(exclude_unset=True)
+    if "employee_id" in payload:
+        _validate_employee_id(db, org_id=automation.organization_id, employee_id=payload["employee_id"])
+    if "max_retries" in payload and payload["max_retries"] is not None:
+        _validate_retries(payload["max_retries"])
     if "recurrence" in payload:
         rec = payload.pop("recurrence")
         automation.recurrence_config_json = _dump_recurrence(rec)
@@ -178,7 +249,13 @@ def update_automation(db: Session, *, automation: Automation, user_id: str, data
     refresh_next_run(db, automation)
     db.commit()
     db.refresh(automation)
-    write_audit(db, action="automation.updated", organization_id=automation.organization_id, user_id=user_id, detail=automation.name)
+    write_audit(
+        db,
+        action="automation.updated",
+        organization_id=automation.organization_id,
+        user_id=user_id,
+        detail=automation.name,
+    )
     return automation
 
 
@@ -203,7 +280,13 @@ def activate_automation(db: Session, automation: Automation, user_id: str) -> Au
     refresh_next_run(db, automation)
     db.commit()
     db.refresh(automation)
-    write_audit(db, action="automation.activated", organization_id=automation.organization_id, user_id=user_id, detail=automation.name)
+    write_audit(
+        db,
+        action="automation.activated",
+        organization_id=automation.organization_id,
+        user_id=user_id,
+        detail=automation.name,
+    )
     return automation
 
 
@@ -212,7 +295,13 @@ def pause_automation(db: Session, automation: Automation, user_id: str) -> Autom
     automation.next_run_at = None
     db.commit()
     db.refresh(automation)
-    write_audit(db, action="automation.paused", organization_id=automation.organization_id, user_id=user_id, detail=automation.name)
+    write_audit(
+        db,
+        action="automation.paused",
+        organization_id=automation.organization_id,
+        user_id=user_id,
+        detail=automation.name,
+    )
     return automation
 
 
@@ -221,7 +310,13 @@ def disable_automation(db: Session, automation: Automation, user_id: str) -> Aut
     automation.next_run_at = None
     db.commit()
     db.refresh(automation)
-    write_audit(db, action="automation.disabled", organization_id=automation.organization_id, user_id=user_id, detail=automation.name)
+    write_audit(
+        db,
+        action="automation.disabled",
+        organization_id=automation.organization_id,
+        user_id=user_id,
+        detail=automation.name,
+    )
     return automation
 
 
@@ -261,7 +356,13 @@ def duplicate_automation(db: Session, automation: Automation, user_id: str) -> A
     db.add(clone)
     db.commit()
     db.refresh(clone)
-    write_audit(db, action="automation.duplicated", organization_id=clone.organization_id, user_id=user_id, detail=clone.name)
+    write_audit(
+        db,
+        action="automation.duplicated",
+        organization_id=clone.organization_id,
+        user_id=user_id,
+        detail=clone.name,
+    )
     return clone
 
 
@@ -290,6 +391,93 @@ def _sum_run_cost(db: Session, work_plan_id: str | None) -> float | None:
     return float(total) if total is not None else None
 
 
+def _run_with_timeout(fn: Callable[[], dict[str, Any]], timeout_seconds: int | None) -> dict[str, Any]:
+    if not timeout_seconds or timeout_seconds <= 0:
+        return fn()
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(fn)
+        try:
+            return future.result(timeout=timeout_seconds)
+        except FuturesTimeout as exc:
+            raise TimeoutError(f"timeout_seconds excedido ({timeout_seconds}s)") from exc
+
+
+def _create_pre_execution_approval(
+    db: Session,
+    *,
+    automation: Automation,
+    plan: WorkPlan,
+    user_id: str,
+    run: AutomationRun,
+) -> None:
+    approval = ApprovalRequest(
+        organization_id=automation.organization_id,
+        work_plan_id=plan.id,
+        action=f"Aprobar automatización: {automation.name}",
+        reason=automation.objective[:500],
+        requested_by=user_id,
+    )
+    db.add(approval)
+    plan.status = WorkPlanStatus.WAITING_APPROVAL
+    plan.approval_status = ApprovalStatus.PENDING
+    run.work_plan_id = plan.id
+    run.status = AutomationRunStatus.WAITING_APPROVAL
+    run.result_reference_json = json.dumps({"plan_id": plan.id, "approval_id": approval.id}, ensure_ascii=False)
+    db.commit()
+    write_audit(
+        db,
+        action="automation.waiting_approval",
+        organization_id=automation.organization_id,
+        user_id=user_id,
+        detail=f"{automation.name}:{plan.id}",
+    )
+
+
+def _invoke_orchestration(
+    db: Session,
+    *,
+    automation: Automation,
+    run: AutomationRun,
+    user_id: str,
+) -> dict[str, Any]:
+    workflow = json.loads(automation.workflow_config_json) if automation.workflow_config_json else {}
+    context = dict(workflow)
+    if automation.employee_id:
+        context["employee_id"] = automation.employee_id
+    context["automation_id"] = automation.id
+    context["automation_run_id"] = run.id
+
+    if automation.requires_approval:
+        if run.work_plan_id:
+            plan = db.query(WorkPlan).filter(WorkPlan.id == run.work_plan_id).first()
+            if plan and plan.status == WorkPlanStatus.WAITING_APPROVAL:
+                return {"plan_id": plan.id, "status": plan.status}
+            if plan and plan.approval_status == ApprovalStatus.APPROVED:
+                return execute_plan(db, plan_id=plan.id, user_id=user_id)
+        result = route_task(
+            db,
+            organization_id=automation.organization_id,
+            user_id=user_id,
+            request=automation.objective,
+            context=context,
+            auto_execute=False,
+        )
+        plan = db.query(WorkPlan).filter(WorkPlan.id == result.get("plan_id")).first()
+        if plan:
+            _create_pre_execution_approval(db, automation=automation, plan=plan, user_id=user_id, run=run)
+            return {"plan_id": plan.id, "status": WorkPlanStatus.WAITING_APPROVAL}
+        return result
+
+    return route_task(
+        db,
+        organization_id=automation.organization_id,
+        user_id=user_id,
+        request=automation.objective,
+        context=context,
+        auto_execute=True,
+    )
+
+
 def trigger_run(
     db: Session,
     *,
@@ -315,7 +503,13 @@ def trigger_run(
         )
         db.add(run)
         db.commit()
-        write_audit(db, action="automation.run_skipped", organization_id=automation.organization_id, user_id=user_id, detail=automation.name)
+        write_audit(
+            db,
+            action="automation.run_skipped",
+            organization_id=automation.organization_id,
+            user_id=user_id,
+            detail=automation.name,
+        )
         return run
 
     run = AutomationRun(
@@ -351,15 +545,21 @@ def _apply_run_result(
     result: dict[str, Any],
 ) -> None:
     plan_id = result.get("plan_id")
-    run.work_plan_id = plan_id
+    run.work_plan_id = plan_id or run.work_plan_id
     run.result_reference_json = json.dumps(result, ensure_ascii=False, default=str)
 
     plan_status = result.get("status")
     if plan_status == WorkPlanStatus.WAITING_APPROVAL:
         run.status = AutomationRunStatus.WAITING_APPROVAL
         run.finished_at = None
-    elif plan_status in (WorkPlanStatus.COMPLETED, WorkPlanStatus.READY):
+    elif plan_status == WorkPlanStatus.COMPLETED:
         run.status = AutomationRunStatus.SUCCEEDED
+    elif plan_status == WorkPlanStatus.READY:
+        run.status = (
+            AutomationRunStatus.WAITING_APPROVAL
+            if automation.requires_approval
+            else AutomationRunStatus.SUCCEEDED
+        )
     elif plan_status == WorkPlanStatus.FAILED:
         run.status = AutomationRunStatus.FAILED
         run.error = result.get("error") or result.get("message")
@@ -368,11 +568,7 @@ def _apply_run_result(
         if result.get("error"):
             run.error = str(result.get("error"))
 
-    run.cost_reference = _sum_run_cost(db, plan_id)
-    if automation.max_cost_per_run is not None and run.cost_reference is not None:
-        if run.cost_reference > automation.max_cost_per_run:
-            run.status = AutomationRunStatus.SKIPPED
-            run.error = "max_cost_per_run excedido"
+    run.cost_reference = _sum_run_cost(db, run.work_plan_id)
 
 
 def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, user_id: str) -> AutomationRun:
@@ -381,40 +577,66 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
     db.commit()
 
     workflow = json.loads(automation.workflow_config_json) if automation.workflow_config_json else {}
-    context = dict(workflow)
-    if automation.employee_id:
-        context["employee_id"] = automation.employee_id
-    context["automation_id"] = automation.id
-    context["automation_run_id"] = run.id
+    skip_reason = _precheck_cost_limit(automation, workflow)
+    if skip_reason:
+        run.status = AutomationRunStatus.SKIPPED
+        run.error = skip_reason
+        run.finished_at = _utcnow()
+        db.commit()
+        write_audit(
+            db,
+            action="automation.run_skipped",
+            organization_id=automation.organization_id,
+            user_id=user_id,
+            detail=skip_reason,
+        )
+        return run
 
+    try:
+        _assert_employee_tenant(db, automation)
+    except ValueError as exc:
+        run.status = AutomationRunStatus.FAILED
+        run.error = str(exc)
+        run.finished_at = _utcnow()
+        db.commit()
+        write_audit(
+            db,
+            action="automation.failed",
+            organization_id=automation.organization_id,
+            user_id=user_id,
+            detail=str(exc),
+        )
+        return run
+
+    # max_retries = reintentos DESPUÉS del intento inicial (intento 1 + max_retries reintentos)
     max_attempts = automation.max_retries + 1
     while run.attempt <= max_attempts:
         try:
-            if run.work_plan_id and automation.requires_approval:
-                result = execute_plan(db, plan_id=run.work_plan_id, user_id=user_id)
-            else:
-                result = route_task(
-                    db,
-                    organization_id=automation.organization_id,
-                    user_id=user_id,
-                    request=automation.objective,
-                    context=context,
-                    auto_execute=not automation.requires_approval,
-                )
+            result = _run_with_timeout(
+                lambda: _invoke_orchestration(db, automation=automation, run=run, user_id=user_id),
+                automation.timeout_seconds,
+            )
+            if run.status == AutomationRunStatus.WAITING_APPROVAL:
+                return run
             _apply_run_result(db, automation=automation, run=run, result=result)
+        except TimeoutError as exc:
+            run.status = AutomationRunStatus.FAILED
+            run.error = str(exc)
         except Exception as exc:
             run.status = AutomationRunStatus.FAILED
             run.error = str(exc)
 
         if run.status == AutomationRunStatus.WAITING_APPROVAL:
             break
-        if run.status != AutomationRunStatus.FAILED or run.attempt >= max_attempts:
+        if run.status != AutomationRunStatus.FAILED:
+            break
+        if run.attempt >= max_attempts:
             break
 
         run.attempt += 1
         write_audit(
             db,
-            action="automation.run_retry",
+            action="automation.retry",
             organization_id=automation.organization_id,
             user_id=user_id,
             detail=f"{automation.name}:attempt={run.attempt}",
@@ -431,13 +653,13 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
     db.refresh(run)
 
     if run.status == AutomationRunStatus.SUCCEEDED:
-        audit_action = "automation.run_completed"
+        audit_action = "automation.succeeded"
     elif run.status == AutomationRunStatus.WAITING_APPROVAL:
-        audit_action = "automation.run_waiting_approval"
+        audit_action = "automation.waiting_approval"
     elif run.status == AutomationRunStatus.SKIPPED:
         audit_action = "automation.run_skipped"
     else:
-        audit_action = "automation.run_failed"
+        audit_action = "automation.failed"
     write_audit(
         db,
         action=audit_action,
@@ -464,15 +686,14 @@ def sync_run_from_work_plan(db: Session, *, work_plan_id: str, plan_status: str,
     elif plan_status == WorkPlanStatus.WAITING_APPROVAL:
         run.status = AutomationRunStatus.WAITING_APPROVAL
         return run
+    elif plan_status == WorkPlanStatus.CANCELLED:
+        run.status = AutomationRunStatus.CANCELLED
+        run.finished_at = _utcnow()
+        run.error = error or "Cancelado"
     else:
         return run
 
     run.cost_reference = _sum_run_cost(db, work_plan_id)
-    if automation and automation.max_cost_per_run is not None and run.cost_reference is not None:
-        if run.cost_reference > automation.max_cost_per_run:
-            run.status = AutomationRunStatus.SKIPPED
-            run.error = "max_cost_per_run excedido"
-
     if automation:
         automation.last_run_at = run.finished_at
         refresh_next_run(db, automation)
@@ -480,7 +701,7 @@ def sync_run_from_work_plan(db: Session, *, work_plan_id: str, plan_status: str,
     db.refresh(run)
     write_audit(
         db,
-        action="automation.run_completed" if run.status == AutomationRunStatus.SUCCEEDED else "automation.run_failed",
+        action="automation.succeeded" if run.status == AutomationRunStatus.SUCCEEDED else "automation.failed",
         organization_id=run.organization_id,
         user_id=None,
         detail=f"plan:{work_plan_id}:{run.status}",
@@ -522,7 +743,13 @@ def trigger_internal_event(
 
 
 def run_now(db: Session, automation: Automation, user_id: str) -> AutomationRun:
-    write_audit(db, action="automation.run_manual", organization_id=automation.organization_id, user_id=user_id, detail=automation.name)
+    write_audit(
+        db,
+        action="automation.run_now",
+        organization_id=automation.organization_id,
+        user_id=user_id,
+        detail=automation.name,
+    )
     return trigger_run(db, automation=automation, user_id=user_id, trigger_source=AutomationTriggerType.MANUAL)
 
 
