@@ -20,3 +20,5 @@ frontend/tsconfig.tsbuildinfo
 data/*.db
 data/*_PRE_REPAIR_*.db
 data/empleados_ia.pids
+data/backend.log
+data/frontend.log
