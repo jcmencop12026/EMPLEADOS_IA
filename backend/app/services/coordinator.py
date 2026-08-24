@@ -14,7 +14,6 @@ from app.enums import (
     EmployeeStatus,
     EmployeeTaskStatus,
     ExecutorType,
-    ToolPermission,
     WorkEventType,
     WorkPlanStatus,
 )
@@ -26,7 +25,6 @@ from app.orchestration_models import (
     EmployeeCapability,
     EmployeeKnowledgeSource,
     EmployeeTask,
-    EmployeeToolGrant,
     FinOpsRecord,
     KnowledgeSource,
     Tool,
@@ -34,10 +32,22 @@ from app.orchestration_models import (
 )
 from app.services.authorization import (
     AuthorizationError,
+    ExecutionDecision,
     assert_employee_has_capability,
-    assert_employee_tool_authorized,
+    evaluate_tool_execution,
 )
 from app.tools import docint, rips
+
+_TOOL_EXECUTION_COUNTER = 0
+
+
+def reset_tool_execution_counter() -> None:
+    global _TOOL_EXECUTION_COUNTER
+    _TOOL_EXECUTION_COUNTER = 0
+
+
+def get_tool_execution_counter() -> int:
+    return _TOOL_EXECUTION_COUNTER
 
 
 def _utcnow() -> datetime:
@@ -88,16 +98,6 @@ def _find_employee_for_capability(db: Session, org_id: str, capability_id: str) 
     return None
 
 
-def _tool_grant_for_employee(db: Session, employee_id: str | None, tool_id: str | None) -> EmployeeToolGrant | None:
-    if not employee_id or not tool_id:
-        return None
-    return (
-        db.query(EmployeeToolGrant)
-        .filter(EmployeeToolGrant.employee_id == employee_id, EmployeeToolGrant.tool_id == tool_id)
-        .first()
-    )
-
-
 def run_controlled_plan(
     db: Session,
     *,
@@ -145,7 +145,7 @@ def run_controlled_plan(
             )
 
     if tool_id:
-        tool = assert_employee_tool_authorized(
+        decision, tool, _ = evaluate_tool_execution(
             db,
             org_id=organization_id,
             employee_id=employee.id,
@@ -153,6 +153,8 @@ def run_controlled_plan(
             capability_id=capability.id if capability else None,
             user_id=user_id,
         )
+        if decision == ExecutionDecision.DENY:
+            raise AuthorizationError("El empleado no tiene autorización para esta herramienta")
     elif capability and not tool:
         tool = (
             db.query(Tool)
@@ -160,7 +162,7 @@ def run_controlled_plan(
             .first()
         )
         if tool:
-            tool = assert_employee_tool_authorized(
+            decision, tool, _ = evaluate_tool_execution(
                 db,
                 org_id=organization_id,
                 employee_id=employee.id,
@@ -168,6 +170,8 @@ def run_controlled_plan(
                 capability_id=capability.id,
                 user_id=user_id,
             )
+            if decision == ExecutionDecision.DENY:
+                tool = None
 
     ctx = dict(context or {})
     if knowledge_source_ids:
@@ -409,42 +413,22 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
 
     start_ms = time.monotonic()
     try:
-        grant = _tool_grant_for_employee(db, task.employee_id, task.tool_id)
-        if task.employee_id and task.capability_id:
-            assert_employee_has_capability(
-                db,
-                org_id=plan.organization_id,
-                employee_id=task.employee_id,
-                capability_id=task.capability_id,
-            )
-        if task.employee_id and task.tool_id:
-            tool = assert_employee_tool_authorized(
-                db,
-                org_id=plan.organization_id,
-                employee_id=task.employee_id,
-                tool_id=task.tool_id,
-                capability_id=task.capability_id,
-                user_id=user_id,
-            )
-        elif grant and grant.permission == ToolPermission.DENY:
-            raise PermissionError("Herramienta denegada para el empleado asignado")
-        elif tool and not tool.is_active:
-            raise PermissionError("Herramienta desactivada")
+        decision, tool, capability = evaluate_tool_execution(
+            db,
+            org_id=plan.organization_id,
+            employee_id=task.employee_id,
+            tool_id=task.tool_id,
+            capability_id=task.capability_id,
+            user_id=user_id,
+        )
+
+        if decision == ExecutionDecision.DENY:
+            raise AuthorizationError("Ejecución denegada por política de autorización")
 
         inputs = json.loads(task.inputs_json or "{}")
         inputs["request"] = plan.request
-        output = _run_tool(tool.code if tool else "docint", inputs)
-        duration_ms = int((time.monotonic() - start_ms) * 1000)
 
-        task.outputs_json = json.dumps(output, ensure_ascii=False)
-        task.confidence = output.get("confidence")
-        requires_approval = (
-            (tool and tool.requires_approval)
-            or (grant and grant.permission == ToolPermission.REQUIRES_APPROVAL)
-            or output.get("confidence", 1.0) < 0.7
-        )
-
-        if requires_approval:
+        if decision == ExecutionDecision.REQUIRES_APPROVAL:
             task.status = EmployeeTaskStatus.WAITING_APPROVAL
             task.approval_status = ApprovalStatus.PENDING
             plan.status = WorkPlanStatus.WAITING_APPROVAL
@@ -456,11 +440,11 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
                 organization_id=plan.organization_id,
                 work_plan_id=plan.id,
                 task_id=task.id,
-                action=f"Publicar resultado {tool.code if tool else 'análisis'}",
+                action=f"Ejecutar {tool.code if tool else 'análisis'}",
                 employee_name=employee.name if employee else None,
-                reason="Confianza baja o herramienta de riesgo requiere revisión humana.",
-                evidence_json=json.dumps(output.get("evidence", {}), ensure_ascii=False),
-                impact=output.get("summary"),
+                reason="La política de capability/herramienta requiere aprobación humana antes de ejecutar.",
+                evidence_json=None,
+                impact=None,
                 requested_by=user_id,
             )
             db.add(approval)
@@ -475,40 +459,47 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
                 ),
                 db,
             )
-        else:
-            task.status = EmployeeTaskStatus.COMPLETED
-            task.approval_status = ApprovalStatus.NOT_REQUIRED
-            task.completed_at = _utcnow()
-            plan.status = WorkPlanStatus.COMPLETED
-            plan.approval_status = ApprovalStatus.NOT_REQUIRED
-            plan.result_json = task.outputs_json
-            plan.summary = output.get("summary")
-            plan.confidence = output.get("confidence")
-            plan.completed_at = _utcnow()
-            if employee:
-                employee.status = EmployeeStatus.DISPONIBLE
+            db.commit()
+            return {"task_id": task.id, "status": task.status}
 
-            publish(
-                EventMessage(
-                    event_type=WorkEventType.TASK_COMPLETED,
-                    organization_id=plan.organization_id,
-                    work_plan_id=plan.id,
-                    task_id=task.id,
-                    user_id=user_id,
-                    payload={"summary": plan.summary, "confidence": plan.confidence},
-                ),
-                db,
-            )
-            publish(
-                EventMessage(
-                    event_type=WorkEventType.WORK_COMPLETED,
-                    organization_id=plan.organization_id,
-                    work_plan_id=plan.id,
-                    user_id=user_id,
-                    payload={"summary": plan.summary},
-                ),
-                db,
-            )
+        output = _run_tool(tool.code if tool else "docint", inputs)
+        duration_ms = int((time.monotonic() - start_ms) * 1000)
+
+        task.outputs_json = json.dumps(output, ensure_ascii=False)
+        task.confidence = output.get("confidence")
+        task.status = EmployeeTaskStatus.COMPLETED
+        task.approval_status = ApprovalStatus.NOT_REQUIRED
+        task.completed_at = _utcnow()
+        plan.status = WorkPlanStatus.COMPLETED
+        plan.approval_status = ApprovalStatus.NOT_REQUIRED
+        plan.result_json = task.outputs_json
+        plan.summary = output.get("summary")
+        plan.confidence = output.get("confidence")
+        plan.completed_at = _utcnow()
+        if employee:
+            employee.status = EmployeeStatus.DISPONIBLE
+
+        publish(
+            EventMessage(
+                event_type=WorkEventType.TASK_COMPLETED,
+                organization_id=plan.organization_id,
+                work_plan_id=plan.id,
+                task_id=task.id,
+                user_id=user_id,
+                payload={"summary": plan.summary, "confidence": plan.confidence},
+            ),
+            db,
+        )
+        publish(
+            EventMessage(
+                event_type=WorkEventType.WORK_COMPLETED,
+                organization_id=plan.organization_id,
+                work_plan_id=plan.id,
+                user_id=user_id,
+                payload={"summary": plan.summary},
+            ),
+            db,
+        )
 
         db.add(
             FinOpsRecord(
@@ -589,6 +580,8 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
 
 
 def _run_tool(tool_code: str, inputs: dict[str, Any]) -> dict[str, Any]:
+    global _TOOL_EXECUTION_COUNTER
+    _TOOL_EXECUTION_COUNTER += 1
     if tool_code == "rips":
         return rips.analyze_rips(inputs)
     return docint.analyze_documents(inputs)
@@ -652,6 +645,26 @@ def decide_approval(
 
     if decision == "approve":
         approval.status = "APPROVED"
+        if task and not task.outputs_json:
+            tool_obj = db.query(Tool).filter(Tool.id == task.tool_id).first()
+            inputs = json.loads(task.inputs_json or "{}")
+            if plan:
+                inputs["request"] = plan.request
+            start_ms = time.monotonic()
+            output = _run_tool(tool_obj.code if tool_obj else "docint", inputs)
+            duration_ms = int((time.monotonic() - start_ms) * 1000)
+            task.outputs_json = json.dumps(output, ensure_ascii=False)
+            task.confidence = output.get("confidence")
+            db.add(
+                FinOpsRecord(
+                    organization_id=organization_id,
+                    work_plan_id=plan.id if plan else approval.work_plan_id,
+                    task_id=task.id,
+                    model_name=employee.model_name if employee else None,
+                    provider=employee.model_provider if employee else "rule-engine",
+                    duration_ms=duration_ms,
+                )
+            )
         if task:
             task.status = EmployeeTaskStatus.COMPLETED
             task.approval_status = ApprovalStatus.APPROVED

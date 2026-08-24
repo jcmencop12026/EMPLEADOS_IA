@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from enum import StrEnum
+
 from sqlalchemy.orm import Session
 
 from app.audit import write_audit
@@ -19,6 +21,17 @@ class AuthorizationError(PermissionError):
     def __init__(self, message: str, *, audit_action: str | None = None):
         super().__init__(message)
         self.audit_action = audit_action
+
+
+class ExecutionDecision(StrEnum):
+    """Resultado de la política de ejecución de herramientas.
+
+    Precedencia: DENY > REQUIRES_APPROVAL > ALLOW
+    """
+
+    ALLOW = "ALLOW"
+    DENY = "DENY"
+    REQUIRES_APPROVAL = "REQUIRES_APPROVAL"
 
 
 def _assert_same_org(entity_org: str, org_id: str, label: str) -> None:
@@ -83,25 +96,50 @@ def assert_employee_has_capability(
     return capability
 
 
-def assert_employee_tool_authorized(
+def evaluate_tool_execution(
     db: Session,
     *,
     org_id: str,
-    employee_id: str,
-    tool_id: str,
+    employee_id: str | None,
+    tool_id: str | None,
     capability_id: str | None = None,
     user_id: str | None = None,
-) -> Tool:
+) -> tuple[ExecutionDecision, Tool | None, Capability | None]:
+    """
+    Única decisión de autorización para ejecutar una herramienta.
+
+    Inputs: tenant, empleado, capability, tool, asignación/grant, flags requires_approval.
+    No usa permisos de usuario/API como sustituto de política de tool.
+    """
+    if not employee_id or not tool_id:
+        return ExecutionDecision.DENY, None, None
+
     employee = get_employee(db, org_id, employee_id)
     tool = get_tool(db, org_id, tool_id)
 
     if not tool.is_active:
-        raise AuthorizationError("Herramienta desactivada", audit_action=ToolEventType.DENIED)
+        return ExecutionDecision.DENY, tool, None
 
-    if capability_id:
-        assert_employee_has_capability(db, org_id=org_id, employee_id=employee.id, capability_id=capability_id)
-    elif tool.capability_id:
-        assert_employee_has_capability(db, org_id=org_id, employee_id=employee.id, capability_id=tool.capability_id)
+    capability: Capability | None = None
+    cap_id = capability_id or tool.capability_id
+    if not cap_id:
+        return ExecutionDecision.DENY, tool, None
+
+    capability = get_capability(db, org_id, cap_id)
+    if not capability.is_active:
+        return ExecutionDecision.DENY, tool, capability
+
+    cap_link = (
+        db.query(EmployeeCapability)
+        .filter(
+            EmployeeCapability.employee_id == employee.id,
+            EmployeeCapability.capability_id == capability.id,
+            EmployeeCapability.is_active.is_(True),
+        )
+        .first()
+    )
+    if not cap_link:
+        return ExecutionDecision.DENY, tool, capability
 
     grant = (
         db.query(EmployeeToolGrant)
@@ -117,7 +155,7 @@ def assert_employee_tool_authorized(
                 user_id=user_id,
                 detail=f"Empleado {employee.id} sin herramienta {tool.code}",
             )
-        raise AuthorizationError("El empleado no tiene autorización para esta herramienta", audit_action=ToolEventType.DENIED)
+        return ExecutionDecision.DENY, tool, capability
 
     if grant.permission == ToolPermission.DENY:
         if user_id:
@@ -128,8 +166,41 @@ def assert_employee_tool_authorized(
                 user_id=user_id,
                 detail=f"Empleado {employee.id} DENY en herramienta {tool.code}",
             )
-        raise AuthorizationError("Herramienta denegada para el empleado asignado", audit_action=ToolEventType.DENIED)
+        return ExecutionDecision.DENY, tool, capability
 
+    requires_approval = (
+        grant.permission == ToolPermission.REQUIRES_APPROVAL
+        or capability.requires_approval
+        or tool.requires_approval
+    )
+    if requires_approval:
+        return ExecutionDecision.REQUIRES_APPROVAL, tool, capability
+
+    return ExecutionDecision.ALLOW, tool, capability
+
+
+def assert_employee_tool_authorized(
+    db: Session,
+    *,
+    org_id: str,
+    employee_id: str,
+    tool_id: str,
+    capability_id: str | None = None,
+    user_id: str | None = None,
+) -> Tool:
+    decision, tool, _ = evaluate_tool_execution(
+        db,
+        org_id=org_id,
+        employee_id=employee_id,
+        tool_id=tool_id,
+        capability_id=capability_id,
+        user_id=user_id,
+    )
+    if decision == ExecutionDecision.DENY or tool is None:
+        raise AuthorizationError(
+            "El empleado no tiene autorización para esta herramienta",
+            audit_action=ToolEventType.DENIED,
+        )
     return tool
 
 

@@ -1,8 +1,8 @@
 # CURSOR-850 — Capacidades + Herramientas + Conocimiento + Test Lab V1
 
-**Fecha:** 2026-08-24  
-**Rama:** `cursor/capabilities-tools-knowledge-testlab-850`  
-**Base:** `main` @ `b887a2e`  
+**Fecha:** 2026-08-24
+**Rama:** `cursor/capabilities-tools-knowledge-testlab-850`
+**Base:** `main` @ `b887a2e`
 **PR:** (draft, pendiente de creación)
 
 ---
@@ -138,8 +138,8 @@ Archivo: `tests/test_capabilities_850.py` (16 casos 850 + regresión suite compl
 
 ## PENDIENTES
 
-**A:** Auditoría externa PR draft  
-**B:** Integración menú shell PR #8 cuando merge a main  
+**A:** Auditoría externa PR draft
+**B:** Integración menú shell PR #8 cuando merge a main
 **C:** Conectores RAG/OCR/vector DB (fuera de alcance V1)
 
 ---
