@@ -25,6 +25,46 @@ def list_tools(
     )
 
 
+@router.get("/employees/{employee_id}/assignments")
+def employee_tool_assignments(
+    employee_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "tool.view")
+    return tools_service.list_employee_tools(db, user.organization_id, employee_id)
+
+
+@router.post("/employees/{employee_id}/assign")
+def assign_tool(
+    employee_id: str,
+    body: ToolAssignRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "tool.manage")
+    result = tools_service.assign_tool(
+        db, user.organization_id, user.id, employee_id, body.tool_id, permission=body.permission,
+    )
+    if result.get("error"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
+    return result
+
+
+@router.delete("/employees/{employee_id}/assign/{tool_id}")
+def remove_tool(
+    employee_id: str,
+    tool_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "tool.manage")
+    result = tools_service.remove_tool(db, user.organization_id, user.id, employee_id, tool_id)
+    if result.get("error"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
+    return result
+
+
 @router.get("/{tool_id}")
 def get_tool(tool_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     check_permission(user, "tool.view")
@@ -79,43 +119,3 @@ def activate_tool(tool_id: str, db: Session = Depends(get_db), user: User = Depe
 def deactivate_tool(tool_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     check_permission(user, "tool.manage")
     return tools_service.set_tool_status(db, user.organization_id, user.id, tool_id, active=False)
-
-
-@router.get("/employees/{employee_id}/assignments")
-def employee_tool_assignments(
-    employee_id: str,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    check_permission(user, "tool.view")
-    return tools_service.list_employee_tools(db, user.organization_id, employee_id)
-
-
-@router.post("/employees/{employee_id}/assign")
-def assign_tool(
-    employee_id: str,
-    body: ToolAssignRequest,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    check_permission(user, "tool.manage")
-    result = tools_service.assign_tool(
-        db, user.organization_id, user.id, employee_id, body.tool_id, permission=body.permission,
-    )
-    if result.get("error"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
-    return result
-
-
-@router.delete("/employees/{employee_id}/assign/{tool_id}")
-def remove_tool(
-    employee_id: str,
-    tool_id: str,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    check_permission(user, "tool.manage")
-    result = tools_service.remove_tool(db, user.organization_id, user.id, employee_id, tool_id)
-    if result.get("error"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
-    return result

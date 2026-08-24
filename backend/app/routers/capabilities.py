@@ -25,6 +25,44 @@ def list_capabilities(
     )
 
 
+@router.get("/employees/{employee_id}/assignments")
+def employee_capability_assignments(
+    employee_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "capability.view")
+    return capabilities_service.list_employee_capabilities(db, user.organization_id, employee_id)
+
+
+@router.post("/employees/{employee_id}/assign/{capability_id}")
+def assign_capability(
+    employee_id: str,
+    capability_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "capability.manage")
+    result = capabilities_service.assign_capability(db, user.organization_id, user.id, employee_id, capability_id)
+    if result.get("error"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
+    return result
+
+
+@router.delete("/employees/{employee_id}/assign/{capability_id}")
+def remove_capability(
+    employee_id: str,
+    capability_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "capability.manage")
+    result = capabilities_service.remove_capability(db, user.organization_id, user.id, employee_id, capability_id)
+    if result.get("error"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
+    return result
+
+
 @router.get("/{capability_id}")
 def get_capability(capability_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     check_permission(user, "capability.view")
@@ -77,41 +115,3 @@ def activate_capability(capability_id: str, db: Session = Depends(get_db), user:
 def deactivate_capability(capability_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     check_permission(user, "capability.manage")
     return capabilities_service.set_capability_status(db, user.organization_id, user.id, capability_id, active=False)
-
-
-@router.get("/employees/{employee_id}/assignments")
-def employee_capability_assignments(
-    employee_id: str,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    check_permission(user, "capability.view")
-    return capabilities_service.list_employee_capabilities(db, user.organization_id, employee_id)
-
-
-@router.post("/employees/{employee_id}/assign/{capability_id}")
-def assign_capability(
-    employee_id: str,
-    capability_id: str,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    check_permission(user, "capability.manage")
-    result = capabilities_service.assign_capability(db, user.organization_id, user.id, employee_id, capability_id)
-    if result.get("error"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
-    return result
-
-
-@router.delete("/employees/{employee_id}/assign/{capability_id}")
-def remove_capability(
-    employee_id: str,
-    capability_id: str,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    check_permission(user, "capability.manage")
-    result = capabilities_service.remove_capability(db, user.organization_id, user.id, employee_id, capability_id)
-    if result.get("error"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
-    return result

@@ -12,7 +12,7 @@
 | Campo | Valor |
 |-------|-------|
 | HEAD INICIAL | `b887a2e` |
-| HEAD FINAL | (ver commit en rama) |
+| HEAD FINAL | `b1fc7a2` (post-fix rutas) |
 | RAMA | `cursor/capabilities-tools-knowledge-testlab-850` |
 
 ---
@@ -133,6 +133,7 @@ Archivo: `tests/test_capabilities_850.py` (16 casos 850 + regresión suite compl
 - Coordinator no validaba capability asignada → enforcement añadido
 - Sin catálogo org knowledge → `knowledge_sources` creado reutilizando patrón existente
 - Errores cross-tenant 500 → `AuthorizationError` handler 400
+- Rutas `/employees/...` capturadas por `/{id}` → reordenadas en routers
 - UI mostraba JSON crudo en errores → parser en `api.ts`
 
 ## PENDIENTES

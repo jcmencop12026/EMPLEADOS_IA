@@ -14,6 +14,7 @@ import { CapabilitiesPage } from "./pages/CapabilitiesPage";
 import { KnowledgePage } from "./pages/KnowledgePage";
 import { TestLabPage } from "./pages/TestLabPage";
 import { ToolsPage } from "./pages/ToolsPage";
+import { OrganizationPage } from "./pages/OrganizationPage";
 import { getToken } from "./api";
 
 export default function App() {

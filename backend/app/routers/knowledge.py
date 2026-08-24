@@ -25,6 +25,44 @@ def list_knowledge(
     )
 
 
+@router.get("/employees/{employee_id}/assignments")
+def employee_knowledge_assignments(
+    employee_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "knowledge.view")
+    return knowledge_service.list_employee_knowledge(db, user.organization_id, employee_id)
+
+
+@router.post("/employees/{employee_id}/assign/{source_id}")
+def assign_knowledge(
+    employee_id: str,
+    source_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "knowledge.manage")
+    result = knowledge_service.assign_knowledge(db, user.organization_id, user.id, employee_id, source_id)
+    if result.get("error"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
+    return result
+
+
+@router.delete("/employees/{employee_id}/assign/{source_id}")
+def remove_knowledge(
+    employee_id: str,
+    source_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "knowledge.manage")
+    result = knowledge_service.remove_knowledge(db, user.organization_id, user.id, employee_id, source_id)
+    if result.get("error"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
+    return result
+
+
 @router.get("/{source_id}")
 def get_knowledge(source_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     check_permission(user, "knowledge.view")
@@ -91,41 +129,3 @@ def ingest_knowledge(
         db, user.organization_id, user.id, source_id,
         content=body.content, content_type=body.content_type,
     )
-
-
-@router.get("/employees/{employee_id}/assignments")
-def employee_knowledge_assignments(
-    employee_id: str,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    check_permission(user, "knowledge.view")
-    return knowledge_service.list_employee_knowledge(db, user.organization_id, employee_id)
-
-
-@router.post("/employees/{employee_id}/assign/{source_id}")
-def assign_knowledge(
-    employee_id: str,
-    source_id: str,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    check_permission(user, "knowledge.manage")
-    result = knowledge_service.assign_knowledge(db, user.organization_id, user.id, employee_id, source_id)
-    if result.get("error"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
-    return result
-
-
-@router.delete("/employees/{employee_id}/assign/{source_id}")
-def remove_knowledge(
-    employee_id: str,
-    source_id: str,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    check_permission(user, "knowledge.manage")
-    result = knowledge_service.remove_knowledge(db, user.organization_id, user.id, employee_id, source_id)
-    if result.get("error"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
-    return result
