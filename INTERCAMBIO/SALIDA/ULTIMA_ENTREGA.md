@@ -1,39 +1,25 @@
 # Última entrega — EMPLEADOS_IA
 
-**Actualizado:** CURSOR-805 (2026-08-23)
+**Actualizado:** CURSOR-805B (2026-08-24)
 **Repositorio:** jcmencop12026/EMPLEADOS_IA
 **Rama:** cursor/sqlite-alembic-repair-805
-**HEAD base main:** 02a0e0f
-**HEAD final:** d49c1e8
 **PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/5
-**Evidencia:** `INTERCAMBIO/SALIDA/CURSOR_805_SQLITE_ALEMBIC_REPAIR.md`
+**Evidencia:** `INTERCAMBIO/SALIDA/CURSOR_805B_CORRECCION_CODEX.md`
 
-## Estado MVP
+## Estado
+
+**CURSOR-805B: PASS** — corrección bloqueantes auditoría Codex sobre PR #5
+
+- Validación estricta pre-stamp (A1)
+- Backend sobre BD legacy reparada (A2)
+- Backup automático verificado (A3)
+- PID registry sin matar procesos ajenos (A4/A5)
+- 32/32 tests PASS, build OK
+- Visual smoke test sobre BD legacy reparada
+
+## MVP
 
 **MVP CERTIFICADO** — ver `INTERCAMBIO/SALIDA/CURSOR_803_CERTIFICACION_MVP.md`
-
-## CURSOR-805 — SQLite + Alembic + Arranque
-
-**CURSOR-805: PASS**
-
-- Reparación idempotente SQLite legacy (`backend/scripts/repair_legacy_database.py`)
-- Alembic sincronizado: CURRENT = HEAD = `5b2eb2437398`
-- Arranque backend/frontend verificado
-- Scripts `INICIAR_EMPLEADOS_IA.bat` / `DETENER_EMPLEADOS_IA.bat`
-- 25/25 tests PASS, build OK
-
-## Componentes certificados
-
-- Autenticación JWT
-- Tenant isolation (Org A/B)
-- Agent Factory (crear → certificar → publicar → activar)
-- Orquestador E2E (WorkPlan → Task → Tool → Result)
-- DOCINT y RIPS con aprobación humana
-- DENY / ALLOW / REQUIRES_APPROVAL
-- Centro de Operaciones, Directorio, Ejecuciones
-- 25 tests automatizados PASS
-- Build frontend OK
-- SQLite local + Alembic alineados
 
 ## Pendientes producción (B)
 

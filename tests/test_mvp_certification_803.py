@@ -1,5 +1,6 @@
 """CURSOR-803 — certificación integrada MVP."""
 import uuid
+from pathlib import Path
 
 import pytest
 
@@ -112,7 +113,7 @@ def test_mvp_full_orchestrator_traceability(client, token):
 
 
 def test_alembic_chain_present():
-    from pathlib import Path
-    versions = list(Path("/workspace/backend/alembic/versions").glob("*.py"))
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    versions = list((backend_dir / "alembic" / "versions").glob("*.py"))
     assert any("4355c73adcb8" in v.name for v in versions)
     assert any("5b2eb2437398" in v.name for v in versions)

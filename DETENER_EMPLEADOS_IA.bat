@@ -4,23 +4,23 @@ chcp 65001 >nul
 
 set "ROOT=%~dp0"
 if "%ROOT:~-1%"=="\" set "ROOT=%ROOT:~0,-1%"
+set "BACKEND=%ROOT%\backend"
+set "VENV=%BACKEND%\.venv"
+set "PY=%VENV%\Scripts\python.exe"
 
-echo [INFO] Deteniendo servicios EMPLEADOS_IA...
+echo [INFO] Deteniendo servicios EMPLEADOS_IA (solo PIDs registrados)...
 
-REM Detener solo ventanas tituladas de este proyecto (no procesos ajenos)
-taskkill /FI "WINDOWTITLE eq EMPLEADOS_IA_BACKEND*" /F >nul 2>&1
-taskkill /FI "WINDOWTITLE eq EMPLEADOS_IA_FRONTEND*" /F >nul 2>&1
-
-REM Fallback: puertos conocidos del proyecto (8010 backend, 5180 frontend)
-for /f "tokens=5" %%p in ('netstat -ano ^| findstr ":8010 .*LISTENING"') do (
-  taskkill /PID %%p /F >nul 2>&1
-)
-for /f "tokens=5" %%p in ('netstat -ano ^| findstr ":5180 .*LISTENING"') do (
-  taskkill /PID %%p /F >nul 2>&1
+if not exist "%PY%" (
+  echo [WARN] Python del proyecto no encontrado. Nada que detener de forma segura.
+  exit /b 0
 )
 
-if exist "%ROOT%\data\empleados_ia.pids" del /f /q "%ROOT%\data\empleados_ia.pids"
+"%PY%" "%BACKEND%\scripts\launch_services.py" stop
+if errorlevel 1 (
+  echo [ERROR] Error al detener servicios registrados.
+  exit /b 1
+)
 
-echo [OK] Servicios EMPLEADOS_IA detenidos.
+echo [OK] Solicitud de detencion completada.
 endlocal
 exit /b 0

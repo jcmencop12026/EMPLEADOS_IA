@@ -3,7 +3,7 @@ setlocal EnableExtensions EnableDelayedExpansion
 chcp 65001 >nul
 
 REM ============================================================
-REM EMPLEADOS_IA — Arranque integrado (CURSOR-805)
+REM EMPLEADOS_IA — Arranque integrado (CURSOR-805B)
 REM ============================================================
 
 set "ROOT=%~dp0"
@@ -22,7 +22,6 @@ set "PIDFILE=%DATA%\empleados_ia.pids"
 set "BACKEND_PORT=8010"
 set "FRONTEND_PORT=5180"
 set "BACKEND_URL=http://127.0.0.1:%BACKEND_PORT%"
-set "FRONTEND_URL=http://127.0.0.1:%FRONTEND_PORT%"
 
 echo.
 echo ============================================================
@@ -31,7 +30,7 @@ echo  Raiz: %ROOT%
 echo ============================================================
 echo.
 
-REM --- 1. Verificar estructura ---
+REM --- 1. Verificar estructura del proyecto ---
 if not exist "%BACKEND%\app\main.py" (
   echo [ERROR] Backend no encontrado en %BACKEND%
   exit /b 1
@@ -79,81 +78,35 @@ if not exist "%FRONTEND%\node_modules" (
   popd
 )
 
-REM --- 5. Verificar / reparar base de datos ---
-if not exist "%DB%" (
-  echo [INFO] Base de datos no existe. Se creara en el primer arranque.
-) else (
-  echo [INFO] Verificando esquema SQLite y Alembic...
-  pushd "%BACKEND%"
-  "%PY%" scripts\repair_legacy_database.py audit
-  if errorlevel 1 (
-    echo [WARN] Esquema incompleto. Ejecutando reparacion idempotente...
-    "%PY%" scripts\repair_legacy_database.py repair
-    if errorlevel 1 (
-      echo [ERROR] Reparacion de base de datos fallida.
-      popd
-      exit /b 1
-    )
-  )
-  "%PY%" -m alembic current 2>nul | findstr /C:"5b2eb2437398" >nul
-  if errorlevel 1 (
-    echo [WARN] Alembic no en head. Ejecutando reparacion...
-    "%PY%" scripts\repair_legacy_database.py repair
-    if errorlevel 1 (
-      echo [ERROR] No se pudo sincronizar Alembic.
-      popd
-      exit /b 1
-    )
-  )
-  popd
-  echo [OK] Base de datos verificada.
-)
-
-REM --- 6. Detener instancias previas propias ---
+REM --- 5. Detener instancia previa propia (solo PIDs registrados) ---
 if exist "%PIDFILE%" (
-  echo [INFO] Deteniendo instancia previa...
-  call "%ROOT%\DETENER_EMPLEADOS_IA.bat" >nul 2>&1
+  echo [INFO] Deteniendo instancia previa registrada...
+  "%PY%" "%BACKEND%\scripts\launch_services.py" stop
 )
 
-REM --- 7. Iniciar backend ---
-echo [INFO] Iniciando backend en %BACKEND_URL% ...
-start "EMPLEADOS_IA_BACKEND" /MIN cmd /c "cd /d \"%BACKEND%\" && \"%VENV%\Scripts\uvicorn.exe\" app.main:app --host 127.0.0.1 --port %BACKEND_PORT%"
-
-REM --- 8. Iniciar frontend ---
-echo [INFO] Iniciando frontend en http://127.0.0.1:%FRONTEND_PORT% ...
-start "EMPLEADOS_IA_FRONTEND" /MIN cmd /c "cd /d \"%FRONTEND%\" && npm run dev -- --host 127.0.0.1 --port %FRONTEND_PORT%"
-
-REM --- 9. Esperar servicios ---
-echo [INFO] Esperando servicios...
-set "TRIES=0"
-:wait_backend
-set /a TRIES+=1
-powershell -NoProfile -Command "try { (Invoke-WebRequest -UseBasicParsing -Uri '%BACKEND_URL%/health' -TimeoutSec 2).StatusCode } catch { 0 }" | findstr "200" >nul
-if not errorlevel 1 goto backend_ok
-if %TRIES% GEQ 30 (
-  echo [ERROR] Backend no respondio en /health tras 30 intentos.
+REM --- 6. Preparar BD: audit -^> backup -^> repair -^> audit -^> alembic ---
+echo [INFO] Preparando base de datos (auditoria/reparacion si aplica)...
+pushd "%BACKEND%"
+"%PY%" scripts\launch_services.py prepare
+if errorlevel 1 (
+  echo [ERROR] Base de datos incompatible o no reparable. Arranque abortado.
+  popd
   exit /b 1
 )
-timeout /t 1 /nobreak >nul
-goto wait_backend
-:backend_ok
-echo [OK] Backend activo.
+popd
 
-set "TRIES=0"
-:wait_frontend
-set /a TRIES+=1
-powershell -NoProfile -Command "try { (Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:%FRONTEND_PORT%/' -TimeoutSec 2).StatusCode } catch { 0 }" | findstr "200" >nul
-if not errorlevel 1 goto frontend_ok
-if %TRIES% GEQ 30 (
-  echo [ERROR] Frontend no respondio tras 30 intentos.
-  exit /b 1
+REM --- 7. Iniciar backend y esperar /health HTTP 200 ---
+echo [INFO] Iniciando backend y esperando /health ...
+pushd "%BACKEND%"
+"%PY%" scripts\launch_services.py start --backend-port %BACKEND_PORT% --frontend-port %FRONTEND_PORT%
+set START_RC=!ERRORLEVEL!
+popd
+if not !START_RC!==0 (
+  echo [ERROR] Arranque fallido (codigo !START_RC!). No se declara exito.
+  exit /b !START_RC!
 )
-timeout /t 1 /nobreak >nul
-goto wait_frontend
-:frontend_ok
-echo [OK] Frontend activo.
 
-REM --- 10. Abrir navegador ---
+REM --- 8. Abrir navegador ---
 echo [INFO] Abriendo navegador...
 start "" "http://127.0.0.1:%FRONTEND_PORT%/"
 
@@ -162,8 +115,7 @@ echo ============================================================
 echo  EMPLEADOS_IA listo
 echo  Frontend: http://127.0.0.1:%FRONTEND_PORT%/
 echo  Backend:  %BACKEND_URL%/docs
-echo  Login:    admin / Admin2026*
-echo.
+echo  Credenciales: ver documentacion del proyecto
 echo  Para detener: DETENER_EMPLEADOS_IA.bat
 echo ============================================================
 echo.
