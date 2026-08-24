@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
+  ApiError,
   createEmployee,
   fetchCapabilities,
   fetchTemplates,
@@ -38,10 +39,10 @@ export function EmployeeWizardPage() {
         setCapabilities(c);
         setTools(tl);
       })
-      .catch((e) => setError(e instanceof Error ? e.message : "Error"));
+      .catch((e) => setError(e instanceof ApiError ? e.message : "Error al cargar datos del asistente."));
   }, []);
 
-  async function saveDraft() {
+  async function saveDraft(): Promise<string | null> {
     setLoading(true);
     setError(null);
     try {
@@ -53,37 +54,44 @@ export function EmployeeWizardPage() {
           objective: form.objective,
           template_code: form.template_code || undefined,
         });
-        setEmployeeId(created.id as string);
-      } else {
-        await updateEmployee(employeeId, {
-          name: form.name,
-          role: form.role,
-          objective: form.objective,
-          specialty: form.specialty,
-          capability_ids: form.capability_ids,
-          tools: form.tool_ids.map((id) => ({ tool_id: id, permission: "ALLOW" })),
-          model_policy: { preferred_provider: form.model_provider, preferred_model: form.model_name },
-        });
+        const id = created.id as string;
+        setEmployeeId(id);
+        return id;
       }
+      await updateEmployee(employeeId, {
+        name: form.name,
+        role: form.role,
+        objective: form.objective,
+        specialty: form.specialty,
+        capability_ids: form.capability_ids,
+        tools: form.tool_ids.map((id) => ({ tool_id: id, permission: "ALLOW" })),
+        model_policy: { preferred_provider: form.model_provider, preferred_model: form.model_name },
+      });
+      return employeeId;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof ApiError ? e.message : "No se pudo guardar el borrador.");
+      return null;
     } finally {
       setLoading(false);
     }
   }
 
   async function finish() {
-    await saveDraft();
-    if (employeeId) navigate(`/empleados/${employeeId}`);
-    else if (form.name) {
-      const created = await createEmployee({ name: form.name, specialty: form.specialty, template_code: form.template_code || undefined });
-      const id = created.id as string;
-      await updateEmployee(id, {
-        capability_ids: form.capability_ids,
-        tools: form.tool_ids.map((tid) => ({ tool_id: tid, permission: "ALLOW" })),
-        model_policy: { preferred_provider: form.model_provider, preferred_model: form.model_name },
-      });
-      navigate(`/empleados/${id}`);
+    setLoading(true);
+    setError(null);
+    try {
+      const id = await saveDraft();
+      if (id) {
+        navigate(`/empleados/${id}`);
+        return;
+      }
+      if (!form.name) {
+        setError("Ingrese un nombre para el empleado.");
+      }
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "No se pudo crear el empleado.");
+    } finally {
+      setLoading(false);
     }
   }
 

@@ -1,17 +1,31 @@
-import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import type { ExecutionDetail, WorkEventItem } from "../api";
-import { decideApproval, fetchApprovals, fetchEvents, fetchExecution } from "../api";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import {
+  ApiError,
+  decideApproval,
+  fetchApprovals,
+  fetchEvents,
+  fetchExecution,
+  type ExecutionDetail,
+  type WorkEventItem,
+} from "../api";
+import { ErrorState, LoadingState } from "../components/AsyncState";
+import { EXECUTION_STATUS, label } from "../lib/labels";
 
 export function ExecutionDetailPage() {
   const { planId } = useParams<{ planId: string }>();
+  const [searchParams] = useSearchParams();
+  const approvalId = searchParams.get("approval");
   const [detail, setDetail] = useState<ExecutionDetail | null>(null);
   const [events, setEvents] = useState<WorkEventItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!planId) return;
+    setLoading(true);
+    setError(null);
     try {
       const [d, ev, approvals] = await Promise.all([
         fetchExecution(planId),
@@ -20,37 +34,44 @@ export function ExecutionDetailPage() {
       ]);
       setDetail(d);
       setEvents(ev.filter((e) => e.work_plan_id === planId));
-      const pending = approvals.find((a) => a.work_plan_id === planId);
+      const pending = approvals.find(
+        (a) => a.work_plan_id === planId && (!approvalId || a.id === approvalId),
+      );
       if (pending && d.approval_status === "PENDING") {
         setDetail({ ...d, approval_status: "PENDING" });
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof ApiError ? e.message : "Error al cargar la ejecución.");
+    } finally {
+      setLoading(false);
     }
-  }
+  }, [planId, approvalId]);
 
   useEffect(() => {
     load();
-  }, [planId]);
+  }, [load]);
 
   async function handleApproval(decision: "approve" | "reject") {
     if (!planId) return;
     setActing(true);
     try {
       const approvals = await fetchApprovals();
-      const pending = approvals.find((a) => a.work_plan_id === planId);
+      const pending = approvals.find(
+        (a) => a.work_plan_id === planId && (!approvalId || a.id === approvalId),
+      );
       if (!pending) return;
       const res = await decideApproval(pending.id, decision);
       setDetail(res);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof ApiError ? e.message : "No se pudo procesar la aprobación.");
     } finally {
       setActing(false);
     }
   }
 
-  if (!detail && !error) return <p className="muted">Cargando…</p>;
+  if (loading) return <LoadingState message="Cargando ejecución…" />;
+  if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
     <div className="ops-page">
@@ -60,12 +81,13 @@ export function ExecutionDetailPage() {
         </Link>
         <h1>Detalle de ejecución</h1>
       </header>
-      {error && <p className="error">{error}</p>}
       {detail && (
         <>
           <section className="panel">
             <div className="result-header">
-              <span className={`badge status-${detail.status}`}>{detail.status}</span>
+              <span className={`badge status-${detail.status}`} title={detail.status}>
+                {label(EXECUTION_STATUS, detail.status)}
+              </span>
               <span className="muted mono">{detail.correlation_id}</span>
             </div>
             <p><strong>Objetivo:</strong> {detail.objective}</p>
@@ -76,10 +98,10 @@ export function ExecutionDetailPage() {
             {detail.approval_status === "PENDING" && (
               <div className="approval-box">
                 <p className="warn">Aprobación humana requerida</p>
-                <button type="button" className="btn primary" disabled={acting} onClick={() => handleApproval("approve")}>
+                <button type="button" className="btn primary" disabled={acting} onClick={() => handleApproval("approve")} title="Aprobar">
                   Aprobar
                 </button>
-                <button type="button" className="btn danger" disabled={acting} onClick={() => handleApproval("reject")}>
+                <button type="button" className="btn danger" disabled={acting} onClick={() => handleApproval("reject")} title="Rechazar">
                   Rechazar
                 </button>
               </div>
@@ -101,7 +123,7 @@ export function ExecutionDetailPage() {
                 {(detail.tasks || []).map((t) => (
                   <tr key={t.id}>
                     <td>{t.title}</td>
-                    <td>{t.status}</td>
+                    <td>{label(EXECUTION_STATUS, t.status)}</td>
                     <td className="mono">{t.executor_type}</td>
                     <td>{t.confidence != null ? `${(t.confidence * 100).toFixed(0)}%` : "—"}</td>
                   </tr>
@@ -125,7 +147,7 @@ export function ExecutionDetailPage() {
                   <tr key={e.id}>
                     <td className="mono">{e.event_type}</td>
                     <td className="mono">{e.task_id?.slice(0, 8) || "—"}</td>
-                    <td className="mono">{e.created_at?.slice(0, 19)}</td>
+                    <td className="mono">{e.created_at?.slice(0, 19).replace("T", " ")}</td>
                   </tr>
                 ))}
               </tbody>

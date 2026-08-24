@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   activateEmployee,
+  ApiError,
   certifyEmployee,
   fetchEmployeeDetail,
   publishEmployee,
   testEmployee,
 } from "../api";
+import { ErrorState, LoadingState } from "../components/AsyncState";
+import { label, LIFECYCLE_STATUS, MATURITY, RISK_LEVEL } from "../lib/labels";
 
 const TABS = ["Resumen", "Pruebas", "Certificación", "Versiones", "Actividad"] as const;
 
@@ -24,7 +27,7 @@ export function EmployeeDetailPage() {
     try {
       setDetail(await fetchEmployeeDetail(employeeId));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof ApiError ? e.message : "Error al cargar el empleado.");
     }
   }
 
@@ -41,13 +44,14 @@ export function EmployeeDetailPage() {
       if (action === "activate") await activateEmployee(employeeId);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error");
+      setError(e instanceof ApiError ? e.message : "No se pudo completar la acción.");
     } finally {
       setLoading(false);
     }
   }
 
-  if (!detail && !error) return <p className="muted">Cargando…</p>;
+  if (!detail && !error) return <LoadingState message="Cargando empleado…" />;
+  if (error && !detail) return <ErrorState message={error} onRetry={load} />;
 
   const lifecycle = String(detail?.lifecycle_status || "");
   const caps = (detail?.capabilities as Array<{ code: string; name: string }>) || [];
@@ -57,7 +61,9 @@ export function EmployeeDetailPage() {
       <header className="page-header">
         <Link to="/directorio" className="muted">← Directorio</Link>
         <h1>{String(detail?.name || "Empleado")}</h1>
-        <span className={`badge status-${lifecycle}`}>{lifecycle}</span>
+        <span className={`badge status-${lifecycle}`} title={lifecycle}>
+          {label(LIFECYCLE_STATUS, lifecycle)}
+        </span>
       </header>
 
       <div className="tab-bar">
@@ -71,7 +77,7 @@ export function EmployeeDetailPage() {
           <>
             <p className="mono muted">{String(detail?.code)} · v{String(detail?.version)}</p>
             <p><strong>Especialidad:</strong> {String(detail?.specialty)}</p>
-            <p><strong>Riesgo:</strong> {String(detail?.risk_level)} · <strong>Madurez:</strong> {String(detail?.maturity)}</p>
+            <p><strong>Riesgo:</strong> {label(RISK_LEVEL, String(detail?.risk_level))} · <strong>Madurez:</strong> {label(MATURITY, String(detail?.maturity))}</p>
             <p><strong>Capabilities:</strong> {caps.map((c) => c.code || c).join(", ") || (detail?.capabilities as string[])?.join(", ")}</p>
             <div className="ops-actions">
               <button type="button" className="btn" disabled={loading} onClick={() => runAction("test")}>Ejecutar pruebas</button>
@@ -103,7 +109,7 @@ export function EmployeeDetailPage() {
             <thead><tr><th>Versión</th><th>Estado</th><th>Fecha</th></tr></thead>
             <tbody>
               {((detail?.versions as Array<Record<string, unknown>>) || []).map((v) => (
-                <tr key={String(v.id)}><td>{String(v.version)}</td><td>{String(v.status)}</td><td className="mono">{String(v.created_at).slice(0, 19)}</td></tr>
+                <tr key={String(v.id)}><td>{String(v.version)}</td><td>{label(LIFECYCLE_STATUS, String(v.status))}</td><td className="mono">{String(v.created_at).slice(0, 19)}</td></tr>
               ))}
             </tbody>
           </table>

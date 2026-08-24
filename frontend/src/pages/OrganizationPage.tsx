@@ -1,25 +1,44 @@
-import { useEffect, useState } from "react";
-import { api, Organization } from "../api";
+import { useCallback, useEffect, useState } from "react";
+import { ApiError, fetchOrganization, type Organization } from "../api";
+import { EmptyState, ErrorState, LoadingState } from "../components/AsyncState";
 
 export function OrganizationPage() {
   const [org, setOrg] = useState<Organization | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    api<Organization>("/api/organization").then(setOrg).catch(() => setOrg(null));
+  const load = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    fetchOrganization()
+      .then(setOrg)
+      .catch((err) => setError(err instanceof ApiError ? err.message : "Error al cargar la organización."))
+      .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (loading) return <LoadingState message="Cargando organización…" />;
+  if (error) return <ErrorState message={error} onRetry={load} />;
+  if (!org) return <EmptyState title="Sin datos" message="No se encontró información de la organización." />;
+
   return (
-    <div>
-      <h2>Organización</h2>
-      {org ? (
-        <table className="grid">
+    <div className="ops-page">
+      <header className="page-header">
+        <h1>Organización</h1>
+        <p className="muted">Datos del tenant actual</p>
+      </header>
+      <div className="panel">
+        <table className="data-table">
           <tbody>
             <tr>
               <th>Nombre</th>
               <td>{org.name}</td>
             </tr>
             <tr>
-              <th>ID</th>
+              <th>Identificador</th>
               <td className="mono">{org.id}</td>
             </tr>
             <tr>
@@ -28,9 +47,7 @@ export function OrganizationPage() {
             </tr>
           </tbody>
         </table>
-      ) : (
-        <p>Cargando…</p>
-      )}
+      </div>
     </div>
   );
 }
