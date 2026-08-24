@@ -25,7 +25,18 @@ from app.enums import (
 from app.orchestration_models import AIEmployee, ApprovalRequest, FinOpsRecord, WorkPlan
 from app.schemas_automation import AutomationCreate, AutomationUpdate
 from app.services.coordinator import execute_plan, route_task
-from app.services.execution_guard import RunExecutionGuard, bind_guard, reset_guard, require_execution_allowed, ExecutionCancelledError
+from app.services.execution_guard import (
+    ExecutionCancelledError,
+    FenceToken,
+    bind_fence_token,
+    current_fence_token,
+    get_fence_controller,
+    invalidate_run_execution,
+    register_fence,
+    release_fence,
+    require_execution_allowed,
+    reset_fence_token,
+)
 from app.services.recurrence import compute_next_run, internal_event_occurrence_key, occurrence_key, parse_recurrence
 
 MAX_RETRIES_LIMIT = 10
@@ -422,25 +433,14 @@ def _sum_run_cost(db: Session, work_plan_id: str | None) -> float | None:
 def _run_with_timeout(
     fn: Callable[[], dict[str, Any]],
     timeout_seconds: int | None,
-    guard: RunExecutionGuard | None = None,
 ) -> dict[str, Any]:
-    def _invoke() -> dict[str, Any]:
-        token = bind_guard(guard) if guard else None
-        try:
-            return fn()
-        finally:
-            if token is not None:
-                reset_guard(token)
-
     if not timeout_seconds or timeout_seconds <= 0:
-        return _invoke()
+        return fn()
     executor = ThreadPoolExecutor(max_workers=1)
-    future = executor.submit(_invoke)
+    future = executor.submit(fn)
     try:
         return future.result(timeout=timeout_seconds)
     except FuturesTimeout as exc:
-        if guard:
-            guard.cancel()
         future.cancel()
         executor.shutdown(wait=False, cancel_futures=True)
         raise TimeoutError(f"timeout_seconds excedido ({timeout_seconds}s)") from exc
@@ -466,10 +466,9 @@ def _create_pre_execution_approval(
     db.add(approval)
     plan.status = WorkPlanStatus.WAITING_APPROVAL
     plan.approval_status = ApprovalStatus.PENDING
-    run.work_plan_id = plan.id
-    run.status = AutomationRunStatus.WAITING_APPROVAL
-    run.result_reference_json = json.dumps({"plan_id": plan.id, "approval_id": approval.id}, ensure_ascii=False)
-    db.commit()
+    from app.services.execution_guard import commit_gated
+
+    commit_gated(db)
     write_audit(
         db,
         action="automation.waiting_approval",
@@ -477,6 +476,30 @@ def _create_pre_execution_approval(
         user_id=user_id,
         detail=f"{automation.name}:{plan.id}",
     )
+    return approval.id
+
+
+def _invoke_orchestration_isolated(
+    *,
+    automation_id: str,
+    run_id: str,
+    user_id: str,
+    token: FenceToken,
+) -> dict[str, Any]:
+    """Ejecuta orquestación en sesión aislada con fencing (thread-safe)."""
+    from app.database import SessionLocal
+
+    worker_db = SessionLocal()
+    fence_ctx = bind_fence_token(token)
+    try:
+        automation = worker_db.query(Automation).filter(Automation.id == automation_id).first()
+        run = worker_db.query(AutomationRun).filter(AutomationRun.id == run_id).first()
+        if not automation or not run:
+            raise RuntimeError("Automatización o ejecución no encontrada")
+        return _invoke_orchestration(worker_db, automation=automation, run=run, user_id=user_id)
+    finally:
+        reset_fence_token(fence_ctx)
+        worker_db.close()
 
 
 def _invoke_orchestration(
@@ -485,7 +508,6 @@ def _invoke_orchestration(
     automation: Automation,
     run: AutomationRun,
     user_id: str,
-    guard: RunExecutionGuard | None = None,
 ) -> dict[str, Any]:
     require_execution_allowed()
 
@@ -495,6 +517,7 @@ def _invoke_orchestration(
         context["employee_id"] = automation.employee_id
     context["automation_id"] = automation.id
     context["automation_run_id"] = run.id
+    context["execution_generation"] = run.execution_generation
 
     if automation.requires_approval:
         if run.work_plan_id:
@@ -518,8 +541,12 @@ def _invoke_orchestration(
         require_execution_allowed()
         plan = db.query(WorkPlan).filter(WorkPlan.id == result.get("plan_id")).first()
         if plan:
-            _create_pre_execution_approval(db, automation=automation, plan=plan, user_id=user_id, run=run)
-            return {"plan_id": plan.id, "status": WorkPlanStatus.WAITING_APPROVAL}
+            approval_id = _create_pre_execution_approval(db, automation=automation, plan=plan, user_id=user_id, run=run)
+            return {
+                "plan_id": plan.id,
+                "status": WorkPlanStatus.WAITING_APPROVAL,
+                "approval_id": approval_id,
+            }
         return result
 
     require_execution_allowed()
@@ -601,12 +628,14 @@ def _apply_run_result(
     automation: Automation,
     run: AutomationRun,
     result: dict[str, Any],
-    guard: RunExecutionGuard | None = None,
+    token: FenceToken | None = None,
 ) -> None:
-    if guard and guard.cancelled:
-        return
+    if token is not None:
+        controller = get_fence_controller(token.run_id)
+        if controller is None or not controller.verify(token):
+            return
     db.refresh(run)
-    if run.status not in (AutomationRunStatus.RUNNING, AutomationRunStatus.QUEUED):
+    if run.status != AutomationRunStatus.RUNNING:
         return
     if run.finished_at is not None:
         return
@@ -637,12 +666,37 @@ def _apply_run_result(
 
     run.cost_reference = _sum_run_cost(db, run.work_plan_id)
 
+    if token is not None:
+        from sqlalchemy import update
 
-def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, user_id: str) -> AutomationRun:
-    run.status = AutomationRunStatus.RUNNING
-    run.started_at = run.started_at or _utcnow()
+        from app.automation_models import AutomationRun as RunModel
+
+        values = {
+            "work_plan_id": run.work_plan_id,
+            "result_reference_json": run.result_reference_json,
+            "status": run.status,
+            "finished_at": run.finished_at,
+            "error": run.error,
+            "cost_reference": run.cost_reference,
+        }
+        rows = (
+            db.execute(
+                update(RunModel)
+                .where(
+                    RunModel.id == run.id,
+                    RunModel.status == AutomationRunStatus.RUNNING,
+                    RunModel.execution_generation == token.generation,
+                )
+                .values(**values)
+            ).rowcount
+        )
+        if rows == 0:
+            db.rollback()
+            return
     db.commit()
 
+
+def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, user_id: str) -> AutomationRun:
     workflow = json.loads(automation.workflow_config_json) if automation.workflow_config_json else {}
     skip_reason = _precheck_cost_limit(automation, workflow)
     if skip_reason:
@@ -675,33 +729,39 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
         )
         return run
 
-    # max_retries = reintentos DESPUÉS del intento inicial (intento 1 + max_retries reintentos)
     max_attempts = automation.max_retries + 1
-    guard = RunExecutionGuard()
-    guard_token = bind_guard(guard)
+    run.status = AutomationRunStatus.RUNNING
+    run.started_at = run.started_at or _utcnow()
+    run.execution_generation = 1
+    db.commit()
+
+    controller = register_fence(run.id, run.execution_generation)
+    token = controller.snapshot()
+    fence_ctx = bind_fence_token(token)
     timed_out = False
     try:
         while run.attempt <= max_attempts:
             try:
                 result = _run_with_timeout(
-                    lambda: _invoke_orchestration(
-                        db, automation=automation, run=run, user_id=user_id, guard=guard,
+                    lambda: _invoke_orchestration_isolated(
+                        automation_id=automation.id,
+                        run_id=run.id,
+                        user_id=user_id,
+                        token=token,
                     ),
                     automation.timeout_seconds,
-                    guard=guard,
                 )
-                if guard.cancelled or timed_out:
+                if timed_out:
                     break
+                db.refresh(run)
                 if run.status == AutomationRunStatus.WAITING_APPROVAL:
                     return run
-                _apply_run_result(db, automation=automation, run=run, result=result, guard=guard)
+                if run.status != AutomationRunStatus.RUNNING:
+                    break
+                _apply_run_result(db, automation=automation, run=run, result=result, token=token)
             except TimeoutError as exc:
                 timed_out = True
-                guard.cancel()
-                run.status = AutomationRunStatus.FAILED
-                run.error = str(exc)
-                run.finished_at = _utcnow()
-                db.commit()
+                invalidate_run_execution(db, run=run, token=token, error=str(exc))
                 write_audit(
                     db,
                     action="automation.timeout",
@@ -712,11 +772,7 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
                 break
             except ExecutionCancelledError as exc:
                 timed_out = True
-                guard.cancel()
-                run.status = AutomationRunStatus.FAILED
-                run.error = str(exc)
-                run.finished_at = _utcnow()
-                db.commit()
+                invalidate_run_execution(db, run=run, token=token, error=str(exc))
                 write_audit(
                     db,
                     action="automation.timeout",
@@ -739,6 +795,9 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
                 break
 
             run.attempt += 1
+            run.status = AutomationRunStatus.RUNNING
+            run.error = None
+            run.finished_at = None
             write_audit(
                 db,
                 action="automation.retry",
@@ -751,7 +810,20 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
                 time.sleep(delay)
             db.commit()
     finally:
-        reset_guard(guard_token)
+        reset_fence_token(fence_ctx)
+        release_fence(run.id)
+
+    if timed_out:
+        refresh_next_run(db, automation)
+        db.commit()
+        write_audit(
+            db,
+            action="automation.failed",
+            organization_id=automation.organization_id,
+            user_id=user_id,
+            detail=f"{automation.name}:{run.status}",
+        )
+        return run
 
     if run.status != AutomationRunStatus.WAITING_APPROVAL:
         run.finished_at = _utcnow()

@@ -69,6 +69,7 @@ class AutomationRun(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     cost_reference: Mapped[float | None] = mapped_column(Float, nullable=True)
     trigger_source: Mapped[str] = mapped_column(String(30), default="SCHEDULE")
+    execution_generation: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, index=True)
 
     automation: Mapped["Automation"] = relationship(back_populates="runs")

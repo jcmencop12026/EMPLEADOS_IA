@@ -30,7 +30,7 @@ from app.orchestration_models import (
     Tool,
     WorkPlan,
 )
-from app.services.execution_guard import ExecutionCancelledError, require_execution_allowed
+from app.services.execution_guard import ExecutionCancelledError, commit_gated, require_execution_allowed
 from app.tools import docint, rips
 
 
@@ -131,7 +131,7 @@ def route_task(
     if not capability:
         plan.status = WorkPlanStatus.FAILED
         plan.error = f"Capacidad no disponible: {tool_code}"
-        db.commit()
+        commit_gated(db)
         publish(
             EventMessage(
                 event_type=WorkEventType.WORK_FAILED,
@@ -216,7 +216,7 @@ def route_task(
         ),
         db,
     )
-    db.commit()
+    commit_gated(db)
 
     if auto_execute:
         require_execution_allowed()
@@ -234,7 +234,7 @@ def execute_plan(db: Session, *, plan_id: str, user_id: str) -> dict[str, Any]:
 
     plan.status = WorkPlanStatus.RUNNING
     plan.started_at = plan.started_at or _utcnow()
-    db.commit()
+    commit_gated(db)
 
     tasks = db.query(EmployeeTask).filter(EmployeeTask.work_plan_id == plan.id).order_by(EmployeeTask.sequence).all()
     all_outputs: list[dict[str, Any]] = []
@@ -258,7 +258,7 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
 
     task.status = EmployeeTaskStatus.RUNNING
     task.started_at = _utcnow()
-    db.commit()
+    commit_gated(db)
 
     publish(
         EventMessage(
@@ -371,7 +371,7 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
                 duration_ms=duration_ms,
             )
         )
-        db.commit()
+        commit_gated(db)
         return {"task_id": task.id, "status": task.status, "output": output}
 
     except ExecutionCancelledError:
@@ -385,7 +385,7 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
         plan.error = str(exc)
         if employee:
             employee.status = EmployeeStatus.ERROR
-        db.commit()
+        commit_gated(db)
         publish(
             EventMessage(
                 event_type=WorkEventType.TASK_FAILED,
@@ -486,7 +486,7 @@ def decide_approval(
             and (not tasks or any(t.status == EmployeeTaskStatus.READY for t in tasks))
         )
         if needs_execution:
-            db.commit()
+            commit_gated(db)
             execute_plan(db, plan_id=plan.id, user_id=user_id)
             db.refresh(plan)
             from app.services.automation_service import sync_run_from_work_plan
@@ -537,7 +537,7 @@ def decide_approval(
         if employee:
             employee.status = EmployeeStatus.DISPONIBLE
 
-    db.commit()
+    commit_gated(db)
     publish(
         EventMessage(
             event_type=WorkEventType.APPROVAL_COMPLETED,
