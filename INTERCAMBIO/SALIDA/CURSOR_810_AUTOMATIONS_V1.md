@@ -5,7 +5,7 @@
 | Campo | Valor |
 |-------|-------|
 | HEAD INICIAL | `02a0e0f` |
-| HEAD FINAL | _(ver commit tras push)_ |
+| HEAD FINAL | `4d5fbaa` |
 | RAMA | `cursor/automations-scheduler-810` |
 | PR | _(pendiente creación)_ |
 
