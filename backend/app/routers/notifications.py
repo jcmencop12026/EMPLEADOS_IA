@@ -122,6 +122,18 @@ def dismiss(notification_id: str, db: Session = Depends(get_db), user: User = De
     return _transition(notification_id, "DISMISSED", db, user)
 
 
+def _validate_recipient_user(db: Session, org_id: str, recipient_user_id: str | None) -> None:
+    if not recipient_user_id:
+        return
+    valid = (
+        db.query(User)
+        .filter(User.id == recipient_user_id, User.organization_id == org_id)
+        .first()
+    )
+    if not valid:
+        raise HTTPException(status_code=400, detail="Destinatario inválido")
+
+
 def _rule_out(row: AlertRule) -> dict:
     return {"id": row.id, "organization_id": row.organization_id, "name": row.name,
             "event_type": row.event_type, "condition": json.loads(row.condition_json) if row.condition_json else None,
@@ -145,8 +157,7 @@ def list_rules(db: Session = Depends(get_db), user: User = Depends(get_current_u
 @rules_router.post("", status_code=status.HTTP_201_CREATED)
 def create_rule(body: AlertRuleIn, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     check_permission(user, "alert_rule.manage")
-    if body.recipient_user_id and not db.query(User).filter(User.id == body.recipient_user_id, User.organization_id == user.organization_id).first():
-        raise HTTPException(status_code=400, detail="Destinatario inválido")
+    _validate_recipient_user(db, user.organization_id, body.recipient_user_id)
     row = AlertRule(organization_id=user.organization_id, created_by=user.id, name=body.name,
                     event_type=body.event_type.upper(), condition_json=json.dumps(body.condition) if body.condition else None,
                     severity=body.severity, recipient_user_id=body.recipient_user_id,
@@ -160,6 +171,7 @@ def create_rule(body: AlertRuleIn, db: Session = Depends(get_db), user: User = D
 def update_rule(rule_id: str, body: AlertRuleIn, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     check_permission(user, "alert_rule.manage")
     row = _get_rule(rule_id, db, user)
+    _validate_recipient_user(db, user.organization_id, body.recipient_user_id)
     for key in ("name", "severity", "recipient_user_id", "recipient_role", "channel", "enabled"):
         setattr(row, key, getattr(body, key))
     row.event_type = body.event_type.upper(); row.condition_json = json.dumps(body.condition) if body.condition else None

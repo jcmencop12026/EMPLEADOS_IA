@@ -180,3 +180,118 @@ def test_invalid_login_publishes_tenant_security_event(client):
         assert db.query(WorkEvent).filter(WorkEvent.event_type == "TENANT_SECURITY_EVENT").first()
     finally:
         db.close()
+
+
+def test_update_rule_rejects_cross_tenant_recipient(client, auth_headers):
+    db = TestingSessionLocal()
+    try:
+        org = Organization(name=f"Foreign-{uuid.uuid4().hex[:6]}")
+        db.add(org)
+        db.flush()
+        foreign_user = User(
+            organization_id=org.id,
+            username=f"foreign-{uuid.uuid4().hex[:6]}",
+            password_hash=hash_password("Foreign2026*"),
+            role="admin",
+        )
+        db.add(foreign_user)
+        db.commit()
+        foreign_id = foreign_user.id
+    finally:
+        db.close()
+
+    created = client.post(
+        "/api/alert-rules",
+        headers=auth_headers,
+        json={"name": "Regla base", "event_type": "SYSTEM_ERROR"},
+    )
+    assert created.status_code == 201
+    rule_id = created.json()["id"]
+
+    updated = client.put(
+        f"/api/alert-rules/{rule_id}",
+        headers=auth_headers,
+        json={
+            "name": "Regla base",
+            "event_type": "SYSTEM_ERROR",
+            "recipient_user_id": foreign_id,
+        },
+    )
+    assert updated.status_code == 400
+
+
+def test_viewer_cannot_acknowledge_notification(client):
+    db = TestingSessionLocal()
+    try:
+        org = Organization(name=f"ViewerAck-{uuid.uuid4().hex[:6]}")
+        db.add(org)
+        db.flush()
+        viewer = User(
+            organization_id=org.id,
+            username=f"viewer-ack-{uuid.uuid4().hex[:6]}",
+            password_hash=hash_password("ViewerAck2026*"),
+            role="viewer",
+        )
+        db.add(viewer)
+        db.commit()
+        username = viewer.username
+        viewer_id = viewer.id
+        org_id = org.id
+    finally:
+        db.close()
+
+    db = TestingSessionLocal()
+    try:
+        own = Notification(
+            organization_id=org_id,
+            type="SECURITY",
+            severity="HIGH",
+            title="Propia",
+            message="Ack test",
+            source_type="test",
+            recipient_user_id=viewer_id,
+        )
+        db.add(own)
+        db.commit()
+        own_id = own.id
+    finally:
+        db.close()
+
+    token = client.post("/api/auth/login", json={"username": username, "password": "ViewerAck2026*"}).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    assert client.post(f"/api/notifications/{own_id}/read", headers=headers).status_code == 200
+    assert client.post(f"/api/notifications/{own_id}/acknowledge", headers=headers).status_code == 403
+
+
+def test_cross_tenant_alert_rule_returns_404(client, auth_headers):
+    db = TestingSessionLocal()
+    try:
+        org = Organization(name=f"RuleTenant-{uuid.uuid4().hex[:6]}")
+        db.add(org)
+        db.flush()
+        other = User(
+            organization_id=org.id,
+            username=f"rule-other-{uuid.uuid4().hex[:6]}",
+            password_hash=hash_password("RuleOther2026*"),
+            role="admin",
+        )
+        db.add(other)
+        db.commit()
+        other_token = client.post(
+            "/api/auth/login",
+            json={"username": other.username, "password": "RuleOther2026*"},
+        ).json()["access_token"]
+        other_headers = {"Authorization": f"Bearer {other_token}"}
+        foreign_rule = client.post(
+            "/api/alert-rules",
+            headers=other_headers,
+            json={"name": "Ajena", "event_type": "SYSTEM_ERROR"},
+        ).json()["id"]
+    finally:
+        db.close()
+
+    assert client.put(
+        f"/api/alert-rules/{foreign_rule}",
+        headers=auth_headers,
+        json={"name": "Hack", "event_type": "SYSTEM_ERROR"},
+    ).status_code == 404
