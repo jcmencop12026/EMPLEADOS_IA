@@ -285,23 +285,46 @@ def update_employee(
     if "capability_ids" in payload:
         db.query(EmployeeCapability).filter(EmployeeCapability.employee_id == emp.id).delete()
         for cap_id in payload["capability_ids"]:
-            db.add(EmployeeCapability(employee_id=emp.id, capability_id=cap_id))
+            cap = db.query(Capability).filter(Capability.id == cap_id, Capability.organization_id == org_id).first()
+            if not cap:
+                return {"error": "Capacidad no válida para la organización"}
+            db.add(EmployeeCapability(employee_id=emp.id, capability_id=cap.id, is_active=True))
 
     if "tools" in payload:
         db.query(EmployeeToolGrant).filter(EmployeeToolGrant.employee_id == emp.id).delete()
         for t in payload["tools"]:
-            db.add(EmployeeToolGrant(employee_id=emp.id, tool_id=t["tool_id"], permission=t.get("permission", ToolPermission.ALLOW)))
+            tool = db.query(Tool).filter(Tool.id == t["tool_id"], Tool.organization_id == org_id).first()
+            if not tool:
+                return {"error": "Herramienta no válida para la organización"}
+            db.add(EmployeeToolGrant(employee_id=emp.id, tool_id=tool.id, permission=t.get("permission", ToolPermission.ALLOW)))
 
     if "knowledge" in payload:
         db.query(EmployeeKnowledgeSource).filter(EmployeeKnowledgeSource.employee_id == emp.id).delete()
         for k in payload["knowledge"]:
-            db.add(EmployeeKnowledgeSource(
-                organization_id=org_id,
-                employee_id=emp.id,
-                source_type=k["source_type"],
-                name=k["name"],
-                config_json=json.dumps(k.get("config", {})),
-            ))
+            if k.get("knowledge_source_id"):
+                from app.orchestration_models import KnowledgeSource
+                source = db.query(KnowledgeSource).filter(
+                    KnowledgeSource.id == k["knowledge_source_id"],
+                    KnowledgeSource.organization_id == org_id,
+                ).first()
+                if not source:
+                    return {"error": "Fuente de conocimiento no válida para la organización"}
+                db.add(EmployeeKnowledgeSource(
+                    organization_id=org_id,
+                    employee_id=emp.id,
+                    knowledge_source_id=source.id,
+                    source_type=source.source_type,
+                    name=source.name,
+                    config_json=source.config_json,
+                ))
+            else:
+                db.add(EmployeeKnowledgeSource(
+                    organization_id=org_id,
+                    employee_id=emp.id,
+                    source_type=k["source_type"],
+                    name=k["name"],
+                    config_json=json.dumps(k.get("config", {})),
+                ))
 
     if "model_policy" in payload:
         policy = db.query(EmployeeModelPolicy).filter(EmployeeModelPolicy.employee_id == emp.id).first()

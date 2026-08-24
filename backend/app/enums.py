@@ -126,3 +126,55 @@ class EmployeeEventType(StrEnum):
     EMPLOYEE_ACTIVATED = "employee.activated"
     EMPLOYEE_PAUSED = "employee.paused"
     EMPLOYEE_VERSION_CHANGED = "employee.version_changed"
+
+
+class KnowledgeSourceType(StrEnum):
+    TEXT = "TEXT"
+    FILE = "FILE"
+    URL = "URL"
+    DATABASE = "DATABASE"
+    API = "API"
+
+
+class KnowledgeIngestionStatus(StrEnum):
+    PENDING = "PENDIENTE"
+    PROCESSING = "PROCESANDO"
+    COMPLETED = "COMPLETADO"
+    FAILED = "FALLIDO"
+
+
+class TestLabStatus(StrEnum):
+    RUNNING = "EJECUTANDO"
+    WAITING_APPROVAL = "ESPERANDO_APROBACION"
+    COMPLETED = "COMPLETADO"
+    FAILED = "FALLIDO"
+    BLOCKED = "BLOQUEADO"
+
+
+class CapabilityEventType(StrEnum):
+    CREATED = "capability.created"
+    UPDATED = "capability.updated"
+    ASSIGNED = "capability.assigned"
+    REMOVED = "capability.removed"
+
+
+class ToolEventType(StrEnum):
+    CREATED = "tool.created"
+    UPDATED = "tool.updated"
+    ASSIGNED = "tool.assigned"
+    REMOVED = "tool.removed"
+    DENIED = "tool.denied"
+
+
+class KnowledgeEventType(StrEnum):
+    CREATED = "knowledge.created"
+    UPDATED = "knowledge.updated"
+    ASSIGNED = "knowledge.assigned"
+    REMOVED = "knowledge.removed"
+    INGESTED = "knowledge.ingested"
+
+
+class TestLabEventType(StrEnum):
+    STARTED = "test_lab.started"
+    COMPLETED = "test_lab.completed"
+    FAILED = "test_lab.failed"

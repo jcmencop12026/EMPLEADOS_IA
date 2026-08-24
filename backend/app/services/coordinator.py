@@ -24,11 +24,18 @@ from app.orchestration_models import (
     ApprovalRequest,
     Capability,
     EmployeeCapability,
+    EmployeeKnowledgeSource,
     EmployeeTask,
     EmployeeToolGrant,
     FinOpsRecord,
+    KnowledgeSource,
     Tool,
     WorkPlan,
+)
+from app.services.authorization import (
+    AuthorizationError,
+    assert_employee_has_capability,
+    assert_employee_tool_authorized,
 )
 from app.tools import docint, rips
 
@@ -56,7 +63,10 @@ def _detect_route(request: str, context: dict[str, Any] | None) -> tuple[str, st
 def _find_employee_for_capability(db: Session, org_id: str, capability_id: str) -> AIEmployee | None:
     links = (
         db.query(EmployeeCapability)
-        .filter(EmployeeCapability.capability_id == capability_id)
+        .filter(
+            EmployeeCapability.capability_id == capability_id,
+            EmployeeCapability.is_active.is_(True),
+        )
         .all()
     )
     for link in links:
@@ -86,6 +96,146 @@ def _tool_grant_for_employee(db: Session, employee_id: str | None, tool_id: str 
         .filter(EmployeeToolGrant.employee_id == employee_id, EmployeeToolGrant.tool_id == tool_id)
         .first()
     )
+
+
+def run_controlled_plan(
+    db: Session,
+    *,
+    organization_id: str,
+    user_id: str,
+    employee_id: str,
+    request: str,
+    context: dict[str, Any] | None = None,
+    capability_id: str | None = None,
+    tool_id: str | None = None,
+    knowledge_source_ids: list[str] | None = None,
+) -> dict[str, Any]:
+    """Ejecuta un plan controlado para Test Lab con empleado/capability/tool explícitos."""
+    correlation_id = str(uuid.uuid4())
+    employee = db.query(AIEmployee).filter(
+        AIEmployee.id == employee_id,
+        AIEmployee.organization_id == organization_id,
+    ).first()
+    if not employee:
+        return {"error": "Empleado no encontrado", "status": WorkPlanStatus.FAILED}
+
+    capability: Capability | None = None
+    tool: Tool | None = None
+
+    if capability_id:
+        capability = assert_employee_has_capability(
+            db, org_id=organization_id, employee_id=employee.id, capability_id=capability_id,
+        )
+    elif tool_id:
+        tool = db.query(Tool).filter(Tool.id == tool_id, Tool.organization_id == organization_id).first()
+        if tool:
+            capability = assert_employee_has_capability(
+                db, org_id=organization_id, employee_id=employee.id, capability_id=tool.capability_id,
+            )
+    else:
+        tool_code, _ = _detect_route(request, context)
+        capability = (
+            db.query(Capability)
+            .filter(Capability.organization_id == organization_id, Capability.code == tool_code)
+            .first()
+        )
+        if capability:
+            assert_employee_has_capability(
+                db, org_id=organization_id, employee_id=employee.id, capability_id=capability.id,
+            )
+
+    if tool_id:
+        tool = assert_employee_tool_authorized(
+            db,
+            org_id=organization_id,
+            employee_id=employee.id,
+            tool_id=tool_id,
+            capability_id=capability.id if capability else None,
+            user_id=user_id,
+        )
+    elif capability and not tool:
+        tool = (
+            db.query(Tool)
+            .filter(Tool.organization_id == organization_id, Tool.capability_id == capability.id, Tool.is_active.is_(True))
+            .first()
+        )
+        if tool:
+            tool = assert_employee_tool_authorized(
+                db,
+                org_id=organization_id,
+                employee_id=employee.id,
+                tool_id=tool.id,
+                capability_id=capability.id,
+                user_id=user_id,
+            )
+
+    ctx = dict(context or {})
+    if knowledge_source_ids:
+        for kid in knowledge_source_ids:
+            link = (
+                db.query(EmployeeKnowledgeSource)
+                .filter(
+                    EmployeeKnowledgeSource.employee_id == employee.id,
+                    EmployeeKnowledgeSource.knowledge_source_id == kid,
+                    EmployeeKnowledgeSource.is_active.is_(True),
+                )
+                .first()
+            )
+            if not link:
+                source = db.query(KnowledgeSource).filter(KnowledgeSource.id == kid).first()
+                if not source or source.organization_id != organization_id:
+                    raise AuthorizationError("Fuente de conocimiento no accesible")
+                raise AuthorizationError("El empleado no tiene asignada esta fuente de conocimiento")
+        ctx["knowledge_source_ids"] = knowledge_source_ids
+
+    plan = WorkPlan(
+        organization_id=organization_id,
+        user_id=user_id,
+        correlation_id=correlation_id,
+        request=request,
+        objective=f"Prueba controlada: {request[:120]}",
+        status=WorkPlanStatus.PLANNING,
+        capability_id=capability.id if capability else None,
+        employee_id=employee.id,
+        tool_id=tool.id if tool else None,
+    )
+    db.add(plan)
+    db.flush()
+
+    publish(
+        EventMessage(
+            event_type=WorkEventType.WORK_REQUESTED,
+            organization_id=organization_id,
+            work_plan_id=plan.id,
+            user_id=user_id,
+            payload={"request": request, "correlation_id": correlation_id, "test_lab": True},
+        ),
+        db,
+    )
+
+    plan.status = WorkPlanStatus.READY
+    steps = [
+        {"sequence": 1, "title": "Validar autorización", "executor_type": ExecutorType.RULE},
+        {"sequence": 2, "title": f"Ejecutar {tool.code if tool else 'análisis'}", "executor_type": tool.executor_type if tool else ExecutorType.PYTHON},
+        {"sequence": 3, "title": "Consolidar resultado", "executor_type": ExecutorType.RULE},
+    ]
+    plan.steps_json = json.dumps(steps, ensure_ascii=False)
+
+    task = EmployeeTask(
+        organization_id=organization_id,
+        work_plan_id=plan.id,
+        employee_id=employee.id,
+        capability_id=capability.id if capability else None,
+        tool_id=tool.id if tool else None,
+        sequence=1,
+        title=f"Test Lab {tool.code if tool else 'general'}",
+        executor_type=tool.executor_type if tool else ExecutorType.PYTHON,
+        status=EmployeeTaskStatus.READY,
+        inputs_json=json.dumps(ctx, ensure_ascii=False),
+    )
+    db.add(task)
+    db.commit()
+    return execute_plan(db, plan_id=plan.id, user_id=user_id)
 
 
 def route_task(
@@ -260,8 +410,26 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
     start_ms = time.monotonic()
     try:
         grant = _tool_grant_for_employee(db, task.employee_id, task.tool_id)
-        if grant and grant.permission == ToolPermission.DENY:
+        if task.employee_id and task.capability_id:
+            assert_employee_has_capability(
+                db,
+                org_id=plan.organization_id,
+                employee_id=task.employee_id,
+                capability_id=task.capability_id,
+            )
+        if task.employee_id and task.tool_id:
+            tool = assert_employee_tool_authorized(
+                db,
+                org_id=plan.organization_id,
+                employee_id=task.employee_id,
+                tool_id=task.tool_id,
+                capability_id=task.capability_id,
+                user_id=user_id,
+            )
+        elif grant and grant.permission == ToolPermission.DENY:
             raise PermissionError("Herramienta denegada para el empleado asignado")
+        elif tool and not tool.is_active:
+            raise PermissionError("Herramienta desactivada")
 
         inputs = json.loads(task.inputs_json or "{}")
         inputs["request"] = plan.request
@@ -354,6 +522,38 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
         )
         db.commit()
         return {"task_id": task.id, "status": task.status, "output": output}
+
+    except (PermissionError, AuthorizationError) as exc:
+        task.status = EmployeeTaskStatus.FAILED
+        task.error = str(exc)
+        task.completed_at = _utcnow()
+        plan.status = WorkPlanStatus.FAILED
+        plan.error = str(exc)
+        if employee:
+            employee.status = EmployeeStatus.ERROR
+        db.commit()
+        publish(
+            EventMessage(
+                event_type=WorkEventType.TASK_FAILED,
+                organization_id=plan.organization_id,
+                work_plan_id=plan.id,
+                task_id=task.id,
+                user_id=user_id,
+                payload={"error": str(exc)},
+            ),
+            db,
+        )
+        publish(
+            EventMessage(
+                event_type=WorkEventType.WORK_FAILED,
+                organization_id=plan.organization_id,
+                work_plan_id=plan.id,
+                user_id=user_id,
+                payload={"error": str(exc)},
+            ),
+            db,
+        )
+        return {"task_id": task.id, "status": task.status, "error": str(exc)}
 
     except Exception as exc:
         task.status = EmployeeTaskStatus.FAILED

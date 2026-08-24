@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
 
 from app.models import User
 
@@ -13,28 +13,59 @@ EMPLOYEE_PERMISSIONS = {
     "employee.admin",
 }
 
+CAPABILITY_PERMISSIONS = {
+    "capability.view",
+    "capability.manage",
+}
+
+TOOL_PERMISSIONS = {
+    "tool.view",
+    "tool.manage",
+}
+
+KNOWLEDGE_PERMISSIONS = {
+    "knowledge.view",
+    "knowledge.manage",
+}
+
+TEST_LAB_PERMISSIONS = {
+    "test_lab.view",
+    "test_lab.run",
+}
+
+ALL_PERMISSIONS = (
+    EMPLOYEE_PERMISSIONS
+    | CAPABILITY_PERMISSIONS
+    | TOOL_PERMISSIONS
+    | KNOWLEDGE_PERMISSIONS
+    | TEST_LAB_PERMISSIONS
+)
+
 ROLE_PERMISSIONS: dict[str, set[str]] = {
-    "admin": EMPLOYEE_PERMISSIONS,
+    "admin": ALL_PERMISSIONS,
     "operator": {
         "employee.view",
         "employee.create",
         "employee.edit",
         "employee.test",
+        "capability.view",
+        "tool.view",
+        "knowledge.view",
+        "test_lab.view",
+        "test_lab.run",
     },
-    "viewer": {"employee.view"},
+    "viewer": {
+        "employee.view",
+        "capability.view",
+        "tool.view",
+        "knowledge.view",
+        "test_lab.view",
+    },
 }
 
 
 def user_permissions(user: User) -> set[str]:
-    return ROLE_PERMISSIONS.get(user.role, {"employee.view"})
-
-
-def require_permission(permission: str):
-    def checker(user: User = Depends(lambda: None)) -> User:
-        from app.deps import get_current_user
-        raise NotImplementedError
-
-    return checker
+    return ROLE_PERMISSIONS.get(user.role, {"employee.view", "capability.view", "tool.view", "knowledge.view"})
 
 
 def check_permission(user: User, permission: str) -> None:

@@ -10,7 +10,10 @@ import { ExecutionsPage } from "./pages/ExecutionsPage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { OperationsCenterPage } from "./pages/OperationsCenterPage";
-import { OrganizationPage } from "./pages/OrganizationPage";
+import { CapabilitiesPage } from "./pages/CapabilitiesPage";
+import { KnowledgePage } from "./pages/KnowledgePage";
+import { TestLabPage } from "./pages/TestLabPage";
+import { ToolsPage } from "./pages/ToolsPage";
 import { getToken } from "./api";
 
 export default function App() {
@@ -29,6 +32,10 @@ export default function App() {
           <Route path="directorio" element={<DirectoryPage />} />
           <Route path="empleados/nuevo" element={<EmployeeWizardPage />} />
           <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />
+          <Route path="capacidades" element={<CapabilitiesPage />} />
+          <Route path="herramientas" element={<ToolsPage />} />
+          <Route path="conocimiento" element={<KnowledgePage />} />
+          <Route path="test-lab" element={<TestLabPage />} />
           <Route path="organizacion" element={<OrganizationPage />} />
           <Route path="auditoria" element={<AuditPage />} />
         </Route>

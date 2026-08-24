@@ -7,6 +7,10 @@ const NAV = [
   { to: "/operaciones", label: "Centro Operaciones" },
   { to: "/ejecuciones", label: "Ejecuciones" },
   { to: "/directorio", label: "Directorio" },
+  { to: "/capacidades", label: "Capacidades" },
+  { to: "/herramientas", label: "Herramientas" },
+  { to: "/conocimiento", label: "Conocimiento" },
+  { to: "/test-lab", label: "Test Lab" },
   { to: "/organizacion", label: "Organización" },
   { to: "/auditoria", label: "Auditoría" },
 ];
