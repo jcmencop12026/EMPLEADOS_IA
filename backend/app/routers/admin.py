@@ -52,6 +52,7 @@ def create_user(
         role=body.role,
         email=str(body.email) if body.email else None,
         full_name=body.full_name,
+        actor=user,
     )
 
 
@@ -79,6 +80,7 @@ def update_user(
         email=str(body.email) if body.email is not None else None,
         full_name=body.full_name,
         role=body.role,
+        actor=user,
     )
 
 
@@ -176,6 +178,7 @@ def update_role_permissions(
         org_id=user.organization_id,
         actor_id=user.id,
         permission_codes=body.permission_codes,
+        actor=user,
     )
 
 

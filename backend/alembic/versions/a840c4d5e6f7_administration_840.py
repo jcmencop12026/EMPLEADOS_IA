@@ -30,8 +30,9 @@ def upgrade() -> None:
     op.add_column("users", sa.Column("created_by_id", sa.String(length=36), nullable=True))
     op.add_column("users", sa.Column("updated_by_id", sa.String(length=36), nullable=True))
     op.add_column("users", sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True))
-    op.create_foreign_key("fk_users_created_by", "users", "users", ["created_by_id"], ["id"])
-    op.create_foreign_key("fk_users_updated_by", "users", "users", ["updated_by_id"], ["id"])
+    with op.batch_alter_table("users") as batch_op:
+        batch_op.create_foreign_key("fk_users_created_by", "users", ["created_by_id"], ["id"])
+        batch_op.create_foreign_key("fk_users_updated_by", "users", ["updated_by_id"], ["id"])
     op.create_index("ix_users_email", "users", ["email"], unique=False)
 
     op.create_table(
@@ -85,8 +86,9 @@ def downgrade() -> None:
     op.drop_index("ix_permissions_code", table_name="permissions")
     op.drop_table("permissions")
     op.drop_index("ix_users_email", table_name="users")
-    op.drop_constraint("fk_users_updated_by", "users", type_="foreignkey")
-    op.drop_constraint("fk_users_created_by", "users", type_="foreignkey")
+    with op.batch_alter_table("users") as batch_op:
+        batch_op.drop_constraint("fk_users_updated_by", type_="foreignkey")
+        batch_op.drop_constraint("fk_users_created_by", type_="foreignkey")
     op.drop_column("users", "updated_at")
     op.drop_column("users", "updated_by_id")
     op.drop_column("users", "created_by_id")

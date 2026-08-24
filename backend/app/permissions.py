@@ -1,4 +1,11 @@
-"""Catálogo de permisos y roles — CURSOR-840."""
+"""Catálogo de permisos y roles — CURSOR-840.
+
+Modelo de autorización (runtime):
+- Fuente de roles: tabla `roles` (org-específico prioriza sobre global de sistema).
+- Fuente de permisos: tabla `role_permissions` vía `role_permission_codes()`.
+- Bootstrap: `seed_permissions.bootstrap_permissions()` crea roles/permisos de sistema.
+- Fallback hardcoded (`ROLE_PERMISSIONS_FALLBACK`): solo si el rol del usuario no existe en BD.
+"""
 from __future__ import annotations
 
 from fastapi import Depends, HTTPException, status
@@ -77,6 +84,8 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
 
 SYSTEM_ROLE_CODES = {"admin", "operator", "viewer"}
 
+PROTECTED_ASSIGNMENT_ROLE_CODES = {"superadmin", "platform_admin", "SUPERADMIN"}
+
 ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
     "admin": EMPLOYEE_PERMISSIONS | ADMIN_PERMISSIONS | OPERATIONS_PERMISSIONS | AUDIT_PERMISSIONS,
     "operator": {
@@ -99,27 +108,71 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
 }
 
 
-def user_permissions(user: User, db: Session | None = None) -> set[str]:
-    if db is not None:
-        role = (
-            db.query(Role)
-            .filter(
-                Role.code == user.role,
-                Role.is_active.is_(True),
-                (Role.organization_id == user.organization_id) | (Role.organization_id.is_(None)),
-            )
-            .first()
+def resolve_role_for_user(db: Session, user: User) -> Role | None:
+    """Rol efectivo: prioriza rol de la organización sobre rol global de sistema."""
+    return (
+        db.query(Role)
+        .filter(
+            Role.code == user.role,
+            Role.is_active.is_(True),
+            (Role.organization_id == user.organization_id) | (Role.organization_id.is_(None)),
         )
+        .order_by(Role.organization_id.is_(None).asc())
+        .first()
+    )
+
+
+def role_permission_codes(db: Session, role: Role) -> set[str]:
+    rows = (
+        db.query(Permission.code)
+        .join(RolePermission, RolePermission.permission_id == Permission.id)
+        .filter(RolePermission.role_id == role.id)
+        .all()
+    )
+    return {row[0] for row in rows}
+
+
+def user_permissions(user: User, db: Session | None = None) -> set[str]:
+    """
+    Fuente de verdad en runtime: permisos del rol en BD (org > global).
+    Fallback hardcoded solo si el rol no existe en BD (bootstrap / tests sin seed).
+    """
+    if db is not None:
+        role = resolve_role_for_user(db, user)
         if role:
-            codes = (
-                db.query(Permission.code)
-                .join(RolePermission, RolePermission.permission_id == Permission.id)
-                .filter(RolePermission.role_id == role.id)
-                .all()
-            )
-            if codes:
-                return {c[0] for c in codes}
+            return role_permission_codes(db, role)
     return ROLE_PERMISSIONS_FALLBACK.get(user.role, {"employee.view"})
+
+
+def assert_permission_subset(actor: User, requested: set[str], db: Session, *, action: str) -> None:
+    allowed = user_permissions(actor, db)
+    extra = requested - allowed
+    if extra:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"No puede {action}: permisos no autorizados ({', '.join(sorted(extra))})",
+        )
+
+
+def assert_role_assignable(actor: User, role_code: str, org_id: str, db: Session) -> None:
+    normalized = role_code.strip().lower()
+    if normalized in PROTECTED_ASSIGNMENT_ROLE_CODES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Rol de plataforma no asignable")
+    role = (
+        db.query(Role)
+        .filter(
+            Role.code == role_code,
+            Role.is_active.is_(True),
+            (Role.organization_id == org_id) | (Role.organization_id.is_(None)),
+        )
+        .order_by(Role.organization_id.is_(None).asc())
+        .first()
+    )
+    if not role:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Rol no válido para la organización")
+    if role.organization_id and role.organization_id != org_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Rol de otra organización")
+    assert_permission_subset(actor, role_permission_codes(db, role), db, action="asignar rol")
 
 
 def check_permission(user: User, permission: str, db: Session | None = None) -> None:

@@ -338,6 +338,21 @@ export async function fetchPermissionMatrix(): Promise<{
   return api("/api/admin/roles/permission-matrix");
 }
 
+export async function createAdminRole(data: {
+  code: string;
+  name: string;
+  description?: string | null;
+}): Promise<AdminRole> {
+  return api<AdminRole>("/api/admin/roles", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateRolePermissions(roleId: string, permissionCodes: string[]): Promise<AdminRole> {
+  return api<AdminRole>(`/api/admin/roles/${roleId}/permissions`, {
+    method: "PUT",
+    body: JSON.stringify({ permission_codes: permissionCodes }),
+  });
+}
+
 export async function fetchAdminOrganization(): Promise<Organization> {
   return api<Organization>("/api/admin/organization");
 }

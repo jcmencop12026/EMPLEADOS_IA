@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.audit import write_audit
 from app.models import Organization, Permission, Role, RolePermission, User
-from app.permissions import SYSTEM_ROLE_CODES, is_system_role
+from app.permissions import SYSTEM_ROLE_CODES, assert_permission_subset, assert_role_assignable, is_system_role, user_permissions
 from app.security import hash_password
 
 USER_STATUS_ACTIVE = "ACTIVE"
@@ -51,10 +51,13 @@ def get_role_for_org(db: Session, role_code: str, org_id: str) -> Role:
             Role.is_active.is_(True),
             or_(Role.organization_id.is_(None), Role.organization_id == org_id),
         )
+        .order_by(Role.organization_id.is_(None).asc())
         .first()
     )
     if not role:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Rol no válido para la organización")
+    if role.organization_id and role.organization_id != org_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Rol de otra organización")
     return role
 
 
@@ -78,10 +81,14 @@ def create_user(
     role: str,
     email: str | None,
     full_name: str | None,
+    actor: User | None = None,
 ) -> User:
     if db.query(User).filter(User.username == username).first():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El nombre de usuario ya existe")
-    get_role_for_org(db, role, org_id)
+    if actor:
+        assert_role_assignable(actor, role, org_id, db)
+    else:
+        get_role_for_org(db, role, org_id)
     row = User(
         organization_id=org_id,
         username=username.strip(),
@@ -115,9 +122,15 @@ def update_user(
     email: str | None = None,
     full_name: str | None = None,
     role: str | None = None,
+    actor: User | None = None,
 ) -> User:
     if role is not None:
-        get_role_for_org(db, role, user.organization_id)
+        if actor and actor.id == user.id and role != user.role:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No puede auto-elevar su propio rol")
+        if actor:
+            assert_role_assignable(actor, role, user.organization_id, db)
+        else:
+            get_role_for_org(db, role, user.organization_id)
         user.role = role
     if email is not None:
         user.email = email.strip() or None
@@ -138,6 +151,8 @@ def update_user(
 
 
 def set_user_status(db: Session, *, user: User, actor_id: str, status_value: str) -> User:
+    if user.id == actor_id and status_value != USER_STATUS_ACTIVE:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No puede desactivarse a sí mismo")
     if status_value not in (USER_STATUS_ACTIVE, USER_STATUS_INACTIVE, USER_STATUS_BLOCKED):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Estado no válido")
     user.status = status_value
@@ -238,11 +253,21 @@ def update_role(db: Session, *, role: Role, org_id: str, actor_id: str, name: st
     return role
 
 
-def assign_role_permissions(db: Session, *, role: Role, org_id: str, actor_id: str, permission_codes: list[str]) -> Role:
+def assign_role_permissions(
+    db: Session,
+    *,
+    role: Role,
+    org_id: str,
+    actor_id: str,
+    permission_codes: list[str],
+    actor: User | None = None,
+) -> Role:
     if role.is_system and role.organization_id is None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No se pueden modificar permisos de roles de sistema")
     if role.organization_id and role.organization_id != org_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rol no encontrado")
+    if actor:
+        assert_permission_subset(actor, set(permission_codes), db, action="asignar permisos")
     perms = db.query(Permission).filter(Permission.code.in_(permission_codes)).all()
     if len(perms) != len(set(permission_codes)):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Permiso no válido")

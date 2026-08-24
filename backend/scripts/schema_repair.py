@@ -18,7 +18,7 @@ from app.database import Base
 from app import models  # noqa: F401
 from app import orchestration_models  # noqa: F401
 
-HEAD_REVISION = "5b2eb2437398"
+HEAD_REVISION = "a840c4d5e6f7"
 REV_801 = "4355c73adcb8"
 
 # Columnas legacy conocidas que no existen en el modelo actual y rompen INSERT ORM.
