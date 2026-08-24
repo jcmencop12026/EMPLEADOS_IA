@@ -1,4 +1,4 @@
-"""Fencing de ejecución commit-gated para timeouts de automatizaciones (CURSOR-810C v2)."""
+"""Fencing de ejecución commit-gated para timeouts de automatizaciones (CURSOR-810C v3)."""
 from __future__ import annotations
 
 import contextvars
@@ -8,6 +8,8 @@ import subprocess
 import threading
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+
+from sqlalchemy import text
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -48,7 +50,7 @@ class RunFenceController:
             procs = list(self._subprocesses)
             self._subprocesses.clear()
         for proc in procs:
-            _terminate_process_tree(proc)
+            terminate_process_tree(proc)
 
     def register_subprocess(self, proc: subprocess.Popen) -> None:
         with self._lock:
@@ -107,9 +109,37 @@ def require_execution_allowed() -> None:
         raise ExecutionCancelledError("Ejecución cancelada por timeout")
 
 
-def commit_gated(db: Session) -> None:
-    """Confirma cambios solo si el fencing de ejecución sigue vigente."""
+def _lock_run_for_update(db: Session, run_id: str):
     from app.automation_models import AutomationRun
+
+    return (
+        db.query(AutomationRun)
+        .filter(AutomationRun.id == run_id)
+        .with_for_update()
+        .populate_existing()
+        .first()
+    )
+
+
+def _read_run_fence_state(db: Session, run_id: str) -> tuple[str | None, int | None]:
+    row = db.execute(
+        text("SELECT status, execution_generation FROM automation_runs WHERE id = :id"),
+        {"id": run_id},
+    ).one_or_none()
+    if row is None:
+        return None, None
+    return str(row[0]), int(row[1])
+
+
+def commit_gated(db: Session) -> None:
+    """Confirma cambios solo si el fencing de ejecución sigue vigente.
+
+    Orden de locks (único):
+    1. SELECT FOR UPDATE del run
+    2. validar generation/estado en BD (lectura SQL autoritativa)
+    3. validar token en memoria
+    4. commit
+    """
     from app.enums import AutomationRunStatus
 
     token = current_fence_token()
@@ -117,24 +147,37 @@ def commit_gated(db: Session) -> None:
         db.commit()
         return
 
-    controller = get_fence_controller(token.run_id)
-    if controller is None or not controller.verify(token):
-        db.rollback()
-        raise ExecutionCancelledError("Fence invalidado — commit rechazado")
+    with db.no_autoflush:
+        status, generation = _read_run_fence_state(db, token.run_id)
+        if (
+            status is None
+            or generation != token.generation
+            or status != AutomationRunStatus.RUNNING
+        ):
+            db.rollback()
+            raise ExecutionCancelledError("Ejecución vencida — commit rechazado")
 
-    row = (
-        db.query(AutomationRun)
-        .filter(AutomationRun.id == token.run_id)
-        .with_for_update()
-        .first()
-    )
-    if (
-        row is None
-        or row.execution_generation != token.generation
-        or row.status != AutomationRunStatus.RUNNING
-    ):
-        db.rollback()
-        raise ExecutionCancelledError("Ejecución vencida — commit rechazado")
+        controller = get_fence_controller(token.run_id)
+        if controller is None or not controller.verify(token):
+            db.rollback()
+            raise ExecutionCancelledError("Fence invalidado — commit rechazado")
+
+        _lock_run_for_update(db, token.run_id)
+
+    db.flush()
+    with db.no_autoflush:
+        status, generation = _read_run_fence_state(db, token.run_id)
+        if (
+            status is None
+            or generation != token.generation
+            or status != AutomationRunStatus.RUNNING
+        ):
+            db.rollback()
+            raise ExecutionCancelledError("Ejecución vencida — commit rechazado")
+        if controller is None or not controller.verify(token):
+            db.rollback()
+            raise ExecutionCancelledError("Fence invalidado — commit rechazado")
+
     db.commit()
 
 
@@ -145,12 +188,8 @@ def invalidate_run_execution(
     token: FenceToken,
     error: str,
 ) -> bool:
-    """Invalida fencing en memoria y en BD de forma atómica."""
+    """Invalida fencing en BD y memoria con orden de locks consistente."""
     from app.enums import AutomationRunStatus
-
-    controller = get_fence_controller(token.run_id)
-    if controller:
-        controller.invalidate()
 
     row = (
         db.query(type(run))
@@ -171,7 +210,14 @@ def invalidate_run_execution(
     row.finished_at = _utcnow()
     row.execution_generation = token.generation + 1
     db.commit()
-    db.refresh(run)
+    db.refresh(row)
+    if run in db:
+        db.refresh(run)
+
+    controller = get_fence_controller(token.run_id)
+    if controller:
+        controller.invalidate()
+
     return True
 
 
@@ -179,7 +225,10 @@ def run_subprocess(cmd: list[str], **kwargs) -> subprocess.Popen:
     """Lanza subprocess registrado para terminación en timeout."""
     token = current_fence_token()
     popen_kwargs = dict(kwargs)
-    if os.name != "nt" and "start_new_session" not in popen_kwargs:
+    if os.name == "nt":
+        creationflags = popen_kwargs.pop("creationflags", 0)
+        popen_kwargs["creationflags"] = creationflags | subprocess.CREATE_NEW_PROCESS_GROUP
+    elif "start_new_session" not in popen_kwargs:
         popen_kwargs["start_new_session"] = True
     proc = subprocess.Popen(cmd, **popen_kwargs)
     if token is not None:
@@ -200,27 +249,117 @@ def promote_file_if_valid(tmp_path: str, final_path: str) -> bool:
     return True
 
 
-def _terminate_process_tree(proc: subprocess.Popen) -> None:
-    if proc.poll() is not None:
-        return
+def _list_child_pids(pid: int) -> list[int]:
+    if os.name == "nt":
+        try:
+            out = subprocess.run(
+                ["wmic", "process", "where", f"(ParentProcessId={pid})", "get", "ProcessId"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
+            )
+            children: list[int] = []
+            for line in out.stdout.splitlines():
+                line = line.strip()
+                if line.isdigit():
+                    val = int(line)
+                    if val != pid:
+                        children.append(val)
+            return children
+        except (OSError, subprocess.SubprocessError, ValueError):
+            return []
+    children: list[int] = []
+    proc_root = "/proc"
+    if not os.path.isdir(proc_root):
+        return children
+    for entry in os.listdir(proc_root):
+        if not entry.isdigit():
+            continue
+        try:
+            with open(os.path.join(proc_root, entry, "stat"), encoding="utf-8") as handle:
+                stat = handle.read()
+            ppid = int(stat.split()[3])
+            if ppid == pid:
+                children.append(int(entry))
+        except (OSError, ValueError, IndexError):
+            continue
+    return children
+
+
+def _signal_process_tree(pid: int, sig: signal.Signals) -> None:
+    for child in _list_child_pids(pid):
+        _signal_process_tree(child, sig)
     try:
         if os.name != "nt":
-            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-        else:
-            proc.terminate()
+            os.kill(pid, sig)
     except (ProcessLookupError, OSError):
-        proc.terminate()
+        pass
+
+
+def terminate_process_tree(proc: subprocess.Popen) -> None:
+    """Termina el árbol completo de procesos (padre + descendientes)."""
+    if proc.poll() is not None:
+        return
+
+    if os.name == "nt":
+        try:
+            subprocess.run(
+                ["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+                capture_output=True,
+                timeout=8,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError):
+            proc.kill()
+        try:
+            proc.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait(timeout=2)
+        return
+
+    try:
+        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+    except (ProcessLookupError, OSError):
+        _signal_process_tree(proc.pid, signal.SIGTERM)
+        try:
+            proc.terminate()
+        except (ProcessLookupError, OSError):
+            pass
+
     try:
         proc.wait(timeout=2)
     except subprocess.TimeoutExpired:
         try:
-            if os.name != "nt":
-                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-            else:
-                proc.kill()
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
         except (ProcessLookupError, OSError):
-            proc.kill()
+            _signal_process_tree(proc.pid, signal.SIGKILL)
+            try:
+                proc.kill()
+            except (ProcessLookupError, OSError):
+                pass
         proc.wait(timeout=2)
+
+    if proc.poll() is None:
+        _signal_process_tree(proc.pid, signal.SIGKILL)
+        try:
+            proc.kill()
+        except (ProcessLookupError, OSError):
+            pass
+        proc.wait(timeout=2)
+
+
+def process_tree_alive(pid: int) -> bool:
+    """Indica si un PID o alguno de sus descendientes sigue vivo."""
+    try:
+        os.kill(pid, 0)
+    except (ProcessLookupError, OSError):
+        return False
+    for child in _list_child_pids(pid):
+        if process_tree_alive(child):
+            return True
+    return True
 
 
 def _utcnow():

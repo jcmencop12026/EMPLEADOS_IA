@@ -11,6 +11,8 @@ def write_audit(
     user_id: str | None = None,
     detail: str | None = None,
 ) -> None:
+    from app.services.execution_guard import current_fence_token
+
     db.add(
         AuditLog(
             action=action,
@@ -19,4 +21,5 @@ def write_audit(
             detail=detail,
         )
     )
-    db.commit()
+    if current_fence_token() is None:
+        db.commit()

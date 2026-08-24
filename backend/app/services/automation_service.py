@@ -485,18 +485,32 @@ def _invoke_orchestration_isolated(
     run_id: str,
     user_id: str,
     token: FenceToken,
+    db_bind=None,
 ) -> dict[str, Any]:
     """Ejecuta orquestación en sesión aislada con fencing (thread-safe)."""
-    from app.database import SessionLocal
+    from sqlalchemy.orm import sessionmaker as session_factory
 
-    worker_db = SessionLocal()
+    if db_bind is None:
+        from app.database import SessionLocal
+
+        worker_db = SessionLocal()
+    else:
+        worker_db = session_factory(autocommit=False, autoflush=False, bind=db_bind)()
     fence_ctx = bind_fence_token(token)
     try:
         automation = worker_db.query(Automation).filter(Automation.id == automation_id).first()
         run = worker_db.query(AutomationRun).filter(AutomationRun.id == run_id).first()
         if not automation or not run:
             raise RuntimeError("Automatización o ejecución no encontrada")
-        return _invoke_orchestration(worker_db, automation=automation, run=run, user_id=user_id)
+        run_generation = run.execution_generation
+        worker_db.expunge(run)
+        return _invoke_orchestration(
+            worker_db,
+            automation=automation,
+            run_id=run_id,
+            run_generation=run_generation,
+            user_id=user_id,
+        )
     finally:
         reset_fence_token(fence_ctx)
         worker_db.close()
@@ -506,7 +520,8 @@ def _invoke_orchestration(
     db: Session,
     *,
     automation: Automation,
-    run: AutomationRun,
+    run_id: str,
+    run_generation: int,
     user_id: str,
 ) -> dict[str, Any]:
     require_execution_allowed()
@@ -516,11 +531,12 @@ def _invoke_orchestration(
     if automation.employee_id:
         context["employee_id"] = automation.employee_id
     context["automation_id"] = automation.id
-    context["automation_run_id"] = run.id
-    context["execution_generation"] = run.execution_generation
+    context["automation_run_id"] = run_id
+    context["execution_generation"] = run_generation
 
     if automation.requires_approval:
-        if run.work_plan_id:
+        run = db.query(AutomationRun).filter(AutomationRun.id == run_id).first()
+        if run and run.work_plan_id:
             plan = db.query(WorkPlan).filter(WorkPlan.id == run.work_plan_id).first()
             if plan and plan.status == WorkPlanStatus.WAITING_APPROVAL:
                 return {"plan_id": plan.id, "status": plan.status}
@@ -540,8 +556,10 @@ def _invoke_orchestration(
         )
         require_execution_allowed()
         plan = db.query(WorkPlan).filter(WorkPlan.id == result.get("plan_id")).first()
-        if plan:
-            approval_id = _create_pre_execution_approval(db, automation=automation, plan=plan, user_id=user_id, run=run)
+        if plan and run:
+            approval_id = _create_pre_execution_approval(
+                db, automation=automation, plan=plan, user_id=user_id, run=run
+            )
             return {
                 "plan_id": plan.id,
                 "status": WorkPlanStatus.WAITING_APPROVAL,
@@ -693,6 +711,9 @@ def _apply_run_result(
         if rows == 0:
             db.rollback()
             return
+        db.commit()
+        db.refresh(run)
+        return
     db.commit()
 
 
@@ -748,6 +769,7 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
                         run_id=run.id,
                         user_id=user_id,
                         token=token,
+                        db_bind=db.get_bind(),
                     ),
                     automation.timeout_seconds,
                 )
@@ -808,7 +830,33 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
             if automation.retry_delay_seconds > 0:
                 delay = min(automation.retry_delay_seconds, MAX_RETRY_DELAY_SECONDS)
                 time.sleep(delay)
-            db.commit()
+            if token is not None:
+                from sqlalchemy import update
+
+                from app.automation_models import AutomationRun as RunModel
+
+                rows = (
+                    db.execute(
+                        update(RunModel)
+                        .where(
+                            RunModel.id == run.id,
+                            RunModel.execution_generation == token.generation,
+                            RunModel.status == AutomationRunStatus.FAILED,
+                        )
+                        .values(
+                            attempt=run.attempt,
+                            status=AutomationRunStatus.RUNNING,
+                            error=None,
+                            finished_at=None,
+                        )
+                    ).rowcount
+                )
+                if rows == 0:
+                    break
+                db.commit()
+                db.refresh(run)
+            else:
+                db.commit()
     finally:
         reset_fence_token(fence_ctx)
         release_fence(run.id)

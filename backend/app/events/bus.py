@@ -37,6 +37,8 @@ def _audit_subscriber(event: EventMessage, db: Session) -> None:
 
 
 def _persist_subscriber(event: EventMessage, db: Session) -> None:
+    from app.services.execution_guard import current_fence_token
+
     db.add(
         WorkEvent(
             organization_id=event.organization_id,
@@ -46,7 +48,8 @@ def _persist_subscriber(event: EventMessage, db: Session) -> None:
             payload_json=json.dumps(event.payload or {}, ensure_ascii=False),
         )
     )
-    db.commit()
+    if current_fence_token() is None:
+        db.commit()
 
 
 subscribe(_audit_subscriber)

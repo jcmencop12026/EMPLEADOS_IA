@@ -23,11 +23,20 @@ from app.security import hash_password
 from app.services.automation_service import activate_automation, create_automation, run_now
 from app.services.execution_guard import (
     ExecutionCancelledError,
+    FenceToken,
+    bind_fence_token,
+    commit_gated,
+    current_fence_token,
+    get_fence_controller,
+    invalidate_run_execution,
+    process_tree_alive,
     promote_file_if_valid,
     register_fence,
     release_fence,
     require_execution_allowed,
+    reset_fence_token,
     run_subprocess,
+    terminate_process_tree,
 )
 from app.schemas_automation import AutomationCreate, RecurrenceConfig
 from conftest import TestingSessionLocal
@@ -332,3 +341,192 @@ def test_fence_token_invalidates_atomically():
     assert not ctrl.verify(token)
     assert ctrl.generation == 2
     release_fence(run_id)
+
+
+def test_adversarial_process_tree_parent_child_no_late_effects():
+    """Process tree — padre+hijo terminados, cero efecto tardío (repetido)."""
+    for _ in range(3):
+        parent_marker = tempfile.mktemp(suffix=".parent.marker")
+        child_marker = tempfile.mktemp(suffix=".child.marker")
+        for path in (parent_marker, child_marker):
+            if os.path.exists(path):
+                os.unlink(path)
+
+        parent_script = (
+            "import subprocess, sys, time\n"
+            f"child_marker = {child_marker!r}\n"
+            f"parent_marker = {parent_marker!r}\n"
+            "subprocess.Popen([sys.executable, '-c', "
+            "'import time; time.sleep(30); open(\\'' + child_marker + '\\',\\'w\\').write(\\'c\\')'])\n"
+            "time.sleep(30)\n"
+            "open(parent_marker, 'w').write('p')\n"
+        )
+        proc_holder: list[subprocess.Popen] = []
+
+        def route(*_a, **_k):
+            proc = run_subprocess([sys.executable, "-c", parent_script])
+            proc_holder.append(proc)
+            time.sleep(0.25)
+            require_execution_allowed()
+            return {"plan_id": "x", "status": WorkPlanStatus.COMPLETED}
+
+        run = _run_timeout_scenario(route, wait_after=1.5)
+        assert run.status == AutomationRunStatus.FAILED
+        assert proc_holder
+        proc = proc_holder[0]
+        assert proc.poll() is not None
+        if proc.pid:
+            assert not process_tree_alive(proc.pid)
+        time.sleep(1.5)
+        assert not os.path.exists(parent_marker)
+        assert not os.path.exists(child_marker)
+
+
+def test_adversarial_commit_outside_gate_detected():
+    """Commit fuera del gate rechazado tras invalidación."""
+    db = TestingSessionLocal()
+    run_id = str(uuid.uuid4())
+    ctrl = register_fence(run_id, 1)
+    token = ctrl.snapshot()
+    fence_ctx = bind_fence_token(token)
+    try:
+        org = Organization(name=f"Gate-{uuid.uuid4().hex[:6]}")
+        db.add(org)
+        db.flush()
+        run = AutomationRun(
+            id=run_id,
+            automation_id=str(uuid.uuid4()),
+            organization_id=org.id,
+            occurrence_key=f"gate-{uuid.uuid4().hex[:8]}",
+            scheduled_for=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
+            status=AutomationRunStatus.RUNNING,
+            execution_generation=1,
+        )
+        db.add(run)
+        db.commit()
+        ctrl.invalidate()
+        with pytest.raises(ExecutionCancelledError):
+            commit_gated(db)
+    finally:
+        reset_fence_token(fence_ctx)
+        release_fence(run_id)
+        db.close()
+
+
+def test_lock_order_invalidation_wins_before_commit():
+    """Lock order A — invalidación completa antes de commit: commit tardío falla."""
+    db = TestingSessionLocal()
+    run_id = str(uuid.uuid4())
+    commit_error: list[Exception] = []
+
+    try:
+        org = Organization(name=f"LockA-{uuid.uuid4().hex[:6]}")
+        db.add(org)
+        db.flush()
+        run = AutomationRun(
+            id=run_id,
+            automation_id=str(uuid.uuid4()),
+            organization_id=org.id,
+            occurrence_key=f"locka-{uuid.uuid4().hex[:8]}",
+            scheduled_for=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
+            status=AutomationRunStatus.RUNNING,
+            execution_generation=1,
+        )
+        db.add(run)
+        db.commit()
+
+        ctrl = register_fence(run_id, 1)
+        token = ctrl.snapshot()
+
+        inv_db = TestingSessionLocal()
+        inv_run = inv_db.query(AutomationRun).filter(AutomationRun.id == run_id).first()
+        invalidate_run_execution(
+            inv_db,
+            run=inv_run,
+            token=token,
+            error="timeout adversarial",
+        )
+        inv_db.close()
+
+        worker_db = TestingSessionLocal()
+        ctx = bind_fence_token(token)
+        try:
+            with pytest.raises(ExecutionCancelledError) as exc:
+                commit_gated(worker_db)
+            commit_error.append(exc.value)
+        finally:
+            reset_fence_token(ctx)
+            worker_db.close()
+
+        db.refresh(run)
+        assert run.status == AutomationRunStatus.FAILED
+        assert run.execution_generation == 2
+        assert commit_error
+    finally:
+        release_fence(run_id)
+        db.close()
+
+
+def test_lock_order_commit_blocked_after_db_invalidation():
+    """Lock order B — commit intenta después de invalidación en BD."""
+    db = TestingSessionLocal()
+    run_id = str(uuid.uuid4())
+    try:
+        org = Organization(name=f"LockB-{uuid.uuid4().hex[:6]}")
+        db.add(org)
+        db.flush()
+        run = AutomationRun(
+            id=run_id,
+            automation_id=str(uuid.uuid4()),
+            organization_id=org.id,
+            occurrence_key=f"lockb-{uuid.uuid4().hex[:8]}",
+            scheduled_for=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
+            status=AutomationRunStatus.RUNNING,
+            execution_generation=1,
+        )
+        db.add(run)
+        db.commit()
+
+        ctrl = register_fence(run_id, 1)
+        token = ctrl.snapshot()
+        invalidate_run_execution(db, run=run, token=token, error="invalidated first")
+
+        worker_db = TestingSessionLocal()
+        ctx = bind_fence_token(token)
+        try:
+            with pytest.raises(ExecutionCancelledError):
+                commit_gated(worker_db)
+        finally:
+            reset_fence_token(ctx)
+            worker_db.close()
+
+        db.refresh(run)
+        assert run.status == AutomationRunStatus.FAILED
+        assert run.execution_generation == 2
+    finally:
+        release_fence(run_id)
+        db.close()
+
+
+def test_subprocess_tree_terminate_unit():
+    """Unitario — terminate_process_tree mata padre e hijo."""
+    child_marker = tempfile.mktemp(suffix=".child.unit")
+    if os.path.exists(child_marker):
+        os.unlink(child_marker)
+    parent_script = (
+        "import subprocess, sys, time\n"
+        f"marker = {child_marker!r}\n"
+        "subprocess.Popen([sys.executable, '-c', "
+        "'import time; time.sleep(20); open(\\'' + marker + '\\',\\'w\\').write(\\'x\\')'])\n"
+        "time.sleep(20)\n"
+    )
+    proc = subprocess.Popen(
+        [sys.executable, "-c", parent_script],
+        start_new_session=os.name != "nt",
+        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
+    )
+    time.sleep(0.3)
+    terminate_process_tree(proc)
+    assert proc.poll() is not None
+    time.sleep(1.0)
+    assert not os.path.exists(child_marker)
