@@ -26,18 +26,42 @@ def _is_canonical_active(raw) -> bool:
     return raw is True or raw == 1
 
 
-def _normalize_corrupt_is_active(conn) -> None:
-  conn.execute(
+def _normalize_corrupt_is_active_sqlite(conn) -> None:
+    """Solo entero 1 es TRUE canónico; cualquier otro valor → INACTIVO (0)."""
+    conn.execute(
         sa.text(
             """
             UPDATE roles
             SET is_active = CASE
-                WHEN is_active IN (1, '1', 'true', 'TRUE', 't', 'yes', 'YES') THEN 1
+                WHEN typeof(is_active) = 'integer' AND is_active = 1 THEN 1
                 ELSE 0
             END
             """
         )
     )
+
+
+def _normalize_corrupt_is_active_postgres(conn) -> None:
+    """Solo boolean TRUE canónico; cualquier otro valor → INACTIVO."""
+    conn.execute(
+        sa.text(
+            """
+            UPDATE roles
+            SET is_active = CASE
+                WHEN is_active IS TRUE THEN TRUE
+                ELSE FALSE
+            END
+            """
+        )
+    )
+
+
+def _normalize_corrupt_is_active(conn) -> None:
+    dialect = conn.dialect.name
+    if dialect == "sqlite":
+        _normalize_corrupt_is_active_sqlite(conn)
+    else:
+        _normalize_corrupt_is_active_postgres(conn)
 
 
 def _permission_ids(conn, role_id: str) -> set[str]:

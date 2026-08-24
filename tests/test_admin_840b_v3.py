@@ -47,6 +47,124 @@ def _bootstrap_permissions_on_url(db_url: str) -> None:
 
 
 @pytest.mark.parametrize(
+    "corrupt_literal",
+    ["'yes'", "'true'", "'t'", "'TRUE'", "'on'", "'2'", "'-1'", "'garbage'", "''"],
+)
+def test_migration_corrupt_is_active_normalized_to_inactive(monkeypatch, corrupt_literal):
+    """Migración: valores corruptos vía UPDATE directo en SQLite → is_active=0 tras upgrade."""
+    db_path = tempfile.mktemp(suffix=".db")
+    db_url = f"sqlite:///{db_path}"
+    monkeypatch.setenv("DATABASE_URL", db_url)
+    cfg = _alembic_cfg(db_url)
+    try:
+        command.upgrade(cfg, "a840c4d5e6f7")
+        _bootstrap_permissions_on_url(db_url)
+        role_id = str(uuid.uuid4())
+        code = f"corrupt-mig-{uuid.uuid4().hex[:6]}"
+        conn = sqlite3.connect(db_path)
+        conn.execute(
+            "INSERT INTO roles (id, organization_id, code, name, is_system, is_active) "
+            f"VALUES ('{role_id}', NULL, '{code}', 'Corrupt', 0, 1)"
+        )
+        conn.execute(f"UPDATE roles SET is_active = {corrupt_literal} WHERE id = '{role_id}'")
+        conn.commit()
+        conn.close()
+
+        command.upgrade(cfg, "b840c3e4f5a6")
+
+        conn = sqlite3.connect(db_path)
+        row = conn.execute(
+            "SELECT is_active, typeof(is_active) FROM roles WHERE id = ?",
+            (role_id,),
+        ).fetchone()
+        assert row is not None
+        assert row[0] == 0
+        assert row[1] == "integer"
+        conn.close()
+    finally:
+        if os.path.exists(db_path):
+            os.unlink(db_path)
+
+
+def test_migration_duplicate_corrupt_yes_becomes_inactive(monkeypatch):
+    """Duplicados con is_active corrupto 'yes' → superviviente INACTIVO."""
+    db_path = tempfile.mktemp(suffix=".db")
+    db_url = f"sqlite:///{db_path}"
+    monkeypatch.setenv("DATABASE_URL", db_url)
+    cfg = _alembic_cfg(db_url)
+    try:
+        command.upgrade(cfg, "a840c4d5e6f7")
+        _bootstrap_permissions_on_url(db_url)
+        conn = sqlite3.connect(db_path)
+        view_id = conn.execute("SELECT id FROM permissions WHERE code='employee.view'").fetchone()[0]
+        code = f"dup-corrupt-{uuid.uuid4().hex[:6]}"
+        role_a = str(uuid.uuid4())
+        role_b = str(uuid.uuid4())
+        conn.execute(
+            "INSERT INTO roles (id, organization_id, code, name, is_system, is_active) "
+            f"VALUES ('{role_a}', NULL, '{code}', 'A', 0, 1)"
+        )
+        conn.execute(
+            "INSERT INTO roles (id, organization_id, code, name, is_system, is_active) "
+            f"VALUES ('{role_b}', NULL, '{code}', 'B', 0, 1)"
+        )
+        conn.execute(f"UPDATE roles SET is_active = 'yes' WHERE id = '{role_b}'")
+        for rid in (role_a, role_b):
+            conn.execute(
+                "INSERT INTO role_permissions (id, role_id, permission_id) VALUES (?,?,?)",
+                (str(uuid.uuid4()), rid, view_id),
+            )
+        conn.commit()
+        conn.close()
+
+        command.upgrade(cfg, "b840c3e4f5a6")
+
+        conn = sqlite3.connect(db_path)
+        row = conn.execute(
+            "SELECT is_active FROM roles WHERE organization_id IS NULL AND code=?",
+            (code,),
+        ).fetchone()
+        assert row[0] == 0
+        conn.close()
+    finally:
+        if os.path.exists(db_path):
+            os.unlink(db_path)
+
+
+def test_migration_canonical_integer_one_stays_active(monkeypatch):
+    """Migración: entero canónico 1 permanece activo."""
+    db_path = tempfile.mktemp(suffix=".db")
+    db_url = f"sqlite:///{db_path}"
+    monkeypatch.setenv("DATABASE_URL", db_url)
+    cfg = _alembic_cfg(db_url)
+    try:
+        command.upgrade(cfg, "a840c4d5e6f7")
+        role_id = str(uuid.uuid4())
+        code = f"canonical-mig-{uuid.uuid4().hex[:6]}"
+        conn = sqlite3.connect(db_path)
+        conn.execute(
+            "INSERT INTO roles (id, organization_id, code, name, is_system, is_active) "
+            "VALUES (?, NULL, ?, ?, 0, ?)",
+            (role_id, code, "Canonical", 1),
+        )
+        conn.commit()
+        conn.close()
+
+        command.upgrade(cfg, "b840c3e4f5a6")
+
+        conn = sqlite3.connect(db_path)
+        row = conn.execute(
+            "SELECT is_active FROM roles WHERE id = ?",
+            (role_id,),
+        ).fetchone()
+        assert row[0] == 1
+        conn.close()
+    finally:
+        if os.path.exists(db_path):
+            os.unlink(db_path)
+
+
+@pytest.mark.parametrize(
     "corrupt_value",
     ["yes", "TRUE", "2", "null", "", "on", "false", 0],
 )
