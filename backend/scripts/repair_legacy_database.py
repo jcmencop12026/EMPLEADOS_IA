@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI — reparación SQLite legacy EMPLEADOS_IA (CURSOR-805/805B)."""
+"""CLI — migración SQLite legacy EMPLEADOS_IA (CURSOR-805C)."""
 from __future__ import annotations
 
 import argparse
@@ -12,39 +12,45 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from app.config import settings  # noqa: E402
-from scripts.schema_repair import (  # noqa: E402
-    SchemaRepairError,
-    audit_schema,
-    create_verified_backup,
-    repair_database,
-    validate_schema_strict,
-    verify_backup_file,
+from scripts.legacy_migration import (  # noqa: E402
+    LegacyMigrationError,
+    detect_db_scenario,
+    database_url_to_path,
+    inventory_legacy_db,
+    migrate_legacy_database,
 )
+from scripts.schema_repair import validate_schema_strict  # noqa: E402
 from sqlalchemy import create_engine  # noqa: E402
 
 
 def cmd_audit(database_url: str) -> int:
-    engine = create_engine(database_url, connect_args={"check_same_thread": False})
-    validation = validate_schema_strict(engine)
-    diff = audit_schema(engine)
+    db_path = database_url_to_path(database_url)
+    scenario = detect_db_scenario(db_path)
+    engine = create_engine(database_url, connect_args={"check_same_thread": False}) if db_path.exists() else None
+    validation = validate_schema_strict(engine) if engine else None
     output = {
-        "validation": validation.to_dict(),
-        "summary": {
-            "missing_tables": diff.missing_tables,
-            "missing_columns": diff.missing_columns,
-            "extra_columns": diff.extra_columns,
-        },
+        "scenario": scenario,
+        "inventory": inventory_legacy_db(db_path) if db_path.exists() else {},
+        "validation": validation.to_dict() if validation else None,
     }
     print(json.dumps(output, indent=2, ensure_ascii=False))
-    return 0 if validation.is_valid else 1
+    if scenario == "E":
+        return 1
+    if validation and not validation.is_valid and scenario == "C":
+        return 1
+    return 0
 
 
-def cmd_repair(database_url: str, skip_backup: bool) -> int:
+def cmd_migrate(database_url: str, skip_backup: bool, no_swap: bool) -> int:
     try:
-        result = repair_database(database_url, skip_backup=skip_backup)
+        result = migrate_legacy_database(
+            database_url,
+            skip_backup=skip_backup,
+            perform_swap=not no_swap,
+        )
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0
-    except SchemaRepairError as exc:
+    except LegacyMigrationError as exc:
         payload = {"error": str(exc)}
         if exc.validation:
             payload["validation"] = exc.validation.to_dict()
@@ -52,25 +58,24 @@ def cmd_repair(database_url: str, skip_backup: bool) -> int:
         return 2
 
 
-def cmd_backup(database_url: str) -> int:
-    db_path = Path(database_url.removeprefix("sqlite:///"))
-    backup_path = create_verified_backup(db_path)
-    info = verify_backup_file(backup_path, db_path)
-    print(json.dumps(info, indent=2, ensure_ascii=False))
-    return 0
+def cmd_scenario(database_url: str) -> int:
+    scenario = detect_db_scenario(database_url_to_path(database_url))
+    print(json.dumps({"scenario": scenario}))
+    return 0 if scenario != "E" else 1
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Reparación SQLite legacy EMPLEADOS_IA")
-    parser.add_argument("command", choices=["audit", "repair", "backup"], help="audit, repair o backup")
-    parser.add_argument("--database-url", default=settings.database_url, help="URL SQLAlchemy")
-    parser.add_argument("--skip-backup", action="store_true", help="Omitir backup (solo tests)")
+    parser = argparse.ArgumentParser(description="Migración SQLite legacy EMPLEADOS_IA")
+    parser.add_argument("command", choices=["audit", "migrate", "scenario", "repair"], help="comando")
+    parser.add_argument("--database-url", default=settings.database_url)
+    parser.add_argument("--skip-backup", action="store_true")
+    parser.add_argument("--no-swap", action="store_true", help="No hacer swap atómico (tests)")
     args = parser.parse_args()
     if args.command == "audit":
         return cmd_audit(args.database_url)
-    if args.command == "backup":
-        return cmd_backup(args.database_url)
-    return cmd_repair(args.database_url, skip_backup=args.skip_backup)
+    if args.command == "scenario":
+        return cmd_scenario(args.database_url)
+    return cmd_migrate(args.database_url, args.skip_backup, args.no_swap)
 
 
 if __name__ == "__main__":

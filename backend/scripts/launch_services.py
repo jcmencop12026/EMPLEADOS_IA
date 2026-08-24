@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Orquestador de arranque/parada multiplataforma para BAT (CURSOR-805B)."""
+"""Orquestador de arranque/parada multiplataforma para BAT (CURSOR-805C)."""
 from __future__ import annotations
 
 import argparse
@@ -12,8 +12,13 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from app.config import settings  # noqa: E402
-from scripts.repair_legacy_database import cmd_audit, cmd_repair  # noqa: E402
-from scripts.schema_repair import HEAD_REVISION, get_alembic_revision, database_url_to_path  # noqa: E402
+from scripts.legacy_migration import (  # noqa: E402
+    HEAD_REVISION,
+    detect_db_scenario,
+    migrate_legacy_database,
+    database_url_to_path,
+)
+from scripts.schema_repair import validate_schema_strict  # noqa: E402
 from scripts.service_manager import (  # noqa: E402
     load_pid_registry,
     save_pid_registry,
@@ -22,31 +27,30 @@ from scripts.service_manager import (  # noqa: E402
     stop_registered_services,
     wait_for_health,
 )
+from sqlalchemy import create_engine  # noqa: E402
 
 
 def cmd_prepare(database_url: str) -> int:
-    """Auditar BD; reparar si es reparable; verificar Alembic."""
-    audit_code = cmd_audit(database_url)
-    if audit_code == 0:
-        db_path = database_url_to_path(database_url)
-        if db_path.exists() and get_alembic_revision(db_path) == HEAD_REVISION:
-            print(json.dumps({"status": "ok", "action": "none"}))
-            return 0
-
-    repair_code = cmd_repair(database_url, skip_backup=False)
-    if repair_code != 0:
-        return repair_code
-
-    audit_after = cmd_audit(database_url)
-    if audit_after != 0:
-        return audit_after
-
+    """Identificar escenario DB y migrar sólo si corresponde."""
     db_path = database_url_to_path(database_url)
-    if get_alembic_revision(db_path) != HEAD_REVISION:
-        print(json.dumps({"error": "Alembic no en head tras reparación"}))
-        return 3
-    print(json.dumps({"status": "ok", "action": "repaired"}))
-    return 0
+    scenario = detect_db_scenario(db_path)
+    print(json.dumps({"scenario": scenario}))
+
+    if scenario in ("A", "B", "D"):
+        try:
+            result = migrate_legacy_database(database_url, skip_backup=(scenario == "A"))
+            print(json.dumps({"status": "ok", "action": "migrated", "result": result}))
+            return 0
+        except Exception as exc:
+            print(json.dumps({"error": str(exc)}))
+            return 2
+
+    if scenario == "C":
+        print(json.dumps({"status": "ok", "action": "none"}))
+        return 0
+
+    print(json.dumps({"error": "BD incompatible/no migrable"}))
+    return 3
 
 
 def cmd_start(database_url: str, backend_port: int, frontend_port: int) -> int:
@@ -55,30 +59,39 @@ def cmd_start(database_url: str, backend_port: int, frontend_port: int) -> int:
         return prep
 
     stop_registered_services()
+    registry: dict = {"database_url": database_url}
 
-    backend = start_backend(port=backend_port, database_url=database_url)
-    if not wait_for_health(f"http://127.0.0.1:{backend_port}/health"):
-        print(json.dumps({"error": "Backend /health no respondió HTTP 200"}))
-        return 4
+    try:
+        backend = start_backend(port=backend_port, database_url=database_url)
+        registry["backend"] = backend
+        save_pid_registry(registry)
 
-    frontend = start_frontend(port=frontend_port)
-    if not wait_for_health(f"http://127.0.0.1:{frontend_port}/", timeout_sec=45):
-        print(json.dumps({"error": "Frontend no respondió HTTP 200"}))
-        return 5
+        if not wait_for_health(f"http://127.0.0.1:{backend_port}/health"):
+            stop_registered_services()
+            print(json.dumps({"error": "Backend /health no respondió HTTP 200"}))
+            return 4
 
-    registry = {
-        "backend": backend,
-        "frontend": frontend,
-        "database_url": database_url,
-    }
-    pid_path = save_pid_registry(registry)
-    print(json.dumps({
-        "status": "ok",
-        "backend_url": f"http://127.0.0.1:{backend_port}",
-        "frontend_url": f"http://127.0.0.1:{frontend_port}",
-        "pid_file": str(pid_path),
-    }))
-    return 0
+        frontend = start_frontend(port=frontend_port)
+        registry["frontend"] = frontend
+        save_pid_registry(registry)
+
+        if not wait_for_health(f"http://127.0.0.1:{frontend_port}/", timeout_sec=45):
+            stop_registered_services()
+            print(json.dumps({"error": "Frontend no respondió HTTP 200"}))
+            return 5
+
+        pid_path = save_pid_registry(registry)
+        print(json.dumps({
+            "status": "ok",
+            "backend_url": f"http://127.0.0.1:{backend_port}",
+            "frontend_url": f"http://127.0.0.1:{frontend_port}",
+            "pid_file": str(pid_path),
+        }))
+        return 0
+    except Exception as exc:
+        stop_registered_services()
+        print(json.dumps({"error": str(exc)}))
+        return 6
 
 
 def cmd_stop() -> int:
@@ -87,9 +100,15 @@ def cmd_stop() -> int:
     return 0
 
 
+def cmd_scenario(database_url: str) -> int:
+    scenario = detect_db_scenario(database_url_to_path(database_url))
+    print(json.dumps({"scenario": scenario}))
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["prepare", "start", "stop", "status"])
+    parser.add_argument("command", choices=["prepare", "start", "stop", "status", "scenario"])
     parser.add_argument("--database-url", default=settings.database_url)
     parser.add_argument("--backend-port", type=int, default=8010)
     parser.add_argument("--frontend-port", type=int, default=5180)
@@ -101,6 +120,8 @@ def main() -> int:
         return cmd_start(args.database_url, args.backend_port, args.frontend_port)
     if args.command == "stop":
         return cmd_stop()
+    if args.command == "scenario":
+        return cmd_scenario(args.database_url)
     print(json.dumps(load_pid_registry(), indent=2))
     return 0
 

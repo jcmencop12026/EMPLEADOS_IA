@@ -1,14 +1,16 @@
-"""Gestión de servicios EMPLEADOS_IA con registro de PID propio (CURSOR-805B)."""
+"""Gestión de servicios EMPLEADOS_IA con registro de PID propio (CURSOR-805C)."""
 from __future__ import annotations
 
 import json
 import os
+import shutil
 import signal
 import subprocess
 import sys
 import time
 import urllib.error
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -21,11 +23,30 @@ def pid_file_path(data_dir: Path | None = None) -> Path:
     return base / "empleados_ia.pids"
 
 
+def resolve_npm() -> str:
+    """Resuelve npm de forma portable (Windows: npm.cmd)."""
+    if sys.platform == "win32":
+        for candidate in ("npm.cmd", "npm.exe", "npm"):
+            found = shutil.which(candidate)
+            if found:
+                return found
+        raise RuntimeError("npm no encontrado en PATH")
+    found = shutil.which("npm")
+    if not found:
+        raise RuntimeError("npm no encontrado en PATH")
+    return found
+
+
+def _utcnow_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
 def _read_proc_cmdline(pid: int) -> str:
     if sys.platform == "win32":
         try:
             out = subprocess.check_output(
-                ["powershell", "-NoProfile", "-Command", f"(Get-CimInstance Win32_Process -Filter \"ProcessId={pid}\").CommandLine"],
+                ["powershell", "-NoProfile", "-Command",
+                 f"(Get-CimInstance Win32_Process -Filter \"ProcessId={pid}\").CommandLine"],
                 text=True,
                 stderr=subprocess.DEVNULL,
             )
@@ -58,7 +79,7 @@ def _is_empleados_ia_process(pid: int, role: str, entry: dict[str, Any] | None =
         return False
     markers = {
         "backend": ["app.main:app", "uvicorn"],
-        "frontend": ["vite", "empleados-ia-frontend", "npm run dev"],
+        "frontend": ["vite", "empleados-ia-frontend", "npm"],
     }
     role_markers = markers.get(role, [])
     return any(m.lower() in cmd for m in role_markers)
@@ -127,26 +148,50 @@ def start_backend(port: int = 8010, database_url: str | None = None) -> dict[str
     log_path = PROJECT_ROOT / "data" / "backend.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     log_file = open(log_path, "a", encoding="utf-8")
+    executable = sys.executable
+    command = [executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", f"--port={port}"]
     proc = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", f"--port={port}"],
+        command,
         cwd=str(BACKEND_DIR),
         env=env,
         stdout=log_file,
         stderr=subprocess.STDOUT,
         start_new_session=True,
     )
-    return {"role": "backend", "pid": proc.pid, "port": port, "log": str(log_path), "cwd": str(BACKEND_DIR)}
+    return {
+        "role": "backend",
+        "pid": proc.pid,
+        "port": port,
+        "log": str(log_path),
+        "cwd": str(BACKEND_DIR),
+        "executable": executable,
+        "command": " ".join(command),
+        "started_at": _utcnow_iso(),
+        "project_root": str(PROJECT_ROOT),
+    }
 
 
 def start_frontend(port: int = 5180) -> dict[str, Any]:
     log_path = PROJECT_ROOT / "data" / "frontend.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     log_file = open(log_path, "a", encoding="utf-8")
+    npm = resolve_npm()
+    command = [npm, "run", "dev", "--", "--host", "127.0.0.1", "--port", str(port)]
     proc = subprocess.Popen(
-        ["npm", "run", "dev", "--", "--host", "127.0.0.1", f"--port", str(port)],
+        command,
         cwd=str(PROJECT_ROOT / "frontend"),
         stdout=log_file,
         stderr=subprocess.STDOUT,
         start_new_session=True,
     )
-    return {"role": "frontend", "pid": proc.pid, "port": port, "log": str(log_path), "cwd": str(PROJECT_ROOT / "frontend")}
+    return {
+        "role": "frontend",
+        "pid": proc.pid,
+        "port": port,
+        "log": str(log_path),
+        "cwd": str(PROJECT_ROOT / "frontend"),
+        "executable": npm,
+        "command": " ".join(command),
+        "started_at": _utcnow_iso(),
+        "project_root": str(PROJECT_ROOT),
+    }

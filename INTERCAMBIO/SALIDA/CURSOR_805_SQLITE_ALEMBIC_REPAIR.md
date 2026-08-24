@@ -4,6 +4,8 @@
 **Repositorio:** jcmencop12026/EMPLEADOS_IA
 **Rama:** cursor/sqlite-alembic-repair-805
 **HEAD inicial:** 02a0e0f7840f0462befd58655a375399a4814bb2
+**HEAD final:** d49c1e8278e3c0dafd62c8a1177faed1dd58b7f7
+**PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/5
 **Base:** main (post merge PR #4)
 
 ## Resumen

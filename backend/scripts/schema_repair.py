@@ -252,6 +252,21 @@ def validate_schema_strict(engine: Engine) -> SchemaValidationResult:
                         repairable=True,
                     ))
 
+            db_fks = _sqlite_foreign_keys(conn, table_name)
+            db_fk_pairs = {(fk["from"], fk["table"]) for fk in db_fks}
+            for fk in table.foreign_keys:
+                local_cols = tuple(sorted(c.name for c in fk.constraint.columns))
+                ref_table = fk.column.table.name
+                for local_col in local_cols:
+                    if (local_col, ref_table) not in db_fk_pairs:
+                        result.issues.append(SchemaIssue(
+                            category="foreign_key",
+                            table=table_name,
+                            name=f"{local_col}->{ref_table}.{fk.column.name}",
+                            message="Foreign key requerida ausente",
+                            repairable=False,
+                        ))
+
             for extra in sorted(set(db_cols) - model_col_names):
                 info = db_cols[extra]
                 legacy_known = extra in LEGACY_EXTRA_COLUMNS.get(table_name, [])
@@ -512,32 +527,10 @@ def sync_alembic_revision(engine: Engine, database_url: str) -> str:
 
 
 def repair_database(database_url: str, *, skip_backup: bool = False) -> dict[str, Any]:
-    db_path = Path(database_url.removeprefix("sqlite:///"))
-    backup_info = None
-    if db_path.exists() and not skip_backup:
-        backup_path = create_verified_backup(db_path)
-        backup_info = verify_backup_file(backup_path, db_path)
+    """Delega en migración legacy segura (CURSOR-805C)."""
+    from scripts.legacy_migration import migrate_legacy_database
 
-    engine = create_engine(database_url, connect_args={"check_same_thread": False})
-    before = validate_schema_strict(engine)
-    after_repair = repair_schema(engine)
-
-    if not after_repair.is_valid:
-        raise SchemaRepairError("Reparación incompleta", validation=after_repair)
-
-    final_revision = sync_alembic_revision(engine, database_url)
-    after = validate_schema_strict(engine)
-    if not after.is_valid:
-        raise SchemaRepairError("Esquema inválido tras stamp", validation=after)
-
-    return {
-        "before": before.to_dict(),
-        "after_repair": after_repair.to_dict(),
-        "after": after.to_dict(),
-        "alembic_revision": final_revision,
-        "backup": backup_info,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    }
+    return migrate_legacy_database(database_url, skip_backup=skip_backup, perform_swap=True)
 
 
 def database_url_to_path(database_url: str) -> Path:
