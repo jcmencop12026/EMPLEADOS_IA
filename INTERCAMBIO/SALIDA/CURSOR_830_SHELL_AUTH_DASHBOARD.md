@@ -5,7 +5,7 @@
 | Campo | Valor |
 |-------|-------|
 | **HEAD INICIAL** | `b887a2e` (Merge PR #5 sqlite-alembic-repair-805) |
-| **HEAD FINAL** | _(ver commit tras push)_ |
+| **HEAD FINAL** | `efa4803` |
 | **RAMA** | `cursor/shell-auth-dashboard-830` |
 | **PR** | _(draft, sin merge)_ |
 | **BASE** | `main` |
