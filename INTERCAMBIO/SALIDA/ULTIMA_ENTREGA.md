@@ -1,40 +1,37 @@
 # Última entrega — EMPLEADOS_IA
 
-**Actualizado:** CURSOR-805E (2026-08-24)
+**Actualizado:** CURSOR-850 (2026-08-24)
 **Repositorio:** jcmencop12026/EMPLEADOS_IA
-**Rama:** cursor/sqlite-alembic-repair-805
-**PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/5
-**Evidencia:** `INTERCAMBIO/SALIDA/CURSOR_805E_WINDOWS_FIX.md`
+**Rama:** cursor/capabilities-tools-knowledge-testlab-850
+**PR:** (draft pendiente)
+**Evidencia:** `INTERCAMBIO/SALIDA/CURSOR_850_CAPABILITIES_TOOLS_KNOWLEDGE_TESTLAB.md`
 
 ## Estado
 
-**CURSOR-805E: PASS** — corrección WinError 32 + BAT exit 255 + idempotencia preservación
+**CURSOR-850: PASS** — Capacidades + Herramientas + Conocimiento + Test Lab V1
 
-### BD LEGACY
-**PRESERVADA** en `data/LEGACY/` con inventario y export
+### Entregables
 
-### MIGRACIÓN LEGACY AUTOMÁTICA
-**NO SE REALIZA** (arquitectura aprobada 805D)
-
-### NUEVA BD ACTUAL
-**CREADA** con esquema SQLAlchemy actual + Alembic HEAD + seed bootstrap
-
-### DATOS LEGACY
-**INVENTARIADOS/EXPORTADOS** en `data/LEGACY/`
+- Catálogo CRUD capacidades, herramientas, fuentes de conocimiento
+- Asignación empleado con enforcement tenant backend
+- Tool policy real (ALLOW/DENY/REQUIRES_APPROVAL)
+- Test Lab E2E con orquestador real
+- Migración `a850c4d5e6f8`
 
 ### Tests
-46 PASSED, 0 FAILED, 0 SKIPPED
 
-## MVP
+62 PASSED, 0 FAILED, 0 SKIPPED
 
-**MVP CERTIFICADO** — ver `INTERCAMBIO/SALIDA/CURSOR_803_CERTIFICACION_MVP.md`
+### Build
+
+npm ci + audit 0 HIGH/CRITICAL + vite build OK
 
 ## Pendientes producción (B)
 
-- PostgreSQL productivo + migración Alembic en entorno real
+- Integración shell/auth PR #8 tras merge a main
+- Auditoría externa PR draft 850
 
 ## Mejoras posteriores (C)
 
-- Shadow Mode avanzado
-- Model Router multi-provider
-- Grillas avanzadas
+- Conectores knowledge avanzados (RAG, OCR, vector DB)
+- Grillas admin extendidas PR #9
