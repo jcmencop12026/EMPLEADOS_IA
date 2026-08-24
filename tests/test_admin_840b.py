@@ -295,3 +295,165 @@ def test_self_role_elevation_denied(client: TestClient, auth_headers):
         json={"role": "viewer"},
     )
     assert res.status_code == 403
+
+
+def test_inactive_db_role_denies_not_fallback(client: TestClient):
+    """Rol inactivo en BD no debe activar fallback hardcoded con permisos elevados."""
+    db = TestingSessionLocal()
+    try:
+        org, _, _ = _create_org_admin(db, "Inactive Role Org")
+        from app.seed_permissions import bootstrap_permissions
+
+        bootstrap_permissions(db)
+        inactive = Role(
+            organization_id=org.id,
+            code="admin",
+            name="Admin Inactivo",
+            is_system=False,
+            is_active=False,
+        )
+        db.add(inactive)
+        db.flush()
+        view_perm = db.query(Permission).filter(Permission.code == "employee.view").first()
+        db.add(RolePermission(role_id=inactive.id, permission_id=view_perm.id))
+        user = User(
+            organization_id=org.id,
+            username=f"inactive-{uuid.uuid4().hex[:6]}",
+            password_hash=hash_password("Inactive840*"),
+            role="admin",
+            status="ACTIVE",
+            is_active=True,
+        )
+        db.add(user)
+        db.commit()
+        perms = user_permissions(user, db)
+        token = _token(client, user.username, "Inactive840*")
+    finally:
+        db.close()
+
+    assert perms == set()
+    assert "admin.user.view" not in perms
+    res = client.get("/api/admin/users", headers=auth_header(token))
+    assert res.status_code == 403
+
+
+def test_db_role_limits_permissions_no_escalation(client: TestClient):
+    """Permisos de BD restringen; nunca se elevan vía fallback hardcoded."""
+    db = TestingSessionLocal()
+    try:
+        org, _, _ = _create_org_admin(db, "Limited Admin Org")
+        from app.seed_permissions import bootstrap_permissions
+
+        bootstrap_permissions(db)
+        admin_role = (
+            db.query(Role)
+            .filter(Role.code == "admin", Role.organization_id.is_(None))
+            .first()
+        )
+        assert admin_role
+        view_perm = db.query(Permission).filter(Permission.code == "employee.view").first()
+        db.query(RolePermission).filter(RolePermission.role_id == admin_role.id).delete()
+        db.add(RolePermission(role_id=admin_role.id, permission_id=view_perm.id))
+        user = User(
+            organization_id=org.id,
+            username=f"limited-admin-{uuid.uuid4().hex[:6]}",
+            password_hash=hash_password("LimitedA840*"),
+            role="admin",
+            status="ACTIVE",
+            is_active=True,
+        )
+        db.add(user)
+        db.commit()
+        perms = user_permissions(user, db)
+        token = _token(client, user.username, "LimitedA840*")
+    finally:
+        db.close()
+
+    assert perms == {"employee.view"}
+    assert "admin.user.view" not in perms
+    assert "operations.execute" not in perms
+    res = client.get("/api/admin/users", headers=auth_header(token))
+    assert res.status_code == 403
+
+
+def test_active_db_role_without_permissions_denies(client: TestClient):
+    db = TestingSessionLocal()
+    try:
+        org, _, _ = _create_org_admin(db, "Empty Perms Org")
+        empty_role = Role(
+            organization_id=org.id,
+            code=f"empty-{uuid.uuid4().hex[:6]}",
+            name="Sin permisos",
+            is_system=False,
+            is_active=True,
+        )
+        db.add(empty_role)
+        user = User(
+            organization_id=org.id,
+            username=f"empty-{uuid.uuid4().hex[:6]}",
+            password_hash=hash_password("Empty840*"),
+            role=empty_role.code,
+            status="ACTIVE",
+            is_active=True,
+        )
+        db.add(user)
+        db.commit()
+        perms = user_permissions(user, db)
+        token = _token(client, user.username, "Empty840*")
+    finally:
+        db.close()
+
+    assert perms == set()
+    res = client.get("/api/admin/users", headers=auth_header(token))
+    assert res.status_code == 403
+
+
+def test_revoked_inactive_role_denies(client: TestClient):
+    db = TestingSessionLocal()
+    try:
+        org, _, _ = _create_org_admin(db, "Revoked Role Org")
+        revoked = Role(
+            organization_id=org.id,
+            code=f"revoked-{uuid.uuid4().hex[:6]}",
+            name="Revocado",
+            is_system=False,
+            is_active=False,
+        )
+        db.add(revoked)
+        db.flush()
+        view_perm = db.query(Permission).filter(Permission.code == "employee.view").first()
+        db.add(RolePermission(role_id=revoked.id, permission_id=view_perm.id))
+        user = User(
+            organization_id=org.id,
+            username=f"revoked-{uuid.uuid4().hex[:6]}",
+            password_hash=hash_password("Revoked840*"),
+            role=revoked.code,
+            status="ACTIVE",
+            is_active=True,
+        )
+        db.add(user)
+        db.commit()
+        perms = user_permissions(user, db)
+        token = _token(client, user.username, "Revoked840*")
+    finally:
+        db.close()
+
+    assert perms == set()
+    res = client.get("/api/admin/users", headers=auth_header(token))
+    assert res.status_code == 403
+
+
+def test_db_error_on_role_lookup_denies(monkeypatch):
+    db = TestingSessionLocal()
+    try:
+        org, user, _ = _create_org_admin(db, "DB Error Org")
+
+        def boom(*_args, **_kwargs):
+            raise RuntimeError("db unavailable")
+
+        monkeypatch.setattr("app.permissions.find_role_record_for_user", boom)
+        perms = user_permissions(user, db)
+    finally:
+        db.close()
+
+    assert perms == set()

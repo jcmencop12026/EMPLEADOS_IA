@@ -108,18 +108,25 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
 }
 
 
-def resolve_role_for_user(db: Session, user: User) -> Role | None:
-    """Rol efectivo: prioriza rol de la organización sobre rol global de sistema."""
+def find_role_record_for_user(db: Session, user: User) -> Role | None:
+    """Registro de rol en BD (activo o inactivo); prioriza org sobre global."""
     return (
         db.query(Role)
         .filter(
             Role.code == user.role,
-            Role.is_active.is_(True),
             (Role.organization_id == user.organization_id) | (Role.organization_id.is_(None)),
         )
         .order_by(Role.organization_id.is_(None).asc())
         .first()
     )
+
+
+def resolve_role_for_user(db: Session, user: User) -> Role | None:
+    """Rol efectivo activo: prioriza rol de la organización sobre rol global de sistema."""
+    role = find_role_record_for_user(db, user)
+    if role and role.is_active:
+        return role
+    return None
 
 
 def role_permission_codes(db: Session, role: Role) -> set[str]:
@@ -136,11 +143,17 @@ def user_permissions(user: User, db: Session | None = None) -> set[str]:
     """
     Fuente de verdad en runtime: permisos del rol en BD (org > global).
     Fallback hardcoded solo si el rol no existe en BD (bootstrap / tests sin seed).
+    Rol inactivo, revocado o sin permisos en BD → DENY (conjunto vacío).
     """
     if db is not None:
-        role = resolve_role_for_user(db, user)
-        if role:
-            return role_permission_codes(db, role)
+        try:
+            role = find_role_record_for_user(db, user)
+            if role is not None:
+                if not role.is_active:
+                    return set()
+                return role_permission_codes(db, role)
+        except Exception:
+            return set()
     return ROLE_PERMISSIONS_FALLBACK.get(user.role, {"employee.view"})
 
 
