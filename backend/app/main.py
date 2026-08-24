@@ -5,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import Base, SessionLocal, engine
-from app import orchestration_models  # noqa: F401 — registra tablas
-from app.routers import agent_factory, assistant, audit, auth, operations, organization
+from app import orchestration_models, notifications  # noqa: F401 — registra tablas/suscriptores
+from app.routers import agent_factory, assistant, audit, auth, notifications as notification_routes, operations, organization
 from app.seed import bootstrap
 
 
@@ -42,6 +42,8 @@ app.include_router(audit.router)
 app.include_router(assistant.router)
 app.include_router(agent_factory.router)
 app.include_router(operations.router)
+app.include_router(notification_routes.notifications_router)
+app.include_router(notification_routes.rules_router)
 
 
 @app.get("/health")

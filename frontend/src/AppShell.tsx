@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { clearToken } from "./api";
+import { clearToken, fetchUnreadCount } from "./api";
 
 const NAV = [
   { to: "/", label: "Inicio", end: true },
@@ -9,10 +9,19 @@ const NAV = [
   { to: "/directorio", label: "Directorio" },
   { to: "/organizacion", label: "Organización" },
   { to: "/auditoria", label: "Auditoría" },
+  { to: "/notificaciones", label: "Notificaciones" },
 ];
 
 export function AppShell() {
   const [collapsed, setCollapsed] = useState(false);
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    const refresh = () => fetchUnreadCount().then(setUnread).catch(() => undefined);
+    refresh();
+    const timer = window.setInterval(refresh, 60000);
+    window.addEventListener("notifications-changed", refresh);
+    return () => { window.clearInterval(timer); window.removeEventListener("notifications-changed", refresh); };
+  }, []);
 
   return (
     <div className={`layout ${collapsed ? "sidebar-collapsed" : ""}`}>
@@ -51,7 +60,10 @@ export function AppShell() {
       </aside>
       <div className="main">
         <header className="topbar">
-          EMPLEADOS_IA · Orquestador E2E · Workspace Salud
+          <span>EMPLEADOS_IA · Orquestador E2E · Workspace Salud</span>
+          <NavLink className="notification-bell" to="/notificaciones" title="Centro de notificaciones">
+            🔔{unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}
+          </NavLink>
         </header>
         <section className="content">
           <Outlet />
