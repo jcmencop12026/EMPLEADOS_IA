@@ -527,10 +527,11 @@ def sync_alembic_revision(engine: Engine, database_url: str) -> str:
 
 
 def repair_database(database_url: str, *, skip_backup: bool = False) -> dict[str, Any]:
-    """Delega en migración legacy segura (CURSOR-805C)."""
-    from scripts.legacy_migration import migrate_legacy_database
+    """Delega en preparación de BD (CURSOR-805D): preservar legacy o crear actual."""
+    from scripts.db_startup import prepare_database
 
-    return migrate_legacy_database(database_url, skip_backup=skip_backup, perform_swap=True)
+    _ = skip_backup
+    return prepare_database(database_url)
 
 
 def database_url_to_path(database_url: str) -> Path:

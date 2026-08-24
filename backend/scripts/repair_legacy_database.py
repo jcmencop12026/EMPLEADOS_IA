@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI — migración SQLite legacy EMPLEADOS_IA (CURSOR-805C)."""
+"""CLI — preservación e inventario SQLite legacy EMPLEADOS_IA (CURSOR-805D)."""
 from __future__ import annotations
 
 import argparse
@@ -12,13 +12,13 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from app.config import settings  # noqa: E402
-from scripts.legacy_migration import (  # noqa: E402
-    LegacyMigrationError,
+from scripts.db_startup import (  # noqa: E402
+    DbStartupError,
     detect_db_scenario,
     database_url_to_path,
-    inventory_legacy_db,
-    migrate_legacy_database,
+    prepare_database,
 )
+from scripts.legacy_preservation import build_full_inventory, preserve_legacy_database  # noqa: E402
 from scripts.schema_repair import validate_schema_strict  # noqa: E402
 from sqlalchemy import create_engine  # noqa: E402
 
@@ -28,29 +28,33 @@ def cmd_audit(database_url: str) -> int:
     scenario = detect_db_scenario(db_path)
     engine = create_engine(database_url, connect_args={"check_same_thread": False}) if db_path.exists() else None
     validation = validate_schema_strict(engine) if engine else None
+    inventory = build_full_inventory(db_path) if db_path.exists() else {"tables": [], "summary": {}}
     output = {
         "scenario": scenario,
-        "inventory": inventory_legacy_db(db_path) if db_path.exists() else {},
+        "inventory": inventory,
         "validation": validation.to_dict() if validation else None,
     }
     print(json.dumps(output, indent=2, ensure_ascii=False))
-    if scenario == "E":
-        return 1
-    if validation and not validation.is_valid and scenario == "C":
-        return 1
-    return 0
+    return 1 if scenario == "D" else 0
 
 
-def cmd_migrate(database_url: str, skip_backup: bool, no_swap: bool) -> int:
+def cmd_preserve(database_url: str) -> int:
+    db_path = database_url_to_path(database_url)
     try:
-        result = migrate_legacy_database(
-            database_url,
-            skip_backup=skip_backup,
-            perform_swap=not no_swap,
-        )
+        report = preserve_legacy_database(db_path, data_dir=db_path.parent)
+        print(json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
+        return 0
+    except DbStartupError as exc:
+        print(json.dumps({"error": str(exc)}))
+        return 2
+
+
+def cmd_prepare(database_url: str) -> int:
+    try:
+        result = prepare_database(database_url)
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0
-    except LegacyMigrationError as exc:
+    except DbStartupError as exc:
         payload = {"error": str(exc)}
         if exc.validation:
             payload["validation"] = exc.validation.to_dict()
@@ -61,21 +65,21 @@ def cmd_migrate(database_url: str, skip_backup: bool, no_swap: bool) -> int:
 def cmd_scenario(database_url: str) -> int:
     scenario = detect_db_scenario(database_url_to_path(database_url))
     print(json.dumps({"scenario": scenario}))
-    return 0 if scenario != "E" else 1
+    return 0 if scenario != "D" else 1
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Migración SQLite legacy EMPLEADOS_IA")
-    parser.add_argument("command", choices=["audit", "migrate", "scenario", "repair"], help="comando")
+    parser = argparse.ArgumentParser(description="Preservación SQLite legacy EMPLEADOS_IA")
+    parser.add_argument("command", choices=["audit", "preserve", "prepare", "scenario", "repair"])
     parser.add_argument("--database-url", default=settings.database_url)
-    parser.add_argument("--skip-backup", action="store_true")
-    parser.add_argument("--no-swap", action="store_true", help="No hacer swap atómico (tests)")
     args = parser.parse_args()
     if args.command == "audit":
         return cmd_audit(args.database_url)
+    if args.command == "preserve":
+        return cmd_preserve(args.database_url)
     if args.command == "scenario":
         return cmd_scenario(args.database_url)
-    return cmd_migrate(args.database_url, args.skip_backup, args.no_swap)
+    return cmd_prepare(args.database_url)
 
 
 if __name__ == "__main__":

@@ -15,7 +15,11 @@ LEGACY → BACKUP VERIFICADO → BD MIGRATING (esquema actual) → MIGRAR DATOS 
 
 ## Resultado
 
-**CURSOR-805C: PASS**
+**SUPERSEDED por CURSOR-805D** — la migración automática legacy→actual fue abandonada.
+
+Ver: `INTERCAMBIO/SALIDA/CURSOR_805D_CIERRE_SQLITE.md`
+
+~~**CURSOR-805C: PASS**~~
 
 ---
 

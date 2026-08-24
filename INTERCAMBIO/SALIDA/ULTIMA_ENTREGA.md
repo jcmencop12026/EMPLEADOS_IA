@@ -1,21 +1,29 @@
 # Última entrega — EMPLEADOS_IA
 
-**Actualizado:** CURSOR-805B (2026-08-24)
+**Actualizado:** CURSOR-805D (2026-08-24)
 **Repositorio:** jcmencop12026/EMPLEADOS_IA
 **Rama:** cursor/sqlite-alembic-repair-805
 **PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/5
-**Evidencia:** `INTERCAMBIO/SALIDA/CURSOR_805B_CORRECCION_CODEX.md`
+**Evidencia:** `INTERCAMBIO/SALIDA/CURSOR_805D_CIERRE_SQLITE.md`
 
 ## Estado
 
-**CURSOR-805B: PASS** — corrección bloqueantes auditoría Codex sobre PR #5
+**CURSOR-805D: PASS** — cierre definitivo SQLite local / Windows
 
-- Validación estricta pre-stamp (A1)
-- Backend sobre BD legacy reparada (A2)
-- Backup automático verificado (A3)
-- PID registry sin matar procesos ajenos (A4/A5)
-- 32/32 tests PASS, build OK
-- Visual smoke test sobre BD legacy reparada
+### BD LEGACY
+**PRESERVADA** en `data/LEGACY/` con inventario y export
+
+### MIGRACIÓN LEGACY AUTOMÁTICA
+**NO SE REALIZA** (arquitectura aprobada 805D)
+
+### NUEVA BD ACTUAL
+**CREADA** con esquema SQLAlchemy actual + Alembic HEAD + seed bootstrap
+
+### DATOS LEGACY
+**INVENTARIADOS/EXPORTADOS** en `data/LEGACY/`
+
+### Tests
+42 PASSED, 0 FAILED, 0 SKIPPED
 
 ## MVP
 
@@ -24,7 +32,6 @@
 ## Pendientes producción (B)
 
 - PostgreSQL productivo + migración Alembic en entorno real
-- Validar ejecución sin empleado ACTIVE en política operativa
 
 ## Mejoras posteriores (C)
 
