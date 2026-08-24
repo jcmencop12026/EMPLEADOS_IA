@@ -179,7 +179,7 @@ export async function fetchEvents(): Promise<WorkEventItem[]> {
 export type NotificationItem = {
   id: string; type: string; severity: string; title: string; message: string;
   source_type: string; source_id?: string; recipient_user_id?: string; recipient_role?: string;
-  status: string; channel: string; created_at: string;
+  status: string; channel: string; created_at: string; metadata?: Record<string, unknown>;
 };
 
 export async function fetchNotifications(filters = ""): Promise<NotificationItem[]> {

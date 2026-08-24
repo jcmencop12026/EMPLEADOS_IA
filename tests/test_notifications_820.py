@@ -1,7 +1,9 @@
 import uuid
 
+from app.events import bus
+from app.events.bus import EventMessage, publish
 from app.models import AuditLog, Notification, Organization, User
-from app.notifications import emit_event
+from app.notifications import emit_event, normalize_event_type
 from app.security import hash_password
 from conftest import TestingSessionLocal
 
@@ -95,3 +97,86 @@ def test_recipient_scope(client, auth_headers):
         db.close()
     # Administrators have notification.manage and can inspect the tenant for operational management.
     assert client.get(f"/api/notifications/{row_id}", headers=auth_headers).status_code == 200
+
+
+def test_subscriber_failure_isolated_logged_and_later_subscriber_runs():
+    calls = []
+
+    def subscriber_a(event, db):
+        calls.append("A")
+
+    def failing_notifications(event, db):
+        calls.append("Notifications")
+        raise RuntimeError("notifications unavailable")
+
+    def subscriber_c(event, db):
+        calls.append("C")
+
+    db = TestingSessionLocal()
+    admin = db.query(User).filter(User.username == "admin").one()
+    handlers = [subscriber_a, failing_notifications, subscriber_c]
+    bus._subscribers.extend(handlers)
+    try:
+        admin.role = "operator"  # representative business mutation in the owning transaction
+        publish(EventMessage(event_type="SYSTEM_ERROR", organization_id=admin.organization_id,
+                             user_id=admin.id, payload={"test": True}), db)
+        db.commit()
+        db.refresh(admin)
+        assert admin.role == "operator"
+        assert calls == ["A", "Notifications", "C"]
+        failure = db.query(AuditLog).filter(AuditLog.action == "event.subscriber_failed").order_by(AuditLog.created_at.desc()).first()
+        assert failure and "notifications unavailable" in (failure.detail or "")
+    finally:
+        admin.role = "admin"
+        db.commit()
+        for handler in handlers:
+            bus._subscribers.remove(handler)
+        db.close()
+
+
+def test_state_contract_valid_and_invalid_transitions(client, auth_headers):
+    direct_ack = _event("TENANT_SECURITY_EVENT", message="Direct ack")
+    assert client.post(f"/api/notifications/{direct_ack}/acknowledge", headers=auth_headers).status_code == 200
+    assert client.post(f"/api/notifications/{direct_ack}/read", headers=auth_headers).status_code == 409
+
+    dismissed = _event("SYSTEM_ERROR", message="Dismiss")
+    assert client.post(f"/api/notifications/{dismissed}/dismiss", headers=auth_headers).status_code == 200
+    assert client.post(f"/api/notifications/{dismissed}/acknowledge", headers=auth_headers).status_code == 409
+
+
+def test_approval_decision_alias_never_approves_rejection():
+    assert normalize_event_type("approval.completed", {"decision": "approve"}) == "APPROVAL_APPROVED"
+    assert normalize_event_type("approval.completed", {"decision": "reject"}) == "APPROVAL_REJECTED"
+
+
+def test_recipient_can_dismiss_own_notification_but_not_another_tenant(client):
+    db = TestingSessionLocal()
+    try:
+        org = Organization(name=f"Recipient-{uuid.uuid4().hex[:6]}")
+        db.add(org); db.flush()
+        viewer = User(organization_id=org.id, username=f"recipient-{uuid.uuid4().hex[:6]}",
+                      password_hash=hash_password("Recipient2026*"), role="viewer")
+        db.add(viewer); db.flush()
+        own = Notification(organization_id=org.id, type="INFO", severity="LOW", title="Propia",
+                           message="Descartable", source_type="test", recipient_user_id=viewer.id)
+        foreign_org = db.query(Organization).filter(Organization.id != org.id).first()
+        foreign = Notification(organization_id=foreign_org.id, type="INFO", severity="LOW", title="Ajena",
+                               message="No visible", source_type="test")
+        db.add_all([own, foreign]); db.commit()
+        username, own_id, foreign_id = viewer.username, own.id, foreign.id
+    finally:
+        db.close()
+    token = client.post("/api/auth/login", json={"username": username, "password": "Recipient2026*"}).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    assert client.post(f"/api/notifications/{own_id}/dismiss", headers=headers).status_code == 200
+    assert client.post(f"/api/notifications/{foreign_id}/dismiss", headers=headers).status_code == 404
+
+
+def test_invalid_login_publishes_tenant_security_event(client):
+    assert client.post("/api/auth/login", json={"username": "admin", "password": "wrong"}).status_code == 401
+    db = TestingSessionLocal()
+    try:
+        from app.orchestration_models import WorkEvent
+        assert db.query(WorkEvent).filter(WorkEvent.event_type == "TENANT_SECURITY_EVENT").first()
+    finally:
+        db.close()

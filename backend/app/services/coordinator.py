@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.enums import (
@@ -25,6 +26,7 @@ from app.orchestration_models import (
     Capability,
     EmployeeCapability,
     EmployeeTask,
+    EmployeeLimits,
     EmployeeToolGrant,
     FinOpsRecord,
     Tool,
@@ -259,8 +261,42 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
 
     start_ms = time.monotonic()
     try:
+        if employee:
+            limits = db.query(EmployeeLimits).filter(EmployeeLimits.employee_id == employee.id).first()
+            spent_today = (
+                db.query(func.coalesce(func.sum(FinOpsRecord.cost), 0.0))
+                .filter(
+                    FinOpsRecord.organization_id == plan.organization_id,
+                    FinOpsRecord.created_at >= _utcnow().replace(hour=0, minute=0, second=0, microsecond=0),
+                )
+                .scalar()
+            ) or 0.0
+            if limits and limits.daily_cost_limit is not None and spent_today >= limits.daily_cost_limit:
+                publish(
+                    EventMessage(
+                        event_type="FINOPS_LIMIT_REACHED",
+                        organization_id=plan.organization_id,
+                        work_plan_id=plan.id,
+                        task_id=task.id,
+                        user_id=user_id,
+                        payload={"employee_id": employee.id, "limit": limits.daily_cost_limit, "spent": spent_today},
+                    ),
+                    db,
+                )
+                raise PermissionError("Límite diario FinOps alcanzado")
         grant = _tool_grant_for_employee(db, task.employee_id, task.tool_id)
         if grant and grant.permission == ToolPermission.DENY:
+            publish(
+                EventMessage(
+                    event_type="TOOL_DENIED",
+                    organization_id=plan.organization_id,
+                    work_plan_id=plan.id,
+                    task_id=task.id,
+                    user_id=user_id,
+                    payload={"employee_id": task.employee_id, "tool_id": task.tool_id},
+                ),
+                db,
+            )
             raise PermissionError("Herramienta denegada para el empleado asignado")
 
         inputs = json.loads(task.inputs_json or "{}")
@@ -296,6 +332,7 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
                 requested_by=user_id,
             )
             db.add(approval)
+            db.flush()
             publish(
                 EventMessage(
                     event_type=WorkEventType.APPROVAL_REQUIRED,
@@ -385,6 +422,19 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
             ),
             db,
         )
+        if not isinstance(exc, PermissionError):
+            publish(
+                EventMessage(
+                    event_type="SYSTEM_ERROR",
+                    organization_id=plan.organization_id,
+                    work_plan_id=plan.id,
+                    task_id=task.id,
+                    user_id=user_id,
+                    payload={"error": str(exc)},
+                ),
+                db,
+            )
+        db.commit()
         return {"task_id": task.id, "status": task.status, "error": str(exc)}
 
 

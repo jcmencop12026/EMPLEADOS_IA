@@ -10,6 +10,7 @@ def write_audit(
     organization_id: str | None = None,
     user_id: str | None = None,
     detail: str | None = None,
+    commit: bool = True,
 ) -> None:
     db.add(
         AuditLog(
@@ -19,4 +20,5 @@ def write_audit(
             detail=detail,
         )
     )
-    db.commit()
+    if commit:
+        db.commit()

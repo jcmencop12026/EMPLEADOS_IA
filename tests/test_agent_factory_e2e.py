@@ -3,7 +3,7 @@ import uuid
 import pytest
 
 from app.models import Organization, User
-from app.orchestration_models import EmployeeTask
+from app.orchestration_models import EmployeeTask, WorkEvent
 from app.security import hash_password
 from conftest import TestingSessionLocal, auth_header
 
@@ -88,6 +88,13 @@ def test_create_configure_test_certify_publish_activate(client, token):
     act = client.post(f"/api/agent-factory/employees/{emp_id}/activate", headers=auth_header(token))
     assert act.status_code == 200
     assert act.json()["lifecycle_status"] == "ACTIVE"
+    db = TestingSessionLocal()
+    try:
+        event_types = {row.event_type for row in db.query(WorkEvent).all()
+                       if emp_id in (row.payload_json or "")}
+        assert {"employee.created", "employee.certified", "employee.activated"} <= event_types
+    finally:
+        db.close()
 
 
 def test_orchestrator_selects_published_employee(client, token):
@@ -258,5 +265,40 @@ def test_deny_blocks_orchestrator_execution(client, token):
         ).json()
         assert orch["status"] == "FAILED"
         assert "denegada" in (orch.get("error") or "").lower()
+        db = TestingSessionLocal()
+        try:
+            assert db.query(WorkEvent).filter(WorkEvent.work_plan_id == orch["plan_id"],
+                                              WorkEvent.event_type == "TOOL_DENIED").first()
+        finally:
+            db.close()
+    finally:
+        _restore_paused(client, token, paused)
+
+
+def test_finops_limit_reached_is_published_from_real_execution(client, token):
+    paused = _pause_docint_active(client, token)
+    try:
+        caps = client.get("/api/agent-factory/capabilities", headers=auth_header(token)).json()
+        tools = client.get("/api/agent-factory/tools", headers=auth_header(token)).json()
+        cap = next(c for c in caps if c["code"] == "docint")
+        tool = next(t for t in tools if t["code"] == "docint")
+        emp = client.post("/api/agent-factory/employees", headers=auth_header(token),
+                          json={"name": f"FinOps {uuid.uuid4().hex[:6]}", "specialty": "DOCINT"}).json()
+        client.patch(f"/api/agent-factory/employees/{emp['id']}", headers=auth_header(token), json={
+            "capability_ids": [cap["id"]], "tools": [{"tool_id": tool["id"], "permission": "ALLOW"}],
+            "limits": {"daily_cost_limit": 0},
+        })
+        for step in ("test", "certify", "publish", "activate"):
+            client.post(f"/api/agent-factory/employees/{emp['id']}/{step}", headers=auth_header(token))
+        result = client.post("/api/assistant/ask", headers=auth_header(token), json={
+            "message": "FinOps limit", "context": {"tool": "docint", "documents": []},
+        }).json()
+        assert result["status"] == "FAILED"
+        db = TestingSessionLocal()
+        try:
+            assert db.query(WorkEvent).filter(WorkEvent.work_plan_id == result["plan_id"],
+                                              WorkEvent.event_type == "FINOPS_LIMIT_REACHED").first()
+        finally:
+            db.close()
     finally:
         _restore_paused(client, token, paused)

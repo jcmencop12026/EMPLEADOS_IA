@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { fetchNotifications, NotificationItem, transitionNotification } from "../api";
 
 function sourcePath(item: NotificationItem) {
+  if (item.type === "APPROVAL_REQUIRED" && item.source_id && item.metadata?.approval_id) {
+    return `/ejecuciones/${item.source_id}?approval=${encodeURIComponent(String(item.metadata.approval_id))}`;
+  }
   if (!item.source_id) return null;
-  if (item.type === "APPROVAL_REQUIRED") return "/operaciones";
   if (item.source_type === "work_plan") return `/ejecuciones/${item.source_id}`;
   if (item.source_type === "employee") return `/empleados/${item.source_id}`;
   return null;
@@ -33,7 +35,7 @@ export function NotificationsPage() {
     <div className="page-header"><h1>Centro de notificaciones</h1><div className="muted">Alertas operativas y solicitudes que requieren atención.</div></div>
     <div className="notification-filters panel">
       <input aria-label="Buscar" placeholder="Buscar" value={search} onChange={(e) => setSearch(e.target.value)} />
-      <select aria-label="Estado" value={status} onChange={(e) => setStatus(e.target.value)}><option value="">Estado</option>{["NEW","READ","ACKNOWLEDGED","RESOLVED","DISMISSED"].map(x=><option key={x}>{x}</option>)}</select>
+      <select aria-label="Estado" value={status} onChange={(e) => setStatus(e.target.value)}><option value="">Estado</option>{["NEW","READ","ACKNOWLEDGED","DISMISSED"].map(x=><option key={x}>{x}</option>)}</select>
       <select aria-label="Severidad" value={severity} onChange={(e) => setSeverity(e.target.value)}><option value="">Severidad</option>{["LOW","MEDIUM","HIGH","CRITICAL"].map(x=><option key={x}>{x}</option>)}</select>
       <select aria-label="Tipo" value={type} onChange={(e) => setType(e.target.value)}><option value="">Tipo</option>{[...new Set(rows.map(r=>r.type))].map(x=><option key={x}>{x}</option>)}</select>
       <input aria-label="Fecha" type="date" value={date} onChange={(e) => setDate(e.target.value)} />

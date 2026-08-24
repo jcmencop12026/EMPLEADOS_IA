@@ -38,3 +38,6 @@
 - Shadow Mode avanzado
 - Model Router multi-provider
 - Grillas avanzadas
+# Última entrega
+
+Ver `CODEX_820B_CORRECCION_POST_AUDITORIA.md` — corrección post-auditoría del PR #7, resultado `CODEX-820B PASS`.

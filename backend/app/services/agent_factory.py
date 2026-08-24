@@ -6,7 +6,6 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.audit import write_audit
 from app.enums import (
     CertificationResult,
     EmployeeEventType,
@@ -109,7 +108,7 @@ def _emit(db: Session, org_id: str, user_id: str, event_type: str, employee_id: 
         ),
         db,
     )
-    write_audit(db, action=event_type, organization_id=org_id, user_id=user_id, detail=json.dumps(payload or {})[:2000])
+    db.commit()
 
 
 def list_employees(

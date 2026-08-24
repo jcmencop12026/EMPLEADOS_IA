@@ -14,6 +14,12 @@ from app.schemas_notifications import AlertRuleIn
 
 notifications_router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 rules_router = APIRouter(prefix="/api/alert-rules", tags=["alert-rules"])
+ALLOWED_TRANSITIONS = {
+    "NEW": {"READ", "ACKNOWLEDGED", "DISMISSED"},
+    "READ": {"ACKNOWLEDGED", "DISMISSED"},
+    "ACKNOWLEDGED": {"DISMISSED"},
+    "DISMISSED": set(),
+}
 
 
 def _visible(query, user: User):
@@ -83,10 +89,12 @@ def get_notification(notification_id: str, db: Session = Depends(get_db), user: 
 
 
 def _transition(notification_id: str, target: str, db: Session, user: User):
-    permission = "notification.acknowledge" if target == "ACKNOWLEDGED" else "notification.manage"
+    permission = "notification.acknowledge" if target == "ACKNOWLEDGED" else "notification.view"
     if target == "READ": permission = "notification.view"
     check_permission(user, permission)
     row = _get_notification(notification_id, db, user)
+    if target not in ALLOWED_TRANSITIONS.get(row.status, set()):
+        raise HTTPException(status_code=409, detail=f"Transición inválida: {row.status} -> {target}")
     now = datetime.now(timezone.utc)
     row.status = target
     if target == "READ": row.read_at = row.read_at or now

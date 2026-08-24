@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import type { ExecutionDetail, WorkEventItem } from "../api";
 import { decideApproval, fetchApprovals, fetchEvents, fetchExecution } from "../api";
 
 export function ExecutionDetailPage() {
   const { planId } = useParams<{ planId: string }>();
+  const [searchParams] = useSearchParams();
+  const approvalId = searchParams.get("approval");
   const [detail, setDetail] = useState<ExecutionDetail | null>(null);
   const [events, setEvents] = useState<WorkEventItem[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +22,7 @@ export function ExecutionDetailPage() {
       ]);
       setDetail(d);
       setEvents(ev.filter((e) => e.work_plan_id === planId));
-      const pending = approvals.find((a) => a.work_plan_id === planId);
+      const pending = approvals.find((a) => a.work_plan_id === planId && (!approvalId || a.id === approvalId));
       if (pending && d.approval_status === "PENDING") {
         setDetail({ ...d, approval_status: "PENDING" });
       }
@@ -38,7 +40,7 @@ export function ExecutionDetailPage() {
     setActing(true);
     try {
       const approvals = await fetchApprovals();
-      const pending = approvals.find((a) => a.work_plan_id === planId);
+      const pending = approvals.find((a) => a.work_plan_id === planId && (!approvalId || a.id === approvalId));
       if (!pending) return;
       const res = await decideApproval(pending.id, decision);
       setDetail(res);

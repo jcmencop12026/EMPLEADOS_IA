@@ -1,4 +1,5 @@
 import json
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -20,6 +21,7 @@ class EventMessage:
 
 
 _subscribers: list[Callable[[EventMessage, Session], None]] = []
+logger = logging.getLogger(__name__)
 
 
 def subscribe(handler: Callable[[EventMessage, Session], None]) -> None:
@@ -33,6 +35,7 @@ def _audit_subscriber(event: EventMessage, db: Session) -> None:
         organization_id=event.organization_id,
         user_id=event.user_id,
         detail=json.dumps(event.payload or {}, ensure_ascii=False)[:4000],
+        commit=False,
     )
 
 
@@ -46,7 +49,6 @@ def _persist_subscriber(event: EventMessage, db: Session) -> None:
             payload_json=json.dumps(event.payload or {}, ensure_ascii=False),
         )
     )
-    db.commit()
 
 
 subscribe(_audit_subscriber)
@@ -55,4 +57,32 @@ subscribe(_persist_subscriber)
 
 def publish(event: EventMessage, db: Session) -> None:
     for handler in _subscribers:
-        handler(event, db)
+        try:
+            # A SAVEPOINT isolates optional subscribers from the domain transaction.
+            # Subscribers may flush, but only the owning use case may commit.
+            with db.begin_nested():
+                handler(event, db)
+                db.flush()
+        except Exception as exc:  # noqa: BLE001 - subscriber isolation is intentional
+            handler_name = getattr(handler, "__qualname__", repr(handler))
+            logger.exception("Event subscriber %s failed for %s", handler_name, event.event_type)
+            try:
+                with db.begin_nested():
+                    write_audit(
+                        db,
+                        action="event.subscriber_failed",
+                        organization_id=event.organization_id,
+                        user_id=event.user_id,
+                        detail=json.dumps(
+                            {
+                                "event_type": str(event.event_type),
+                                "subscriber": handler_name,
+                                "error": str(exc),
+                            },
+                            ensure_ascii=False,
+                        )[:4000],
+                        commit=False,
+                    )
+                    db.flush()
+            except Exception:  # keep logging available even if audit persistence fails
+                logger.exception("Could not audit subscriber failure for %s", event.event_type)

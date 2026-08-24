@@ -17,7 +17,7 @@ SUPPORTED_EVENTS = {
 
 EVENT_ALIASES = {
     "approval.required": "APPROVAL_REQUIRED",
-    "approval.completed": "APPROVAL_APPROVED",
+    "task.started": "EXECUTION_STARTED",
     "work.failed": "EXECUTION_FAILED",
     "task.failed": "EXECUTION_FAILED",
     "work.completed": "EXECUTION_SUCCEEDED",
@@ -65,10 +65,18 @@ def _matches(rule: AlertRule, payload: dict[str, Any]) -> bool:
     return all(payload.get(key) == value for key, value in expected.items())
 
 
-def emit_event(event_type: str, organization_id: str, source_type: str, source_id: str | None,
-               payload: dict[str, Any] | None, db: Session) -> list[Notification]:
-    normalized = EVENT_ALIASES.get(str(event_type), str(event_type).upper())
+def normalize_event_type(event_type: str, payload: dict[str, Any] | None = None) -> str:
     body = payload or {}
+    raw_type = str(event_type)
+    if raw_type == "approval.completed":
+        return "APPROVAL_APPROVED" if body.get("decision") == "approve" else "APPROVAL_REJECTED"
+    return EVENT_ALIASES.get(raw_type, raw_type.upper())
+
+
+def emit_event(event_type: str, organization_id: str, source_type: str, source_id: str | None,
+               payload: dict[str, Any] | None, db: Session, *, commit: bool = True) -> list[Notification]:
+    body = payload or {}
+    normalized = normalize_event_type(event_type, body)
     rules = db.query(AlertRule).filter(
         AlertRule.organization_id == organization_id,
         AlertRule.event_type == normalized,
@@ -99,13 +107,19 @@ def emit_event(event_type: str, organization_id: str, source_type: str, source_i
         )
         CHANNELS["IN_APP"].deliver(notification, db)
         created.append(notification)
-    db.commit()
+    db.flush()
+    if commit:
+        db.commit()
     return created
 
 
 def _event_subscriber(event: EventMessage, db: Session) -> None:
-    emit_event(str(event.event_type), event.organization_id, "work_plan",
-               event.work_plan_id or event.task_id, event.payload, db)
+    payload = event.payload or {}
+    if payload.get("employee_id"):
+        source_type, source_id = "employee", payload["employee_id"]
+    else:
+        source_type, source_id = "work_plan", event.work_plan_id or event.task_id
+    emit_event(str(event.event_type), event.organization_id, source_type, source_id, payload, db, commit=False)
 
 
 subscribe(_event_subscriber)
