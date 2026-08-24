@@ -52,7 +52,13 @@ def cmd_prepare(database_url: str) -> int:
         return 2
 
 
-def cmd_start(database_url: str, backend_port: int, frontend_port: int) -> int:
+def cmd_start(
+    database_url: str,
+    backend_port: int,
+    frontend_port: int,
+    *,
+    open_browser: bool = False,
+) -> int:
     prep = cmd_prepare(database_url)
     if prep != 0:
         return prep
@@ -80,12 +86,18 @@ def cmd_start(database_url: str, backend_port: int, frontend_port: int) -> int:
             return 5
 
         pid_path = save_pid_registry(registry)
+        frontend_url = f"http://127.0.0.1:{frontend_port}/"
         print(json.dumps({
             "status": "ok",
             "backend_url": f"http://127.0.0.1:{backend_port}",
-            "frontend_url": f"http://127.0.0.1:{frontend_port}",
+            "frontend_url": frontend_url,
             "pid_file": str(pid_path),
         }))
+        if open_browser:
+            import webbrowser
+
+            webbrowser.open(frontend_url)
+        print("EMPLEADOS_IA iniciado correctamente", file=sys.stderr)
         return 0
     except Exception as exc:
         stop_registered_services()
@@ -111,12 +123,22 @@ def main() -> int:
     parser.add_argument("--database-url", default=settings.database_url)
     parser.add_argument("--backend-port", type=int, default=8010)
     parser.add_argument("--frontend-port", type=int, default=5180)
+    parser.add_argument(
+        "--open-browser",
+        action="store_true",
+        help="Abrir navegador en frontend_url tras arranque exitoso",
+    )
     args = parser.parse_args()
 
     if args.command == "prepare":
         return cmd_prepare(args.database_url)
     if args.command == "start":
-        return cmd_start(args.database_url, args.backend_port, args.frontend_port)
+        return cmd_start(
+            args.database_url,
+            args.backend_port,
+            args.frontend_port,
+            open_browser=args.open_browser,
+        )
     if args.command == "stop":
         return cmd_stop()
     if args.command == "scenario":
