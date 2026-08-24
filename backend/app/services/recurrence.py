@@ -1,6 +1,7 @@
 """Cálculo de próximas ejecuciones con timezone (CURSOR-810)."""
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -28,6 +29,17 @@ def parse_recurrence(raw: str | None) -> dict[str, Any]:
 
 def occurrence_key(scheduled_for: datetime) -> str:
     return scheduled_for.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
+def internal_event_occurrence_key(event_type: str, payload: dict[str, Any] | None) -> str:
+    """Clave idempotente estable para INTERNAL_EVENT (automation + event + occurrence)."""
+    data = payload or {}
+    explicit = data.get("idempotency_key") or data.get("event_id")
+    if explicit:
+        return f"evt:{event_type}:{explicit}"
+    stable = json.dumps({"event_type": event_type, "payload": data}, sort_keys=True, default=str)
+    digest = hashlib.sha256(stable.encode()).hexdigest()[:24]
+    return f"evt:{event_type}:{digest}"
 
 
 def _as_utc(dt: datetime) -> datetime:

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
@@ -25,9 +26,24 @@ from app.enums import (
 from app.orchestration_models import AIEmployee, ApprovalRequest, FinOpsRecord, WorkPlan
 from app.schemas_automation import AutomationCreate, AutomationUpdate
 from app.services.coordinator import execute_plan, route_task
-from app.services.recurrence import compute_next_run, occurrence_key, parse_recurrence
+from app.services.recurrence import compute_next_run, internal_event_occurrence_key, occurrence_key, parse_recurrence
 
 MAX_RETRIES_LIMIT = 10
+MAX_RETRY_DELAY_SECONDS = 300
+
+
+class _RunExecutionGuard:
+    """Marca una ejecución como cancelada (p. ej. timeout) para ignorar resultados tardíos."""
+
+    def __init__(self) -> None:
+        self._cancelled = threading.Event()
+
+    def cancel(self) -> None:
+        self._cancelled.set()
+
+    @property
+    def cancelled(self) -> bool:
+        return self._cancelled.is_set()
 
 
 def _utcnow() -> datetime:
@@ -43,7 +59,11 @@ def _as_utc(dt: datetime | None) -> datetime | None:
 
 
 def _dump_recurrence(data: dict[str, Any] | None) -> str | None:
-    return json.dumps(data, ensure_ascii=False) if data else None
+    if not data:
+        return None
+    if hasattr(data, "model_dump"):
+        data = data.model_dump(exclude_none=True)
+    return json.dumps(data, ensure_ascii=False)
 
 
 def _load_recurrence(raw: str | None) -> dict[str, Any] | None:
@@ -391,15 +411,25 @@ def _sum_run_cost(db: Session, work_plan_id: str | None) -> float | None:
     return float(total) if total is not None else None
 
 
-def _run_with_timeout(fn: Callable[[], dict[str, Any]], timeout_seconds: int | None) -> dict[str, Any]:
+def _run_with_timeout(
+    fn: Callable[[], dict[str, Any]],
+    timeout_seconds: int | None,
+    guard: _RunExecutionGuard | None = None,
+) -> dict[str, Any]:
     if not timeout_seconds or timeout_seconds <= 0:
         return fn()
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(fn)
-        try:
-            return future.result(timeout=timeout_seconds)
-        except FuturesTimeout as exc:
-            raise TimeoutError(f"timeout_seconds excedido ({timeout_seconds}s)") from exc
+    executor = ThreadPoolExecutor(max_workers=1)
+    future = executor.submit(fn)
+    try:
+        return future.result(timeout=timeout_seconds)
+    except FuturesTimeout as exc:
+        if guard:
+            guard.cancel()
+        future.cancel()
+        executor.shutdown(wait=False, cancel_futures=True)
+        raise TimeoutError(f"timeout_seconds excedido ({timeout_seconds}s)") from exc
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
 
 
 def _create_pre_execution_approval(
@@ -439,7 +469,11 @@ def _invoke_orchestration(
     automation: Automation,
     run: AutomationRun,
     user_id: str,
+    guard: _RunExecutionGuard | None = None,
 ) -> dict[str, Any]:
+    if guard and guard.cancelled:
+        return {"status": WorkPlanStatus.FAILED, "error": "Ejecución cancelada por timeout"}
+
     workflow = json.loads(automation.workflow_config_json) if automation.workflow_config_json else {}
     context = dict(workflow)
     if automation.employee_id:
@@ -453,7 +487,12 @@ def _invoke_orchestration(
             if plan and plan.status == WorkPlanStatus.WAITING_APPROVAL:
                 return {"plan_id": plan.id, "status": plan.status}
             if plan and plan.approval_status == ApprovalStatus.APPROVED:
-                return execute_plan(db, plan_id=plan.id, user_id=user_id)
+                result = execute_plan(db, plan_id=plan.id, user_id=user_id)
+                if guard and guard.cancelled:
+                    return {"status": WorkPlanStatus.FAILED, "error": "Ejecución cancelada por timeout"}
+                return result
+        if guard and guard.cancelled:
+            return {"status": WorkPlanStatus.FAILED, "error": "Ejecución cancelada por timeout"}
         result = route_task(
             db,
             organization_id=automation.organization_id,
@@ -462,13 +501,17 @@ def _invoke_orchestration(
             context=context,
             auto_execute=False,
         )
+        if guard and guard.cancelled:
+            return {"status": WorkPlanStatus.FAILED, "error": "Ejecución cancelada por timeout"}
         plan = db.query(WorkPlan).filter(WorkPlan.id == result.get("plan_id")).first()
         if plan:
             _create_pre_execution_approval(db, automation=automation, plan=plan, user_id=user_id, run=run)
             return {"plan_id": plan.id, "status": WorkPlanStatus.WAITING_APPROVAL}
         return result
 
-    return route_task(
+    if guard and guard.cancelled:
+        return {"status": WorkPlanStatus.FAILED, "error": "Ejecución cancelada por timeout"}
+    result = route_task(
         db,
         organization_id=automation.organization_id,
         user_id=user_id,
@@ -476,6 +519,9 @@ def _invoke_orchestration(
         context=context,
         auto_execute=True,
     )
+    if guard and guard.cancelled:
+        return {"status": WorkPlanStatus.FAILED, "error": "Ejecución cancelada por timeout"}
+    return result
 
 
 def trigger_run(
@@ -485,9 +531,10 @@ def trigger_run(
     user_id: str,
     trigger_source: str,
     scheduled_for: datetime | None = None,
+    occurrence_key_override: str | None = None,
 ) -> AutomationRun:
     when = scheduled_for or _utcnow()
-    key = occurrence_key(when)
+    key = occurrence_key_override or occurrence_key(when)
 
     if automation.max_runs_per_day is not None and _runs_today_count(db, automation.id) >= automation.max_runs_per_day:
         skip_key = f"{key}-limit-{uuid.uuid4().hex[:8]}"
@@ -543,7 +590,16 @@ def _apply_run_result(
     automation: Automation,
     run: AutomationRun,
     result: dict[str, Any],
+    guard: _RunExecutionGuard | None = None,
 ) -> None:
+    if guard and guard.cancelled:
+        return
+    db.refresh(run)
+    if run.status not in (AutomationRunStatus.RUNNING, AutomationRunStatus.QUEUED):
+        return
+    if run.finished_at is not None:
+        return
+
     plan_id = result.get("plan_id")
     run.work_plan_id = plan_id or run.work_plan_id
     run.result_reference_json = json.dumps(result, ensure_ascii=False, default=str)
@@ -610,22 +666,43 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
 
     # max_retries = reintentos DESPUÉS del intento inicial (intento 1 + max_retries reintentos)
     max_attempts = automation.max_retries + 1
+    guard = _RunExecutionGuard()
+    timed_out = False
     while run.attempt <= max_attempts:
         try:
             result = _run_with_timeout(
-                lambda: _invoke_orchestration(db, automation=automation, run=run, user_id=user_id),
+                lambda: _invoke_orchestration(
+                    db, automation=automation, run=run, user_id=user_id, guard=guard,
+                ),
                 automation.timeout_seconds,
+                guard=guard,
             )
+            if guard.cancelled or timed_out:
+                break
             if run.status == AutomationRunStatus.WAITING_APPROVAL:
                 return run
-            _apply_run_result(db, automation=automation, run=run, result=result)
+            _apply_run_result(db, automation=automation, run=run, result=result, guard=guard)
         except TimeoutError as exc:
+            timed_out = True
+            guard.cancel()
             run.status = AutomationRunStatus.FAILED
             run.error = str(exc)
+            run.finished_at = _utcnow()
+            db.commit()
+            write_audit(
+                db,
+                action="automation.timeout",
+                organization_id=automation.organization_id,
+                user_id=user_id,
+                detail=f"{automation.name}:{run.id}",
+            )
+            break
         except Exception as exc:
             run.status = AutomationRunStatus.FAILED
             run.error = str(exc)
 
+        if timed_out:
+            break
         if run.status == AutomationRunStatus.WAITING_APPROVAL:
             break
         if run.status != AutomationRunStatus.FAILED:
@@ -642,7 +719,8 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
             detail=f"{automation.name}:attempt={run.attempt}",
         )
         if automation.retry_delay_seconds > 0:
-            time.sleep(min(automation.retry_delay_seconds, 1))
+            delay = min(automation.retry_delay_seconds, MAX_RETRY_DELAY_SECONDS)
+            time.sleep(delay)
         db.commit()
 
     if run.status != AutomationRunStatus.WAITING_APPROVAL:
@@ -674,6 +752,14 @@ def sync_run_from_work_plan(db: Session, *, work_plan_id: str, plan_status: str,
     run = db.query(AutomationRun).filter(AutomationRun.work_plan_id == work_plan_id).first()
     if not run:
         return None
+    if (
+        run.finished_at
+        and run.status == AutomationRunStatus.FAILED
+        and plan_status == WorkPlanStatus.COMPLETED
+        and run.error
+        and "timeout" in run.error.lower()
+    ):
+        return run
     automation = db.query(Automation).filter(Automation.id == run.automation_id).first()
     if plan_status == WorkPlanStatus.COMPLETED:
         run.status = AutomationRunStatus.SUCCEEDED
@@ -727,6 +813,7 @@ def trigger_internal_event(
         .all()
     )
     runs: list[AutomationRun] = []
+    idem_key = internal_event_occurrence_key(event_type, payload)
     for automation in rows:
         cfg = _load_recurrence(automation.recurrence_config_json) or {}
         if cfg.get("event_type") and cfg.get("event_type") != event_type:
@@ -737,6 +824,7 @@ def trigger_internal_event(
             automation=automation,
             user_id=actor,
             trigger_source=AutomationTriggerType.INTERNAL_EVENT,
+            occurrence_key_override=idem_key,
         )
         runs.append(run)
     return runs

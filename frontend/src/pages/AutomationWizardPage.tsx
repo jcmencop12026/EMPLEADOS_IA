@@ -6,6 +6,7 @@ import {
   fetchAutomation,
   fetchEmployees,
   updateAutomation,
+  type AutomationItem,
   type EmployeeItem,
 } from "../api";
 
@@ -26,6 +27,7 @@ type FormState = {
   schedule_type: string;
   timezone: string;
   trigger_type: string;
+  event_type: string;
   start_at: string;
   hour: number;
   minute: number;
@@ -38,6 +40,7 @@ type FormState = {
   max_cost_per_run: string;
   estimated_cost: string;
   requires_approval: boolean;
+  workflow_tool: string;
 };
 
 const defaultForm: FormState = {
@@ -47,6 +50,7 @@ const defaultForm: FormState = {
   schedule_type: "DAILY",
   timezone: "UTC",
   trigger_type: "SCHEDULE",
+  event_type: "",
   start_at: "",
   hour: 9,
   minute: 0,
@@ -59,7 +63,38 @@ const defaultForm: FormState = {
   max_cost_per_run: "",
   estimated_cost: "",
   requires_approval: false,
+  workflow_tool: "docint",
 };
+
+function automationToForm(auto: AutomationItem): FormState {
+  const rec = auto.recurrence || {};
+  const wf = auto.workflow || {};
+  const startLocal = auto.start_at
+    ? new Date(auto.start_at).toISOString().slice(0, 16)
+    : "";
+  return {
+    name: auto.name,
+    description: auto.description || "",
+    objective: auto.objective,
+    schedule_type: auto.schedule_type || "DAILY",
+    timezone: auto.timezone || "UTC",
+    trigger_type: auto.trigger_type,
+    event_type: rec.event_type || "",
+    start_at: startLocal,
+    hour: rec.hour ?? 9,
+    minute: rec.minute ?? 0,
+    interval_minutes: rec.interval_minutes ?? 60,
+    employee_id: auto.employee_id || "",
+    max_runs_per_day: auto.max_runs_per_day ?? 10,
+    max_retries: auto.max_retries ?? 0,
+    retry_delay_seconds: auto.retry_delay_seconds ?? 60,
+    timeout_seconds: auto.timeout_seconds != null ? String(auto.timeout_seconds) : "",
+    max_cost_per_run: auto.max_cost_per_run != null ? String(auto.max_cost_per_run) : "",
+    estimated_cost: wf.estimated_cost != null ? String(wf.estimated_cost) : "",
+    requires_approval: auto.requires_approval,
+    workflow_tool: String(wf.tool || "docint"),
+  };
+}
 
 export function AutomationWizardPage() {
   const navigate = useNavigate();
@@ -78,20 +113,7 @@ export function AutomationWizardPage() {
   useEffect(() => {
     if (!automationId) return;
     fetchAutomation(automationId)
-      .then((auto) => {
-        setForm({
-          ...defaultForm,
-          name: auto.name,
-          description: auto.description || "",
-          objective: auto.objective,
-          schedule_type: auto.schedule_type || "DAILY",
-          timezone: auto.timezone,
-          trigger_type: auto.trigger_type,
-          employee_id: auto.employee_id || "",
-          requires_approval: auto.requires_approval,
-          max_runs_per_day: 10,
-        });
-      })
+      .then((auto) => setForm(automationToForm(auto)))
       .catch((e) => setError(e instanceof Error ? e.message : "No se pudo cargar la automatización"));
   }, [automationId]);
 
@@ -99,6 +121,9 @@ export function AutomationWizardPage() {
     if (current === 0 && !form.name.trim()) return "Ingrese un nombre.";
     if (current === 1 && !form.objective.trim()) return "Ingrese el objetivo.";
     if (current === 2 && form.trigger_type === "SCHEDULE" && !form.schedule_type) return "Seleccione frecuencia.";
+    if (current === 2 && form.trigger_type === "INTERNAL_EVENT" && !form.event_type.trim()) {
+      return "Ingrese el tipo de evento interno.";
+    }
     if (current === 4 && form.max_retries < 0) return "Los reintentos no pueden ser negativos.";
     if (current === 4 && form.max_retries > 10) return "Máximo 10 reintentos después del intento inicial.";
     return null;
@@ -119,8 +144,18 @@ export function AutomationWizardPage() {
     setStep((s) => Math.max(s - 1, 0));
   }
 
+  function buildRecurrence() {
+    if (form.trigger_type === "INTERNAL_EVENT") {
+      return { event_type: form.event_type.trim() };
+    }
+    if (form.schedule_type === "INTERVAL") {
+      return { interval_minutes: form.interval_minutes };
+    }
+    return { hour: form.hour, minute: form.minute };
+  }
+
   function buildPayload() {
-    const workflow: Record<string, unknown> = { tool: "docint" };
+    const workflow: Record<string, unknown> = { tool: form.workflow_tool };
     if (form.estimated_cost) workflow.estimated_cost = Number(form.estimated_cost);
     return {
       name: form.name.trim(),
@@ -130,10 +165,7 @@ export function AutomationWizardPage() {
       schedule_type: form.trigger_type === "SCHEDULE" ? form.schedule_type : null,
       timezone: form.timezone,
       start_at: form.start_at ? new Date(form.start_at).toISOString() : null,
-      recurrence:
-        form.schedule_type === "INTERVAL"
-          ? { interval_minutes: form.interval_minutes }
-          : { hour: form.hour, minute: form.minute },
+      recurrence: buildRecurrence(),
       employee_id: form.employee_id || null,
       requires_approval: form.requires_approval,
       max_runs_per_day: form.max_runs_per_day,
@@ -201,6 +233,15 @@ export function AutomationWizardPage() {
                 <option value="INTERNAL_EVENT">Evento interno</option>
               </select>
             </label>
+            {form.trigger_type === "INTERNAL_EVENT" && (
+              <label>Tipo de evento *
+                <input
+                  value={form.event_type}
+                  onChange={(e) => setForm({ ...form, event_type: e.target.value })}
+                  placeholder="ej. rips.validated"
+                />
+              </label>
+            )}
             {form.trigger_type === "SCHEDULE" && (
               <>
                 <label>Frecuencia
@@ -243,6 +284,12 @@ export function AutomationWizardPage() {
             <label>Retardo entre reintentos (s)<input type="number" min={0} value={form.retry_delay_seconds} onChange={(e) => setForm({ ...form, retry_delay_seconds: Number(e.target.value) })} /></label>
             <label>Timeout (s, opcional)<input value={form.timeout_seconds} onChange={(e) => setForm({ ...form, timeout_seconds: e.target.value })} placeholder="Sin límite" /></label>
             <label>Costo máx./ejecución<input value={form.max_cost_per_run} onChange={(e) => setForm({ ...form, max_cost_per_run: e.target.value })} placeholder="Opcional" /></label>
+            <label>Herramienta workflow
+              <select value={form.workflow_tool} onChange={(e) => setForm({ ...form, workflow_tool: e.target.value })}>
+                <option value="docint">DOCINT</option>
+                <option value="rips">RIPS</option>
+              </select>
+            </label>
             <label>Costo estimado (pre-validación)<input value={form.estimated_cost} onChange={(e) => setForm({ ...form, estimated_cost: e.target.value })} placeholder="Opcional" /></label>
           </>
         )}
@@ -256,8 +303,12 @@ export function AutomationWizardPage() {
           <div className="review-box">
             <p><strong>{form.name}</strong></p>
             <p className="muted">{form.objective}</p>
-            <p>{form.schedule_type} · {form.hour}:{String(form.minute).padStart(2, "0")} {form.timezone}</p>
-            <p>Reintentos: {form.max_retries} · Aprobación: {form.requires_approval ? "Sí" : "No"}</p>
+            {form.trigger_type === "SCHEDULE" ? (
+              <p>{form.schedule_type} · {form.hour}:{String(form.minute).padStart(2, "0")} {form.timezone}</p>
+            ) : (
+              <p>Evento: {form.event_type}</p>
+            )}
+            <p>Reintentos: {form.max_retries} · Timeout: {form.timeout_seconds || "—"} · Aprobación: {form.requires_approval ? "Sí" : "No"}</p>
           </div>
         )}
         {error && <p className="error" role="alert">{error}</p>}
