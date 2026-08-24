@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.audit import write_audit
+from app.events.subscriber_session import SubscriberSession
 from app.orchestration_models import WorkEvent
 
 
@@ -59,9 +60,9 @@ def publish(event: EventMessage, db: Session) -> None:
     for handler in _subscribers:
         try:
             # A SAVEPOINT isolates optional subscribers from the domain transaction.
-            # Subscribers may flush, but only the owning use case may commit.
+            # Subscribers reciben sesión sin commit/rollback para no escapar del SAVEPOINT.
             with db.begin_nested():
-                handler(event, db)
+                handler(event, SubscriberSession(db))
                 db.flush()
         except Exception as exc:  # noqa: BLE001 - subscriber isolation is intentional
             handler_name = getattr(handler, "__qualname__", repr(handler))

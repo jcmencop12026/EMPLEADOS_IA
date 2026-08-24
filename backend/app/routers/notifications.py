@@ -9,6 +9,7 @@ from app.audit import write_audit
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import AlertRule, Notification, User
+from app.notification_recipients import validate_notification_recipient
 from app.permissions import check_permission, user_permissions
 from app.schemas_notifications import AlertRuleIn
 
@@ -125,12 +126,11 @@ def dismiss(notification_id: str, db: Session = Depends(get_db), user: User = De
 def _validate_recipient_user(db: Session, org_id: str, recipient_user_id: str | None) -> None:
     if not recipient_user_id:
         return
-    valid = (
-        db.query(User)
-        .filter(User.id == recipient_user_id, User.organization_id == org_id)
-        .first()
-    )
-    if not valid:
+    if not validate_notification_recipient(
+        db,
+        organization_id=org_id,
+        recipient_user_id=recipient_user_id,
+    ):
         raise HTTPException(status_code=400, detail="Destinatario inválido")
 
 

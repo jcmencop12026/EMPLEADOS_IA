@@ -38,6 +38,7 @@ export type UserMe = {
   role: string;
   organization_id: string;
   organization_name: string;
+  permissions: string[];
 };
 
 export type Organization = {

@@ -1,11 +1,20 @@
+"""Motor de notificaciones y alertas — CODEX-820."""
+from __future__ import annotations
+
+import hashlib
 import json
+import logging
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.events.bus import EventMessage, subscribe
 from app.models import AlertRule, Notification
+from app.notification_recipients import validate_notification_recipient
+
+logger = logging.getLogger(__name__)
 
 SUPPORTED_EVENTS = {
     "EMPLOYEE_CREATED", "EMPLOYEE_CERTIFIED", "EMPLOYEE_ACTIVATED",
@@ -73,53 +82,226 @@ def normalize_event_type(event_type: str, payload: dict[str, Any] | None = None)
     return EVENT_ALIASES.get(raw_type, raw_type.upper())
 
 
-def emit_event(event_type: str, organization_id: str, source_type: str, source_id: str | None,
-               payload: dict[str, Any] | None, db: Session, *, commit: bool = True) -> list[Notification]:
+def resolve_event_id(
+    event_type: str,
+    organization_id: str,
+    source_id: str | None,
+    payload: dict[str, Any] | None,
+    *,
+    rule_id: str | None = None,
+) -> str:
+    body = payload or {}
+    explicit = body.get("event_id")
+    if explicit:
+        return str(explicit)
+    stable = "|".join(
+        [
+            str(event_type),
+            str(organization_id),
+            str(source_id or ""),
+            str(rule_id or ""),
+            str(body.get("correlation_id") or ""),
+            str(body.get("approval_id") or ""),
+            str(body.get("kind") or ""),
+        ]
+    )
+    return hashlib.sha256(stable.encode("utf-8")).hexdigest()
+
+
+def build_idempotency_key(
+    *,
+    event_id: str,
+    rule_id: str | None,
+    recipient_user_id: str | None,
+    notification_type: str,
+) -> str:
+    return f"{event_id}|{rule_id or '-'}|{recipient_user_id or '-'}|{notification_type}"
+
+
+def _delivery_channel(notification: Notification) -> str:
+    channel = notification.channel or "IN_APP"
+    notification.channel = channel
+    return channel
+
+
+def _persist_notification(
+    db: Session,
+    *,
+    organization_id: str,
+    event_id: str,
+    rule_id: str | None,
+    notification: Notification,
+) -> Notification | None:
+    notification.event_id = event_id
+    notification.rule_id = rule_id
+    notification.idempotency_key = build_idempotency_key(
+        event_id=event_id,
+        rule_id=rule_id,
+        recipient_user_id=notification.recipient_user_id,
+        notification_type=notification.type,
+    )
+    if not validate_notification_recipient(
+        db,
+        organization_id=organization_id,
+        recipient_user_id=notification.recipient_user_id,
+    ):
+        return None
+    existing = (
+        db.query(Notification)
+        .filter(
+            Notification.organization_id == organization_id,
+            Notification.idempotency_key == notification.idempotency_key,
+        )
+        .first()
+    )
+    if existing:
+        return existing
+    channel = _delivery_channel(notification)
+    try:
+        with db.begin_nested():
+            CHANNELS[channel].deliver(notification, db)
+            db.flush()
+    except IntegrityError:
+        return (
+            db.query(Notification)
+            .filter(
+                Notification.organization_id == organization_id,
+                Notification.idempotency_key == notification.idempotency_key,
+            )
+            .first()
+        )
+    return notification
+
+
+def emit_event(
+    event_type: str,
+    organization_id: str,
+    source_type: str,
+    source_id: str | None,
+    payload: dict[str, Any] | None,
+    db: Session,
+    *,
+    commit: bool = True,
+    event_id: str | None = None,
+) -> list[Notification]:
     body = payload or {}
     normalized = normalize_event_type(event_type, body)
+    resolved_event_id = event_id or resolve_event_id(
+        normalized, organization_id, source_id, body
+    )
     rules = db.query(AlertRule).filter(
         AlertRule.organization_id == organization_id,
         AlertRule.event_type == normalized,
         AlertRule.enabled.is_(True),
     ).all()
     created: list[Notification] = []
+    matched_rules = 0
+    denied_recipient = False
     for rule in rules:
         if not _matches(rule, body):
             continue
+        matched_rules += 1
+        if not validate_notification_recipient(
+            db,
+            organization_id=organization_id,
+            recipient_user_id=rule.recipient_user_id,
+        ):
+            denied_recipient = True
+            continue
         notification = Notification(
-            organization_id=organization_id, type=body.get("notification_type", "WARNING"),
-            severity=rule.severity, title=body.get("title", rule.name),
-            message=body.get("message", f"Evento {normalized}"), source_type=source_type,
-            source_id=source_id, recipient_user_id=rule.recipient_user_id,
-            recipient_role=rule.recipient_role, channel=rule.channel,
+            organization_id=organization_id,
+            type=body.get("notification_type", "WARNING"),
+            severity=rule.severity,
+            title=body.get("title", rule.name),
+            message=body.get("message", f"Evento {normalized}"),
+            source_type=source_type,
+            source_id=source_id,
+            recipient_user_id=rule.recipient_user_id,
+            recipient_role=rule.recipient_role,
+            channel=rule.channel,
             metadata_json=json.dumps(body, ensure_ascii=False),
         )
-        CHANNELS[rule.channel].deliver(notification, db)
-        created.append(notification)
-    if not created and normalized in DEFAULTS:
+        persisted = _persist_notification(
+            db,
+            organization_id=organization_id,
+            event_id=resolved_event_id,
+            rule_id=rule.id,
+            notification=notification,
+        )
+        if persisted:
+            created.append(persisted)
+    if (
+        not created
+        and normalized in DEFAULTS
+        and not denied_recipient
+        and matched_rules == 0
+    ):
         notification_type, severity, title = DEFAULTS[normalized]
+        recipient_user_id = body.get("recipient_user_id")
         notification = Notification(
-            organization_id=organization_id, type=notification_type, severity=severity,
-            title=body.get("title", title), message=body.get("message", f"Evento {normalized}"),
-            source_type=source_type, source_id=source_id,
-            recipient_user_id=body.get("recipient_user_id"), recipient_role=body.get("recipient_role"),
+            organization_id=organization_id,
+            type=notification_type,
+            severity=severity,
+            title=body.get("title", title),
+            message=body.get("message", f"Evento {normalized}"),
+            source_type=source_type,
+            source_id=source_id,
+            recipient_user_id=recipient_user_id,
+            recipient_role=body.get("recipient_role"),
+            channel="IN_APP",
             metadata_json=json.dumps(body, ensure_ascii=False),
         )
-        CHANNELS["IN_APP"].deliver(notification, db)
-        created.append(notification)
-    db.flush()
+        persisted = _persist_notification(
+            db,
+            organization_id=organization_id,
+            event_id=resolved_event_id,
+            rule_id=None,
+            notification=notification,
+        )
+        if persisted:
+            created.append(persisted)
     if commit:
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            keys = [item.idempotency_key for item in created if item.idempotency_key]
+            created = (
+                db.query(Notification)
+                .filter(
+                    Notification.organization_id == organization_id,
+                    Notification.idempotency_key.in_(keys),
+                )
+                .all()
+                if keys
+                else []
+            )
     return created
 
 
 def _event_subscriber(event: EventMessage, db: Session) -> None:
-    payload = event.payload or {}
+    payload = dict(event.payload or {})
     if payload.get("employee_id"):
         source_type, source_id = "employee", payload["employee_id"]
     else:
         source_type, source_id = "work_plan", event.work_plan_id or event.task_id
-    emit_event(str(event.event_type), event.organization_id, source_type, source_id, payload, db, commit=False)
+    event_id = resolve_event_id(
+        str(event.event_type),
+        event.organization_id,
+        source_id,
+        payload,
+    )
+    payload.setdefault("event_id", event_id)
+    emit_event(
+        str(event.event_type),
+        event.organization_id,
+        source_type,
+        source_id,
+        payload,
+        db,
+        commit=False,
+        event_id=event_id,
+    )
 
 
 subscribe(_event_subscriber)

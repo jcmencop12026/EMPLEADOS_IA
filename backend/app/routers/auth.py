@@ -7,6 +7,7 @@ from app.deps import get_current_user
 from app.events.bus import EventMessage, publish
 from app.models import Organization, User
 from app.schemas import LoginRequest, TokenResponse, UserMe
+from app.permissions import user_permissions
 from app.security import create_access_token, verify_password
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -49,4 +50,5 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         role=user.role,
         organization_id=user.organization_id,
         organization_name=org.name if org else "",
+        permissions=sorted(user_permissions(user)),
     )

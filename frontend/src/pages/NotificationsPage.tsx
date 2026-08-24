@@ -21,16 +21,50 @@ export function NotificationsPage() {
   const [date, setDate] = useState("");
   const [sortAsc, setSortAsc] = useState(false);
   const [error, setError] = useState("");
-  const load = () => fetchNotifications().then(setRows).catch((e) => setError(String(e)));
-  useEffect(load, []);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await fetchNotifications();
+        if (!cancelled) {
+          setRows(data);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : String(e));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const filtered = useMemo(() => rows.filter((row) =>
     (!search || `${row.title} ${row.message}`.toLowerCase().includes(search.toLowerCase())) &&
     (!status || row.status === status) && (!severity || row.severity === severity) &&
     (!type || row.type === type) && (!date || row.created_at.slice(0, 10) === date)
   ).sort((a, b) => (sortAsc ? 1 : -1) * a.created_at.localeCompare(b.created_at)), [rows, search, status, severity, type, date, sortAsc]);
+
   const act = async (id: string, action: "read" | "acknowledge" | "dismiss") => {
-    await transitionNotification(id, action); await load(); window.dispatchEvent(new Event("notifications-changed"));
+    await transitionNotification(id, action);
+    const data = await fetchNotifications();
+    setRows(data);
+    window.dispatchEvent(new Event("notifications-changed"));
   };
+
   return <div className="ops-page notifications-page">
     <div className="page-header"><h1>Centro de notificaciones</h1><div className="muted">Alertas operativas y solicitudes que requieren atención.</div></div>
     <div className="notification-filters panel">
@@ -41,13 +75,17 @@ export function NotificationsPage() {
       <input aria-label="Fecha" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       <button className="btn" title="Ordenar por fecha" onClick={() => setSortAsc(!sortAsc)}>↕ Fecha</button>
     </div>
+    {loading && <p className="muted">Cargando notificaciones…</p>}
     {error && <p className="error">{error}</p>}
+    {!loading && !error && filtered.length === 0 && (
+      <p className="muted">No hay notificaciones para los filtros seleccionados.</p>
+    )}
     <div className="notification-grid-wrap"><table className="grid notification-grid"><thead><tr><th>Fecha</th><th>Severidad</th><th>Tipo</th><th>Título</th><th>Origen</th><th>Estado</th><th>Destinatario</th><th>Acciones</th></tr></thead>
       <tbody>{filtered.map(row => <tr key={row.id} className={row.status === "NEW" ? "notification-new" : ""}>
         <td>{new Date(row.created_at).toLocaleString()}</td><td><span className={`severity severity-${row.severity.toLowerCase()}`}>{row.severity}</span></td><td>{row.type}</td>
         <td title={row.message}><strong>{row.title}</strong><div className="muted notification-message">{row.message}</div></td><td>{row.source_type}</td><td>{row.status}</td><td>{row.recipient_user_id || row.recipient_role || "Todos"}</td>
         <td className="notification-actions">
-          <button title="Marcar leído" onClick={() => act(row.id,"read")}>✓</button><button title="Acknowledge" onClick={() => act(row.id,"acknowledge")}>◎</button><button title="Descartar" onClick={() => act(row.id,"dismiss")}>×</button>
+          <button title="Marcar leído" onClick={() => void act(row.id,"read")}>✓</button><button title="Acknowledge" onClick={() => void act(row.id,"acknowledge")}>◎</button><button title="Descartar" onClick={() => void act(row.id,"dismiss")}>×</button>
           {sourcePath(row) && <Link title="Ir al origen" to={sourcePath(row)!}>↗</Link>}
         </td></tr>)}</tbody></table></div>
   </div>;

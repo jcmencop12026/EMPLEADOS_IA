@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import type { ExecutionDetail, WorkEventItem } from "../api";
-import { decideApproval, fetchApprovals, fetchEvents, fetchExecution } from "../api";
+import type { ExecutionDetail, UserMe, WorkEventItem } from "../api";
+import { api, decideApproval, fetchApprovals, fetchEvents, fetchExecution } from "../api";
 
 export function ExecutionDetailPage() {
   const { planId } = useParams<{ planId: string }>();
@@ -11,6 +11,7 @@ export function ExecutionDetailPage() {
   const [events, setEvents] = useState<WorkEventItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [acting, setActing] = useState(false);
+  const [canApprove, setCanApprove] = useState(false);
 
   async function load() {
     if (!planId) return;
@@ -32,7 +33,29 @@ export function ExecutionDetailPage() {
   }
 
   useEffect(() => {
-    load();
+    let cancelled = false;
+
+    const bootstrap = async () => {
+      try {
+        const me = await api<UserMe>("/api/auth/me");
+        if (!cancelled) {
+          setCanApprove(me.permissions.includes("operations.approve"));
+        }
+      } catch {
+        if (!cancelled) {
+          setCanApprove(false);
+        }
+      }
+      if (!cancelled) {
+        await load();
+      }
+    };
+
+    void bootstrap();
+
+    return () => {
+      cancelled = true;
+    };
   }, [planId]);
 
   async function handleApproval(decision: "approve" | "reject") {
@@ -75,16 +98,19 @@ export function ExecutionDetailPage() {
             {detail.confidence != null && (
               <p className="muted">Confianza: {(detail.confidence * 100).toFixed(0)}%</p>
             )}
-            {detail.approval_status === "PENDING" && (
+            {detail.approval_status === "PENDING" && canApprove && (
               <div className="approval-box">
                 <p className="warn">Aprobación humana requerida</p>
-                <button type="button" className="btn primary" disabled={acting} onClick={() => handleApproval("approve")}>
+                <button type="button" className="btn primary" disabled={acting} onClick={() => void handleApproval("approve")}>
                   Aprobar
                 </button>
-                <button type="button" className="btn danger" disabled={acting} onClick={() => handleApproval("reject")}>
+                <button type="button" className="btn danger" disabled={acting} onClick={() => void handleApproval("reject")}>
                   Rechazar
                 </button>
               </div>
+            )}
+            {detail.approval_status === "PENDING" && !canApprove && (
+              <p className="muted">Aprobación pendiente — sin permiso para decidir.</p>
             )}
           </section>
 

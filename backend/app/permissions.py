@@ -21,8 +21,14 @@ NOTIFICATION_PERMISSIONS = {
     "alert_rule.manage",
 }
 
+OPERATIONS_PERMISSIONS = {
+    "operations.view",
+    "operations.execute",
+    "operations.approve",
+}
+
 ROLE_PERMISSIONS: dict[str, set[str]] = {
-    "admin": EMPLOYEE_PERMISSIONS | NOTIFICATION_PERMISSIONS,
+    "admin": EMPLOYEE_PERMISSIONS | NOTIFICATION_PERMISSIONS | OPERATIONS_PERMISSIONS,
     "operator": {
         "employee.view",
         "employee.create",
@@ -31,8 +37,11 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "notification.view",
         "notification.acknowledge",
         "alert_rule.view",
+        "operations.view",
+        "operations.execute",
+        "operations.approve",
     },
-    "viewer": {"employee.view", "notification.view"},
+    "viewer": {"employee.view", "notification.view", "operations.view"},
 }
 
 
