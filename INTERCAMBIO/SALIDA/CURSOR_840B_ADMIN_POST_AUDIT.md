@@ -3,7 +3,7 @@
 **Rama:** `cursor/admin-users-roles-840`  
 **PR:** #9 (draft, sin merge)  
 **HEAD ANTERIOR:** `5c1e4b3`  
-**HEAD NUEVO:** `dd49c44`
+**HEAD NUEVO:** `4f7ba18`
 
 ## Correcciones
 
