@@ -6,6 +6,7 @@ const NAV = [
   { to: "/", label: "Inicio", end: true },
   { to: "/operaciones", label: "Centro Operaciones" },
   { to: "/ejecuciones", label: "Ejecuciones" },
+  { to: "/automatizaciones", label: "Automatizaciones" },
   { to: "/directorio", label: "Directorio" },
   { to: "/organizacion", label: "Organización" },
   { to: "/auditoria", label: "Auditoría" },

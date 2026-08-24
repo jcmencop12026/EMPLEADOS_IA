@@ -11,9 +11,11 @@ _TEST_DB = tempfile.mktemp(suffix=".db")
 os.environ["DATABASE_URL"] = f"sqlite:///{_TEST_DB}"
 os.environ["JWT_SECRET"] = "test-secret-mvp-cert803"
 
+from app import automation_models  # noqa: F401, E402
 from app.database import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.seed import bootstrap  # noqa: E402
+from app.services import automation_scheduler  # noqa: E402
 
 engine = create_engine(os.environ["DATABASE_URL"], connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -32,11 +34,15 @@ def _override_get_db():
 
 
 app.dependency_overrides[get_db] = _override_get_db
+automation_scheduler.SessionLocal = TestingSessionLocal
 
 
 @pytest.fixture(scope="session")
 def client() -> TestClient:
-    return TestClient(app)
+    with TestClient(app) as test_client:
+        automation_scheduler.stop_scheduler()
+        yield test_client
+        automation_scheduler.stop_scheduler()
 
 
 @pytest.fixture

@@ -13,15 +13,35 @@ EMPLOYEE_PERMISSIONS = {
     "employee.admin",
 }
 
+AUTOMATION_PERMISSIONS = {
+    "automation.view",
+    "automation.create",
+    "automation.edit",
+    "automation.activate",
+    "automation.pause",
+    "automation.run",
+    "automation.delete",
+    "automation.view_runs",
+}
+
+ALL_PERMISSIONS = EMPLOYEE_PERMISSIONS | AUTOMATION_PERMISSIONS
+
 ROLE_PERMISSIONS: dict[str, set[str]] = {
-    "admin": EMPLOYEE_PERMISSIONS,
+    "admin": ALL_PERMISSIONS,
     "operator": {
         "employee.view",
         "employee.create",
         "employee.edit",
         "employee.test",
+        "automation.view",
+        "automation.create",
+        "automation.edit",
+        "automation.activate",
+        "automation.pause",
+        "automation.run",
+        "automation.view_runs",
     },
-    "viewer": {"employee.view"},
+    "viewer": {"employee.view", "automation.view", "automation.view_runs"},
 }
 
 

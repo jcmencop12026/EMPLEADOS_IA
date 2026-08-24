@@ -492,5 +492,13 @@ def decide_approval(
         db,
     )
     if plan:
+        from app.services.automation_service import sync_run_from_work_plan
+
+        sync_run_from_work_plan(
+            db,
+            work_plan_id=plan.id,
+            plan_status=plan.status,
+            error=plan.error,
+        )
         return _build_plan_response(db, plan)
     return {"approval_id": approval_id, "status": approval.status}

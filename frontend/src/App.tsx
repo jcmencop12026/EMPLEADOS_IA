@@ -1,6 +1,9 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./AppShell";
 import { RequireAuth } from "./RequireAuth";
+import { AutomationRunsPage } from "./pages/AutomationRunsPage";
+import { AutomationWizardPage } from "./pages/AutomationWizardPage";
+import { AutomationsPage } from "./pages/AutomationsPage";
 import { AuditPage } from "./pages/AuditPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
@@ -27,6 +30,9 @@ export default function App() {
           <Route path="ejecuciones" element={<ExecutionsPage />} />
           <Route path="ejecuciones/:planId" element={<ExecutionDetailPage />} />
           <Route path="directorio" element={<DirectoryPage />} />
+          <Route path="automatizaciones" element={<AutomationsPage />} />
+          <Route path="automatizaciones/nueva" element={<AutomationWizardPage />} />
+          <Route path="automatizaciones/:automationId/ejecuciones" element={<AutomationRunsPage />} />
           <Route path="empleados/nuevo" element={<EmployeeWizardPage />} />
           <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />
           <Route path="organizacion" element={<OrganizationPage />} />

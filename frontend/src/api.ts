@@ -225,3 +225,60 @@ export async function publishEmployee(id: string): Promise<Record<string, unknow
 export async function activateEmployee(id: string): Promise<Record<string, unknown>> {
   return api(`/api/agent-factory/employees/${id}/activate`, { method: "POST" });
 }
+
+export type AutomationItem = {
+  id: string;
+  name: string;
+  description?: string;
+  status: string;
+  trigger_type: string;
+  schedule_type?: string;
+  timezone: string;
+  next_run_at?: string;
+  last_run_at?: string;
+  objective: string;
+  employee_id?: string;
+  priority: number;
+  requires_approval: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AutomationRunItem = {
+  id: string;
+  automation_id: string;
+  scheduled_for: string;
+  started_at?: string;
+  finished_at?: string;
+  status: string;
+  work_plan_id?: string;
+  attempt: number;
+  error?: string;
+  cost_reference?: number;
+  trigger_source: string;
+  created_at: string;
+};
+
+export async function fetchAutomations(): Promise<AutomationItem[]> {
+  return api<AutomationItem[]>("/api/automations");
+}
+
+export async function createAutomation(data: Record<string, unknown>): Promise<AutomationItem> {
+  return api<AutomationItem>("/api/automations", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function activateAutomation(id: string): Promise<AutomationItem> {
+  return api<AutomationItem>(`/api/automations/${id}/activate`, { method: "POST" });
+}
+
+export async function pauseAutomation(id: string): Promise<AutomationItem> {
+  return api<AutomationItem>(`/api/automations/${id}/pause`, { method: "POST" });
+}
+
+export async function runAutomationNow(id: string): Promise<AutomationRunItem> {
+  return api<AutomationRunItem>(`/api/automations/${id}/run-now`, { method: "POST" });
+}
+
+export async function fetchAutomationRuns(automationId: string): Promise<AutomationRunItem[]> {
+  return api<AutomationRunItem[]>(`/api/automations/${automationId}/runs`);
+}
