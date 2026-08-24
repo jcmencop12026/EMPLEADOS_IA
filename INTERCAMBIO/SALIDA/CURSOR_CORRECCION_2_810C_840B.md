@@ -74,7 +74,7 @@
 |-------|-------|
 | Rama | `cursor/admin-users-roles-840` |
 | HEAD inicial (reauditoría) | `0e25e3e0189b5ed9c029ee9d863d0f40782a1349` |
-| HEAD final | _(pendiente commit)_ |
+| HEAD final | `4d1a8a038f525df74ded80d5d40edb9d44be93f4` |
 | Commit | `fix(840b): fail-closed roles deny ambiguous and remove runtime fallback` |
 
 ### Causa raíz
