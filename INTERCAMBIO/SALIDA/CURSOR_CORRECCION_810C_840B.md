@@ -1,7 +1,7 @@
 # CURSOR — Corrección reauditoría PR #6 (810C) y PR #9 (840B)
 
-**Fecha:** 2026-08-24  
-**Estado global:** CORREGIDO Y LISTO PARA REAUDITORÍA  
+**Fecha:** 2026-08-24
+**Estado global:** CORREGIDO Y LISTO PARA REAUDITORÍA
 **No declarado apto para merge**
 
 ---

@@ -451,9 +451,133 @@ def test_db_error_on_role_lookup_denies(monkeypatch):
         def boom(*_args, **_kwargs):
             raise RuntimeError("db unavailable")
 
-        monkeypatch.setattr("app.permissions.find_role_record_for_user", boom)
+        monkeypatch.setattr("app.permissions.resolve_authoritative_role", boom)
         perms = user_permissions(user, db)
     finally:
         db.close()
 
+    assert perms == set()
+
+
+def test_nonexistent_role_denies_no_fallback(client: TestClient):
+    """Rol inexistente → DENY, sin fallback hardcoded."""
+    db = TestingSessionLocal()
+    try:
+        org, _, _ = _create_org_admin(db, "Ghost Role")
+        from app.seed_permissions import bootstrap_permissions
+
+        bootstrap_permissions(db)
+        user = User(
+            organization_id=org.id,
+            username=f"ghost-{uuid.uuid4().hex[:6]}",
+            password_hash=hash_password("Ghost840*"),
+            role=f"nonexistent-{uuid.uuid4().hex[:8]}",
+            status="ACTIVE",
+            is_active=True,
+        )
+        db.add(user)
+        db.commit()
+        perms = user_permissions(user, db)
+        token = _token(client, user.username, "Ghost840*")
+    finally:
+        db.close()
+
+    assert perms == set()
+    assert "employee.view" not in perms
+    res = client.get("/api/admin/users", headers=auth_header(token))
+    assert res.status_code == 403
+
+
+def test_duplicate_global_role_denies(client: TestClient):
+    """Roles globales duplicados → DENY (ambigüedad)."""
+    db = TestingSessionLocal()
+    try:
+        org, _, _ = _create_org_admin(db, "Dup Global")
+        dup_code = f"dup-global-{uuid.uuid4().hex[:6]}"
+        role_a = Role(
+            organization_id=None,
+            code=dup_code,
+            name="Global A",
+            is_system=False,
+            is_active=True,
+        )
+        role_b = Role(
+            organization_id=None,
+            code=dup_code,
+            name="Global B",
+            is_system=False,
+            is_active=True,
+        )
+        db.add_all([role_a, role_b])
+        user = User(
+            organization_id=org.id,
+            username=f"dup-{uuid.uuid4().hex[:6]}",
+            password_hash=hash_password("Dup840*"),
+            role=dup_code,
+            status="ACTIVE",
+            is_active=True,
+        )
+        db.add(user)
+        db.commit()
+        perms = user_permissions(user, db)
+        token = _token(client, user.username, "Dup840*")
+    finally:
+        db.close()
+
+    assert perms == set()
+    res = client.get("/api/admin/users", headers=auth_header(token))
+    assert res.status_code == 403
+
+
+@pytest.mark.parametrize("bad_active", [False, 0, None, "yes", 1])
+def test_corrupt_is_active_denies(bad_active):
+    """is_active corrupto/no booleano True → DENY."""
+    from app.permissions import is_role_strictly_active
+
+    role = Role(code="x", name="x", is_active=True)
+    object.__setattr__(role, "is_active", bad_active)
+    assert is_role_strictly_active(role) is False
+
+
+def test_corrupt_is_active_in_db_denies(client: TestClient):
+    db = TestingSessionLocal()
+    try:
+        org, _, _ = _create_org_admin(db, "Inactive Bool")
+        role = Role(
+            organization_id=org.id,
+            code=f"inactive-bool-{uuid.uuid4().hex[:6]}",
+            name="Inactivo",
+            is_system=False,
+            is_active=False,
+        )
+        db.add(role)
+        user = User(
+            organization_id=org.id,
+            username=f"inactive-bool-{uuid.uuid4().hex[:6]}",
+            password_hash=hash_password("InactiveB840*"),
+            role=role.code,
+            status="ACTIVE",
+            is_active=True,
+        )
+        db.add(user)
+        db.commit()
+        perms = user_permissions(user, db)
+        token = _token(client, user.username, "InactiveB840*")
+    finally:
+        db.close()
+
+    assert perms == set()
+    res = client.get("/api/admin/users", headers=auth_header(token))
+    assert res.status_code == 403
+
+
+def test_empty_role_code_denies():
+    db = TestingSessionLocal()
+    try:
+        org, user, _ = _create_org_admin(db, "Empty Role Code")
+        user.role = "   "
+        db.commit()
+        perms = user_permissions(user, db)
+    finally:
+        db.close()
     assert perms == set()

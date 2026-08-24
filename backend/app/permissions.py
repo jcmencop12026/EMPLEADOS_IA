@@ -4,9 +4,11 @@ Modelo de autorización (runtime):
 - Fuente de roles: tabla `roles` (org-específico prioriza sobre global de sistema).
 - Fuente de permisos: tabla `role_permissions` vía `role_permission_codes()`.
 - Bootstrap: `seed_permissions.bootstrap_permissions()` crea roles/permisos de sistema.
-- Fallback hardcoded (`ROLE_PERMISSIONS_FALLBACK`): solo si el rol del usuario no existe en BD.
+- Política: DENY BY DEFAULT / FAIL CLOSED — sin fallback permisivo en runtime.
 """
 from __future__ import annotations
+
+import logging
 
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -14,6 +16,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import Permission, Role, RolePermission, User
+
+logger = logging.getLogger(__name__)
 
 EMPLOYEE_PERMISSIONS = {
     "employee.view",
@@ -86,6 +90,7 @@ SYSTEM_ROLE_CODES = {"admin", "operator", "viewer"}
 
 PROTECTED_ASSIGNMENT_ROLE_CODES = {"superadmin", "platform_admin", "SUPERADMIN"}
 
+# Referencia estática para seed/tests — NO usar como fuente runtime de permisos.
 ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
     "admin": EMPLOYEE_PERMISSIONS | ADMIN_PERMISSIONS | OPERATIONS_PERMISSIONS | AUDIT_PERMISSIONS,
     "operator": {
@@ -108,25 +113,94 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
 }
 
 
-def find_role_record_for_user(db: Session, user: User) -> Role | None:
-    """Registro de rol en BD (activo o inactivo); prioriza org sobre global."""
+def is_role_strictly_active(role: Role) -> bool:
+    """Solo True booleano inequívoco cuenta como activo."""
+    return role.is_active is True
+
+
+def find_role_candidates_for_user(db: Session, user: User) -> list[Role]:
+    role_code = (user.role or "").strip()
+    if not role_code:
+        return []
     return (
         db.query(Role)
         .filter(
-            Role.code == user.role,
+            Role.code == role_code,
             (Role.organization_id == user.organization_id) | (Role.organization_id.is_(None)),
         )
-        .order_by(Role.organization_id.is_(None).asc())
-        .first()
+        .order_by(Role.organization_id.is_(None).asc(), Role.created_at.asc())
+        .all()
     )
 
 
+def find_role_candidates_for_code(db: Session, role_code: str, org_id: str) -> list[Role]:
+    code = (role_code or "").strip()
+    if not code:
+        return []
+    return (
+        db.query(Role)
+        .filter(
+            Role.code == code,
+            (Role.organization_id == org_id) | (Role.organization_id.is_(None)),
+        )
+        .order_by(Role.organization_id.is_(None).asc(), Role.created_at.asc())
+        .all()
+    )
+
+
+def resolve_authoritative_role(db: Session, user: User) -> Role | None:
+    """Resuelve un único rol autoritativo o None (ambigüedad/inactivo → DENY)."""
+    candidates = find_role_candidates_for_user(db, user)
+    if not candidates:
+        return None
+
+    org_roles = [r for r in candidates if r.organization_id == user.organization_id]
+    if org_roles:
+        if len(org_roles) > 1:
+            logger.warning("roles_ambiguous org=%s code=%s count=%s", user.organization_id, user.role, len(org_roles))
+            return None
+        role = org_roles[0]
+        return role if is_role_strictly_active(role) else None
+
+    global_roles = [r for r in candidates if r.organization_id is None]
+    if len(global_roles) != 1:
+        logger.warning("roles_ambiguous_global code=%s count=%s", user.role, len(global_roles))
+        return None
+    role = global_roles[0]
+    return role if is_role_strictly_active(role) else None
+
+
+def resolve_role_for_assignable(db: Session, role_code: str, org_id: str) -> Role | None:
+    candidates = find_role_candidates_for_code(db, role_code, org_id)
+    if not candidates:
+        return None
+    org_roles = [r for r in candidates if r.organization_id == org_id]
+    if org_roles:
+        if len(org_roles) > 1:
+            return None
+        role = org_roles[0]
+        return role if is_role_strictly_active(role) else None
+    global_roles = [r for r in candidates if r.organization_id is None]
+    if len(global_roles) != 1:
+        return None
+    role = global_roles[0]
+    return role if is_role_strictly_active(role) else None
+
+
+def find_role_record_for_user(db: Session, user: User) -> Role | None:
+    """Compat: registro de rol sin validar activo (usar resolve_authoritative_role en runtime)."""
+    candidates = find_role_candidates_for_user(db, user)
+    if not candidates:
+        return None
+    org_roles = [r for r in candidates if r.organization_id == user.organization_id]
+    if org_roles:
+        return org_roles[0] if len(org_roles) == 1 else None
+    global_roles = [r for r in candidates if r.organization_id is None]
+    return global_roles[0] if len(global_roles) == 1 else None
+
+
 def resolve_role_for_user(db: Session, user: User) -> Role | None:
-    """Rol efectivo activo: prioriza rol de la organización sobre rol global de sistema."""
-    role = find_role_record_for_user(db, user)
-    if role and role.is_active:
-        return role
-    return None
+    return resolve_authoritative_role(db, user)
 
 
 def role_permission_codes(db: Session, role: Role) -> set[str]:
@@ -140,21 +214,17 @@ def role_permission_codes(db: Session, role: Role) -> set[str]:
 
 
 def user_permissions(user: User, db: Session | None = None) -> set[str]:
-    """
-    Fuente de verdad en runtime: permisos del rol en BD (org > global).
-    Fallback hardcoded solo si el rol no existe en BD (bootstrap / tests sin seed).
-    Rol inactivo, revocado o sin permisos en BD → DENY (conjunto vacío).
-    """
-    if db is not None:
-        try:
-            role = find_role_record_for_user(db, user)
-            if role is not None:
-                if not role.is_active:
-                    return set()
-                return role_permission_codes(db, role)
-        except Exception:
+    """DENY BY DEFAULT — permisos solo desde rol autoritativo en BD."""
+    if db is None:
+        return set()
+    try:
+        role = resolve_authoritative_role(db, user)
+        if role is None:
             return set()
-    return ROLE_PERMISSIONS_FALLBACK.get(user.role, {"employee.view"})
+        return role_permission_codes(db, role)
+    except Exception:
+        logger.exception("role_permission_resolution_failed user=%s", user.id)
+        return set()
 
 
 def assert_permission_subset(actor: User, requested: set[str], db: Session, *, action: str) -> None:
@@ -171,16 +241,7 @@ def assert_role_assignable(actor: User, role_code: str, org_id: str, db: Session
     normalized = role_code.strip().lower()
     if normalized in PROTECTED_ASSIGNMENT_ROLE_CODES:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Rol de plataforma no asignable")
-    role = (
-        db.query(Role)
-        .filter(
-            Role.code == role_code,
-            Role.is_active.is_(True),
-            (Role.organization_id == org_id) | (Role.organization_id.is_(None)),
-        )
-        .order_by(Role.organization_id.is_(None).asc())
-        .first()
-    )
+    role = resolve_role_for_assignable(db, role_code, org_id)
     if not role:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Rol no válido para la organización")
     if role.organization_id and role.organization_id != org_id:
