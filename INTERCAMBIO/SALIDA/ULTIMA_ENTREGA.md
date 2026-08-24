@@ -1,32 +1,37 @@
 # Última entrega — EMPLEADOS_IA
 
-**Actualizado:** CURSOR-803 (2026-08-23)
+**Actualizado:** CURSOR-805E (2026-08-24)
 **Repositorio:** jcmencop12026/EMPLEADOS_IA
-**Rama certificación:** cursor/certificacion-mvp-803
-**HEAD base main:** fb269e7
-**HEAD final:** 5622a6c
-**PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/4
+**Rama:** cursor/sqlite-alembic-repair-805
+**PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/5
+**Evidencia:** `INTERCAMBIO/SALIDA/CURSOR_805E_WINDOWS_FIX.md`
 
-## Estado MVP
+## Estado
+
+**CURSOR-805E: PASS** — corrección WinError 32 + BAT exit 255 + idempotencia preservación
+
+### BD LEGACY
+**PRESERVADA** en `data/LEGACY/` con inventario y export
+
+### MIGRACIÓN LEGACY AUTOMÁTICA
+**NO SE REALIZA** (arquitectura aprobada 805D)
+
+### NUEVA BD ACTUAL
+**CREADA** con esquema SQLAlchemy actual + Alembic HEAD + seed bootstrap
+
+### DATOS LEGACY
+**INVENTARIADOS/EXPORTADOS** en `data/LEGACY/`
+
+### Tests
+46 PASSED, 0 FAILED, 0 SKIPPED
+
+## MVP
 
 **MVP CERTIFICADO** — ver `INTERCAMBIO/SALIDA/CURSOR_803_CERTIFICACION_MVP.md`
 
-## Componentes certificados
-
-- Autenticación JWT
-- Tenant isolation (Org A/B)
-- Agent Factory (crear → certificar → publicar → activar)
-- Orquestador E2E (WorkPlan → Task → Tool → Result)
-- DOCINT y RIPS con aprobación humana
-- DENY / ALLOW / REQUIRES_APPROVAL
-- Centro de Operaciones, Directorio, Ejecuciones
-- 25 tests automatizados PASS
-- Build frontend OK
-
 ## Pendientes producción (B)
 
-- PostgreSQL + migración Alembic en entorno real
-- Validar ejecución sin empleado ACTIVE en política operativa
+- PostgreSQL productivo + migración Alembic en entorno real
 
 ## Mejoras posteriores (C)
 
