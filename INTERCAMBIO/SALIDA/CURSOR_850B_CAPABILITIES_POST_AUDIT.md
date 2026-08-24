@@ -3,7 +3,7 @@
 **Rama:** `cursor/capabilities-tools-knowledge-testlab-850`
 **PR:** #10 (draft, sin merge)
 **HEAD ANTERIOR:** `218ed08`
-**HEAD NUEVO:** _(post-commit)_
+**HEAD NUEVO:** `184df63`
 
 ## Correcciones
 
