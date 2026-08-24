@@ -1,6 +1,11 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./AppShell";
 import { RequireAuth } from "./RequireAuth";
+import { AdminConfigPage } from "./pages/admin/AdminConfigPage";
+import { AdminOrganizationPage } from "./pages/admin/AdminOrganizationPage";
+import { AdminRolesPage } from "./pages/admin/AdminRolesPage";
+import { AdminSecurityPage } from "./pages/admin/AdminSecurityPage";
+import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { AuditPage } from "./pages/AuditPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
@@ -10,7 +15,6 @@ import { ExecutionsPage } from "./pages/ExecutionsPage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { OperationsCenterPage } from "./pages/OperationsCenterPage";
-import { OrganizationPage } from "./pages/OrganizationPage";
 import { getToken } from "./api";
 
 export default function App() {
@@ -29,7 +33,12 @@ export default function App() {
           <Route path="directorio" element={<DirectoryPage />} />
           <Route path="empleados/nuevo" element={<EmployeeWizardPage />} />
           <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />
-          <Route path="organizacion" element={<OrganizationPage />} />
+          <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
+          <Route path="administracion/usuarios" element={<AdminUsersPage />} />
+          <Route path="administracion/roles" element={<AdminRolesPage />} />
+          <Route path="administracion/organizacion" element={<AdminOrganizationPage />} />
+          <Route path="administracion/configuracion" element={<AdminConfigPage />} />
+          <Route path="administracion/seguridad" element={<AdminSecurityPage />} />
           <Route path="auditoria" element={<AuditPage />} />
         </Route>
       </Route>
