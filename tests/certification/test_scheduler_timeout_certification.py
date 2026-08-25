@@ -333,10 +333,8 @@ def test_cert_09_process_tree_sin_descendientes_vivos():
         f"child_marker = {child_marker!r}\n"
         f"grand_marker = {grand_marker!r}\n"
         f"parent_marker = {parent_marker!r}\n"
-        "grand = subprocess.Popen([sys.executable, '-c', "
-        "'import time; time.sleep(30); open(\\'' + grand_marker + '\\',\\'w\\').write(\\'g\\')'])\n"
-        "subprocess.Popen([sys.executable, '-c', "
-        "'import time; time.sleep(30); open(\\'' + child_marker + '\\',\\'w\\').write(\\'c\\')'])\n"
+        f"grand = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30); open({grand_marker!r},\"w\").write(\"g\")'])\n"
+        f"subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30); open({child_marker!r},\"w\").write(\"c\")'])\n"
         "time.sleep(30)\n"
         "open(parent_marker, 'w').write('p')\n"
     )
@@ -368,8 +366,7 @@ def test_cert_09_process_tree_unitario():
     parent_script = (
         "import subprocess, sys, time\n"
         f"marker = {child_marker!r}\n"
-        "subprocess.Popen([sys.executable, '-c', "
-        "'import time; time.sleep(20); open(\\'' + marker + '\\',\\'w\\').write(\\'x\\')'])\n"
+        f"subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(20); open({child_marker!r},\"w\").write(\"x\")'])\n"
         "time.sleep(20)\n"
     )
     proc = subprocess.Popen(
