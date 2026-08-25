@@ -1,8 +1,8 @@
 # REAUDITORÍA FINAL — PR #13 OPERACIONES-940
 
-**Fecha:** 2026-08-25  
-**Rama:** `cursor/operations-center-940-12b6`  
-**PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/13  
+**Fecha:** 2026-08-25
+**Rama:** `cursor/operations-center-940-12b6`
+**PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/13
 **Main verificado:** `1697dd2`
 
 ---
@@ -37,7 +37,7 @@ Commits del PR relevantes:
 | Registros anteriores | OK — migración `server_default=MEDIA` |
 | Valores inválidos rechazados | OK — `test_priority_invalid_rejected` + adversariales |
 
-**Adversariales:** `""`, `URGENTE`, `critical`, `1`, `null`, `{}`, `[]` → **400**.  
+**Adversariales:** `""`, `URGENTE`, `critical`, `1`, `null`, `{}`, `[]` → **400**.
 Aliases `baja`, `Crítica`, `normal` → aceptados y normalizados.
 
 ---
@@ -55,7 +55,7 @@ Aliases `baja`, `Crítica`, `normal` → aceptados y normalizados.
 | Timezone | OK — `_aware()` normaliza UTC |
 | Limpiar vencimiento | OK — `sin_vencimiento: true` |
 
-Clasificación **100% backend** (`due_state()`, `vencimiento_codigo` en API).  
+Clasificación **100% backend** (`due_state()`, `vencimiento_codigo` en API).
 Frontend no contiene número mágico 48.
 
 ---
@@ -72,7 +72,7 @@ Endpoint `GET /api/operations/summary`:
 | Vencidos | `is_overdue()` |
 | Próximos a vencer | `is_due_soon()` |
 
-Validación matemática con datos controlados: `test_summary_counters_mathematically_consistent` — contadores coherentes con listados filtrados.  
+Validación matemática con datos controlados: `test_summary_counters_mathematically_consistent` — contadores coherentes con listados filtrados.
 **No hay indicadores hardcodeados en frontend** — hub consume `/summary`.
 
 ---
@@ -115,7 +115,7 @@ Rutas:
 - `/operaciones` — `OperationsHubPage.tsx`
 - `/operaciones/:id` — `OperationDetailPage.tsx`
 
-Español, prioridad/vencimiento visibles, filtros, indicadores clicables, edición inline.  
+Español, prioridad/vencimiento visibles, filtros, indicadores clicables, edición inline.
 **Observación:** pause/resume en API sin botones UI (no bloqueante V1).
 
 ---
