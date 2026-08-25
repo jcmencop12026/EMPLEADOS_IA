@@ -11,7 +11,7 @@
 |-------|-------|
 | HEAD inicial reportado | `7b97a46` |
 | HEAD tras merge main | `627c7c6` |
-| HEAD final | *(pendiente push — fix PG retry)* |
+| HEAD final | `3d40414` (+ fix username collision) |
 | PR | https://github.com/jcmencop12026/EMPLEADOS_IA/pull/6 |
 
 ### Merge con main
@@ -29,6 +29,7 @@
 6. `invalidate_run_execution` siempre termina process tree en Windows
 7. Cert Windows: criterio por ausencia de marcadores tras ventana 8s
 8. **Fix PG retry/internal-event:** `_apply_run_result` solo asigna `work_plan_id` si el plan existe (evita FK abort en mocks con `plan_id` ficticio); `except Exception` en `_execute_run` hace rollback y persiste FAILED antes del retry
+9. **Fix flake PG adversarial:** usernames con `uuid4().hex` completo (evita `UniqueViolation` en suite compartida)
 
 ### GitHub Actions
 

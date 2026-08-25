@@ -64,7 +64,7 @@ def _create_org_user(db: Session, org_name: str) -> tuple[Organization, User]:
     db.flush()
     user = User(
         organization_id=org.id,
-        username=f"user-{uuid.uuid4().hex[:6]}",
+        username=f"user-{uuid.uuid4().hex}",
         password_hash=hash_password("Admin2026*"),
         role="admin",
     )
@@ -588,7 +588,7 @@ def test_adversarial_commit_outside_gate_detected():
         db.flush()
         user = User(
             organization_id=org.id,
-            username=f"gate-{uuid.uuid4().hex[:6]}",
+            username=f"gate-{uuid.uuid4().hex}",
             password_hash=hash_password("x"),
             role="admin",
         )
@@ -627,7 +627,7 @@ def test_lock_order_invalidation_wins_before_commit():
         db.flush()
         user = User(
             organization_id=org.id,
-            username=f"locka-{uuid.uuid4().hex[:6]}",
+            username=f"locka-{uuid.uuid4().hex}",
             password_hash=hash_password("x"),
             role="admin",
         )
@@ -688,7 +688,7 @@ def test_lock_order_commit_blocked_after_db_invalidation():
         db.flush()
         user = User(
             organization_id=org.id,
-            username=f"lockb-{uuid.uuid4().hex[:6]}",
+            username=f"lockb-{uuid.uuid4().hex}",
             password_hash=hash_password("x"),
             role="admin",
         )

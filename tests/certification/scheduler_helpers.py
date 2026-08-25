@@ -35,7 +35,7 @@ def create_org_user(db: Session, org_name: str) -> tuple[Organization, User]:
     db.flush()
     user = User(
         organization_id=org.id,
-        username=f"user-{uuid.uuid4().hex[:6]}",
+        username=f"user-{uuid.uuid4().hex}",
         password_hash=hash_password("Admin2026*"),
         role="admin",
     )

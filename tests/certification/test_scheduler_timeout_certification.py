@@ -181,7 +181,7 @@ def test_cert_06_materialize_gated_valido():
         db.flush()
         user = User(
             organization_id=org.id,
-            username=f"mat-{uuid.uuid4().hex[:6]}",
+            username=f"mat-{uuid.uuid4().hex}",
             password_hash="x",
             role="admin",
         )
@@ -220,7 +220,7 @@ def test_cert_06_materialize_gated_invalido_tras_invalidacion():
         db.flush()
         user = User(
             organization_id=org.id,
-            username=f"matno-{uuid.uuid4().hex[:6]}",
+            username=f"matno-{uuid.uuid4().hex}",
             password_hash="x",
             role="admin",
         )
