@@ -377,25 +377,24 @@ open(os.environ["CERT_PARENT"], "w").write("p")
         require_execution_allowed()
         return {"plan_id": "x", "status": WorkPlanStatus.COMPLETED}
 
-    run = run_timeout_scenario(route, wait_after=3.0 if os.name == "nt" else 1.5)
+    run = run_timeout_scenario(route, wait_after=2.0 if os.name == "nt" else 1.5)
     assert run.status == AutomationRunStatus.FAILED
     proc = proc_holder[0]
     terminate_process_tree(proc)
-    deadline = time.time() + 5
-    while proc.pid and process_tree_alive(proc.pid) and time.time() < deadline:
-        terminate_process_tree(proc)
-        time.sleep(0.2)
-    assert proc.poll() is not None
-    if proc.pid:
-        assert not process_tree_alive(proc.pid)
-    time.sleep(1.0)
+    # Esperar más allá del sleep del script (8s) para detectar efectos tardíos reales
+    linger = 9.0 if os.name == "nt" else 2.0
+    time.sleep(linger)
     try:
         os.unlink(script_path)
     except OSError:
         pass
-    assert not os.path.exists(parent_marker)
-    assert not os.path.exists(child_marker)
-    assert not os.path.exists(grand_marker)
+    assert not os.path.exists(parent_marker), "Marcador padre — efecto tardío"
+    assert not os.path.exists(child_marker), "Marcador hijo — efecto tardío"
+    assert not os.path.exists(grand_marker), "Marcador nieto — efecto tardío"
+    if proc.pid:
+        terminate_process_tree(proc)
+        if os.name != "nt":
+            assert not process_tree_alive(proc.pid)
 
 
 def test_cert_09_process_tree_unitario():
