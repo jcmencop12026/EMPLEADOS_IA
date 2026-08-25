@@ -13,15 +13,27 @@ EMPLOYEE_PERMISSIONS = {
     "employee.admin",
 }
 
+FINOPS_PERMISSIONS = {
+    "finops.view",
+    "finops.manage",
+    "finops.budget",
+    "finops.rates",
+}
+
+ALL_PERMISSIONS = EMPLOYEE_PERMISSIONS | FINOPS_PERMISSIONS
+
 ROLE_PERMISSIONS: dict[str, set[str]] = {
-    "admin": EMPLOYEE_PERMISSIONS,
+    "admin": ALL_PERMISSIONS,
     "operator": {
         "employee.view",
         "employee.create",
         "employee.edit",
         "employee.test",
+        "finops.view",
+        "finops.manage",
+        "finops.budget",
     },
-    "viewer": {"employee.view"},
+    "viewer": {"employee.view", "finops.view"},
 }
 
 

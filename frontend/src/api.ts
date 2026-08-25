@@ -225,3 +225,37 @@ export async function publishEmployee(id: string): Promise<Record<string, unknow
 export async function activateEmployee(id: string): Promise<Record<string, unknown>> {
   return api(`/api/agent-factory/employees/${id}/activate`, { method: "POST" });
 }
+
+export type FinOpsDashboard = {
+  period_start?: string;
+  period_end?: string;
+  total_cost?: string | null;
+  total_cost_label: string;
+  total_value?: string | null;
+  total_value_label: string;
+  estimated_savings?: string | null;
+  net_benefit?: string | null;
+  roi_percent?: string | null;
+  roi_label: string;
+  execution_count: number;
+  avg_cost_per_work?: string | null;
+  currency?: string | null;
+};
+
+export type FinOpsConsumption = {
+  id: string;
+  category?: string;
+  provider?: string;
+  model_name?: string;
+  cost_label: string;
+  currency?: string;
+  created_at: string;
+};
+
+export async function fetchFinOpsDashboard(): Promise<FinOpsDashboard> {
+  return api<FinOpsDashboard>("/api/finops/dashboard");
+}
+
+export async function fetchFinOpsConsumptions(): Promise<FinOpsConsumption[]> {
+  return api<FinOpsConsumption[]>("/api/finops/consumptions");
+}

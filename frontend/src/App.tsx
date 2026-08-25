@@ -11,6 +11,7 @@ import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { OperationsCenterPage } from "./pages/OperationsCenterPage";
 import { OrganizationPage } from "./pages/OrganizationPage";
+import { CostosValorPage } from "./pages/CostosValorPage";
 import { getToken } from "./api";
 
 export default function App() {
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="empleados/nuevo" element={<EmployeeWizardPage />} />
           <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />
           <Route path="organizacion" element={<OrganizationPage />} />
+          <Route path="costos-valor" element={<CostosValorPage />} />
           <Route path="auditoria" element={<AuditPage />} />
         </Route>
       </Route>

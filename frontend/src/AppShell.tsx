@@ -8,6 +8,7 @@ const NAV = [
   { to: "/ejecuciones", label: "Ejecuciones" },
   { to: "/directorio", label: "Directorio" },
   { to: "/organizacion", label: "Organización" },
+  { to: "/costos-valor", label: "Costos y valor" },
   { to: "/auditoria", label: "Auditoría" },
 ];
 
