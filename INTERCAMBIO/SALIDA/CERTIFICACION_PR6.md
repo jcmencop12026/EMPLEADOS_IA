@@ -3,7 +3,7 @@
 **Estado:** `LISTO PARA CERTIFICACIÓN GITHUB`  
 **Rama:** `cursor/automations-scheduler-810`  
 **HEAD inicial:** `5bd8744`  
-**HEAD final:** `588458f`  
+**HEAD final:** `1fff255`  
 **NO MERGE**
 
 ---
@@ -14,7 +14,7 @@
 |---------|-------------|
 | `tests/certification/test_scheduler_timeout_certification.py` | Suite permanente — 10 vectores históricos + variantes |
 | `tests/certification/scheduler_helpers.py` | Helpers compartidos (`run_timeout_scenario`, fixtures org/user) |
-| `tests/certification/conftest.py` | Fixture PostgreSQL vía `DATABASE_URL` (skip si no disponible) |
+| `tests/certification/conftest.py` | Fixture PostgreSQL + limpieza autouse de fence/scheduler |
 | `pytest.ini` | Markers `certification`, `certification_intensive`, `postgresql`, `concurrency`, `windows` |
 
 ## Defectos históricos cubiertos
@@ -32,6 +32,15 @@
 | 9 | Process tree padre→hijo→nieto sin descendientes vivos | `test_cert_09_process_tree_sin_descendientes_vivos`, `test_cert_09_process_tree_unitario` |
 | 10 | Estado terminal: timeout no puede terminar SUCCESS | `test_cert_10_timeout_no_becomes_success` |
 | PG | Commit tardío sin persistencia en PostgreSQL | `test_cert_pg_commit_tardio_sin_persistencia` |
+
+## Corrección de aislamiento (turno autónomo)
+
+**Causa raíz:** `from tests.conftest import ...` cargaba un segundo módulo `conftest` con otra base SQLite, desincronizando el `client` HTTP del `TestingSessionLocal` de los tests posteriores.
+
+**Corrección mínima:**
+- Imports unificados a `from conftest import TestingSessionLocal`
+- `tests/conftest.py`: no sobrescribe `DATABASE_URL` si ya está definida
+- `tests/certification/conftest.py`: fixture autouse de limpieza fence/scheduler
 
 ## Resultados
 
@@ -57,9 +66,7 @@ PYTHONPATH=backend:. pytest -m certification_intensive -q
 PYTHONPATH=backend:. pytest -q
 ```
 
-**129 passed, 10 failed, 2 skipped**
-
-Los 10 fallos son **problemas de aislamiento preexistentes** entre suites (los mismos tests pasan en ejecución focal/aislada). No se debilitaron pruebas de certificación.
+**139 passed, 2 skipped** (corregido aislamiento; antes 129 passed / 10 failed)
 
 ### Build / audit / Git
 
@@ -83,28 +90,26 @@ DATABASE_URL=postgresql+psycopg2://empleados_test:empleados_test@localhost:5432/
 ## Windows
 
 - Tests `@pytest.mark.windows` para árbol de procesos (`test_cert_09_process_tree_*`).
-- Ejecutar en job Windows de QA-INFRA #12:
+- Job Windows en rama `cursor/qa-infra-cert-12b6`:
 
 ```bash
 PYTHONPATH=backend:. pytest -m "certification and windows" -v
 ```
 
-- En Linux: `test_cert_09_process_tree_unitario` valida lógica productiva; el test de subprocess real se omite si no es Windows.
-
 ## Comandos GitHub (post QA-INFRA #12 en main)
 
-```bash
-# Certificación rápida por PR
-PYTHONPATH=backend:. pytest -m certification -v
+Rama de integración CI preparada: **`cursor/qa-infra-cert-12b6`** (derivada de QA-INFRA #12).
 
-# Certificación intensiva (manual / workflow_dispatch)
+```bash
+# Certificación rápida por PR (workflow qa.yml)
+PYTHONPATH=backend:. pytest -m "certification and not certification_intensive" -v
+
+# Certificación intensiva (workflow_dispatch manual)
 PYTHONPATH=backend:. pytest -m certification_intensive -v
 
-# Grupo focal automations (workflow existente)
-pytest -m automations -v
+# Grupo focal automations
+PYTHONPATH=backend:. pytest -m automations -v
 ```
-
-No duplicar `.github/workflows/qa.yml` en esta rama — ampliar QA-INFRA cuando #12 esté en `main`.
 
 ## Notas de diseño
 
@@ -115,15 +120,13 @@ No duplicar `.github/workflows/qa.yml` en esta rama — ampliar QA-INFRA cuando 
 
 | SHA | Mensaje |
 |-----|---------|
-| `588458f` | `docs(cert): estado final certificación PR6` |
-| `046b4f7` | `docs(cert): informe CERTIFICACION_PR6 y limpieza imports` |
+| `1fff255` | `fix(test): aislamiento certificación — conftest único y limpieza estado` |
 | `dbe4012` | `test(cert): suite permanente scheduler timeout PR #6` |
 
 ## Pendientes
 
-- Integrar `pytest -m certification` en workflow QA-INFRA tras merge de #12.
-- Investigar 10 fallos de aislamiento en suite completa (fuera del alcance de certificación focal).
-- Ejecutar tests `windows` y `postgresql` en CI multi-OS.
+- Merge de QA-INFRA #12 + rama `cursor/qa-infra-cert-12b6` para activar CI de certificación.
+- Ejecutar tests `postgresql` y `windows` en GitHub Actions (infra lista en rama QA).
 
 ---
 
