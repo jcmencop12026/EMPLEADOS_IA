@@ -3,7 +3,7 @@
 **Estado:** `LISTO PARA CERTIFICACIÓN GITHUB`  
 **Rama:** `cursor/automations-scheduler-810`  
 **HEAD inicial:** `5bd8744`  
-**HEAD final:** `455fcdd`  
+**HEAD final:** `046b4f7`  
 **NO MERGE**
 
 ---
@@ -115,7 +115,7 @@ No duplicar `.github/workflows/qa.yml` en esta rama — ampliar QA-INFRA cuando 
 
 | SHA | Mensaje |
 |-----|---------|
-| `455fcdd` | `docs(cert): informe CERTIFICACION_PR6 y limpieza imports` |
+| `5ffcc04` | `docs(cert): informe CERTIFICACION_PR6 y limpieza imports` |
 | `dbe4012` | `test(cert): suite permanente scheduler timeout PR #6` |
 
 ## Pendientes
