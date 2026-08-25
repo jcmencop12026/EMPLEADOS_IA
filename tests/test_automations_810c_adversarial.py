@@ -40,6 +40,7 @@ from app.services.execution_guard import (
 )
 from app.services.execution_workspace import WorkerCommitForbiddenError
 from app.schemas_automation import AutomationCreate, RecurrenceConfig
+from tests.certification.scheduler_helpers import create_minimal_automation
 from conftest import TestingSessionLocal
 
 
@@ -585,9 +586,18 @@ def test_adversarial_commit_outside_gate_detected():
         org = Organization(name=f"Gate-{uuid.uuid4().hex[:6]}")
         db.add(org)
         db.flush()
+        user = User(
+            organization_id=org.id,
+            username=f"gate-{uuid.uuid4().hex[:6]}",
+            password_hash=hash_password("x"),
+            role="admin",
+        )
+        db.add(user)
+        db.flush()
+        auto = create_minimal_automation(db, org.id, user.id)
         run = AutomationRun(
             id=run_id,
-            automation_id=str(uuid.uuid4()),
+            automation_id=auto.id,
             organization_id=org.id,
             occurrence_key=f"gate-{uuid.uuid4().hex[:8]}",
             scheduled_for=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
@@ -615,9 +625,18 @@ def test_lock_order_invalidation_wins_before_commit():
         org = Organization(name=f"LockA-{uuid.uuid4().hex[:6]}")
         db.add(org)
         db.flush()
+        user = User(
+            organization_id=org.id,
+            username=f"locka-{uuid.uuid4().hex[:6]}",
+            password_hash=hash_password("x"),
+            role="admin",
+        )
+        db.add(user)
+        db.flush()
+        auto = create_minimal_automation(db, org.id, user.id)
         run = AutomationRun(
             id=run_id,
-            automation_id=str(uuid.uuid4()),
+            automation_id=auto.id,
             organization_id=org.id,
             occurrence_key=f"locka-{uuid.uuid4().hex[:8]}",
             scheduled_for=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
@@ -667,9 +686,18 @@ def test_lock_order_commit_blocked_after_db_invalidation():
         org = Organization(name=f"LockB-{uuid.uuid4().hex[:6]}")
         db.add(org)
         db.flush()
+        user = User(
+            organization_id=org.id,
+            username=f"lockb-{uuid.uuid4().hex[:6]}",
+            password_hash=hash_password("x"),
+            role="admin",
+        )
+        db.add(user)
+        db.flush()
+        auto = create_minimal_automation(db, org.id, user.id)
         run = AutomationRun(
             id=run_id,
-            automation_id=str(uuid.uuid4()),
+            automation_id=auto.id,
             organization_id=org.id,
             occurrence_key=f"lockb-{uuid.uuid4().hex[:8]}",
             scheduled_for=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),

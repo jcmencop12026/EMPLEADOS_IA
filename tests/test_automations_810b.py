@@ -76,6 +76,7 @@ def _payload(**overrides) -> AutomationCreate:
 def test_pr_diff_isolated_from_805():
     """A1 — el diff contra main no debe eliminar infraestructura 805."""
     root = Path(__file__).resolve().parents[1]
+    subprocess.run(["git", "fetch", "origin", "main"], cwd=root, capture_output=True, check=False)
     result = subprocess.run(
         ["git", "diff", "--name-status", "origin/main...HEAD"],
         cwd=root,

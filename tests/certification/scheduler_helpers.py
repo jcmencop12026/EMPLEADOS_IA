@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from sqlalchemy.orm import Session
 
+from app.automation_models import Automation
 from app.enums import ScheduleType
 from app.models import Organization, User
 from app.security import hash_password
@@ -41,6 +42,19 @@ def create_org_user(db: Session, org_name: str) -> tuple[Organization, User]:
     db.add(user)
     db.commit()
     return org, user
+
+
+def create_minimal_automation(db: Session, org_id: str, user_id: str) -> Automation:
+    auto = Automation(
+        organization_id=org_id,
+        name=f"Cert-{uuid.uuid4().hex[:6]}",
+        objective="cert",
+        created_by_id=user_id,
+        status="ACTIVE",
+    )
+    db.add(auto)
+    db.flush()
+    return auto
 
 
 def automation_payload(**overrides) -> AutomationCreate:

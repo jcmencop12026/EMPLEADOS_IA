@@ -47,6 +47,7 @@ from app.services.execution_workspace import (
 )
 from tests.certification.scheduler_helpers import (
     automation_payload,
+    create_minimal_automation,
     create_org_user,
     run_timeout_scenario,
 )
@@ -167,19 +168,6 @@ def test_cert_05_sql_transaccional_bloqueado(sql: str):
 # ---------------------------------------------------------------------------
 # 6. materialize_gated — válido e inválido
 # ---------------------------------------------------------------------------
-def _cert_automation(db, org_id: str, user_id: str) -> Automation:
-    auto = Automation(
-        organization_id=org_id,
-        name="Cert materialize",
-        objective="cert",
-        created_by_id=user_id,
-        status="ACTIVE",
-    )
-    db.add(auto)
-    db.flush()
-    return auto
-
-
 def test_cert_06_materialize_gated_valido():
     db = TestingSessionLocal()
     run_id = str(uuid.uuid4())
@@ -199,7 +187,7 @@ def test_cert_06_materialize_gated_valido():
         )
         db.add(user)
         db.flush()
-        auto = _cert_automation(db, org.id, user.id)
+        auto = create_minimal_automation(db, org.id, user.id)
         run = AutomationRun(
             id=run_id,
             automation_id=auto.id,
@@ -238,7 +226,7 @@ def test_cert_06_materialize_gated_invalido_tras_invalidacion():
         )
         db.add(user)
         db.flush()
-        auto = _cert_automation(db, org.id, user.id)
+        auto = create_minimal_automation(db, org.id, user.id)
         run = AutomationRun(
             id=run_id,
             automation_id=auto.id,
@@ -360,19 +348,29 @@ def test_cert_09_process_tree_sin_descendientes_vivos():
             os.unlink(path)
 
     parent_script = (
-        "import subprocess, sys, time\n"
-        f"child_marker = {child_marker!r}\n"
-        f"grand_marker = {grand_marker!r}\n"
-        f"parent_marker = {parent_marker!r}\n"
-        f"grand = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30); open({grand_marker!r},\"w\").write(\"g\")'])\n"
-        f"subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30); open({child_marker!r},\"w\").write(\"c\")'])\n"
+        "import os, subprocess, sys, time\n"
+        "child_marker = os.environ['CERT_CHILD']\n"
+        "grand_marker = os.environ['CERT_GRAND']\n"
+        "parent_marker = os.environ['CERT_PARENT']\n"
+        "subprocess.Popen([sys.executable, '-c', "
+        "'import os,time; time.sleep(30); open(os.environ[\\'M\\'],\\'w\\').write(\\'g\\')'], "
+        "env={**os.environ, 'M': grand_marker})\n"
+        "subprocess.Popen([sys.executable, '-c', "
+        "'import os,time; time.sleep(30); open(os.environ[\\'M\\'],\\'w\\').write(\\'c\\')'], "
+        "env={**os.environ, 'M': child_marker})\n"
         "time.sleep(30)\n"
         "open(parent_marker, 'w').write('p')\n"
     )
+    proc_env = {
+        **os.environ,
+        "CERT_PARENT": parent_marker,
+        "CERT_CHILD": child_marker,
+        "CERT_GRAND": grand_marker,
+    }
     proc_holder: list[subprocess.Popen] = []
 
     def route(*_a, **_k):
-        proc = run_subprocess([sys.executable, "-c", parent_script])
+        proc = run_subprocess([sys.executable, "-c", parent_script], env=proc_env)
         proc_holder.append(proc)
         time.sleep(0.25)
         require_execution_allowed()
@@ -381,6 +379,11 @@ def test_cert_09_process_tree_sin_descendientes_vivos():
     run = run_timeout_scenario(route, wait_after=1.5)
     assert run.status == AutomationRunStatus.FAILED
     proc = proc_holder[0]
+    terminate_process_tree(proc)
+    deadline = time.time() + 5
+    while proc.pid and process_tree_alive(proc.pid) and time.time() < deadline:
+        terminate_process_tree(proc)
+        time.sleep(0.2)
     assert proc.poll() is not None
     if proc.pid:
         assert not process_tree_alive(proc.pid)
