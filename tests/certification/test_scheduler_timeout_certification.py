@@ -377,7 +377,7 @@ open(os.environ["CERT_PARENT"], "w").write("p")
         require_execution_allowed()
         return {"plan_id": "x", "status": WorkPlanStatus.COMPLETED}
 
-    run = run_timeout_scenario(route, wait_after=1.5)
+    run = run_timeout_scenario(route, wait_after=3.0 if os.name == "nt" else 1.5)
     assert run.status == AutomationRunStatus.FAILED
     proc = proc_holder[0]
     terminate_process_tree(proc)

@@ -316,6 +316,7 @@ def invalidate_run_execution(
     """Invalida fencing en BD y memoria con orden de locks consistente."""
     from app.enums import AutomationRunStatus
 
+    controller = get_fence_controller(token.run_id)
     row = (
         db.query(type(run))
         .filter(
@@ -326,24 +327,22 @@ def invalidate_run_execution(
         .with_for_update()
         .first()
     )
+    updated = False
     if row is None:
         db.rollback()
-        return False
-
-    row.status = AutomationRunStatus.FAILED
-    row.error = error
-    row.finished_at = _utcnow()
-    row.execution_generation = token.generation + 1
-    db.commit()
-    db.refresh(row)
-    if run in db:
-        db.refresh(run)
-
-    controller = get_fence_controller(token.run_id)
+    else:
+        row.status = AutomationRunStatus.FAILED
+        row.error = error
+        row.finished_at = _utcnow()
+        row.execution_generation = token.generation + 1
+        db.commit()
+        db.refresh(row)
+        if run in db:
+            db.refresh(run)
+        updated = True
     if controller:
         controller.invalidate()
-
-    return True
+    return updated
 
 
 def run_subprocess(cmd: list[str], **kwargs) -> subprocess.Popen:
@@ -380,10 +379,15 @@ def _list_child_pids(pid: int) -> list[int]:
     if os.name == "nt":
         try:
             out = subprocess.run(
-                ["wmic", "process", "where", f"(ParentProcessId={pid})", "get", "ProcessId"],
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    f"(Get-CimInstance Win32_Process -Filter \"ParentProcessId={pid}\").ProcessId",
+                ],
                 capture_output=True,
                 text=True,
-                timeout=5,
+                timeout=8,
                 check=False,
             )
             children: list[int] = []
