@@ -347,20 +347,21 @@ def test_cert_09_process_tree_sin_descendientes_vivos():
         if os.path.exists(path):
             os.unlink(path)
 
-    parent_script = (
-        "import os, subprocess, sys, time\n"
-        "child_marker = os.environ['CERT_CHILD']\n"
-        "grand_marker = os.environ['CERT_GRAND']\n"
-        "parent_marker = os.environ['CERT_PARENT']\n"
-        "subprocess.Popen([sys.executable, '-c', "
-        "'import os,time; time.sleep(30); open(os.environ[\\'M\\'],\\'w\\').write(\\'g\\')'], "
-        "env={**os.environ, 'M': grand_marker})\n"
-        "subprocess.Popen([sys.executable, '-c', "
-        "'import os,time; time.sleep(30); open(os.environ[\\'M\\'],\\'w\\').write(\\'c\\')'], "
-        "env={**os.environ, 'M': child_marker})\n"
-        "time.sleep(30)\n"
-        "open(parent_marker, 'w').write('p')\n"
-    )
+    parent_script_content = """import os, subprocess, sys, time
+subprocess.Popen(
+    [sys.executable, "-c", "import os,time; time.sleep(30); open(os.environ['M'],'w').write('g')"],
+    env={**os.environ, "M": os.environ["CERT_GRAND"]},
+)
+subprocess.Popen(
+    [sys.executable, "-c", "import os,time; time.sleep(30); open(os.environ['M'],'w').write('c')"],
+    env={**os.environ, "M": os.environ["CERT_CHILD"]},
+)
+time.sleep(30)
+open(os.environ["CERT_PARENT"], "w").write("p")
+"""
+    with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, encoding="utf-8") as script_file:
+        script_file.write(parent_script_content)
+        script_path = script_file.name
     proc_env = {
         **os.environ,
         "CERT_PARENT": parent_marker,
@@ -370,7 +371,7 @@ def test_cert_09_process_tree_sin_descendientes_vivos():
     proc_holder: list[subprocess.Popen] = []
 
     def route(*_a, **_k):
-        proc = run_subprocess([sys.executable, "-c", parent_script], env=proc_env)
+        proc = run_subprocess([sys.executable, script_path], env=proc_env)
         proc_holder.append(proc)
         time.sleep(0.25)
         require_execution_allowed()
@@ -388,6 +389,10 @@ def test_cert_09_process_tree_sin_descendientes_vivos():
     if proc.pid:
         assert not process_tree_alive(proc.pid)
     time.sleep(1.0)
+    try:
+        os.unlink(script_path)
+    except OSError:
+        pass
     assert not os.path.exists(parent_marker)
     assert not os.path.exists(child_marker)
     assert not os.path.exists(grand_marker)
