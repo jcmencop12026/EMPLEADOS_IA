@@ -12,6 +12,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { OperationDetailPage } from "./pages/OperationDetailPage";
 import { OperationsHubPage } from "./pages/OperationsHubPage";
 import { OperationsCenterPage } from "./pages/OperationsCenterPage";
+import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { OrganizationPage } from "./pages/OrganizationPage";
 import { getToken } from "./api";
 
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="operaciones" element={<OperationsHubPage />} />
           <Route path="operaciones/solicitud" element={<OperationsCenterPage />} />
           <Route path="operaciones/:operationId" element={<OperationDetailPage />} />
+          <Route path="salud/diagnostico" element={<DiagnosticoIpsPage />} />
           <Route path="ejecuciones" element={<ExecutionsPage />} />
           <Route path="ejecuciones/:planId" element={<ExecutionDetailPage />} />
           <Route path="directorio" element={<DirectoryPage />} />

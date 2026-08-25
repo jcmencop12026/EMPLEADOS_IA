@@ -2,6 +2,8 @@ import uuid
 
 import pytest
 
+pytestmark = [pytest.mark.auth, pytest.mark.tenant]
+
 from app.models import Organization, User
 from app.orchestration_models import EmployeeTask
 from app.security import hash_password

@@ -1,5 +1,7 @@
 import pytest
 
+pytestmark = pytest.mark.operations
+
 from conftest import TestingSessionLocal, auth_header
 
 SAMPLE_RIPS = {

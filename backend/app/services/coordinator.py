@@ -42,6 +42,12 @@ def _detect_route(request: str, context: dict[str, Any] | None) -> tuple[str, st
     ctx = context or {}
     if ctx.get("tool") in ("rips", "docint"):
         return ctx["tool"], "salud"
+    if ctx.get("analysis_type") == "ips" or ctx.get("ips_analysis"):
+        return "ips-analitica", "salud"
+    ips_keywords = ("ips", "facturación", "facturacion", "radicación", "radicacion",
+                    "glosa", "cartera", "diagnóstico", "diagnostico", "financiera y operativa")
+    if any(kw in text for kw in ips_keywords):
+        return "ips-analitica", "salud"
     if "rips" in text:
         return "rips", "salud"
     if any(k in text for k in ("documento", "docint", "documentos")):
@@ -50,15 +56,23 @@ def _detect_route(request: str, context: dict[str, Any] | None) -> tuple[str, st
         return "rips", "salud"
     if ctx.get("documents") or ctx.get("documentos"):
         return "docint", "salud"
+    if ctx.get("inline_datasets") or ctx.get("datasets"):
+        return "ips-analitica", "salud"
     return "docint", "salud"
 
 
 def _find_employee_for_capability(db: Session, org_id: str, capability_id: str) -> AIEmployee | None:
+    from app.services.salud_specialist_selection import score_employee_for_domain
+
     links = (
         db.query(EmployeeCapability)
         .filter(EmployeeCapability.capability_id == capability_id)
         .all()
     )
+    capability = db.query(Capability).filter(Capability.id == capability_id).first()
+    domain = capability.code if capability else "estrategico"
+
+    candidates: list[tuple[float, AIEmployee]] = []
     for link in links:
         employee = (
             db.query(AIEmployee)
@@ -74,7 +88,16 @@ def _find_employee_for_capability(db: Session, org_id: str, capability_id: str) 
             .first()
         )
         if employee:
-            return employee
+            if domain.startswith("ips-") or domain == "rips":
+                score_data = score_employee_for_domain(db, org_id, employee, domain.replace("ips-", ""))
+                candidates.append((score_data["score"], employee))
+            else:
+                candidates.append((1.0, employee))
+
+    if candidates:
+        candidates.sort(key=lambda x: x[0], reverse=True)
+        return candidates[0][1]
+
     return None
 
 

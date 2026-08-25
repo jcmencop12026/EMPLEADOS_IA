@@ -187,7 +187,10 @@ def upgrade() -> None:
     op.execute("UPDATE ai_employees SET maturity = 'AUTONOMOUS_CONTROLLED' WHERE maturity IS NULL")
     op.execute("UPDATE ai_employees SET risk_level = 'LOW' WHERE risk_level IS NULL")
     op.execute("UPDATE ai_employees SET version = 1 WHERE version IS NULL")
-    op.execute("UPDATE ai_employees SET shadow_mode = 0 WHERE shadow_mode IS NULL")
+    op.get_bind().execute(
+        sa.text("UPDATE ai_employees SET shadow_mode = :shadow_mode WHERE shadow_mode IS NULL"),
+        {"shadow_mode": False},
+    )
     op.execute("UPDATE ai_employees SET updated_at = created_at WHERE updated_at IS NULL")
     with op.batch_alter_table('ai_employees') as batch_op:
         batch_op.alter_column('code', nullable=False)
@@ -214,11 +217,12 @@ def downgrade() -> None:
     op.drop_column('capabilities', 'executor_types_json')
     op.drop_column('capabilities', 'outputs_json')
     op.drop_column('capabilities', 'inputs_json')
-    op.drop_constraint(None, 'ai_employees', type_='foreignkey')
-    op.drop_constraint(None, 'ai_employees', type_='foreignkey')
     op.drop_index(op.f('ix_ai_employees_organization_id'), table_name='ai_employees')
     op.drop_index(op.f('ix_ai_employees_lifecycle_status'), table_name='ai_employees')
     op.drop_index(op.f('ix_ai_employees_code'), table_name='ai_employees')
+    with op.batch_alter_table('ai_employees') as batch_op:
+        batch_op.drop_constraint('fk_ai_employees_created_by', type_='foreignkey')
+        batch_op.drop_constraint('fk_ai_employees_owner', type_='foreignkey')
     op.drop_column('ai_employees', 'updated_at')
     op.drop_column('ai_employees', 'certified_at')
     op.drop_column('ai_employees', 'published_at')

@@ -21,7 +21,15 @@ OPERATIONS_PERMISSIONS = {
     "operations.approve",
 }
 
-ALL_PERMISSIONS = EMPLOYEE_PERMISSIONS | OPERATIONS_PERMISSIONS
+SALUD_PERMISSIONS = {
+    "salud.cargar_datos",
+    "salud.ejecutar_analisis",
+    "salud.consultar_diagnostico",
+    "salud.aceptar_recomendaciones",
+    "salud.administrar_experiencia",
+}
+
+ALL_PERMISSIONS = EMPLOYEE_PERMISSIONS | OPERATIONS_PERMISSIONS | SALUD_PERMISSIONS
 
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "admin": ALL_PERMISSIONS,
@@ -35,8 +43,12 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "operations.cancel",
         "operations.reassign",
         "operations.approve",
+        "salud.cargar_datos",
+        "salud.ejecutar_analisis",
+        "salud.consultar_diagnostico",
+        "salud.aceptar_recomendaciones",
     },
-    "viewer": {"employee.view", "operations.view"},
+    "viewer": {"employee.view", "operations.view", "salud.consultar_diagnostico"},
 }
 
 

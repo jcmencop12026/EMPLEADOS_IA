@@ -6,7 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import Base, SessionLocal, engine
 from app import orchestration_models  # noqa: F401 — registra tablas
-from app.routers import agent_factory, assistant, audit, auth, operations, organization
+from app import salud_models  # noqa: F401 — registra tablas IPS
+from app.routers import agent_factory, assistant, audit, auth, operations, organization, salud
 from app.seed import bootstrap
 
 
@@ -42,6 +43,7 @@ app.include_router(audit.router)
 app.include_router(assistant.router)
 app.include_router(agent_factory.router)
 app.include_router(operations.router)
+app.include_router(salud.router)
 
 
 @app.get("/health")
