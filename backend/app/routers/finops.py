@@ -7,7 +7,7 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.finops_models import FinOpsBudget, FinOpsRate, FinOpsValueRecord
 from app.models import User
-from app.orchestration_models import FinOpsRecord
+from app.orchestration_models import FinOpsRecord, AIEmployee, WorkPlan
 from app.permissions import check_permission
 from app.schemas_finops import (
     BudgetIn,
@@ -68,26 +68,29 @@ def create_consumption(
     user: User = Depends(get_current_user),
 ):
     check_permission(user, "finops.manage")
-    record = svc.registrar_consumo(
-        db,
-        organization_id=user.organization_id,
-        user_id=user.id,
-        employee_id=body.employee_id,
-        work_plan_id=body.work_plan_id,
-        task_id=body.task_id,
-        execution_ref=body.execution_ref,
-        provider=body.provider,
-        model_name=body.model_name,
-        category=body.category,
-        tokens_in=body.tokens_in,
-        tokens_out=body.tokens_out,
-        quantity=body.quantity,
-        unit=body.unit,
-        duration_ms=body.duration_ms,
-        currency=body.currency,
-        cost=body.cost,
-        rate_id=body.rate_id,
-    )
+    try:
+        record = svc.registrar_consumo(
+            db,
+            organization_id=user.organization_id,
+            user_id=user.id,
+            employee_id=body.employee_id,
+            work_plan_id=body.work_plan_id,
+            task_id=body.task_id,
+            execution_ref=body.execution_ref,
+            provider=body.provider,
+            model_name=body.model_name,
+            category=body.category,
+            tokens_in=body.tokens_in,
+            tokens_out=body.tokens_out,
+            quantity=body.quantity,
+            unit=body.unit,
+            duration_ms=body.duration_ms,
+            currency=body.currency,
+            cost=body.cost,
+            rate_id=body.rate_id,
+        )
+    except svc.FinOpsValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return svc.serialize_consumption(record)
 
 
@@ -163,16 +166,19 @@ def list_values(db: Session = Depends(get_db), user: User = Depends(get_current_
 @router.post("/values", response_model=ValueOut)
 def create_value(body: ValueIn, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     check_permission(user, "finops.manage")
-    return svc.registrar_valor(
-        db,
-        organization_id=user.organization_id,
-        user_id=user.id,
-        **body.model_dump(),
-    )
+    try:
+        return svc.registrar_valor(
+            db,
+            organization_id=user.organization_id,
+            user_id=user.id,
+            **body.model_dump(),
+        )
+    except svc.FinOpsValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 def _budget_out(db: Session, org_id: str, row: FinOpsBudget) -> dict:
-    spent = svc._sum_costs(db, org_id, period_start=row.period_start, period_end=row.period_end) or 0
+    spent = svc.budget_spent_for_scope(db, row)
     return {
         "id": row.id,
         "organization_id": row.organization_id,
@@ -257,4 +263,20 @@ def drill_down(
     user: User = Depends(get_current_user),
 ):
     check_permission(user, "finops.view")
+    if work_plan_id:
+        plan = (
+            db.query(WorkPlan)
+            .filter(WorkPlan.id == work_plan_id, WorkPlan.organization_id == user.organization_id)
+            .first()
+        )
+        if not plan:
+            raise HTTPException(status_code=404, detail="Trabajo no encontrado")
+    if employee_id:
+        employee = (
+            db.query(AIEmployee)
+            .filter(AIEmployee.id == employee_id, AIEmployee.organization_id == user.organization_id)
+            .first()
+        )
+        if not employee:
+            raise HTTPException(status_code=404, detail="Empleado IA no encontrado")
     return svc.build_drill_down(db, user.organization_id, employee_id=employee_id, work_plan_id=work_plan_id)

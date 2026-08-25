@@ -17,7 +17,125 @@ VALUE_UNAVAILABLE = "Valor no disponible"
 ROI_UNAVAILABLE = "ROI no disponible"
 
 
+class FinOpsValidationError(ValueError):
+    """Referencias cruzadas o datos inválidos en operaciones FinOps."""
+
+
+def _validate_org_refs(
+    db: Session,
+    organization_id: str,
+    *,
+    employee_id: str | None = None,
+    work_plan_id: str | None = None,
+    task_id: str | None = None,
+) -> None:
+    from app.orchestration_models import EmployeeTask
+
+    if employee_id:
+        employee = (
+            db.query(AIEmployee)
+            .filter(AIEmployee.id == employee_id, AIEmployee.organization_id == organization_id)
+            .first()
+        )
+        if not employee:
+            raise FinOpsValidationError("Empleado IA no encontrado en la organización.")
+    if work_plan_id:
+        plan = (
+            db.query(WorkPlan)
+            .filter(WorkPlan.id == work_plan_id, WorkPlan.organization_id == organization_id)
+            .first()
+        )
+        if not plan:
+            raise FinOpsValidationError("Trabajo no encontrado en la organización.")
+    if task_id:
+        task = db.query(EmployeeTask).filter(EmployeeTask.id == task_id).first()
+        if not task:
+            raise FinOpsValidationError("Tarea no encontrada.")
+        plan = db.query(WorkPlan).filter(WorkPlan.id == task.work_plan_id).first()
+        if not plan or plan.organization_id != organization_id:
+            raise FinOpsValidationError("Tarea no pertenece a la organización.")
+        if work_plan_id and task.work_plan_id != work_plan_id:
+            raise FinOpsValidationError("La tarea no pertenece al trabajo indicado.")
+
+
+def _cost_currencies(
+    db: Session,
+    organization_id: str,
+    *,
+    period_start: datetime | None = None,
+    period_end: datetime | None = None,
+) -> set[str]:
+    query = db.query(FinOpsRecord.currency).filter(
+        FinOpsRecord.organization_id == organization_id,
+        FinOpsRecord.currency.isnot(None),
+        FinOpsRecord.cost.isnot(None),
+    )
+    if period_start:
+        query = query.filter(FinOpsRecord.created_at >= period_start)
+    if period_end:
+        query = query.filter(FinOpsRecord.created_at <= period_end)
+    return {row[0] for row in query.distinct().all() if row[0]}
+
+
+def _value_currencies(
+    db: Session,
+    organization_id: str,
+    *,
+    period_start: datetime | None = None,
+    period_end: datetime | None = None,
+) -> set[str]:
+    query = db.query(FinOpsValueRecord.currency).filter(
+        FinOpsValueRecord.organization_id == organization_id,
+        FinOpsValueRecord.currency.isnot(None),
+        FinOpsValueRecord.amount.isnot(None),
+        FinOpsValueRecord.certainty != "No disponible",
+    )
+    if period_start:
+        query = query.filter(FinOpsValueRecord.created_at >= period_start)
+    if period_end:
+        query = query.filter(FinOpsValueRecord.created_at <= period_end)
+    return {row[0] for row in query.distinct().all() if row[0]}
+
+
+def _same_currency_for_roi(
+    db: Session,
+    organization_id: str,
+    *,
+    period_start: datetime | None = None,
+    period_end: datetime | None = None,
+) -> bool:
+    cost_ccy = _cost_currencies(db, organization_id, period_start=period_start, period_end=period_end)
+    value_ccy = _value_currencies(db, organization_id, period_start=period_start, period_end=period_end)
+    if not cost_ccy and not value_ccy:
+        return True
+    if not cost_ccy or not value_ccy:
+        return len(cost_ccy | value_ccy) <= 1
+    return cost_ccy == value_ccy and len(cost_ccy) == 1
+
+
+def budget_spent_for_scope(
+    db: Session,
+    budget: FinOpsBudget,
+) -> Decimal:
+    employee_id: str | None = None
+    category: str | None = None
+    if budget.scope_type == "empleado" and budget.scope_id:
+        employee_id = budget.scope_id
+    elif budget.scope_type == "proceso" and budget.scope_id:
+        category = budget.scope_id
+    spent = _sum_costs(
+        db,
+        budget.organization_id,
+        period_start=budget.period_start,
+        period_end=budget.period_end,
+        employee_id=employee_id,
+        category=category,
+    )
+    return spent or Decimal("0")
+
+
 def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
     return datetime.now(timezone.utc)
 
 
@@ -119,6 +237,13 @@ def registrar_consumo(
     cost: Decimal | None = None,
     rate_id: str | None = None,
 ) -> FinOpsRecord:
+    _validate_org_refs(
+        db,
+        organization_id,
+        employee_id=employee_id,
+        work_plan_id=work_plan_id,
+        task_id=task_id,
+    )
     rate_source: str | None = None
     resolved_rate_id = rate_id
     resolved_currency = currency
@@ -132,6 +257,8 @@ def registrar_consumo(
                 .filter(FinOpsRate.id == rate_id, FinOpsRate.organization_id == organization_id)
                 .first()
             )
+            if not rate:
+                raise FinOpsValidationError("Tarifa no encontrada en la organización.")
         else:
             rate = find_active_rate(
                 db,
@@ -164,7 +291,7 @@ def registrar_consumo(
         tokens_out=tokens_out,
         quantity=float(quantity) if quantity is not None else None,
         unit=unit,
-        cost=float(resolved_cost) if resolved_cost is not None else None,
+        cost=float(_decimal(resolved_cost).quantize(Decimal("0.000001"))) if resolved_cost is not None else None,
         currency=resolved_currency,
         rate_source=rate_source,
         rate_id=resolved_rate_id,
@@ -199,6 +326,13 @@ def registrar_valor(
     source: str | None = None,
     notes: str | None = None,
 ) -> FinOpsValueRecord:
+    _validate_org_refs(
+        db,
+        organization_id,
+        employee_id=employee_id,
+        work_plan_id=work_plan_id,
+        task_id=task_id,
+    )
     row = FinOpsValueRecord(
         organization_id=organization_id,
         employee_id=employee_id,
@@ -251,6 +385,7 @@ def _sum_costs(
     period_end: datetime | None = None,
     employee_id: str | None = None,
     work_plan_id: str | None = None,
+    category: str | None = None,
 ) -> Decimal | None:
     query = db.query(func.coalesce(func.sum(FinOpsRecord.cost), 0)).filter(
         FinOpsRecord.organization_id == organization_id
@@ -263,11 +398,15 @@ def _sum_costs(
         query = query.filter(FinOpsRecord.employee_id == employee_id)
     if work_plan_id:
         query = query.filter(FinOpsRecord.work_plan_id == work_plan_id)
+    if category:
+        query = query.filter(FinOpsRecord.category == category)
     total = query.scalar()
     if total is None:
         return None
     dec = Decimal(str(total))
-    if dec == 0 and not _has_cost_rows(db, organization_id, period_start, period_end, employee_id, work_plan_id):
+    if dec == 0 and not _has_cost_rows(
+        db, organization_id, period_start, period_end, employee_id, work_plan_id, category
+    ):
         return None
     return dec
 
@@ -279,6 +418,7 @@ def _has_cost_rows(
     period_end: datetime | None,
     employee_id: str | None,
     work_plan_id: str | None,
+    category: str | None = None,
 ) -> bool:
     query = db.query(FinOpsRecord.id).filter(
         FinOpsRecord.organization_id == organization_id,
@@ -292,6 +432,8 @@ def _has_cost_rows(
         query = query.filter(FinOpsRecord.employee_id == employee_id)
     if work_plan_id:
         query = query.filter(FinOpsRecord.work_plan_id == work_plan_id)
+    if category:
+        query = query.filter(FinOpsRecord.category == category)
     return query.first() is not None
 
 
@@ -341,7 +483,14 @@ def dashboard_summary(
     net_benefit = None
     if total_cost is not None and total_value is not None:
         net_benefit = total_value - total_cost
-    roi, roi_label = compute_roi(total_cost=total_cost, total_value=total_value)
+    same_currency = _same_currency_for_roi(
+        db, organization_id, period_start=period_start, period_end=period_end
+    )
+    roi, roi_label = compute_roi(
+        total_cost=total_cost,
+        total_value=total_value,
+        same_currency=same_currency,
+    )
 
     exec_query = db.query(func.count(func.distinct(FinOpsRecord.work_plan_id))).filter(
         FinOpsRecord.organization_id == organization_id,
@@ -420,6 +569,8 @@ def project_budget_spend(
         budget.organization_id,
         period_start=period_start,
         period_end=now,
+        employee_id=budget.scope_id if budget.scope_type == "empleado" else None,
+        category=budget.scope_id if budget.scope_type == "proceso" else None,
     )
     if spent is None:
         return None
