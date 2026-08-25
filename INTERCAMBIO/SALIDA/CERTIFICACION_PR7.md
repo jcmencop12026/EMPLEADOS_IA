@@ -3,6 +3,7 @@
 **Estado:** `LISTO PARA CERTIFICACIÓN GITHUB`  
 **Rama:** `codex/notifications-alerts-820`  
 **HEAD inicial:** `b7f36ba`  
+**HEAD final:** `c4f7871`  
 **NO MERGE**
 
 ---
@@ -12,6 +13,7 @@
 | Archivo | Descripción |
 |---------|-------------|
 | `tests/certification/test_notifications_certification.py` | Suite permanente 11 casos obligatorios |
+| `tests/certification/__init__.py` | Paquete certificación |
 | `pytest.ini` | Markers `certification`, `notifications`, `tenant`, `auth`, `operations`, `concurrency`, `postgresql` |
 
 ## Defectos históricos cubiertos
@@ -35,7 +37,7 @@
 ### Certificación rápida
 
 ```bash
-pytest -m "certification and notifications"
+PYTHONPATH=backend:. pytest -m "certification and notifications" -q
 ```
 
 **11 passed**
@@ -43,7 +45,7 @@ pytest -m "certification and notifications"
 ### Suite notificaciones completa
 
 ```bash
-pytest tests/test_notifications_820.py tests/test_notifications_820_adversarial.py tests/certification/ -q
+PYTHONPATH=backend:. pytest tests/test_notifications_820.py tests/test_notifications_820_adversarial.py tests/certification/ -q
 ```
 
 **36 passed**
@@ -51,7 +53,7 @@ pytest tests/test_notifications_820.py tests/test_notifications_820_adversarial.
 ### Suite completa
 
 ```bash
-pytest -q
+PYTHONPATH=backend:. pytest -q
 ```
 
 **84 passed**
@@ -64,7 +66,7 @@ cd backend && PYTHONPATH=. alembic upgrade head
 
 **PASS** (`820a1` → `820a2` idempotency)
 
-### Build / audit
+### Build / audit / Git
 
 | Comando | Resultado |
 |---------|-----------|
@@ -81,28 +83,41 @@ cd backend && PYTHONPATH=. alembic upgrade head
 
 ## PostgreSQL
 
-Tests `@pytest.mark.postgresql` pendientes de fixture dedicada. En GitHub (QA-INFRA #12):
+- Local: sin `DATABASE_URL` PostgreSQL — tests de persistencia usan SQLite en suite focal.
+- En GitHub (QA-INFRA #12, servicio `postgres:16`):
 
 ```bash
-DATABASE_URL=postgresql+psycopg2://... pytest -m "certification and notifications and postgresql"
+DATABASE_URL=postgresql+psycopg2://empleados_test:empleados_test@localhost:5432/empleados_ia_test \
+  PYTHONPATH=backend:. pytest -m "certification and notifications" -v
 ```
 
 ## Comandos GitHub (post QA-INFRA #12 en main)
 
 ```bash
-pytest -m "certification and notifications" -v
+# Certificación rápida por PR
+PYTHONPATH=backend:. pytest -m "certification and notifications" -v
+
+# Grupo focal notifications (workflow existente)
 pytest -m notifications -v
 ```
 
+No duplicar `.github/workflows/qa.yml` en esta rama — ampliar QA-INFRA cuando #12 esté en `main`.
+
+## Corrección aplicada durante certificación
+
+- `test_cert_09_idempotencia_concurrente`: deadlock por `future.result()` secuencial en list comprehension; corregido enviando ambos futures antes de `result()`.
+
 ## Commits
 
-- (actualizar tras push)
+| SHA | Mensaje |
+|-----|---------|
+| `c4f7871` | `test(cert): suite permanente notificaciones PR #7` |
 
 ## Pendientes
 
-- Restaurar `.github/workflows/qa.yml` cuando #12 esté en main (no duplicado en esta rama)
-- Tests PostgreSQL dedicados para idempotencia multi-conexión
-- E2E browser `/notificaciones` (opcional futuro)
+- Integrar `pytest -m "certification and notifications"` en workflow QA-INFRA tras merge de #12.
+- Tests PostgreSQL dedicados para idempotencia multi-conexión (opcional).
+- E2E browser `/notificaciones` (opcional futuro).
 
 ---
 
