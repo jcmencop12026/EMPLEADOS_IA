@@ -2,6 +2,20 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchNotifications, NotificationItem, transitionNotification } from "../api";
 
+const STATUS_LABELS: Record<string, string> = {
+  NEW: "Nueva",
+  READ: "Leída",
+  ACKNOWLEDGED: "Atendida",
+  DISMISSED: "Descartada",
+};
+
+const SEVERITY_LABELS: Record<string, string> = {
+  LOW: "Baja",
+  MEDIUM: "Media",
+  HIGH: "Alta",
+  CRITICAL: "Crítica",
+};
+
 function sourcePath(item: NotificationItem) {
   if (item.type === "APPROVAL_REQUIRED" && item.source_id && item.metadata?.approval_id) {
     return `/ejecuciones/${item.source_id}?approval=${encodeURIComponent(String(item.metadata.approval_id))}`;
@@ -69,8 +83,8 @@ export function NotificationsPage() {
     <div className="page-header"><h1>Centro de notificaciones</h1><div className="muted">Alertas operativas y solicitudes que requieren atención.</div></div>
     <div className="notification-filters panel">
       <input aria-label="Buscar" placeholder="Buscar" value={search} onChange={(e) => setSearch(e.target.value)} />
-      <select aria-label="Estado" value={status} onChange={(e) => setStatus(e.target.value)}><option value="">Estado</option>{["NEW","READ","ACKNOWLEDGED","DISMISSED"].map(x=><option key={x}>{x}</option>)}</select>
-      <select aria-label="Severidad" value={severity} onChange={(e) => setSeverity(e.target.value)}><option value="">Severidad</option>{["LOW","MEDIUM","HIGH","CRITICAL"].map(x=><option key={x}>{x}</option>)}</select>
+      <select aria-label="Estado" value={status} onChange={(e) => setStatus(e.target.value)}><option value="">Estado</option>{Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+      <select aria-label="Severidad" value={severity} onChange={(e) => setSeverity(e.target.value)}><option value="">Severidad</option>{Object.entries(SEVERITY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
       <select aria-label="Tipo" value={type} onChange={(e) => setType(e.target.value)}><option value="">Tipo</option>{[...new Set(rows.map(r=>r.type))].map(x=><option key={x}>{x}</option>)}</select>
       <input aria-label="Fecha" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       <button className="btn" title="Ordenar por fecha" onClick={() => setSortAsc(!sortAsc)}>↕ Fecha</button>
@@ -82,10 +96,10 @@ export function NotificationsPage() {
     )}
     <div className="notification-grid-wrap"><table className="grid notification-grid"><thead><tr><th>Fecha</th><th>Severidad</th><th>Tipo</th><th>Título</th><th>Origen</th><th>Estado</th><th>Destinatario</th><th>Acciones</th></tr></thead>
       <tbody>{filtered.map(row => <tr key={row.id} className={row.status === "NEW" ? "notification-new" : ""}>
-        <td>{new Date(row.created_at).toLocaleString()}</td><td><span className={`severity severity-${row.severity.toLowerCase()}`}>{row.severity}</span></td><td>{row.type}</td>
-        <td title={row.message}><strong>{row.title}</strong><div className="muted notification-message">{row.message}</div></td><td>{row.source_type}</td><td>{row.status}</td><td>{row.recipient_user_id || row.recipient_role || "Todos"}</td>
+        <td>{new Date(row.created_at).toLocaleString()}</td><td><span className={`severity severity-${row.severity.toLowerCase()}`}>{SEVERITY_LABELS[row.severity] || row.severity}</span></td><td>{row.type}</td>
+        <td title={row.message}><strong>{row.title}</strong><div className="muted notification-message">{row.message}</div></td><td>{row.source_type}</td><td>{STATUS_LABELS[row.status] || row.status}</td><td>{row.recipient_user_id || row.recipient_role || "Todos"}</td>
         <td className="notification-actions">
-          <button title="Marcar leído" onClick={() => void act(row.id,"read")}>✓</button><button title="Acknowledge" onClick={() => void act(row.id,"acknowledge")}>◎</button><button title="Descartar" onClick={() => void act(row.id,"dismiss")}>×</button>
+          <button title="Marcar como leída" onClick={() => void act(row.id,"read")}>✓</button><button title="Marcar como atendida" onClick={() => void act(row.id,"acknowledge")}>◎</button><button title="Descartar" onClick={() => void act(row.id,"dismiss")}>×</button>
           {sourcePath(row) && <Link title="Ir al origen" to={sourcePath(row)!}>↗</Link>}
         </td></tr>)}</tbody></table></div>
   </div>;
