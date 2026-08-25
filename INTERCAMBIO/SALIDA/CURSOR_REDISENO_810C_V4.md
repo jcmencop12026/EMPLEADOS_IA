@@ -13,7 +13,7 @@
 | PR | #6 |
 | Rama | `cursor/automations-scheduler-810` |
 | HEAD anterior (auditado) | `80c1e6ab5b7f74f928b2ed3d53928b971a025ae0` |
-| HEAD nuevo | *(post-commit)* |
+| HEAD nuevo | `b33190a6d45df4cddb09753287a0fe5b69c04e28` |
 | Commit | `feat(810c): v4 execution/materialization boundary redesign` |
 
 ---
