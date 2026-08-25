@@ -529,7 +529,6 @@ def decide_approval(
         if employee:
             employee.status = EmployeeStatus.DISPONIBLE
 
-    db.commit()
     publish(
         EventMessage(
             event_type=WorkEventType.APPROVAL_COMPLETED,
@@ -541,6 +540,7 @@ def decide_approval(
         ),
         db,
     )
+    db.commit()
     if plan:
         return _build_plan_response(db, plan)
     return {"approval_id": approval_id, "status": approval.status}
