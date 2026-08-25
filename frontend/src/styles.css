@@ -475,3 +475,212 @@ body {
   background: #f1f5f9;
   color: #475569;
 }
+
+/* SALUD-960 Diagnóstico IPS */
+.salud-page {
+  max-width: 1200px;
+}
+
+.salud-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.salud-kpi-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  padding: 10px 14px;
+}
+
+.salud-kpi-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.salud-kpi-mini span {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.salud-kpi-mini strong {
+  font-size: 15px;
+}
+
+.salud-kpi-mini em {
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: normal;
+}
+
+.salud-tabs {
+  margin-bottom: -1px;
+}
+
+.salud-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.salud-kpi-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.salud-kpi-card h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.salud-dl {
+  margin: 0;
+}
+
+.salud-dl-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 12px;
+}
+
+.salud-dl-row dt {
+  color: #64748b;
+}
+
+.salud-dl-row dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.salud-insuficiente {
+  color: #b45309;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.salud-traza-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.salud-traza-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 11px;
+}
+
+.salud-traza-item span {
+  display: block;
+  color: #64748b;
+  text-transform: capitalize;
+}
+
+.salud-traza-item strong {
+  font-size: 12px;
+}
+
+.salud-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .salud-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.salud-detalle-panel {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 12px;
+}
+
+.salud-detalle-panel h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.salud-cadena {
+  margin: 0 0 10px;
+  padding-left: 18px;
+}
+
+.salud-cadena li {
+  margin-bottom: 6px;
+}
+
+.salud-row-active {
+  background: #eff6ff;
+}
+
+.salud-prop-card,
+.salud-tarea-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.salud-resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.salud-impacto {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e40af;
+}
+
+.salud-sub {
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+.badge-sev-alta {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-sev-media {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.badge-sev-baja {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.salud-ok {
+  color: #166534;
+  font-size: 12px;
+  margin: 0;
+}
+
+.salud-respuesta {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 6px;
+  font-size: 12px;
+}
