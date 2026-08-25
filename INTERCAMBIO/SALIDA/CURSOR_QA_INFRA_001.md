@@ -14,7 +14,7 @@
 | PR | #12 |
 | Rama | `cursor/qa-infra-001-12b6` |
 | HEAD anterior (auditado) | `d0a119823178a5b918248f23cc429a20a0dcf955` |
-| HEAD nuevo | *(ver commit de corrección)* |
+| HEAD nuevo | `eb78ac0` → *(ver commit downgrade FK)* |
 
 ---
 
@@ -45,9 +45,20 @@ Revisadas todas las migraciones en `upgrade head`:
 - Único patrón `boolean = 0` encontrado: `shadow_mode` en `5b2eb2437398`
 - `version = 1` es entero → compatible con PostgreSQL
 
----
+### 4. Nuevo bloqueo tras shadow_mode (downgrade PostgreSQL)
 
-## COMMIT DE CORRECCIÓN
+| Campo | Detalle |
+|-------|---------|
+| Paso CI | `alembic downgrade 4355c73adcb8` |
+| Migración | `5b2eb2437398_agent_factory_802.py` (downgrade) |
+| SQL/op | `op.drop_constraint(None, 'ai_employees', type_='foreignkey')` |
+| Excepción | `CompileError: Can't emit DROP CONSTRAINT ... it has no name` |
+| Causa | PostgreSQL exige nombre explícito; upgrade crea `fk_ai_employees_owner` y `fk_ai_employees_created_by` |
+| Corrección | `drop_constraint` con nombres explícitos en downgrade |
+
+**Nota:** `upgrade head` ya PASS en GitHub tras corrección `shadow_mode`.
+
+---
 
 | Campo | Valor |
 |-------|-------|
