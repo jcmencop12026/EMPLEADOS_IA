@@ -139,6 +139,7 @@ export function DiagnosticoIpsPage() {
   const [respuesta, setRespuesta] = useState<Record<string, unknown> | null>(null);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [planMsg, setPlanMsg] = useState<string | null>(null);
+  const [lastWorkPlanId, setLastWorkPlanId] = useState<string | null>(null);
   const [modoDemo, setModoDemo] = useState<"completo" | "parcial" | null>(null);
 
   const ejecutarAnalisis = useCallback(async (parcial: boolean) => {
@@ -147,6 +148,7 @@ export function DiagnosticoIpsPage() {
     setRespuesta(null);
     setFeedbackMsg(null);
     setPlanMsg(null);
+    setLastWorkPlanId(null);
     setHallazgoSel(null);
     setPropSel(new Set());
     setModoDemo(parcial ? "parcial" : "completo");

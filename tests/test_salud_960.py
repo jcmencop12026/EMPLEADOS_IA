@@ -12,7 +12,7 @@ from app.services.salud_engine import run_ips_analysis
 from app.services.salud_indicators import INSUFICIENTE, calc_facturacion, compute_all_indicators
 from app.services.salud_normalization import normalize_record, profile_data_quality
 from app.services.salud_specialist_selection import detect_required_domains, select_specialists
-from tests.conftest import TestingSessionLocal
+from conftest import TestingSessionLocal
 
 pytestmark = [pytest.mark.salud]
 

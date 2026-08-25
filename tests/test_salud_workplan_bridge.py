@@ -93,7 +93,7 @@ def test_bridge_creates_workplan_and_tasks(client, token):
     detail = client.get(f"/api/operations/center/{body['work_plan_id']}", headers=auth_header(token)).json()
     assert detail["prioridad_codigo"] in {"BAJA", "MEDIA", "ALTA", "CRITICA"}
     assert detail["vencimiento"] is not None
-    assert "SALUD" in (detail.get("resumen") or "")
+    assert "SALUD" in (detail.get("summary") or detail.get("resultado") or "")
 
 
 def test_idempotency_same_propuestas(client, token):
