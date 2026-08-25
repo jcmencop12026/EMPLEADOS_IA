@@ -13,7 +13,7 @@
 |-------|-------|
 | HEAD reportado | `18ac628` |
 | HEAD encontrado al inicio | `e6ecba1` (+ fix PG boolean `e6ecba1`) |
-| HEAD final reauditoría | *(commit tras correcciones adversariales)* |
+| HEAD final reauditoría | `5de88e2` |
 
 Commits adicionales auditados respecto a `18ac628`:
 - `e6ecba1` — migración PG boolean + schema_repair Numeric
@@ -140,7 +140,7 @@ Validación previa de IDs cross-tenant en router.
 | upgrade head (SQLite) | OK |
 | downgrade → `5b2eb2437398` | OK |
 | upgrade head | OK |
-| PostgreSQL CI previo (`e6ecba1`) | 4/4 PASS |
+| PostgreSQL CI (`5de88e2`) | **4/4 PASS** — https://github.com/jcmencop12026/EMPLEADOS_IA/actions/runs/32858209045 |
 
 ---
 
