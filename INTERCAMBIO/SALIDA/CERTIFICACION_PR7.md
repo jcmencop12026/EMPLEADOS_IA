@@ -3,7 +3,7 @@
 **Estado:** `LISTO PARA CERTIFICACIÓN GITHUB`  
 **Rama:** `codex/notifications-alerts-820`  
 **HEAD inicial:** `b7f36ba`  
-**HEAD final:** `2e575d8`  
+**HEAD final:** `6bf8ba0`  
 **NO MERGE**
 
 ---
@@ -93,15 +93,17 @@ DATABASE_URL=postgresql+psycopg2://empleados_test:empleados_test@localhost:5432/
 
 ## Comandos GitHub (post QA-INFRA #12 en main)
 
+Rama de integración CI preparada: **`cursor/qa-infra-cert-12b6`** (derivada de QA-INFRA #12).
+
 ```bash
-# Certificación rápida por PR
+# Certificación rápida por PR (workflow qa.yml)
 PYTHONPATH=backend:. pytest -m "certification and notifications" -v
 
-# Grupo focal notifications (workflow existente)
-pytest -m notifications -v
+# Grupo focal notifications
+PYTHONPATH=backend:. pytest -m notifications -v
 ```
 
-No duplicar `.github/workflows/qa.yml` en esta rama — ampliar QA-INFRA cuando #12 esté en `main`.
+No duplicar `.github/workflows/qa.yml` en esta rama — usar `cursor/qa-infra-cert-12b6` tras merge de #12.
 
 ## Corrección aplicada durante certificación
 
@@ -114,9 +116,11 @@ No duplicar `.github/workflows/qa.yml` en esta rama — ampliar QA-INFRA cuando 
 | `efd30a5` | `docs(cert): informe CERTIFICACION_PR7 completo` |
 | `c4f7871` | `test(cert): suite permanente notificaciones PR #7` |
 
+(Commit adicional: guard `DATABASE_URL` en `tests/conftest.py` — ver HEAD final)
+
 ## Pendientes
 
-- Integrar `pytest -m "certification and notifications"` en workflow QA-INFRA tras merge de #12.
+- Merge de QA-INFRA #12 + rama `cursor/qa-infra-cert-12b6` para activar CI de certificación.
 - Tests PostgreSQL dedicados para idempotencia multi-conexión (opcional).
 - E2E browser `/notificaciones` (opcional futuro).
 
