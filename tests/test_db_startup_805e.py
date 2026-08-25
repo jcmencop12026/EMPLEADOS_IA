@@ -14,6 +14,8 @@ if str(BACKEND_DIR) not in sys.path:
 if str(TESTS_DIR) not in sys.path:
     sys.path.insert(0, str(TESTS_DIR))
 
+pytestmark = [pytest.mark.migrations, pytest.mark.windows]
+
 from fixtures.legacy_db_fixture import build_programmatic_legacy_db  # noqa: E402
 from scripts.db_startup import create_fresh_database, prepare_database  # noqa: E402
 from scripts.legacy_preservation import find_preserved_legacy_by_sha256, preserve_legacy_database  # noqa: E402
