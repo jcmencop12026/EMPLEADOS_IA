@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = [pytest.mark.auth, pytest.mark.tenant]
+
 from app.models import Organization, User
 from app.security import hash_password
 from conftest import TestingSessionLocal, auth_header
