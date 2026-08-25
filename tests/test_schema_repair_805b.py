@@ -4,6 +4,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
+pytestmark = pytest.mark.migrations
+
 from sqlalchemy import create_engine
 
 BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend"
