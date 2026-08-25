@@ -14,6 +14,13 @@ class WorkPlanStatus(StrEnum):
     CANCELLED = "CANCELLED"
 
 
+class WorkPlanPriority(StrEnum):
+    BAJA = "BAJA"
+    MEDIA = "MEDIA"
+    ALTA = "ALTA"
+    CRITICA = "CRITICA"
+
+
 class EmployeeTaskStatus(StrEnum):
     CREATED = "CREATED"
     READY = "READY"

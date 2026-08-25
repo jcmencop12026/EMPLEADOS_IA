@@ -10,6 +10,7 @@ class OperationSummaryOut(BaseModel):
     approval: int = 0
     error: int = 0
     overdue: int = 0
+    due_soon: int = 0
 
 
 class OperationItemOut(BaseModel):
@@ -18,13 +19,16 @@ class OperationItemOut(BaseModel):
     proceso: str | None = None
     responsable: str | None = None
     empleado_ia: str | None = None
-    prioridad: str = "Normal"
+    prioridad: str = "Media"
+    prioridad_codigo: str = "MEDIA"
     estado: str
     estado_codigo: str
     progreso: str
     aprobaciones_pendientes: int = 0
     inicio: datetime | None = None
     vencimiento: datetime | None = None
+    vencimiento_estado: str = "Sin vencimiento"
+    vencimiento_codigo: str = "sin_vencimiento"
     ultima_actividad: datetime | None = None
     resultado: str | None = None
     approval_status: str
@@ -97,6 +101,8 @@ class OperationDetailOut(OperationItemOut):
 class OperationUpdateRequest(BaseModel):
     prioridad: str | None = None
     employee_id: str | None = None
+    vencimiento: datetime | None = None
+    sin_vencimiento: bool | None = None
 
 
 class OperationActionRequest(BaseModel):

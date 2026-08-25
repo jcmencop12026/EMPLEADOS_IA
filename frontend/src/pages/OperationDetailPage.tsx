@@ -10,6 +10,7 @@ import {
   fetchOperationResults,
   fetchOperationTasks,
   runOperation,
+  updateOperation,
 } from "../api";
 
 type Tab = "resumen" | "plan" | "tareas" | "ejecuciones" | "aprobaciones" | "resultados" | "actividad";
@@ -25,6 +26,10 @@ export function OperationDetailPage() {
   const [tab, setTab] = useState<Tab>("resumen");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [editPrioridad, setEditPrioridad] = useState("");
+  const [editVencimiento, setEditVencimiento] = useState("");
+  const [sinVencimiento, setSinVencimiento] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     if (!operationId) return;
@@ -40,6 +45,9 @@ export function OperationDetailPage() {
         fetchOperationActivity(operationId),
       ]);
       setDetail(d);
+      setEditPrioridad(d.prioridad_codigo);
+      setEditVencimiento(d.vencimiento ? d.vencimiento.slice(0, 16) : "");
+      setSinVencimiento(!d.vencimiento);
       setTasks(t);
       setExecutions(e);
       setApprovals(a);
@@ -118,6 +126,72 @@ export function OperationDetailPage() {
           <p>
             <strong>Empleado IA:</strong> {detail.empleado_ia || "—"}
           </p>
+          <p>
+            <strong>Prioridad:</strong>{" "}
+            <span className={`badge priority-${detail.prioridad_codigo}`}>{detail.prioridad}</span>
+          </p>
+          <p>
+            <strong>Vencimiento:</strong>{" "}
+            <span className={`badge due-${detail.vencimiento_codigo}`}>
+              {detail.vencimiento ? new Date(detail.vencimiento).toLocaleString() : detail.vencimiento_estado}
+            </span>
+          </p>
+          <div className="ops-actions">
+            <label className="ops-label" htmlFor="ops-prioridad">
+              Cambiar prioridad
+            </label>
+            <select
+              id="ops-prioridad"
+              value={editPrioridad}
+              onChange={(e) => setEditPrioridad(e.target.value)}
+              aria-label="Prioridad"
+            >
+              <option value="BAJA">Baja</option>
+              <option value="MEDIA">Media</option>
+              <option value="ALTA">Alta</option>
+              <option value="CRITICA">Crítica</option>
+            </select>
+            <label className="ops-label" htmlFor="ops-vencimiento">
+              Vencimiento
+            </label>
+            <input
+              id="ops-vencimiento"
+              type="datetime-local"
+              className="ops-input"
+              value={editVencimiento}
+              disabled={sinVencimiento}
+              onChange={(e) => setEditVencimiento(e.target.value)}
+              aria-label="Fecha de vencimiento"
+            />
+            <label>
+              <input
+                type="checkbox"
+                checked={sinVencimiento}
+                onChange={(e) => setSinVencimiento(e.target.checked)}
+              />{" "}
+              Sin vencimiento
+            </label>
+            <button
+              type="button"
+              className="btn"
+              title="Guardar cambios"
+              disabled={saving}
+              onClick={() => {
+                if (!operationId) return;
+                setSaving(true);
+                void updateOperation(operationId, {
+                  prioridad: editPrioridad,
+                  sin_vencimiento: sinVencimiento,
+                  vencimiento: sinVencimiento ? null : editVencimiento ? new Date(editVencimiento).toISOString() : undefined,
+                })
+                  .then(load)
+                  .catch((e) => setError(e instanceof Error ? e.message : String(e)))
+                  .finally(() => setSaving(false));
+              }}
+            >
+              {saving ? "Guardando…" : "Guardar"}
+            </button>
+          </div>
           <p>
             <strong>Aprobación:</strong> {detail.approval_status}
           </p>

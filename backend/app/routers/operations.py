@@ -49,6 +49,8 @@ def operations_center_list(
     prioridad: str | None = None,
     proceso: str | None = None,
     bucket: str | None = None,
+    vencimiento_filtro: str | None = None,
+    orden: str | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     limit: int = Query(100, ge=1, le=500),
@@ -65,6 +67,8 @@ def operations_center_list(
         prioridad=prioridad,
         proceso=proceso,
         bucket=bucket,
+        vencimiento_filtro=vencimiento_filtro,
+        orden=orden,
         date_from=date_from,
         date_to=date_to,
         limit=limit,
@@ -95,9 +99,13 @@ def operations_center_update(
             plan_id=plan_id,
             prioridad=body.prioridad,
             employee_id=body.employee_id,
+            vencimiento=body.vencimiento,
+            sin_vencimiento=bool(body.sin_vencimiento),
         )
     except LookupError as exc:
         raise _not_found(exc) from exc
+    except ValueError as exc:
+        raise _bad_request(exc) from exc
 
 
 @router.get("/center/{plan_id}/tasks", response_model=list[OperationTaskOut])

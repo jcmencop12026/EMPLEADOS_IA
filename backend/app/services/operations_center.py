@@ -7,14 +7,21 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.enums import WorkPlanPriority
 from app.models import User
 from app.orchestration_models import AIEmployee, ApprovalRequest, Capability, EmployeeTask, FinOpsRecord, Tool, WorkEvent, WorkPlan
 from app.services.operations_labels import (
     APPROVAL_LABELS,
-    DISPLAY_STATUS,
     EVENT_LABELS,
+    PRIORITY_ORDER,
     SUMMARY_BUCKETS,
     display_status,
+    due_state,
+    due_state_label,
+    is_due_soon,
+    is_overdue,
+    normalize_priority,
+    priority_label,
     task_progress,
 )
 
@@ -93,13 +100,16 @@ def _operation_item(db: Session, plan: WorkPlan) -> dict[str, Any]:
         "proceso": _process_name(db, plan),
         "responsable": _username(db, plan.user_id),
         "empleado_ia": _employee_name(db, plan.employee_id),
-        "prioridad": "Normal",
+        "prioridad": priority_label(plan.prioridad),
+        "prioridad_codigo": plan.prioridad or WorkPlanPriority.MEDIA.value,
         "estado": display_status(plan.status),
         "estado_codigo": plan.status,
         "progreso": progress,
         "aprobaciones_pendientes": _pending_approvals(db, plan.id),
         "inicio": plan.started_at or plan.created_at,
-        "vencimiento": None,
+        "vencimiento": plan.vencimiento,
+        "vencimiento_estado": due_state_label(plan),
+        "vencimiento_codigo": due_state(plan),
         "ultima_actividad": last_activity,
         "resultado": plan.summary or (plan.error if plan.status == "FAILED" else None),
         "approval_status": APPROVAL_LABELS.get(plan.approval_status, plan.approval_status),
@@ -112,13 +122,20 @@ def _operation_item(db: Session, plan: WorkPlan) -> dict[str, Any]:
 
 def get_summary(db: Session, organization_id: str) -> dict[str, int]:
     rows = db.query(WorkPlan).filter(WorkPlan.organization_id == organization_id).all()
+    now = _utcnow()
     summary = {key: 0 for key in SUMMARY_BUCKETS}
     for plan in rows:
         for bucket, statuses in SUMMARY_BUCKETS.items():
+            if bucket in {"overdue", "due_soon"}:
+                continue
             if plan.status in statuses:
                 summary[bucket] += 1
         if plan.approval_status == "PENDING" and plan.status not in SUMMARY_BUCKETS["approval"]:
             summary["approval"] += 1
+        if is_overdue(plan, now):
+            summary["overdue"] += 1
+        elif is_due_soon(plan, now):
+            summary["due_soon"] += 1
     return summary
 
 
@@ -132,6 +149,8 @@ def list_operations(
     prioridad: str | None = None,
     proceso: str | None = None,
     bucket: str | None = None,
+    vencimiento_filtro: str | None = None,
+    orden: str | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     limit: int = 100,
@@ -146,19 +165,45 @@ def list_operations(
         query = query.filter(WorkPlan.status == status.upper())
     if employee_id:
         query = query.filter(WorkPlan.employee_id == employee_id)
+    if prioridad:
+        try:
+            code = normalize_priority(prioridad)
+            query = query.filter(WorkPlan.prioridad == code)
+        except ValueError:
+            return []
     if date_from:
         query = query.filter(WorkPlan.created_at >= date_from)
     if date_to:
         query = query.filter(WorkPlan.created_at <= date_to)
-    rows = query.order_by(WorkPlan.created_at.desc()).limit(limit).all()
+
+    if orden == "prioridad":
+        rows = query.all()
+        rows.sort(key=lambda p: (PRIORITY_ORDER.get(p.prioridad or "MEDIA", 99), p.created_at), reverse=False)
+        rows = rows[:limit]
+    elif orden == "vencimiento":
+        rows = query.order_by(WorkPlan.vencimiento.asc().nullslast(), WorkPlan.created_at.desc()).limit(limit).all()
+    else:
+        rows = query.order_by(WorkPlan.created_at.desc()).limit(limit).all()
+
     items = [_operation_item(db, row) for row in rows]
+    now = _utcnow()
+
     if bucket and bucket in SUMMARY_BUCKETS:
-        statuses = SUMMARY_BUCKETS[bucket]
-        items = [item for item, row in zip(items, rows) if row.status in statuses or (bucket == "approval" and row.approval_status == "PENDING")]
+        if bucket == "overdue":
+            items = [item for item, row in zip(items, rows) if is_overdue(row, now)]
+        elif bucket == "due_soon":
+            items = [item for item, row in zip(items, rows) if is_due_soon(row, now)]
+        else:
+            statuses = SUMMARY_BUCKETS[bucket]
+            items = [
+                item
+                for item, row in zip(items, rows)
+                if row.status in statuses or (bucket == "approval" and row.approval_status == "PENDING")
+            ]
     if proceso:
         items = [item for item in items if item.get("proceso") and proceso.lower() in item["proceso"].lower()]
-    if prioridad:
-        items = [item for item in items if item.get("prioridad", "").lower() == prioridad.lower()]
+    if vencimiento_filtro:
+        items = [item for item in items if item.get("vencimiento_codigo") == vencimiento_filtro]
     return items
 
 
@@ -212,7 +257,7 @@ def list_operation_tasks(db: Session, organization_id: str, plan_id: str) -> lis
                 "responsable": _employee_name(db, task.employee_id),
                 "estado": display_status(task.status),
                 "estado_codigo": task.status,
-                "prioridad": "Normal",
+                "prioridad": priority_label(plan.prioridad),
                 "dependencia": str(task.sequence - 1) if task.sequence > 1 else None,
                 "inicio": task.started_at,
                 "fin": task.completed_at,
@@ -418,7 +463,9 @@ def update_operation(
     organization_id: str,
     plan_id: str,
     prioridad: str | None = None,
+    vencimiento: datetime | None = None,
     employee_id: str | None = None,
+    sin_vencimiento: bool = False,
 ) -> dict[str, Any]:
     if employee_id:
         return reassign_operation(db, organization_id=organization_id, plan_id=plan_id, employee_id=employee_id)
@@ -426,7 +473,11 @@ def update_operation(
     if not plan:
         raise LookupError("La operación no existe o no está disponible.")
     if prioridad is not None:
-        pass
+        plan.prioridad = normalize_priority(prioridad)
+    if sin_vencimiento:
+        plan.vencimiento = None
+    elif vencimiento is not None:
+        plan.vencimiento = vencimiento
     db.commit()
     db.refresh(plan)
     return get_operation_detail(db, organization_id, plan_id)

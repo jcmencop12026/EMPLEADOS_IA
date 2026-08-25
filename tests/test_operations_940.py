@@ -1,9 +1,11 @@
 """Tests OPERACIONES-940 — Centro de Operaciones."""
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from app.models import Organization, User
+from app.orchestration_models import WorkPlan
 from app.security import hash_password
 from conftest import TestingSessionLocal, auth_header
 
@@ -130,3 +132,146 @@ def test_approval_requires_permission(client, token):
     viewer = _create_org_user(client, "Org Viewer Appr", f"va-{uuid.uuid4().hex[:6]}", "ViewerAppr*", role="viewer")
     pending = client.get("/api/operations/approvals/pending", headers=auth_header(viewer))
     assert pending.status_code == 200
+
+
+def test_priority_default_media(client, token):
+    plan_id = _create_plan(client, token)
+    detail = client.get(f"/api/operations/center/{plan_id}", headers=auth_header(token))
+    assert detail.status_code == 200
+    body = detail.json()
+    assert body["prioridad"] == "Media"
+    assert body["prioridad_codigo"] == "MEDIA"
+
+
+def test_priority_explicit_update_and_persist(client, token):
+    plan_id = _create_plan(client, token)
+    patched = client.patch(
+        f"/api/operations/center/{plan_id}",
+        headers=auth_header(token),
+        json={"prioridad": "Alta"},
+    )
+    assert patched.status_code == 200
+    assert patched.json()["prioridad"] == "Alta"
+    assert patched.json()["prioridad_codigo"] == "ALTA"
+    again = client.get(f"/api/operations/center/{plan_id}", headers=auth_header(token))
+    assert again.json()["prioridad_codigo"] == "ALTA"
+
+
+def test_priority_invalid_rejected(client, token):
+    plan_id = _create_plan(client, token)
+    bad = client.patch(
+        f"/api/operations/center/{plan_id}",
+        headers=auth_header(token),
+        json={"prioridad": "Urgente"},
+    )
+    assert bad.status_code == 400
+
+
+def test_filter_by_priority(client, token):
+    plan_id = _create_plan(client, token)
+    client.patch(
+        f"/api/operations/center/{plan_id}",
+        headers=auth_header(token),
+        json={"prioridad": "CRITICA"},
+    )
+    listed = client.get("/api/operations/center", headers=auth_header(token), params={"prioridad": "CRITICA"})
+    assert listed.status_code == 200
+    assert any(row["id"] == plan_id for row in listed.json())
+
+
+def test_due_date_none_by_default(client, token):
+    plan_id = _create_plan(client, token)
+    detail = client.get(f"/api/operations/center/{plan_id}", headers=auth_header(token)).json()
+    assert detail["vencimiento"] is None
+    assert detail["vencimiento_codigo"] == "sin_vencimiento"
+
+
+def test_due_date_future_persisted(client, token):
+    plan_id = _create_plan(client, token)
+    future = (datetime.now(timezone.utc) + timedelta(days=3)).isoformat()
+    patched = client.patch(
+        f"/api/operations/center/{plan_id}",
+        headers=auth_header(token),
+        json={"vencimiento": future},
+    )
+    assert patched.status_code == 200
+    assert patched.json()["vencimiento"] is not None
+    assert patched.json()["vencimiento_codigo"] == "vigente"
+
+
+def test_due_date_overdue_summary(client, token):
+    plan_id = _create_plan(client, token)
+    past = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+    client.patch(
+        f"/api/operations/center/{plan_id}",
+        headers=auth_header(token),
+        json={"vencimiento": past},
+    )
+    summary = client.get("/api/operations/summary", headers=auth_header(token)).json()
+    assert summary["overdue"] >= 1
+    filtered = client.get("/api/operations/center", headers=auth_header(token), params={"vencimiento_filtro": "vencido"})
+    assert any(row["id"] == plan_id for row in filtered.json())
+
+
+def test_due_soon_within_48h(client, token):
+    plan_id = _create_plan(client, token)
+    soon = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+    client.patch(
+        f"/api/operations/center/{plan_id}",
+        headers=auth_header(token),
+        json={"vencimiento": soon},
+    )
+    summary = client.get("/api/operations/summary", headers=auth_header(token)).json()
+    assert summary["due_soon"] >= 1
+
+
+def test_clear_due_date(client, token):
+    plan_id = _create_plan(client, token)
+    future = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
+    client.patch(
+        f"/api/operations/center/{plan_id}",
+        headers=auth_header(token),
+        json={"vencimiento": future},
+    )
+    cleared = client.patch(
+        f"/api/operations/center/{plan_id}",
+        headers=auth_header(token),
+        json={"sin_vencimiento": True},
+    )
+    assert cleared.status_code == 200
+    assert cleared.json()["vencimiento"] is None
+
+
+def test_viewer_cannot_update_priority(client, token):
+    plan_id = _create_plan(client, token)
+    viewer = _create_org_user(client, "Org Viewer Upd", f"vu-{uuid.uuid4().hex[:6]}", "ViewerUpd*", role="viewer")
+    denied = client.patch(
+        f"/api/operations/center/{plan_id}",
+        headers=auth_header(viewer),
+        json={"prioridad": "Alta"},
+    )
+    assert denied.status_code == 403
+
+
+def test_cross_tenant_priority_update_denied(client):
+    token_a = _create_org_user(client, "Org Pri A", f"pa-{uuid.uuid4().hex[:6]}", "PriA*")
+    token_b = _create_org_user(client, "Org Pri B", f"pb-{uuid.uuid4().hex[:6]}", "PriB*")
+    plan_id = _create_plan(client, token_a)
+    denied = client.patch(
+        f"/api/operations/center/{plan_id}",
+        headers=auth_header(token_b),
+        json={"prioridad": "Alta"},
+    )
+    assert denied.status_code == 404
+
+
+def test_migration_preserves_existing_plans(client, token):
+    plan_id = _create_plan(client, token)
+    db = TestingSessionLocal()
+    try:
+        plan = db.query(WorkPlan).filter(WorkPlan.id == plan_id).first()
+        assert plan is not None
+        assert plan.prioridad == "MEDIA"
+        assert plan.vencimiento is None
+    finally:
+        db.close()

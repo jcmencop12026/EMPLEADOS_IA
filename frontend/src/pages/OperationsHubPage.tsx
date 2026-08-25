@@ -6,9 +6,10 @@ import { cancelOperation, fetchOperationsCenter, fetchOperationsSummary } from "
 const BUCKETS: Array<{ key: keyof OperationSummary; label: string }> = [
   { key: "running", label: "En ejecución" },
   { key: "pending", label: "Pendientes" },
-  { key: "approval", label: "Esperando aprobación" },
-  { key: "error", label: "Con error" },
+  { key: "approval", label: "Requieren aprobación" },
+  { key: "due_soon", label: "Próximos a vencer" },
   { key: "overdue", label: "Vencidos" },
+  { key: "error", label: "Con error" },
 ];
 
 export function OperationsHubPage() {
@@ -16,6 +17,9 @@ export function OperationsHubPage() {
   const [summary, setSummary] = useState<OperationSummary | null>(null);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [prioridad, setPrioridad] = useState("");
+  const [vencimientoFiltro, setVencimientoFiltro] = useState("");
+  const [orden, setOrden] = useState("");
   const [bucket, setBucket] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,6 +31,9 @@ export function OperationsHubPage() {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (status) params.set("status", status);
+      if (prioridad) params.set("prioridad", prioridad);
+      if (vencimientoFiltro) params.set("vencimiento_filtro", vencimientoFiltro);
+      if (orden) params.set("orden", orden);
       if (activeBucket) params.set("bucket", activeBucket);
       const [items, stats] = await Promise.all([
         fetchOperationsCenter(params.toString()),
@@ -73,6 +80,29 @@ export function OperationsHubPage() {
           <option value="FAILED">Fallido</option>
           <option value="CANCELLED">Cancelado</option>
         </select>
+        <select value={prioridad} onChange={(e) => setPrioridad(e.target.value)} aria-label="Filtrar prioridad">
+          <option value="">Todas las prioridades</option>
+          <option value="BAJA">Baja</option>
+          <option value="MEDIA">Media</option>
+          <option value="ALTA">Alta</option>
+          <option value="CRITICA">Crítica</option>
+        </select>
+        <select
+          value={vencimientoFiltro}
+          onChange={(e) => setVencimientoFiltro(e.target.value)}
+          aria-label="Filtrar vencimiento"
+        >
+          <option value="">Todo vencimiento</option>
+          <option value="sin_vencimiento">Sin vencimiento</option>
+          <option value="vencido">Vencido</option>
+          <option value="vence_hoy">Vence hoy</option>
+          <option value="proximo">Próximo a vencer</option>
+        </select>
+        <select value={orden} onChange={(e) => setOrden(e.target.value)} aria-label="Ordenar">
+          <option value="">Más recientes</option>
+          <option value="prioridad">Prioridad</option>
+          <option value="vencimiento">Vencimiento</option>
+        </select>
         <button type="button" className="btn" title="Aplicar filtros" onClick={() => void load()}>
           Filtrar
         </button>
@@ -113,7 +143,9 @@ export function OperationsHubPage() {
               <th>Proceso</th>
               <th>Responsable</th>
               <th>Empleado IA</th>
+              <th>Prioridad</th>
               <th>Estado</th>
+              <th>Vencimiento</th>
               <th>Progreso</th>
               <th>Aprobaciones</th>
               <th>Inicio</th>
@@ -132,7 +164,17 @@ export function OperationsHubPage() {
                 <td>{row.responsable || "—"}</td>
                 <td>{row.empleado_ia || "—"}</td>
                 <td>
+                  <span className={`badge priority-${row.prioridad_codigo}`} title={row.prioridad}>
+                    {row.prioridad}
+                  </span>
+                </td>
+                <td>
                   <span className={`badge status-${row.estado_codigo}`}>{row.estado}</span>
+                </td>
+                <td>
+                  <span className={`badge due-${row.vencimiento_codigo}`} title={row.vencimiento_estado}>
+                    {row.vencimiento ? new Date(row.vencimiento).toLocaleString() : row.vencimiento_estado}
+                  </span>
                 </td>
                 <td>{row.progreso}</td>
                 <td>{row.aprobaciones_pendientes}</td>

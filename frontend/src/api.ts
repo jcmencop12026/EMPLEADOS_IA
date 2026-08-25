@@ -232,6 +232,7 @@ export type OperationSummary = {
   approval: number;
   error: number;
   overdue: number;
+  due_soon: number;
 };
 
 export type OperationItem = {
@@ -241,12 +242,15 @@ export type OperationItem = {
   responsable: string | null;
   empleado_ia: string | null;
   prioridad: string;
+  prioridad_codigo: string;
   estado: string;
   estado_codigo: string;
   progreso: string;
   aprobaciones_pendientes: number;
   inicio: string | null;
   vencimiento: string | null;
+  vencimiento_estado: string;
+  vencimiento_codigo: string;
   ultima_actividad: string | null;
   resultado: string | null;
   approval_status: string;
@@ -297,6 +301,16 @@ export async function fetchOperationActivity(id: string) {
 
 export async function cancelOperation(id: string): Promise<OperationDetail> {
   return api<OperationDetail>(`/api/operations/center/${id}/cancel`, { method: "POST" });
+}
+
+export async function updateOperation(
+  id: string,
+  body: { prioridad?: string; vencimiento?: string | null; sin_vencimiento?: boolean },
+): Promise<OperationDetail> {
+  return api<OperationDetail>(`/api/operations/center/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
 }
 
 export async function runOperation(id: string): Promise<PlanResult> {
