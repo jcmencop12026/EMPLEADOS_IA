@@ -80,7 +80,25 @@ jobs:
 
       - name: Certificación rápida (PR)
         run: |
+          set -euo pipefail
+          COLLECTED=$(PYTHONPATH=backend:. python -m pytest --collect-only -q -m "certification and not certification_intensive" 2>&1 | tail -1)
+          if echo "$COLLECTED" | grep -qE "collected 0 items|no tests collected"; then
+            echo "Sin tests de certificación en esta rama — step omitido."
+            exit 0
+          fi
+          echo "$COLLECTED"
           PYTHONPATH=backend:. python -m pytest -m "certification and not certification_intensive" -v
+
+      - name: Certificación PostgreSQL
+        run: |
+          set -euo pipefail
+          COLLECTED=$(PYTHONPATH=backend:. python -m pytest --collect-only -q -m "certification and postgresql" 2>&1 | tail -1)
+          if echo "$COLLECTED" | grep -qE "collected 0 items|no tests collected"; then
+            echo "Sin tests postgresql de certificación — step omitido."
+            exit 0
+          fi
+          echo "$COLLECTED"
+          PYTHONPATH=backend:. python -m pytest -m "certification and postgresql" -v
 
       - name: Certificación intensiva (manual)
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.certification_intensive == 'true'
