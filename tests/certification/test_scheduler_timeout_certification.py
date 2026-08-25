@@ -349,14 +349,14 @@ def test_cert_09_process_tree_sin_descendientes_vivos():
 
     parent_script_content = """import os, subprocess, sys, time
 subprocess.Popen(
-    [sys.executable, "-c", "import os,time; time.sleep(30); open(os.environ['M'],'w').write('g')"],
+    [sys.executable, "-c", "import os,time; time.sleep(8); open(os.environ['M'],'w').write('g')"],
     env={**os.environ, "M": os.environ["CERT_GRAND"]},
 )
 subprocess.Popen(
-    [sys.executable, "-c", "import os,time; time.sleep(30); open(os.environ['M'],'w').write('c')"],
+    [sys.executable, "-c", "import os,time; time.sleep(8); open(os.environ['M'],'w').write('c')"],
     env={**os.environ, "M": os.environ["CERT_CHILD"]},
 )
-time.sleep(30)
+time.sleep(8)
 open(os.environ["CERT_PARENT"], "w").write("p")
 """
     with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, encoding="utf-8") as script_file:
