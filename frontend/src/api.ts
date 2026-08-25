@@ -225,3 +225,80 @@ export async function publishEmployee(id: string): Promise<Record<string, unknow
 export async function activateEmployee(id: string): Promise<Record<string, unknown>> {
   return api(`/api/agent-factory/employees/${id}/activate`, { method: "POST" });
 }
+
+export type OperationSummary = {
+  running: number;
+  pending: number;
+  approval: number;
+  error: number;
+  overdue: number;
+};
+
+export type OperationItem = {
+  id: string;
+  trabajo: string;
+  proceso: string | null;
+  responsable: string | null;
+  empleado_ia: string | null;
+  prioridad: string;
+  estado: string;
+  estado_codigo: string;
+  progreso: string;
+  aprobaciones_pendientes: number;
+  inicio: string | null;
+  vencimiento: string | null;
+  ultima_actividad: string | null;
+  resultado: string | null;
+  approval_status: string;
+  confidence: number | null;
+  correlation_id: string;
+  employee_id: string | null;
+  acciones: string[];
+};
+
+export type OperationDetail = OperationItem & {
+  objective: string;
+  summary: string | null;
+  error: string | null;
+  costo_metadata: Record<string, unknown>;
+};
+
+export async function fetchOperationsSummary(): Promise<OperationSummary> {
+  return api<OperationSummary>("/api/operations/summary");
+}
+
+export async function fetchOperationsCenter(filters = ""): Promise<OperationItem[]> {
+  return api<OperationItem[]>(`/api/operations/center${filters ? `?${filters}` : ""}`);
+}
+
+export async function fetchOperationDetail(id: string): Promise<OperationDetail> {
+  return api<OperationDetail>(`/api/operations/center/${id}`);
+}
+
+export async function fetchOperationTasks(id: string) {
+  return api<Array<Record<string, unknown>>>(`/api/operations/center/${id}/tasks`);
+}
+
+export async function fetchOperationExecutions(id: string) {
+  return api<Array<Record<string, unknown>>>(`/api/operations/center/${id}/executions`);
+}
+
+export async function fetchOperationApprovals(id: string) {
+  return api<Array<Record<string, unknown>>>(`/api/operations/center/${id}/approvals`);
+}
+
+export async function fetchOperationResults(id: string) {
+  return api<Record<string, unknown>>(`/api/operations/center/${id}/results`);
+}
+
+export async function fetchOperationActivity(id: string) {
+  return api<Array<Record<string, unknown>>>(`/api/operations/center/${id}/activity`);
+}
+
+export async function cancelOperation(id: string): Promise<OperationDetail> {
+  return api<OperationDetail>(`/api/operations/center/${id}/cancel`, { method: "POST" });
+}
+
+export async function runOperation(id: string): Promise<PlanResult> {
+  return api<PlanResult>(`/api/operations/center/${id}/run`, { method: "POST" });
+}

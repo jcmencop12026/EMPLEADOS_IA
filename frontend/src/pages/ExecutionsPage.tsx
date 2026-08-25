@@ -59,7 +59,7 @@ export function ExecutionsPage() {
                   </span>
                 </td>
                 <td>{item.confidence != null ? `${(item.confidence * 100).toFixed(0)}%` : "—"}</td>
-                <td>{item.approval_status}</td>
+                <td>{item.approval_status === "PENDING" ? "Pendiente" : item.approval_status === "APPROVED" ? "Aprobada" : item.approval_status === "REJECTED" ? "Rechazada" : item.approval_status === "NOT_REQUIRED" ? "No requerida" : item.approval_status}</td>
                 <td className="mono">{item.created_at?.slice(0, 19)}</td>
                 <td>
                   <Link to={`/ejecuciones/${item.id}`}>Detalle</Link>

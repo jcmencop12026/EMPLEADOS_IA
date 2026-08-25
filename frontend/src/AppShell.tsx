@@ -4,7 +4,7 @@ import { clearToken } from "./api";
 
 const NAV = [
   { to: "/", label: "Inicio", end: true },
-  { to: "/operaciones", label: "Centro Operaciones" },
+  { to: "/operaciones", label: "Operaciones" },
   { to: "/ejecuciones", label: "Ejecuciones" },
   { to: "/directorio", label: "Directorio" },
   { to: "/organizacion", label: "Organización" },

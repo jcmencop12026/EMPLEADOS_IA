@@ -13,15 +13,30 @@ EMPLOYEE_PERMISSIONS = {
     "employee.admin",
 }
 
+OPERATIONS_PERMISSIONS = {
+    "operations.view",
+    "operations.manage",
+    "operations.cancel",
+    "operations.reassign",
+    "operations.approve",
+}
+
+ALL_PERMISSIONS = EMPLOYEE_PERMISSIONS | OPERATIONS_PERMISSIONS
+
 ROLE_PERMISSIONS: dict[str, set[str]] = {
-    "admin": EMPLOYEE_PERMISSIONS,
+    "admin": ALL_PERMISSIONS,
     "operator": {
         "employee.view",
         "employee.create",
         "employee.edit",
         "employee.test",
+        "operations.view",
+        "operations.manage",
+        "operations.cancel",
+        "operations.reassign",
+        "operations.approve",
     },
-    "viewer": {"employee.view"},
+    "viewer": {"employee.view", "operations.view"},
 }
 
 

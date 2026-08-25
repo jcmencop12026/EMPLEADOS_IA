@@ -100,7 +100,32 @@ body {
   gap: 10px;
 }
 
-.login-card h1 {
+.ops-indicators {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.ops-indicators .indicator {
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 120px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ops-indicators .indicator.active {
+  border-color: #2563eb;
+  background: #f8fbff;
+}
+.ops-indicators .indicator strong {
+  font-size: 18px;
+}
+
   margin: 0;
   font-size: 18px;
 }
