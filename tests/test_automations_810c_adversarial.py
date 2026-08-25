@@ -310,6 +310,101 @@ def test_adversarial_qa_sync_race_raw_sql_100_iterations():
     assert late_count == 0, f"SQL crudo tardío: {late_count}/{iterations}"
 
 
+def test_worker_facade_no_session_surface_leak():
+    """La API pública del worker no expone Session/Engine ni atributos _session."""
+    from sqlalchemy.orm import Session as SASession
+
+    from app.services.execution_workspace import (
+        WorkerExecutionSession,
+        create_worker_execution_session,
+        release_worker_session,
+    )
+
+    inner = TestingSessionLocal()
+    facade = create_worker_execution_session(inner)
+    try:
+        assert isinstance(facade, WorkerExecutionSession)
+        with pytest.raises(WorkerCommitForbiddenError):
+            _ = facade.session
+        with pytest.raises(WorkerCommitForbiddenError):
+            getattr(facade, "_session")
+        with pytest.raises(WorkerCommitForbiddenError):
+            facade.get_bind()
+        assert not isinstance(getattr(facade, "query", None), SASession)
+    finally:
+        release_worker_session(facade, close=True)
+
+
+def test_adversarial_qa_sync_race_session_attr_commit_100_iterations():
+    """V4.1 — db.session.commit() tras invalidación → 0/100."""
+    late_count = 0
+    for _ in range(100):
+        commits: list[str] = []
+
+        def route(db, *_a, **_k):
+            time.sleep(0.08)
+            try:
+                db.session.commit()
+                commits.append("session-commit")
+            except (ExecutionCancelledError, WorkerCommitForbiddenError, AttributeError):
+                pass
+            return {"plan_id": "x", "status": WorkPlanStatus.COMPLETED}
+
+        run = _run_timeout_scenario(route, actual_timeout=0.03, wait_after=0.12)
+        assert run.status == AutomationRunStatus.FAILED
+        late_count += len(commits)
+
+    assert late_count == 0, f"session.commit tardíos: {late_count}/100"
+
+
+def test_adversarial_qa_sync_race_underscore_session_commit_100_iterations():
+    """V4.1 — db._session.commit() tras invalidación → 0/100."""
+    late_count = 0
+    for _ in range(100):
+        commits: list[str] = []
+
+        def route(db, *_a, **_k):
+            time.sleep(0.08)
+            try:
+                db._session.commit()
+                commits.append("underscore-session-commit")
+            except (ExecutionCancelledError, WorkerCommitForbiddenError, AttributeError):
+                pass
+            return {"plan_id": "x", "status": WorkPlanStatus.COMPLETED}
+
+        run = _run_timeout_scenario(route, actual_timeout=0.03, wait_after=0.12)
+        assert run.status == AutomationRunStatus.FAILED
+        late_count += len(commits)
+
+    assert late_count == 0, f"_session.commit tardíos: {late_count}/100"
+
+
+def test_adversarial_qa_sync_race_session_attr_raw_sql_100_iterations():
+    """V4.1 — db.session.get_bind() tras invalidación → 0/100."""
+    late_count = 0
+    for _ in range(100):
+        writes: list[str] = []
+
+        def route(db, *_a, **_k):
+            time.sleep(0.08)
+            try:
+                bind = db.session.get_bind()
+                conn = bind.connect()
+                conn.execute(__import__("sqlalchemy").text("SELECT 1"))
+                conn.commit()
+                conn.close()
+                writes.append("session-raw-sql")
+            except (ExecutionCancelledError, WorkerCommitForbiddenError, AttributeError):
+                pass
+            return {"plan_id": "x", "status": WorkPlanStatus.COMPLETED}
+
+        run = _run_timeout_scenario(route, actual_timeout=0.03, wait_after=0.12)
+        assert run.status == AutomationRunStatus.FAILED
+        late_count += len(writes)
+
+    assert late_count == 0, f"session raw SQL tardío: {late_count}/100"
+
+
 def test_adversarial_process_tree_parent_child_grandchild_no_late_effects():
     """Process tree — padre → hijo → nieto terminados, cero efecto tardío."""
     for _ in range(3):

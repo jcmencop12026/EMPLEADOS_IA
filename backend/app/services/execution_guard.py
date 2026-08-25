@@ -129,8 +129,11 @@ def require_execution_allowed(db: Session | None = None) -> None:
     if controller is None or not controller.verify(token):
         raise ExecutionCancelledError("Ejecución cancelada por timeout")
     if db is not None:
-        with db.no_autoflush:
-            status, generation = _read_run_fence_state(db, token.run_id)
+        from app.services.execution_workspace import unwrap_db_session
+
+        inner = unwrap_db_session(db)
+        with inner.no_autoflush:
+            status, generation = _read_run_fence_state(inner, token.run_id)
             if (
                 status is None
                 or generation != token.generation
@@ -157,12 +160,15 @@ def _validate_fence_for_persist(db: Session, token: FenceToken) -> None:
 
 def flush_gated(db: Session) -> None:
     """Flush validado sin commit — fase worker."""
+    from app.services.execution_workspace import unwrap_db_session
+
+    inner = unwrap_db_session(db)
     token = current_fence_token()
     if token is None:
-        db.flush()
+        inner.flush()
         return
-    _validate_fence_for_persist(db, token)
-    db.flush()
+    _validate_fence_for_persist(inner, token)
+    inner.flush()
 
 
 def materialize_gated(db: Session, token: FenceToken) -> None:
@@ -172,44 +178,46 @@ def materialize_gated(db: Session, token: FenceToken) -> None:
     from app.services.execution_workspace import (
         reset_execution_phase,
         set_execution_phase,
+        unwrap_db_session,
     )
 
+    inner = unwrap_db_session(db)
     phase_token = set_execution_phase("materialization")
     fence_ctx = bind_fence_token(token)
     try:
-        with db.no_autoflush:
-            status, generation = _read_run_fence_state(db, token.run_id)
+        with inner.no_autoflush:
+            status, generation = _read_run_fence_state(inner, token.run_id)
             if (
                 status is None
                 or generation != token.generation
                 or status != AutomationRunStatus.RUNNING
             ):
-                db.rollback()
+                inner.rollback()
                 raise ExecutionCancelledError("Ejecución vencida — materialización rechazada")
 
             controller = get_fence_controller(token.run_id)
             if controller is None or not controller.verify(token):
-                db.rollback()
+                inner.rollback()
                 raise ExecutionCancelledError("Fence invalidado — materialización rechazada")
 
-            _lock_run_for_update(db, token.run_id)
+            _lock_run_for_update(inner, token.run_id)
 
-        db.flush()
-        with db.no_autoflush:
-            status, generation = _read_run_fence_state(db, token.run_id)
+        inner.flush()
+        with inner.no_autoflush:
+            status, generation = _read_run_fence_state(inner, token.run_id)
             if (
                 status is None
                 or generation != token.generation
                 or status != AutomationRunStatus.RUNNING
             ):
-                db.rollback()
+                inner.rollback()
                 raise ExecutionCancelledError("Ejecución vencida — materialización rechazada")
             controller = get_fence_controller(token.run_id)
             if controller is None or not controller.verify(token):
-                db.rollback()
+                inner.rollback()
                 raise ExecutionCancelledError("Fence invalidado — materialización rechazada")
 
-        db.commit()
+        inner.commit()
     finally:
         reset_execution_phase(phase_token)
         reset_fence_token(fence_ctx)
@@ -217,11 +225,12 @@ def materialize_gated(db: Session, token: FenceToken) -> None:
 
 def commit_gated(db: Session) -> None:
     """Durante ejecución worker: flush validado. Fuera de fence: commit normal."""
-    from app.services.execution_workspace import get_execution_phase
+    from app.services.execution_workspace import get_execution_phase, unwrap_db_session
 
+    inner = unwrap_db_session(db)
     token = current_fence_token()
     if token is None:
-        db.commit()
+        inner.commit()
         return
 
     phase = get_execution_phase()
@@ -233,8 +242,7 @@ def commit_gated(db: Session) -> None:
         materialize_gated(db, token)
         return
 
-    # Compat: commit completo si no hay fase worker explícita
-    _commit_gated_legacy(db, token)
+    _commit_gated_legacy(inner, token)
 
 
 def _commit_gated_legacy(db: Session, token: FenceToken) -> None:

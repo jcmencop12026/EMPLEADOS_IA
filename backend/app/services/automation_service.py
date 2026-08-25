@@ -42,8 +42,11 @@ from app.services.execution_guard import (
 from app.services.execution_workspace import (
     WorkerExecutionSession,
     bind_worker_session,
+    create_worker_execution_session,
+    release_worker_session,
     reset_execution_phase,
     reset_worker_session,
+    resolve_inner_session,
     set_execution_phase,
 )
 from app.services.recurrence import compute_next_run, internal_event_occurrence_key, occurrence_key, parse_recurrence
@@ -54,10 +57,10 @@ MAX_RETRY_DELAY_SECONDS = 300
 
 @dataclass
 class WorkerExecutionHandle:
-    """Resultado del worker aislado — sesión sin materializar hasta validación dispatcher."""
+    """Resultado del worker aislado — facade sin Session expuesta."""
 
     result: dict[str, Any]
-    inner_session: Session
+    worker: WorkerExecutionSession
 
 
 def _deep_merge(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
@@ -514,7 +517,7 @@ def _invoke_orchestration_isolated(
     else:
         inner = session_factory(autocommit=False, autoflush=False, bind=db_bind)()
 
-    worker_db = WorkerExecutionSession(inner)
+    worker_db = create_worker_execution_session(inner)
     controller = get_fence_controller(token.run_id)
     if controller:
         controller.register_worker_session(inner)
@@ -536,9 +539,10 @@ def _invoke_orchestration_isolated(
             run_generation=run_generation,
             user_id=user_id,
         )
-        return WorkerExecutionHandle(result=result, inner_session=inner)
+        return WorkerExecutionHandle(result=result, worker=worker_db)
     except ExecutionCancelledError:
         inner.rollback()
+        release_worker_session(worker_db, close=True)
         raise
     finally:
         reset_fence_token(fence_ctx)
@@ -547,7 +551,7 @@ def _invoke_orchestration_isolated(
 
 
 def _invoke_orchestration(
-    db: Session,
+    db: WorkerExecutionSession,
     *,
     automation: Automation,
     run_id: str,
@@ -812,10 +816,11 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
                 if run.status != AutomationRunStatus.RUNNING:
                     break
                 try:
-                    materialize_gated(worker_handle.inner_session, token)
+                    inner = resolve_inner_session(worker_handle.worker)
+                    materialize_gated(inner, token)
                     if controller:
-                        controller.unregister_worker_session(worker_handle.inner_session)
-                    worker_handle.inner_session.close()
+                        controller.unregister_worker_session(inner)
+                    release_worker_session(worker_handle.worker, close=True)
                 except ExecutionCancelledError as exc:
                     timed_out = True
                     invalidate_run_execution(db, run=run, token=token, error=str(exc))
@@ -832,7 +837,7 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
                 invalidate_run_execution(db, run=run, token=token, error=str(exc))
                 if worker_handle:
                     try:
-                        worker_handle.inner_session.close()
+                        release_worker_session(worker_handle.worker, close=True)
                     except Exception:  # noqa: BLE001
                         pass
                 write_audit(
@@ -848,7 +853,7 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
                 invalidate_run_execution(db, run=run, token=token, error=str(exc))
                 if worker_handle:
                     try:
-                        worker_handle.inner_session.close()
+                        release_worker_session(worker_handle.worker, close=True)
                     except Exception:  # noqa: BLE001
                         pass
                 write_audit(

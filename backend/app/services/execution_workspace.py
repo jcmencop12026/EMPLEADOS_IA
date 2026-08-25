@@ -1,32 +1,143 @@
-"""Frontera ejecución/materialización — CURSOR-810C v4.
+"""Frontera ejecución/materialización — CURSOR-810C v4.1.
 
-Los workers cancelables reciben una sesión restringida sin autoridad de commit
-ni acceso a engine/conexión. Solo el dispatcher materializa tras validar fence.
+Los workers cancelables reciben una interfaz DB mínima. La Session SQLAlchemy real
+vive en un registro interno inaccesible desde la capacidad entregada al worker.
 """
 from __future__ import annotations
 
 import contextvars
-from typing import TYPE_CHECKING
+import re
+import weakref
+from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.services.execution_guard import ExecutionCancelledError
-
-if TYPE_CHECKING:
-    from sqlalchemy.engine import Engine
+from app.services.execution_guard import ExecutionCancelledError, flush_gated
 
 _execution_phase: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "automation_execution_phase",
     default=None,
 )
-_worker_session_var: contextvars.ContextVar[Session | None] = contextvars.ContextVar(
-    "automation_worker_session",
+_worker_inner_session_var: contextvars.ContextVar[Session | None] = contextvars.ContextVar(
+    "automation_worker_inner_session",
     default=None,
+)
+
+_TRANSACTION_SQL = re.compile(
+    r"^\s*(COMMIT|ROLLBACK|BEGIN(\s+TRANSACTION)?|SAVEPOINT|RELEASE|END\s+TRANSACTION)\b",
+    re.IGNORECASE,
 )
 
 
 class WorkerCommitForbiddenError(ExecutionCancelledError):
     """El worker intentó confirmar o acceder a conexión sin autorización."""
+
+
+class WorkerExecutionSession:
+    """Interfaz DB mínima para workers — sin Session/Engine/Connection expuestos."""
+
+    __slots__ = ("__weakref__",)
+
+    def query(self, *entities: Any, **kwargs: Any):
+        return _resolve_inner(self).query(*entities, **kwargs)
+
+    def add(self, instance: object, _warn: bool = True) -> None:
+        _resolve_inner(self).add(instance, _warn=_warn)
+
+    def add_all(self, instances: Any) -> None:
+        _resolve_inner(self).add_all(instances)
+
+    def delete(self, instance: object) -> None:
+        _resolve_inner(self).delete(instance)
+
+    def execute(self, statement: Any, params: Any = None, **kwargs: Any):
+        _guard_sql(statement)
+        inner = _resolve_inner(self)
+        if params is not None:
+            return inner.execute(statement, params, **kwargs)
+        return inner.execute(statement, **kwargs)
+
+    def flush(self, objects: Any = None) -> None:
+        flush_gated(_resolve_inner(self))
+
+    def refresh(
+        self,
+        instance: object,
+        attribute_names: Any = None,
+        with_for_update: Any = None,
+    ) -> None:
+        inner = _resolve_inner(self)
+        if attribute_names is not None or with_for_update is not None:
+            inner.refresh(instance, attribute_names=attribute_names, with_for_update=with_for_update)
+        else:
+            inner.refresh(instance)
+
+    def expunge(self, instance: object) -> None:
+        _resolve_inner(self).expunge(instance)
+
+    def merge(self, instance: object, *, load: bool = True, options: Any = None):
+        inner = _resolve_inner(self)
+        if options is not None:
+            return inner.merge(instance, load=load, options=options)
+        return inner.merge(instance, load=load)
+
+    def rollback(self) -> None:
+        _resolve_inner(self).rollback()
+
+    def commit(self) -> None:
+        raise WorkerCommitForbiddenError(
+            "Ejecución cancelable: el worker no puede invocar commit(); "
+            "la materialización la controla el dispatcher."
+        )
+
+    def get_bind(self):
+        raise WorkerCommitForbiddenError(
+            "Ejecución cancelable: el worker no puede obtener engine/bind."
+        )
+
+    def connection(self, *args: Any, **kwargs: Any):
+        raise WorkerCommitForbiddenError(
+            "Ejecución cancelable: el worker no puede abrir connection()."
+        )
+
+    def bind_mapper(self, *args: Any, **kwargs: Any):
+        raise WorkerCommitForbiddenError(
+            "Ejecución cancelable: el worker no puede acceder a bind_mapper()."
+        )
+
+    def bind_table(self, *args: Any, **kwargs: Any):
+        raise WorkerCommitForbiddenError(
+            "Ejecución cancelable: el worker no puede acceder a bind_table()."
+        )
+
+    def begin(self, *args: Any, **kwargs: Any):
+        raise WorkerCommitForbiddenError(
+            "Ejecución cancelable: el worker no puede iniciar transacciones."
+        )
+
+    def close(self) -> None:
+        raise WorkerCommitForbiddenError(
+            "Ejecución cancelable: el worker no puede cerrar la sesión propietaria."
+        )
+
+    @property
+    def session(self):
+        raise WorkerCommitForbiddenError(
+            "Ejecución cancelable: Session interna no expuesta al worker."
+        )
+
+    def __getattr__(self, name: str):
+        if name in {"_session", "__dict__", "__weakref__"}:
+            raise WorkerCommitForbiddenError(
+                f"Ejecución cancelable: atributo '{name}' no disponible para el worker."
+            )
+        raise AttributeError(f"{type(self).__name__!r} no expone {name!r}")
+
+
+# Registro interno: facade → Session real (no expuesto al worker).
+_facade_registry: weakref.WeakKeyDictionary[WorkerExecutionSession, Session] = (
+    weakref.WeakKeyDictionary()
+)
 
 
 def get_execution_phase() -> str | None:
@@ -42,122 +153,58 @@ def reset_execution_phase(token: contextvars.Token) -> None:
 
 
 def bind_worker_session(session: Session | None) -> contextvars.Token:
-    return _worker_session_var.set(session)
+    return _worker_inner_session_var.set(session)
 
 
 def reset_worker_session(token: contextvars.Token) -> None:
-    _worker_session_var.reset(token)
+    _worker_inner_session_var.reset(token)
 
 
 def current_worker_session() -> Session | None:
-    return _worker_session_var.get()
+    return _worker_inner_session_var.get()
 
 
-class WorkerExecutionSession:
-    """Proxy de Session sin commit ni acceso a engine/conexión cruda."""
+def _resolve_inner(facade: WorkerExecutionSession) -> Session:
+    try:
+        return _facade_registry[facade]
+    except KeyError as exc:
+        raise RuntimeError("Sesión worker no registrada") from exc
 
-    __slots__ = ("_session",)
 
-    def __init__(self, session: Session) -> None:
-        object.__setattr__(self, "_session", session)
+def create_worker_execution_session(inner: Session) -> WorkerExecutionSession:
+    """Crea facade worker; la Session real queda solo en registro interno."""
+    facade = WorkerExecutionSession.__new__(WorkerExecutionSession)
+    _facade_registry[facade] = inner
+    return facade
 
-    @property
-    def session(self) -> Session:
-        return self._session
 
-    def commit(self) -> None:
+def resolve_inner_session(facade: WorkerExecutionSession) -> Session:
+    """Solo para dispatcher/controlador — nunca entregar al código worker."""
+    return _resolve_inner(facade)
+
+
+def unwrap_db_session(db: Session | WorkerExecutionSession) -> Session:
+    """Resuelve facade worker a Session real para capa de guardia/dispatcher."""
+    if isinstance(db, WorkerExecutionSession):
+        return _resolve_inner(db)
+    return db
+
+
+def release_worker_session(facade: WorkerExecutionSession, *, close: bool = True) -> None:
+    inner = _facade_registry.pop(facade, None)
+    if inner is not None and close:
+        inner.close()
+
+
+def _guard_sql(statement: Any) -> None:
+    sql: str | None = None
+    if isinstance(statement, str):
+        sql = statement
+    else:
+        text = getattr(statement, "text", None)
+        if text is not None:
+            sql = str(text)
+    if sql and _TRANSACTION_SQL.search(sql.strip()):
         raise WorkerCommitForbiddenError(
-            "Ejecución cancelable: el worker no puede invocar commit(); "
-            "la materialización la controla el dispatcher."
+            "Ejecución cancelable: SQL transaccional (COMMIT/ROLLBACK/BEGIN/…) bloqueado."
         )
-
-    def get_bind(self):
-        raise WorkerCommitForbiddenError(
-            "Ejecución cancelable: el worker no puede obtener engine/bind."
-        )
-
-    def connection(self, *args, **kwargs):
-        raise WorkerCommitForbiddenError(
-            "Ejecución cancelable: el worker no puede abrir connection()."
-        )
-
-    def bind_mapper(self, *args, **kwargs):
-        raise WorkerCommitForbiddenError(
-            "Ejecución cancelable: el worker no puede acceder a bind_mapper()."
-        )
-
-    def bind_table(self, *args, **kwargs):
-        raise WorkerCommitForbiddenError(
-            "Ejecución cancelable: el worker no puede acceder a bind_table()."
-        )
-
-    def rollback(self) -> None:
-        self._session.rollback()
-
-    def close(self) -> None:
-        self._session.close()
-
-    def __getattr__(self, name: str):
-        return getattr(self._session, name)
-
-    def __setattr__(self, name: str, value) -> None:
-        if name == "_session":
-            object.__setattr__(self, name, value)
-        else:
-            setattr(self._session, name, value)
-
-
-class GuardedEngine:
-    """Engine proxy que bloquea commit en conexiones durante ejecución cancelable."""
-
-    __slots__ = ("_engine",)
-
-    def __init__(self, engine: Engine) -> None:
-        object.__setattr__(self, "_engine", engine)
-
-    def connect(self, *args, **kwargs):
-        from app.services.execution_guard import current_fence_token, require_execution_allowed
-
-        if current_fence_token() is not None:
-            require_execution_allowed()
-        conn = self._engine.connect(*args, **kwargs)
-        return _GuardedConnection(conn)
-
-    def __getattr__(self, name: str):
-        return getattr(self._engine, name)
-
-
-class _GuardedConnection:
-    __slots__ = ("_conn",)
-
-    def __init__(self, conn) -> None:
-        object.__setattr__(self, "_conn", conn)
-
-    def commit(self) -> None:
-        from app.services.execution_guard import current_fence_token
-
-        if current_fence_token() is not None:
-            raise WorkerCommitForbiddenError(
-                "Ejecución cancelable: commit en conexión cruda bloqueado."
-            )
-        self._conn.commit()
-
-    def close(self) -> None:
-        self._conn.close()
-
-    def __getattr__(self, name: str):
-        return getattr(self._conn, name)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        self.close()
-
-
-def wrap_engine_if_guarded(engine: Engine) -> Engine:
-    from app.services.execution_guard import current_fence_token
-
-    if current_fence_token() is not None:
-        return GuardedEngine(engine)  # type: ignore[return-value]
-    return engine
