@@ -693,7 +693,12 @@ def _apply_run_result(
         return
 
     plan_id = result.get("plan_id")
-    run.work_plan_id = plan_id or run.work_plan_id
+    if plan_id:
+        plan_exists = (
+            db.query(WorkPlan.id).filter(WorkPlan.id == plan_id).scalar() is not None
+        )
+        if plan_exists:
+            run.work_plan_id = plan_id
     run.result_reference_json = json.dumps(result, ensure_ascii=False, default=str)
 
     plan_status = result.get("status")
@@ -865,8 +870,34 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
                 )
                 break
             except Exception as exc:
+                db.rollback()
+                db.refresh(run)
                 run.status = AutomationRunStatus.FAILED
                 run.error = str(exc)
+                if token is not None:
+                    from sqlalchemy import update
+
+                    from app.automation_models import AutomationRun as RunModel
+
+                    rows = (
+                        db.execute(
+                            update(RunModel)
+                            .where(
+                                RunModel.id == run.id,
+                                RunModel.status == AutomationRunStatus.RUNNING,
+                                RunModel.execution_generation == token.generation,
+                            )
+                            .values(
+                                status=AutomationRunStatus.FAILED,
+                                error=str(exc),
+                            )
+                        ).rowcount
+                    )
+                    if rows:
+                        db.commit()
+                        db.refresh(run)
+                    else:
+                        db.rollback()
 
             if timed_out:
                 break

@@ -11,7 +11,7 @@
 |-------|-------|
 | HEAD inicial reportado | `7b97a46` |
 | HEAD tras merge main | `627c7c6` |
-| HEAD final | `7f84efa` |
+| HEAD final | *(pendiente push — fix PG retry)* |
 | PR | https://github.com/jcmencop12026/EMPLEADOS_IA/pull/6 |
 
 ### Merge con main
@@ -25,26 +25,28 @@
 2. Escapado de rutas Windows en scripts `-c` de process tree
 3. FK PostgreSQL en `test_cert_06` (crear `Automation` antes de `AutomationRun`)
 4. `terminate_process_tree` / `process_tree_alive` en Windows
-5. Trailing whitespace en informes `INTERCAMBIO/SALIDA/`
+5. `fetch-depth: 0` en checkout backend (validación Git)
+6. `invalidate_run_execution` siempre termina process tree en Windows
+7. Cert Windows: criterio por ausencia de marcadores tras ventana 8s
+8. **Fix PG retry/internal-event:** `_apply_run_result` solo asigna `work_plan_id` si el plan existe (evita FK abort en mocks con `plan_id` ficticio); `except Exception` en `_execute_run` hace rollback y persiste FAILED antes del retry
 
 ### GitHub Actions
 
 | Run | HEAD | Estado |
 |-----|------|--------|
-| 32845455625 (PR7 ref) | — | — |
-| 32845519982 | `d4f09ac` | FAILURE (cert PG + Windows + git check) |
-| 32846358773 | `7f84efa` | **EN CURSO** al generar informe |
+| 32849741410 | `fd9e60c` | FAILURE — Backend PG (4 tests retry/event) + Windows PASS |
+| *(siguiente)* | *(fix PG)* | **PENDIENTE** |
 
-URL último run: https://github.com/jcmencop12026/EMPLEADOS_IA/actions/runs/32846358773
+URL último run (fallido): https://github.com/jcmencop12026/EMPLEADOS_IA/actions/runs/32849741410
 
-### Validaciones locales (rama `7f84efa`)
+### Validaciones locales (rama con fix PG)
 
 | Prueba | Resultado |
 |--------|-----------|
+| 4 tests PG retry/event (reproducidos localmente) | 4 passed |
+| Suite automations 810b/810c/adversarial (PostgreSQL) | 57 passed |
 | Certificación rápida | 15 passed, 2 skipped |
 | Certificación intensiva (race 100) | 1 passed — 0/100 efectos tardíos |
-| `test_cert_06` PostgreSQL pattern | 2 passed |
-| Suite completa (local) | 139 passed, 2 skipped (turno anterior) |
 
 ### Componentes CI esperados
 
@@ -56,7 +58,7 @@ URL último run: https://github.com/jcmencop12026/EMPLEADOS_IA/actions/runs/3284
 
 ### Resultado
 
-**PENDIENTE CONFIRMACIÓN CI run `32846358773`**
+**PENDIENTE CONFIRMACIÓN CI tras fix PG**
 
 Si el run queda PASS en los 4 jobs: **APTO PARA MERGE — PENDIENTE DE INTEGRACIÓN**
 
