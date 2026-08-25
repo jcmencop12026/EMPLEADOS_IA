@@ -172,8 +172,8 @@ Cubre: dataset completo/parcial, campos faltantes, normalización, indicadores (
 
 ## 10. HEAD y commits
 
-- **HEAD:** `bf42ec9`
-- **Commits:** `409c1c7` (implementación), `bf42ec9` (informe)
+- **HEAD:** `6ab03a0`
+- **Commits:** `409c1c7` (implementación), `bf42ec9`/`6ab03a0` (informe)
 
 ## 11. Pendientes reales
 
