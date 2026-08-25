@@ -172,8 +172,8 @@ Cubre: dataset completo/parcial, campos faltantes, normalización, indicadores (
 
 ## 10. HEAD y commits
 
-- **HEAD:** `409c1c7`
-- **Commit:** `feat(salud-960): motor especializado IPS con diagnóstico, indicadores y experiencia`
+- **HEAD:** `bf42ec9`
+- **Commits:** `409c1c7` (implementación), `bf42ec9` (informe)
 
 ## 11. Pendientes reales
 
