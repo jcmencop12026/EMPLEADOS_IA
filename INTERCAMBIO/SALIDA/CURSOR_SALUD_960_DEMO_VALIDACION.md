@@ -218,7 +218,7 @@ Directorio: `INTERCAMBIO/SALIDA/SALUD_960_DEMO/`
 ## 15. Git
 
 - **Rama:** `cursor/salud-ips-engine-960`
-- **HEAD:** (actualizar tras commit demo)
+- **HEAD:** `0f34590`
 - **PR:** #14 (draft, NO MERGE)
 
 ---
