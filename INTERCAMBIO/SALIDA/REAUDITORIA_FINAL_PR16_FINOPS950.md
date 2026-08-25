@@ -1,8 +1,8 @@
 # REAUDITORÍA FINAL — PR #16 FINOPS-950
 
-**Fecha:** 2026-08-25  
-**Rama:** `cursor/finops-value-950-12b6`  
-**PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/16  
+**Fecha:** 2026-08-25
+**Rama:** `cursor/finops-value-950-12b6`
+**PR:** https://github.com/jcmencop12026/EMPLEADOS_IA/pull/16
 **Main verificado:** `1697dd2`
 
 ---
@@ -36,7 +36,7 @@ Adversariales probados: 0, 0.01, 0.1, valores grandes, negativos, NULL → sin e
 
 ## B3. TARIFAS — PASS
 
-Campos completos en `FinOpsRate`.  
+Campos completos en `FinOpsRate`.
 `find_active_rate()` respeta vigencia, activo, categoría, proveedor/modelo.
 
 | Caso | Resultado |
@@ -59,8 +59,8 @@ Campos completos en `FinOpsRate`.
 
 ## B5. VALOR GENERADO — PASS
 
-Tipos y certezas (Real/Estimado/No disponible).  
-Auditoría en `finops.value.registered`.  
+Tipos y certezas (Real/Estimado/No disponible).
+Auditoría en `finops.value.registered`.
 Valores `No disponible` excluidos de sumas dashboard.
 
 ---
@@ -121,14 +121,14 @@ Fail closed verificado (`test_permissions_viewer_read_only`, `test_operator_deni
 
 ## B10. DASHBOARD `/costos-valor` — PASS
 
-7 indicadores desde `/api/finops/dashboard` — sin cifras hardcodeadas.  
+7 indicadores desde `/api/finops/dashboard` — sin cifras hardcodeadas.
 UI en español (`CostosValorPage.tsx`).
 
 ---
 
 ## B11. DRILL-DOWN — PASS
 
-Árbol empleado→trabajo→ejecución con filtros org.  
+Árbol empleado→trabajo→ejecución con filtros org.
 Validación previa de IDs cross-tenant en router.
 
 ---
