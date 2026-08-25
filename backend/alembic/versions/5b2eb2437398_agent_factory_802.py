@@ -187,7 +187,10 @@ def upgrade() -> None:
     op.execute("UPDATE ai_employees SET maturity = 'AUTONOMOUS_CONTROLLED' WHERE maturity IS NULL")
     op.execute("UPDATE ai_employees SET risk_level = 'LOW' WHERE risk_level IS NULL")
     op.execute("UPDATE ai_employees SET version = 1 WHERE version IS NULL")
-    op.execute("UPDATE ai_employees SET shadow_mode = 0 WHERE shadow_mode IS NULL")
+    op.get_bind().execute(
+        sa.text("UPDATE ai_employees SET shadow_mode = :shadow_mode WHERE shadow_mode IS NULL"),
+        {"shadow_mode": False},
+    )
     op.execute("UPDATE ai_employees SET updated_at = created_at WHERE updated_at IS NULL")
     with op.batch_alter_table('ai_employees') as batch_op:
         batch_op.alter_column('code', nullable=False)
