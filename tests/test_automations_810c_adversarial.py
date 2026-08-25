@@ -38,6 +38,7 @@ from app.services.execution_guard import (
     run_subprocess,
     terminate_process_tree,
 )
+from app.services.execution_workspace import WorkerCommitForbiddenError
 from app.schemas_automation import AutomationCreate, RecurrenceConfig
 from conftest import TestingSessionLocal
 
@@ -255,6 +256,102 @@ def test_adversarial_race_zero_late_effects_100_iterations():
             late_count += len(effects)
 
     assert late_count == 0, f"Efectos tardíos detectados: {late_count}/{iterations}"
+
+
+def test_adversarial_qa_sync_race_direct_commit_100_iterations():
+    """F-v4 — escenario QA sincronizado: commit() directo tras invalidación → 0/100."""
+    late_count = 0
+    iterations = 100
+
+    for _ in range(iterations):
+        commits: list[str] = []
+
+        def route(db, *_a, **_k):
+            time.sleep(0.08)
+            try:
+                db.commit()
+                commits.append("direct-commit")
+            except (ExecutionCancelledError, WorkerCommitForbiddenError):
+                pass
+            return {"plan_id": "x", "status": WorkPlanStatus.COMPLETED}
+
+        run = _run_timeout_scenario(route, actual_timeout=0.03, wait_after=0.12)
+        assert run.status == AutomationRunStatus.FAILED
+        late_count += len(commits)
+
+    assert late_count == 0, f"Commits tardíos: {late_count}/{iterations}"
+
+
+def test_adversarial_qa_sync_race_raw_sql_100_iterations():
+    """F-v4 — escenario QA: SQL crudo vía get_bind bloqueado → 0/100."""
+    late_count = 0
+    iterations = 100
+
+    for _ in range(iterations):
+        writes: list[str] = []
+
+        def route(db, *_a, **_k):
+            time.sleep(0.08)
+            try:
+                bind = db.get_bind()
+                conn = bind.connect()
+                conn.execute(__import__("sqlalchemy").text("SELECT 1"))
+                conn.commit()
+                conn.close()
+                writes.append("raw-sql")
+            except (ExecutionCancelledError, WorkerCommitForbiddenError):
+                pass
+            return {"plan_id": "x", "status": WorkPlanStatus.COMPLETED}
+
+        run = _run_timeout_scenario(route, actual_timeout=0.03, wait_after=0.12)
+        assert run.status == AutomationRunStatus.FAILED
+        late_count += len(writes)
+
+    assert late_count == 0, f"SQL crudo tardío: {late_count}/{iterations}"
+
+
+def test_adversarial_process_tree_parent_child_grandchild_no_late_effects():
+    """Process tree — padre → hijo → nieto terminados, cero efecto tardío."""
+    for _ in range(3):
+        parent_marker = tempfile.mktemp(suffix=".parent.marker")
+        child_marker = tempfile.mktemp(suffix=".child.marker")
+        grand_marker = tempfile.mktemp(suffix=".grand.marker")
+        for path in (parent_marker, child_marker, grand_marker):
+            if os.path.exists(path):
+                os.unlink(path)
+
+        parent_script = (
+            "import subprocess, sys, time\n"
+            f"child_marker = {child_marker!r}\n"
+            f"grand_marker = {grand_marker!r}\n"
+            f"parent_marker = {parent_marker!r}\n"
+            "grand = subprocess.Popen([sys.executable, '-c', "
+            "'import time; time.sleep(30); open(\\'' + grand_marker + '\\',\\'w\\').write(\\'g\\')'])\n"
+            "subprocess.Popen([sys.executable, '-c', "
+            "'import time; time.sleep(30); open(\\'' + child_marker + '\\',\\'w\\').write(\\'c\\')'])\n"
+            "time.sleep(30)\n"
+            "open(parent_marker, 'w').write('p')\n"
+        )
+        proc_holder: list[subprocess.Popen] = []
+
+        def route(*_a, **_k):
+            proc = run_subprocess([sys.executable, "-c", parent_script])
+            proc_holder.append(proc)
+            time.sleep(0.25)
+            require_execution_allowed()
+            return {"plan_id": "x", "status": WorkPlanStatus.COMPLETED}
+
+        run = _run_timeout_scenario(route, wait_after=1.5)
+        assert run.status == AutomationRunStatus.FAILED
+        assert proc_holder
+        proc = proc_holder[0]
+        assert proc.poll() is not None
+        if proc.pid:
+            assert not process_tree_alive(proc.pid)
+        time.sleep(1.5)
+        assert not os.path.exists(parent_marker)
+        assert not os.path.exists(child_marker)
+        assert not os.path.exists(grand_marker)
 
 
 def test_adversarial_stale_thread_cannot_confirm_db_effect():

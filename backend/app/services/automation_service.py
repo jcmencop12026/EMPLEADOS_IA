@@ -5,6 +5,7 @@ import json
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
@@ -32,15 +33,31 @@ from app.services.execution_guard import (
     current_fence_token,
     get_fence_controller,
     invalidate_run_execution,
+    materialize_gated,
     register_fence,
     release_fence,
     require_execution_allowed,
     reset_fence_token,
 )
+from app.services.execution_workspace import (
+    WorkerExecutionSession,
+    bind_worker_session,
+    reset_execution_phase,
+    reset_worker_session,
+    set_execution_phase,
+)
 from app.services.recurrence import compute_next_run, internal_event_occurrence_key, occurrence_key, parse_recurrence
 
 MAX_RETRIES_LIMIT = 10
 MAX_RETRY_DELAY_SECONDS = 300
+
+
+@dataclass
+class WorkerExecutionHandle:
+    """Resultado del worker aislado — sesión sin materializar hasta validación dispatcher."""
+
+    result: dict[str, Any]
+    inner_session: Session
 
 
 def _deep_merge(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
@@ -486,16 +503,24 @@ def _invoke_orchestration_isolated(
     user_id: str,
     token: FenceToken,
     db_bind=None,
-) -> dict[str, Any]:
-    """Ejecuta orquestación en sesión aislada con fencing (thread-safe)."""
+) -> WorkerExecutionHandle:
+    """Ejecuta orquestación en sesión restringida — sin commit (materialización diferida)."""
     from sqlalchemy.orm import sessionmaker as session_factory
 
     if db_bind is None:
         from app.database import SessionLocal
 
-        worker_db = SessionLocal()
+        inner = SessionLocal()
     else:
-        worker_db = session_factory(autocommit=False, autoflush=False, bind=db_bind)()
+        inner = session_factory(autocommit=False, autoflush=False, bind=db_bind)()
+
+    worker_db = WorkerExecutionSession(inner)
+    controller = get_fence_controller(token.run_id)
+    if controller:
+        controller.register_worker_session(inner)
+
+    phase_token = set_execution_phase("worker")
+    worker_ctx = bind_worker_session(inner)
     fence_ctx = bind_fence_token(token)
     try:
         automation = worker_db.query(Automation).filter(Automation.id == automation_id).first()
@@ -504,16 +529,21 @@ def _invoke_orchestration_isolated(
             raise RuntimeError("Automatización o ejecución no encontrada")
         run_generation = run.execution_generation
         worker_db.expunge(run)
-        return _invoke_orchestration(
+        result = _invoke_orchestration(
             worker_db,
             automation=automation,
             run_id=run_id,
             run_generation=run_generation,
             user_id=user_id,
         )
+        return WorkerExecutionHandle(result=result, inner_session=inner)
+    except ExecutionCancelledError:
+        inner.rollback()
+        raise
     finally:
         reset_fence_token(fence_ctx)
-        worker_db.close()
+        reset_worker_session(worker_ctx)
+        reset_execution_phase(phase_token)
 
 
 def _invoke_orchestration(
@@ -524,7 +554,7 @@ def _invoke_orchestration(
     run_generation: int,
     user_id: str,
 ) -> dict[str, Any]:
-    require_execution_allowed()
+    require_execution_allowed(db)
 
     workflow = json.loads(automation.workflow_config_json) if automation.workflow_config_json else {}
     context = dict(workflow)
@@ -541,11 +571,11 @@ def _invoke_orchestration(
             if plan and plan.status == WorkPlanStatus.WAITING_APPROVAL:
                 return {"plan_id": plan.id, "status": plan.status}
             if plan and plan.approval_status == ApprovalStatus.APPROVED:
-                require_execution_allowed()
+                require_execution_allowed(db)
                 result = execute_plan(db, plan_id=plan.id, user_id=user_id)
-                require_execution_allowed()
+                require_execution_allowed(db)
                 return result
-        require_execution_allowed()
+        require_execution_allowed(db)
         result = route_task(
             db,
             organization_id=automation.organization_id,
@@ -554,7 +584,7 @@ def _invoke_orchestration(
             context=context,
             auto_execute=False,
         )
-        require_execution_allowed()
+        require_execution_allowed(db)
         plan = db.query(WorkPlan).filter(WorkPlan.id == result.get("plan_id")).first()
         if plan and run:
             approval_id = _create_pre_execution_approval(
@@ -567,7 +597,7 @@ def _invoke_orchestration(
             }
         return result
 
-    require_execution_allowed()
+    require_execution_allowed(db)
     result = route_task(
         db,
         organization_id=automation.organization_id,
@@ -576,7 +606,7 @@ def _invoke_orchestration(
         context=context,
         auto_execute=True,
     )
-    require_execution_allowed()
+    require_execution_allowed(db)
     return result
 
 
@@ -762,8 +792,9 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
     timed_out = False
     try:
         while run.attempt <= max_attempts:
+            worker_handle: WorkerExecutionHandle | None = None
             try:
-                result = _run_with_timeout(
+                worker_handle = _run_with_timeout(
                     lambda: _invoke_orchestration_isolated(
                         automation_id=automation.id,
                         run_id=run.id,
@@ -780,10 +811,30 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
                     return run
                 if run.status != AutomationRunStatus.RUNNING:
                     break
-                _apply_run_result(db, automation=automation, run=run, result=result, token=token)
+                try:
+                    materialize_gated(worker_handle.inner_session, token)
+                    if controller:
+                        controller.unregister_worker_session(worker_handle.inner_session)
+                    worker_handle.inner_session.close()
+                except ExecutionCancelledError as exc:
+                    timed_out = True
+                    invalidate_run_execution(db, run=run, token=token, error=str(exc))
+                    break
+                _apply_run_result(
+                    db,
+                    automation=automation,
+                    run=run,
+                    result=worker_handle.result,
+                    token=token,
+                )
             except TimeoutError as exc:
                 timed_out = True
                 invalidate_run_execution(db, run=run, token=token, error=str(exc))
+                if worker_handle:
+                    try:
+                        worker_handle.inner_session.close()
+                    except Exception:  # noqa: BLE001
+                        pass
                 write_audit(
                     db,
                     action="automation.timeout",
@@ -795,6 +846,11 @@ def _execute_run(db: Session, *, automation: Automation, run: AutomationRun, use
             except ExecutionCancelledError as exc:
                 timed_out = True
                 invalidate_run_execution(db, run=run, token=token, error=str(exc))
+                if worker_handle:
+                    try:
+                        worker_handle.inner_session.close()
+                    except Exception:  # noqa: BLE001
+                        pass
                 write_audit(
                     db,
                     action="automation.timeout",

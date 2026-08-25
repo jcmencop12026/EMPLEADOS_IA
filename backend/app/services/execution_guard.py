@@ -1,4 +1,4 @@
-"""Fencing de ejecución commit-gated para timeouts de automatizaciones (CURSOR-810C v3)."""
+"""Fencing de ejecución — CURSOR-810C v4 (ejecución vs materialización)."""
 from __future__ import annotations
 
 import contextvars
@@ -35,6 +35,18 @@ class RunFenceController:
         self._generation = generation
         self._lock = threading.Lock()
         self._subprocesses: list[subprocess.Popen] = []
+        self._worker_sessions: list[Session] = []
+
+    def register_worker_session(self, session: Session) -> None:
+        with self._lock:
+            self._worker_sessions.append(session)
+
+    def unregister_worker_session(self, session: Session) -> None:
+        with self._lock:
+            try:
+                self._worker_sessions.remove(session)
+            except ValueError:
+                pass
 
     def snapshot(self) -> FenceToken:
         with self._lock:
@@ -49,8 +61,15 @@ class RunFenceController:
             self._generation += 1
             procs = list(self._subprocesses)
             self._subprocesses.clear()
+            sessions = list(self._worker_sessions)
+            self._worker_sessions.clear()
         for proc in procs:
             terminate_process_tree(proc)
+        for session in sessions:
+            try:
+                session.rollback()
+            except Exception:  # noqa: BLE001 — invalidación best-effort
+                pass
 
     def register_subprocess(self, proc: subprocess.Popen) -> None:
         with self._lock:
@@ -100,52 +119,127 @@ def release_fence(run_id: str) -> None:
         _controllers.pop(run_id, None)
 
 
-def require_execution_allowed() -> None:
+def require_execution_allowed(db: Session | None = None) -> None:
+    from app.enums import AutomationRunStatus
+
     token = current_fence_token()
     if token is None:
         return
     controller = get_fence_controller(token.run_id)
     if controller is None or not controller.verify(token):
         raise ExecutionCancelledError("Ejecución cancelada por timeout")
+    if db is not None:
+        with db.no_autoflush:
+            status, generation = _read_run_fence_state(db, token.run_id)
+            if (
+                status is None
+                or generation != token.generation
+                or status != AutomationRunStatus.RUNNING
+            ):
+                raise ExecutionCancelledError("Ejecución invalidada en BD")
 
 
-def _lock_run_for_update(db: Session, run_id: str):
-    from app.automation_models import AutomationRun
+def _validate_fence_for_persist(db: Session, token: FenceToken) -> None:
+    from app.enums import AutomationRunStatus
 
-    return (
-        db.query(AutomationRun)
-        .filter(AutomationRun.id == run_id)
-        .with_for_update()
-        .populate_existing()
-        .first()
+    controller = get_fence_controller(token.run_id)
+    if controller is None or not controller.verify(token):
+        raise ExecutionCancelledError("Fence invalidado — persistencia rechazada")
+    with db.no_autoflush:
+        status, generation = _read_run_fence_state(db, token.run_id)
+        if (
+            status is None
+            or generation != token.generation
+            or status != AutomationRunStatus.RUNNING
+        ):
+            raise ExecutionCancelledError("Ejecución vencida — persistencia rechazada")
+
+
+def flush_gated(db: Session) -> None:
+    """Flush validado sin commit — fase worker."""
+    token = current_fence_token()
+    if token is None:
+        db.flush()
+        return
+    _validate_fence_for_persist(db, token)
+    db.flush()
+
+
+def materialize_gated(db: Session, token: FenceToken) -> None:
+    """Único commit autorizado tras validación de generación/estado (dispatcher)."""
+    from app.enums import AutomationRunStatus
+
+    from app.services.execution_workspace import (
+        reset_execution_phase,
+        set_execution_phase,
     )
 
+    phase_token = set_execution_phase("materialization")
+    fence_ctx = bind_fence_token(token)
+    try:
+        with db.no_autoflush:
+            status, generation = _read_run_fence_state(db, token.run_id)
+            if (
+                status is None
+                or generation != token.generation
+                or status != AutomationRunStatus.RUNNING
+            ):
+                db.rollback()
+                raise ExecutionCancelledError("Ejecución vencida — materialización rechazada")
 
-def _read_run_fence_state(db: Session, run_id: str) -> tuple[str | None, int | None]:
-    row = db.execute(
-        text("SELECT status, execution_generation FROM automation_runs WHERE id = :id"),
-        {"id": run_id},
-    ).one_or_none()
-    if row is None:
-        return None, None
-    return str(row[0]), int(row[1])
+            controller = get_fence_controller(token.run_id)
+            if controller is None or not controller.verify(token):
+                db.rollback()
+                raise ExecutionCancelledError("Fence invalidado — materialización rechazada")
+
+            _lock_run_for_update(db, token.run_id)
+
+        db.flush()
+        with db.no_autoflush:
+            status, generation = _read_run_fence_state(db, token.run_id)
+            if (
+                status is None
+                or generation != token.generation
+                or status != AutomationRunStatus.RUNNING
+            ):
+                db.rollback()
+                raise ExecutionCancelledError("Ejecución vencida — materialización rechazada")
+            controller = get_fence_controller(token.run_id)
+            if controller is None or not controller.verify(token):
+                db.rollback()
+                raise ExecutionCancelledError("Fence invalidado — materialización rechazada")
+
+        db.commit()
+    finally:
+        reset_execution_phase(phase_token)
+        reset_fence_token(fence_ctx)
 
 
 def commit_gated(db: Session) -> None:
-    """Confirma cambios solo si el fencing de ejecución sigue vigente.
-
-    Orden de locks (único):
-    1. SELECT FOR UPDATE del run
-    2. validar generation/estado en BD (lectura SQL autoritativa)
-    3. validar token en memoria
-    4. commit
-    """
-    from app.enums import AutomationRunStatus
+    """Durante ejecución worker: flush validado. Fuera de fence: commit normal."""
+    from app.services.execution_workspace import get_execution_phase
 
     token = current_fence_token()
     if token is None:
         db.commit()
         return
+
+    phase = get_execution_phase()
+    if phase == "worker":
+        flush_gated(db)
+        return
+
+    if phase == "materialization":
+        materialize_gated(db, token)
+        return
+
+    # Compat: commit completo si no hay fase worker explícita
+    _commit_gated_legacy(db, token)
+
+
+def _commit_gated_legacy(db: Session, token: FenceToken) -> None:
+    """Commit gated legacy (sin fase worker) — compat tests directos."""
+    from app.enums import AutomationRunStatus
 
     with db.no_autoflush:
         status, generation = _read_run_fence_state(db, token.run_id)
@@ -174,11 +268,34 @@ def commit_gated(db: Session) -> None:
         ):
             db.rollback()
             raise ExecutionCancelledError("Ejecución vencida — commit rechazado")
+        controller = get_fence_controller(token.run_id)
         if controller is None or not controller.verify(token):
             db.rollback()
             raise ExecutionCancelledError("Fence invalidado — commit rechazado")
 
     db.commit()
+
+
+def _read_run_fence_state(db: Session, run_id: str) -> tuple[str | None, int | None]:
+    row = db.execute(
+        text("SELECT status, execution_generation FROM automation_runs WHERE id = :id"),
+        {"id": run_id},
+    ).one_or_none()
+    if row is None:
+        return None, None
+    return str(row[0]), int(row[1])
+
+
+def _lock_run_for_update(db: Session, run_id: str):
+    from app.automation_models import AutomationRun
+
+    return (
+        db.query(AutomationRun)
+        .filter(AutomationRun.id == run_id)
+        .with_for_update()
+        .populate_existing()
+        .first()
+    )
 
 
 def invalidate_run_execution(
@@ -240,7 +357,9 @@ def run_subprocess(cmd: list[str], **kwargs) -> subprocess.Popen:
 
 def promote_file_if_valid(tmp_path: str, final_path: str) -> bool:
     """Promueve archivo temporal solo si el fence sigue vigente."""
-    require_execution_allowed()
+    from app.services.execution_workspace import current_worker_session
+
+    require_execution_allowed(current_worker_session())
     if not os.path.exists(tmp_path):
         return False
     if os.path.exists(final_path):

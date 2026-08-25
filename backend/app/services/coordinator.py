@@ -30,7 +30,13 @@ from app.orchestration_models import (
     Tool,
     WorkPlan,
 )
-from app.services.execution_guard import ExecutionCancelledError, commit_gated, require_execution_allowed
+from app.services.execution_guard import (
+    ExecutionCancelledError,
+    commit_gated,
+    current_fence_token,
+    require_execution_allowed,
+)
+from app.services.execution_workspace import current_worker_session
 from app.tools import docint, rips
 
 
@@ -219,7 +225,7 @@ def route_task(
     commit_gated(db)
 
     if auto_execute:
-        require_execution_allowed()
+        require_execution_allowed(db)
         return execute_plan(db, plan_id=plan.id, user_id=user_id)
     return {"plan_id": plan.id, "task_id": task.id, "status": plan.status}
 
@@ -280,9 +286,9 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
 
         inputs = json.loads(task.inputs_json or "{}")
         inputs["request"] = plan.request
-        require_execution_allowed()
+        require_execution_allowed(db)
         output = _run_tool(tool.code if tool else "docint", inputs)
-        require_execution_allowed()
+        require_execution_allowed(db)
         duration_ms = int((time.monotonic() - start_ms) * 1000)
 
         task.outputs_json = json.dumps(output, ensure_ascii=False)
@@ -293,7 +299,7 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
             or output.get("confidence", 1.0) < 0.7
         )
 
-        require_execution_allowed()
+        require_execution_allowed(db)
 
         if requires_approval:
             task.status = EmployeeTaskStatus.WAITING_APPROVAL
@@ -411,7 +417,7 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
 
 
 def _run_tool(tool_code: str, inputs: dict[str, Any]) -> dict[str, Any]:
-    require_execution_allowed()
+    require_execution_allowed(current_worker_session())
     if tool_code == "rips":
         return rips.analyze_rips(inputs)
     return docint.analyze_documents(inputs)
