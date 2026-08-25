@@ -28,7 +28,6 @@ from app.services.automation_service import run_now, sync_run_from_work_plan
 from app.services.execution_guard import (
     ExecutionCancelledError,
     bind_fence_token,
-    commit_gated,
     invalidate_run_execution,
     materialize_gated,
     process_tree_alive,
