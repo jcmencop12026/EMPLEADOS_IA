@@ -11,7 +11,7 @@
 |-------|-------|
 | HEAD inicial reportado | `7b97a46` |
 | HEAD tras merge main | `627c7c6` |
-| HEAD final | `3d40414` (+ fix username collision) |
+| HEAD final | `ba54039` |
 | PR | https://github.com/jcmencop12026/EMPLEADOS_IA/pull/6 |
 
 ### Merge con main
@@ -36,22 +36,23 @@
 | Run | HEAD | Estado |
 |-----|------|--------|
 | 32849741410 | `fd9e60c` | FAILURE — Backend PG (4 tests retry/event) + Windows PASS |
-| *(siguiente)* | *(fix PG)* | **PENDIENTE** |
+| 32851522761 | `3d40414` | FAILURE — 1 flake UniqueViolation adversarial |
+| **32852408076** | **`ba54039`** | **SUCCESS (4/4 jobs)** |
 
-URL último run (fallido): https://github.com/jcmencop12026/EMPLEADOS_IA/actions/runs/32849741410
+URL run PASS: https://github.com/jcmencop12026/EMPLEADOS_IA/actions/runs/32852408076
 
-### Validaciones locales (rama con fix PG)
+### Validaciones locales (rama `ba54039`)
 
 | Prueba | Resultado |
 |--------|-----------|
-| 4 tests PG retry/event (reproducidos localmente) | 4 passed |
+| 4 tests PG retry/event | 4 passed |
 | Suite automations 810b/810c/adversarial (PostgreSQL) | 57 passed |
 | Certificación rápida | 15 passed, 2 skipped |
 | Certificación intensiva (race 100) | 1 passed — 0/100 efectos tardíos |
 
-### Componentes CI esperados
+### Componentes CI — PASS
 
-- Backend y PostgreSQL (incl. cert rápida + cert PostgreSQL)
+- Backend y PostgreSQL (incl. cert rápida + cert PostgreSQL + adversarial 100 iter)
 - Frontend
 - Validación Git
 - Pruebas Windows (cert process tree)
@@ -59,9 +60,7 @@ URL último run (fallido): https://github.com/jcmencop12026/EMPLEADOS_IA/actions
 
 ### Resultado
 
-**PENDIENTE CONFIRMACIÓN CI tras fix PG**
-
-Si el run queda PASS en los 4 jobs: **APTO PARA MERGE — PENDIENTE DE INTEGRACIÓN**
+## **PR #6 — APTO PARA MERGE — PENDIENTE DE INTEGRACIÓN**
 
 **NO MERGE** (instrucción explícita)
 
