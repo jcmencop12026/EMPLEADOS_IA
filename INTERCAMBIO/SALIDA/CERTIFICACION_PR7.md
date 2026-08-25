@@ -3,7 +3,7 @@
 **Estado:** `LISTO PARA CERTIFICACIÓN GITHUB`  
 **Rama:** `codex/notifications-alerts-820`  
 **HEAD inicial:** `b7f36ba`  
-**HEAD final:** `c4f7871`  
+**HEAD final:** `efd30a5`  
 **NO MERGE**
 
 ---
@@ -111,6 +111,7 @@ No duplicar `.github/workflows/qa.yml` en esta rama — ampliar QA-INFRA cuando 
 
 | SHA | Mensaje |
 |-----|---------|
+| `efd30a5` | `docs(cert): informe CERTIFICACION_PR7 completo` |
 | `c4f7871` | `test(cert): suite permanente notificaciones PR #7` |
 
 ## Pendientes
