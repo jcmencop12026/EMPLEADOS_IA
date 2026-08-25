@@ -1,7 +1,7 @@
 # CURSOR — Cierre técnico PR #7 / CODEX-820
 
-**Fecha:** 2026-08-25  
-**Estado:** CORREGIDO Y LISTO PARA QA FINAL  
+**Fecha:** 2026-08-25
+**Estado:** CORREGIDO Y LISTO PARA QA FINAL
 **No declarado apto para merge — NO MERGE**
 
 ---

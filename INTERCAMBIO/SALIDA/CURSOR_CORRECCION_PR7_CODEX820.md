@@ -1,7 +1,7 @@
 # CURSOR — Corrección PR #7 / CODEX-820 (reauditoría Codex)
 
-**Fecha:** 2026-08-24  
-**Estado final:** CORREGIDO Y LISTO PARA NUEVA REAUDITORÍA  
+**Fecha:** 2026-08-24
+**Estado final:** CORREGIDO Y LISTO PARA NUEVA REAUDITORÍA
 **No declarado apto para merge**
 
 ---

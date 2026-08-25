@@ -1,9 +1,9 @@
 # CERTIFICACIÓN PR #7 — Notificaciones y Alertas (CODEX-820)
 
-**Estado:** `LISTO PARA CERTIFICACIÓN GITHUB`  
-**Rama:** `codex/notifications-alerts-820`  
-**HEAD inicial:** `b7f36ba`  
-**HEAD final:** `6bf8ba0`  
+**Estado:** `LISTO PARA CERTIFICACIÓN GITHUB`
+**Rama:** `codex/notifications-alerts-820`
+**HEAD inicial:** `b7f36ba`
+**HEAD final:** `6bf8ba0`
 **NO MERGE**
 
 ---
