@@ -20,9 +20,9 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy import text
 
-from app.automation_models import AutomationRun
+from app.automation_models import Automation, AutomationRun
 from app.enums import AutomationRunStatus, WorkPlanStatus
-from app.models import Organization
+from app.models import Organization, User
 from app.orchestration_models import WorkPlan
 from app.services.automation_service import run_now, sync_run_from_work_plan
 from app.services.execution_guard import (
@@ -167,6 +167,19 @@ def test_cert_05_sql_transaccional_bloqueado(sql: str):
 # ---------------------------------------------------------------------------
 # 6. materialize_gated — válido e inválido
 # ---------------------------------------------------------------------------
+def _cert_automation(db, org_id: str, user_id: str) -> Automation:
+    auto = Automation(
+        organization_id=org_id,
+        name="Cert materialize",
+        objective="cert",
+        created_by_id=user_id,
+        status="ACTIVE",
+    )
+    db.add(auto)
+    db.flush()
+    return auto
+
+
 def test_cert_06_materialize_gated_valido():
     db = TestingSessionLocal()
     run_id = str(uuid.uuid4())
@@ -178,9 +191,18 @@ def test_cert_06_materialize_gated_valido():
         org = Organization(name=f"MatOK-{uuid.uuid4().hex[:6]}")
         db.add(org)
         db.flush()
+        user = User(
+            organization_id=org.id,
+            username=f"mat-{uuid.uuid4().hex[:6]}",
+            password_hash="x",
+            role="admin",
+        )
+        db.add(user)
+        db.flush()
+        auto = _cert_automation(db, org.id, user.id)
         run = AutomationRun(
             id=run_id,
-            automation_id=str(uuid.uuid4()),
+            automation_id=auto.id,
             organization_id=org.id,
             occurrence_key=f"mat-{uuid.uuid4().hex[:8]}",
             scheduled_for=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
@@ -208,9 +230,18 @@ def test_cert_06_materialize_gated_invalido_tras_invalidacion():
         org = Organization(name=f"MatNO-{uuid.uuid4().hex[:6]}")
         db.add(org)
         db.flush()
+        user = User(
+            organization_id=org.id,
+            username=f"matno-{uuid.uuid4().hex[:6]}",
+            password_hash="x",
+            role="admin",
+        )
+        db.add(user)
+        db.flush()
+        auto = _cert_automation(db, org.id, user.id)
         run = AutomationRun(
             id=run_id,
-            automation_id=str(uuid.uuid4()),
+            automation_id=auto.id,
             organization_id=org.id,
             occurrence_key=f"matno-{uuid.uuid4().hex[:8]}",
             scheduled_for=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),

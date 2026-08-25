@@ -426,9 +426,6 @@ def _signal_process_tree(pid: int, sig: signal.Signals) -> None:
 
 def terminate_process_tree(proc: subprocess.Popen) -> None:
     """Termina el árbol completo de procesos (padre + descendientes)."""
-    if proc.poll() is not None:
-        return
-
     if os.name == "nt":
         try:
             subprocess.run(
@@ -438,12 +435,17 @@ def terminate_process_tree(proc: subprocess.Popen) -> None:
                 check=False,
             )
         except (OSError, subprocess.SubprocessError):
-            proc.kill()
-        try:
-            proc.wait(timeout=3)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait(timeout=2)
+            if proc.poll() is None:
+                proc.kill()
+        if proc.poll() is None:
+            try:
+                proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait(timeout=2)
+        return
+
+    if proc.poll() is not None:
         return
 
     try:
@@ -479,14 +481,15 @@ def terminate_process_tree(proc: subprocess.Popen) -> None:
 
 def process_tree_alive(pid: int) -> bool:
     """Indica si un PID o alguno de sus descendientes sigue vivo."""
+    parent_alive = True
     try:
         os.kill(pid, 0)
     except (ProcessLookupError, OSError):
-        return False
+        parent_alive = False
     for child in _list_child_pids(pid):
         if process_tree_alive(child):
             return True
-    return True
+    return parent_alive
 
 
 def _utcnow():

@@ -1,9 +1,9 @@
 # CERTIFICACIÓN PR #6 — Scheduler Timeout / Fencing (CURSOR-810C)
 
-**Estado:** `LISTO PARA CERTIFICACIÓN GITHUB`  
-**Rama:** `cursor/automations-scheduler-810`  
-**HEAD inicial:** `5bd8744`  
-**HEAD final:** `1fff255`  
+**Estado:** `LISTO PARA CERTIFICACIÓN GITHUB`
+**Rama:** `cursor/automations-scheduler-810`
+**HEAD inicial:** `5bd8744`
+**HEAD final:** `1fff255`
 **NO MERGE**
 
 ---

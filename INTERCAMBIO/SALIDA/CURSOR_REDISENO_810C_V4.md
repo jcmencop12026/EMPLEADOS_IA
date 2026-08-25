@@ -1,7 +1,7 @@
 # CURSOR — Rediseño PR #6 / 810C v4
 
-**Fecha:** 2026-08-24  
-**Estado:** REDISEÑADO Y LISTO PARA QA FINAL  
+**Fecha:** 2026-08-24
+**Estado:** REDISEÑADO Y LISTO PARA QA FINAL
 **No declarado apto para merge**
 
 ---

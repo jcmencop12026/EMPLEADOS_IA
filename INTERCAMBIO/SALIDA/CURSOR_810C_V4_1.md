@@ -1,7 +1,7 @@
 # CURSOR — PR #6 / 810C v4.1
 
-**Fecha:** 2026-08-25  
-**Estado:** CORREGIDO Y LISTO PARA QA FINAL  
+**Fecha:** 2026-08-25
+**Estado:** CORREGIDO Y LISTO PARA QA FINAL
 **No declarado apto para merge**
 
 ---
