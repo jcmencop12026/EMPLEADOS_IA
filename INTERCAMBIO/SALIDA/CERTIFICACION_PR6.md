@@ -115,7 +115,7 @@ No duplicar `.github/workflows/qa.yml` en esta rama — ampliar QA-INFRA cuando 
 
 | SHA | Mensaje |
 |-----|---------|
-| `5ffcc04` | `docs(cert): informe CERTIFICACION_PR6 y limpieza imports` |
+| `046b4f7` | `docs(cert): informe CERTIFICACION_PR6 y limpieza imports` |
 | `dbe4012` | `test(cert): suite permanente scheduler timeout PR #6` |
 
 ## Pendientes
