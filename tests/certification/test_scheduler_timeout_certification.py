@@ -50,7 +50,7 @@ from tests.certification.scheduler_helpers import (
     create_org_user,
     run_timeout_scenario,
 )
-from tests.conftest import TestingSessionLocal
+from conftest import TestingSessionLocal
 
 pytestmark = pytest.mark.certification
 

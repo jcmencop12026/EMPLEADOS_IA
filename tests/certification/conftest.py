@@ -1,4 +1,4 @@
-"""Fixtures PostgreSQL para certificación (usa DATABASE_URL de QA-INFRA)."""
+"""Fixtures PostgreSQL y limpieza de estado global para certificación."""
 from __future__ import annotations
 
 import os
@@ -9,10 +9,34 @@ from sqlalchemy.orm import sessionmaker
 
 from app.database import Base
 from app.seed import bootstrap
+from app.services import automation_scheduler
 
 
 def _is_postgresql_url(url: str) -> bool:
     return url.startswith("postgresql") or url.startswith("postgres")
+
+
+@pytest.fixture(autouse=True)
+def _certification_state_cleanup():
+    """Evita contaminación de fence/scheduler entre tests de certificación."""
+    yield
+    automation_scheduler.stop_scheduler()
+    try:
+        from app.services.execution_guard import _controllers, _controllers_lock
+
+        with _controllers_lock:
+            _controllers.clear()
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        import contextvars
+        from app.services.execution_guard import _fence_token_var
+        from app.services.execution_workspace import _execution_phase
+
+        _fence_token_var.set(None)
+        _execution_phase.set(None)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 @pytest.fixture(scope="session")

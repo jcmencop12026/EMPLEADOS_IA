@@ -12,7 +12,7 @@ from app.models import Organization, User
 from app.security import hash_password
 from app.services.automation_service import activate_automation, create_automation, run_now
 from app.schemas_automation import AutomationCreate, RecurrenceConfig
-from tests.conftest import TestingSessionLocal
+from conftest import TestingSessionLocal
 
 
 def fractional_run_with_timeout(fn, _configured_timeout, actual_timeout: float):
