@@ -7,9 +7,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-_TEST_DB = tempfile.mktemp(suffix=".db")
-os.environ["DATABASE_URL"] = f"sqlite:///{_TEST_DB}"
-os.environ["JWT_SECRET"] = "test-secret-mvp-cert803"
+_TEST_DB = os.environ.get("DATABASE_URL", "").replace("sqlite:///", "")
+if not _TEST_DB:
+    _TEST_DB = tempfile.mktemp(suffix=".db")
+    os.environ["DATABASE_URL"] = f"sqlite:///{_TEST_DB}"
+if "JWT_SECRET" not in os.environ:
+    os.environ["JWT_SECRET"] = "test-secret-mvp-cert803"
 
 from app.database import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402

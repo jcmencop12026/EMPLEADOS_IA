@@ -3,7 +3,7 @@
 **Estado:** `LISTO PARA CERTIFICACIÓN GITHUB`  
 **Rama:** `codex/notifications-alerts-820`  
 **HEAD inicial:** `b7f36ba`  
-**HEAD final:** `efd30a5`  
+**HEAD final:** `2e575d8`  
 **NO MERGE**
 
 ---
