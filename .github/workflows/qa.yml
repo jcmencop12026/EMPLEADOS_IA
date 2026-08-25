@@ -5,9 +5,14 @@ on:
   workflow_dispatch:
     inputs:
       grupo_focal:
-        description: "Grupo focal de tests (auth, tenant, knowledge, notifications, automations, migrations, operations) o ruta tests/..."
+        description: "Grupo focal de tests (auth, tenant, knowledge, notifications, automations, migrations, operations, certification, certification_intensive) o ruta tests/..."
         required: false
         default: ""
+      certification_intensive:
+        description: "Ejecutar certificación intensiva (race 100 iteraciones) — solo manual"
+        type: boolean
+        required: false
+        default: false
 
 concurrency:
   group: qa-${{ github.workflow }}-${{ github.ref }}
@@ -73,17 +78,26 @@ jobs:
           PYTHONPATH=. alembic downgrade 4355c73adcb8
           PYTHONPATH=. alembic upgrade head
 
+      - name: Certificación rápida (PR)
+        run: |
+          PYTHONPATH=backend:. python -m pytest -m "certification and not certification_intensive" -v
+
+      - name: Certificación intensiva (manual)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.certification_intensive == 'true'
+        run: |
+          PYTHONPATH=backend:. python -m pytest -m certification_intensive -v
+
       - name: Ejecutar tests backend
         run: |
           if [ -n "${{ github.event.inputs.grupo_focal }}" ]; then
             FOCAL="${{ github.event.inputs.grupo_focal }}"
             if [[ "$FOCAL" == tests/* ]]; then
-              python -m pytest "$FOCAL" -v
+              PYTHONPATH=backend:. python -m pytest "$FOCAL" -v
             else
-              python -m pytest -m "$FOCAL" -v
+              PYTHONPATH=backend:. python -m pytest -m "$FOCAL" -v
             fi
           else
-            python -m pytest -v
+            PYTHONPATH=backend:. python -m pytest -v
           fi
 
   frontend:
@@ -145,3 +159,7 @@ jobs:
 
       - name: Pruebas de arranque SQLite (Windows)
         run: python -m pytest tests/test_db_startup_805e.py -v
+
+      - name: Certificación Windows (process tree)
+        run: |
+          PYTHONPATH=backend:. python -m pytest -m "certification and windows" -v
