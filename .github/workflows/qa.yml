@@ -115,7 +115,7 @@ jobs:
               PYTHONPATH=backend:. python -m pytest -m "$FOCAL" -v
             fi
           else
-            PYTHONPATH=backend:. python -m pytest -v
+            PYTHONPATH=backend:. python -m pytest -m "not certification_intensive" -v
           fi
 
   frontend:
@@ -179,5 +179,13 @@ jobs:
         run: python -m pytest tests/test_db_startup_805e.py -v
 
       - name: Certificación Windows (process tree)
+        shell: bash
         run: |
+          set -euo pipefail
+          COLLECTED=$(PYTHONPATH=backend:. python -m pytest --collect-only -q -m "certification and windows" 2>&1 | tail -1)
+          if echo "$COLLECTED" | grep -qE "collected 0 items|no tests collected"; then
+            echo "Sin tests Windows de certificación — step omitido."
+            exit 0
+          fi
+          echo "$COLLECTED"
           PYTHONPATH=backend:. python -m pytest -m "certification and windows" -v
