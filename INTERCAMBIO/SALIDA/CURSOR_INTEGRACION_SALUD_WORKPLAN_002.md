@@ -14,7 +14,7 @@
 | HEAD base (OPERACIONES #13) | `7c536d2` (`origin/cursor/operations-center-940-12b6`) |
 | HEAD base (SALUD #14) | `9ee91eb` (`origin/cursor/salud-ips-engine-960`) — verificado remoto |
 | HEAD integración (inicial) | `7c536d2` |
-| HEAD integración (final) | `5362792` (+ commits de tests/fixes posteriores) |
+| HEAD integración (final) | `a511ea1` |
 | Git root | `/workspace` (= `D:\EMPLEADOS_IA`) |
 
 Rama creada desde OPERACIONES-940 certificado; merge de SALUD-960 sin modificar ramas origen.
