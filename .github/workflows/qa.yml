@@ -81,8 +81,12 @@ jobs:
       - name: Certificación rápida (PR)
         run: |
           set -euo pipefail
-          COLLECTED=$(PYTHONPATH=backend:. python -m pytest --collect-only -q -m "certification and not certification_intensive" 2>&1 | tail -1)
-          if echo "$COLLECTED" | grep -qE "collected 0 items|no tests collected"; then
+          set +e
+          OUTPUT=$(PYTHONPATH=backend:. python -m pytest --collect-only -q -m "certification and not certification_intensive" 2>&1)
+          CODE=$?
+          set -e
+          COLLECTED=$(echo "$OUTPUT" | tail -1)
+          if [ "$CODE" -eq 5 ] || echo "$COLLECTED" | grep -qE "collected 0 items|no tests collected"; then
             echo "Sin tests de certificación en esta rama — step omitido."
             exit 0
           fi
@@ -92,8 +96,12 @@ jobs:
       - name: Certificación PostgreSQL
         run: |
           set -euo pipefail
-          COLLECTED=$(PYTHONPATH=backend:. python -m pytest --collect-only -q -m "certification and postgresql" 2>&1 | tail -1)
-          if echo "$COLLECTED" | grep -qE "collected 0 items|no tests collected"; then
+          set +e
+          OUTPUT=$(PYTHONPATH=backend:. python -m pytest --collect-only -q -m "certification and postgresql" 2>&1)
+          CODE=$?
+          set -e
+          COLLECTED=$(echo "$OUTPUT" | tail -1)
+          if [ "$CODE" -eq 5 ] || echo "$COLLECTED" | grep -qE "collected 0 items|no tests collected"; then
             echo "Sin tests postgresql de certificación — step omitido."
             exit 0
           fi
@@ -182,8 +190,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          COLLECTED=$(PYTHONPATH=backend:. python -m pytest --collect-only -q -m "certification and windows" 2>&1 | tail -1)
-          if echo "$COLLECTED" | grep -qE "collected 0 items|no tests collected"; then
+          set +e
+          OUTPUT=$(PYTHONPATH=backend:. python -m pytest --collect-only -q -m "certification and windows" 2>&1)
+          CODE=$?
+          set -e
+          COLLECTED=$(echo "$OUTPUT" | tail -1)
+          if [ "$CODE" -eq 5 ] || echo "$COLLECTED" | grep -qE "collected 0 items|no tests collected"; then
             echo "Sin tests Windows de certificación — step omitido."
             exit 0
           fi
