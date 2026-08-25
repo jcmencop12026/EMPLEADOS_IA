@@ -8,6 +8,8 @@ import { EmployeeWizardPage } from "./pages/EmployeeWizardPage";
 import { ExecutionDetailPage } from "./pages/ExecutionDetailPage";
 import { ExecutionsPage } from "./pages/ExecutionsPage";
 import { HomePage } from "./pages/HomePage";
+import { KnowledgeDetailPage } from "./pages/KnowledgeDetailPage";
+import { KnowledgePage } from "./pages/KnowledgePage";
 import { LoginPage } from "./pages/LoginPage";
 import { OperationsCenterPage } from "./pages/OperationsCenterPage";
 import { OrganizationPage } from "./pages/OrganizationPage";
@@ -27,6 +29,8 @@ export default function App() {
           <Route path="ejecuciones" element={<ExecutionsPage />} />
           <Route path="ejecuciones/:planId" element={<ExecutionDetailPage />} />
           <Route path="directorio" element={<DirectoryPage />} />
+          <Route path="conocimiento" element={<KnowledgePage />} />
+          <Route path="conocimiento/:documentId" element={<KnowledgeDetailPage />} />
           <Route path="empleados/nuevo" element={<EmployeeWizardPage />} />
           <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />
           <Route path="organizacion" element={<OrganizationPage />} />

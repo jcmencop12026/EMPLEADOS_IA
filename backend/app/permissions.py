@@ -13,15 +13,29 @@ EMPLOYEE_PERMISSIONS = {
     "employee.admin",
 }
 
+KNOWLEDGE_PERMISSIONS = {
+    "knowledge.view",
+    "knowledge.manage",
+    "knowledge.upload",
+    "knowledge.delete",
+    "knowledge.use",
+}
+
+ALL_PERMISSIONS = EMPLOYEE_PERMISSIONS | KNOWLEDGE_PERMISSIONS
+
 ROLE_PERMISSIONS: dict[str, set[str]] = {
-    "admin": EMPLOYEE_PERMISSIONS,
+    "admin": ALL_PERMISSIONS,
     "operator": {
         "employee.view",
         "employee.create",
         "employee.edit",
         "employee.test",
+        "knowledge.view",
+        "knowledge.manage",
+        "knowledge.upload",
+        "knowledge.use",
     },
-    "viewer": {"employee.view"},
+    "viewer": {"employee.view", "knowledge.view", "knowledge.use"},
 }
 
 
