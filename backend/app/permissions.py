@@ -13,15 +13,27 @@ EMPLOYEE_PERMISSIONS = {
     "employee.admin",
 }
 
+SALUD_PERMISSIONS = {
+    "salud.cargar_datos",
+    "salud.ejecutar_analisis",
+    "salud.consultar_diagnostico",
+    "salud.aceptar_recomendaciones",
+    "salud.administrar_experiencia",
+}
+
 ROLE_PERMISSIONS: dict[str, set[str]] = {
-    "admin": EMPLOYEE_PERMISSIONS,
+    "admin": EMPLOYEE_PERMISSIONS | SALUD_PERMISSIONS,
     "operator": {
         "employee.view",
         "employee.create",
         "employee.edit",
         "employee.test",
+        "salud.cargar_datos",
+        "salud.ejecutar_analisis",
+        "salud.consultar_diagnostico",
+        "salud.aceptar_recomendaciones",
     },
-    "viewer": {"employee.view"},
+    "viewer": {"employee.view", "salud.consultar_diagnostico"},
 }
 
 
