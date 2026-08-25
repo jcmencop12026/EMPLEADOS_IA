@@ -13,7 +13,7 @@
 | PR | #6 |
 | Rama | `cursor/automations-scheduler-810` |
 | HEAD anterior | `772867b544d6a57693da83d88c31b61df130163b` |
-| HEAD nuevo | *(post-commit)* |
+| HEAD nuevo | `668aeb1774a8d8d719c04cd32116c1b81b9de951` |
 | Commit V4 | `b33190a` |
 | Commit V4.1 | `fix(810c): close worker session bypass via facade encapsulation` |
 
