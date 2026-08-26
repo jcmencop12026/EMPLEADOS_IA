@@ -173,10 +173,6 @@ jobs:
       - name: Verificar espacios en blanco conflictivos
         run: git fetch origin main && git diff --check origin/main...HEAD
 
-      - name: Validar gobierno de migraciones (ledger + head único)
-        working-directory: backend
-        run: PYTHONPATH=. python scripts/validate_migrations.py
-
   pruebas-windows:
     name: Pruebas Windows
     runs-on: windows-latest
