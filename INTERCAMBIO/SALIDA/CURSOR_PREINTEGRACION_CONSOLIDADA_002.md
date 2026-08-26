@@ -4,8 +4,8 @@
 **Fecha:** 2026-08-26
 **Base main:** `1697dd2`
 **Rama:** `cursor/preintegracion-consolidada-002`
-**HEAD final:** `5839455`
-**PR draft:** pendiente de apertura contra `main`
+**HEAD final:** `d7edb4b`
+**PR draft:** [#19](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/19) contra `main`
 **NO MERGE a main**
 
 ---
@@ -192,7 +192,14 @@ Menú jerárquico en español con:
 
 ## 11. CI GitHub
 
-Pendiente ejecución en PR draft `cursor/preintegracion-consolidada-002`.
+| Job | Run (HEAD `d7edb4b`) | Resultado |
+|-----|----------------------|-----------|
+| Backend y PostgreSQL | CI PR #19 | **PASS** |
+| Frontend | CI PR #19 | **PASS** |
+| Validación Git | CI PR #19 | **PASS** |
+| Pruebas Windows | CI PR #19 | **PASS** |
+
+**Resultado: 4/4 PASS en GitHub Actions**
 
 ---
 
