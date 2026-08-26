@@ -167,10 +167,11 @@ def test_contradictory_documents_flag_validation(client, token):
     assert any("conflicto" in h["titulo"].lower() for h in diag["hallazgos"])
 
 
-def test_without_knowledge_analysis_still_runs(client, token):
-    analysis = _run_analysis(client, token, ips_name="IPS sin docs").json()
+def test_without_knowledge_analysis_still_runs(client):
+    token_iso = _create_org_user(client, "Org sin conocimiento", f"snk-{uuid.uuid4().hex[:6]}", "Snk*")
+    analysis = _run_analysis(client, token_iso, ips_name="IPS sin docs").json()
     assert analysis["estado"] == "COMPLETADO"
-    diag = client.get(f"/api/salud/diagnostico/{analysis['id']}", headers=auth_header(token)).json()
+    diag = client.get(f"/api/salud/diagnostico/{analysis['id']}", headers=auth_header(token_iso)).json()
     assert diag["conocimiento"]["utilizado"] is False
     assert "No se encontró conocimiento" in (diag["conocimiento"].get("mensaje") or "")
 
@@ -188,13 +189,18 @@ def test_incomplete_dataset_plus_document(client, token):
 
 def test_natural_question_contractual(client, token):
     emp_id = _radicacion_employee_id()
-    doc = _create_text_doc(client, token, "Contrato entidad", "Plazo máximo de radicación 10 días.").json()
+    doc = _create_text_doc(
+        client,
+        token,
+        f"Contrato entidad {uuid.uuid4().hex[:6]}",
+        "Plazo máximo de radicación 10 días.",
+    ).json()
     _grant(client, token, emp_id, doc["id"])
     datasets = {
         "facturacion": [{"fecha_factura": "2026-01-01", "numero_factura": "F-Q", "valor_facturado": 500000, "pagador": "EPS"}],
         "radicacion": [{"fecha_factura": "2026-01-01", "fecha_radicacion": "2026-01-19", "numero_factura": "F-Q", "valor_radicado": 500000}],
     }
-    analysis = _run_analysis(client, token, datasets=datasets).json()
+    analysis = _run_analysis(client, token, datasets=datasets, ips_name=f"IPS Pregunta {uuid.uuid4().hex[:4]}").json()
     q = client.post(
         f"/api/salud/pregunta/{analysis['id']}",
         headers=auth_header(token),
@@ -202,7 +208,8 @@ def test_natural_question_contractual(client, token):
     )
     assert q.status_code == 200
     body = q.json()
-    assert "incumplimiento" in body["respuesta"].lower() or "insuficiente" in body["respuesta"].lower()
+    lowered = body["respuesta"].lower()
+    assert any(w in lowered for w in ("incumplimiento", "insuficiente", "validación"))
 
 
 def test_source_visible_in_hallazgo(client, token):

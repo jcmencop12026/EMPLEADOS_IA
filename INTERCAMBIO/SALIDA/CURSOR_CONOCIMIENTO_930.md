@@ -1,7 +1,7 @@
 # CURSOR — CONOCIMIENTO-930 Centro de Conocimiento V1
 
-**Fecha:** 2026-08-25  
-**Estado:** CONOCIMIENTO-930 LISTO PARA REAUDITORÍA  
+**Fecha:** 2026-08-25
+**Estado:** CONOCIMIENTO-930 LISTO PARA REAUDITORÍA
 **No declarado apto para merge — NO MERGE**
 
 ---

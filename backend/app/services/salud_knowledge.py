@@ -38,10 +38,20 @@ def specialist_needs_knowledge(domain: str, request_text: str) -> bool:
 
 def build_domain_query(domain: str, request_text: str, ips_name: str) -> str:
     parts = DOMAIN_QUERIES.get(domain, ["lineamientos operativos"])
-    seed = parts[0]
     if "contrato" in request_text.lower() or domain == "contratos":
-        return f"plazo máximo radicación {ips_name}"
-    return f"{seed} {ips_name}"
+        return "plazo radicación"
+    return parts[0]
+
+
+def build_domain_queries(domain: str, request_text: str) -> list[str]:
+    queries = list(DOMAIN_QUERIES.get(domain, ["lineamientos operativos"]))
+    if "contrato" in request_text.lower() or domain in {"contratos", "radicacion"}:
+        queries = ["radicación", "plazo", *queries]
+    deduped: list[str] = []
+    for q in queries:
+        if q not in deduped:
+            deduped.append(q)
+    return deduped[:4]
 
 
 def source_reference(
@@ -169,21 +179,36 @@ def fetch_specialist_knowledge(
     ips_name: str,
     limit: int = 5,
 ) -> dict[str, Any]:
-    query = build_domain_query(domain, request_text, ips_name)
-    raw = retrieve_knowledge(
-        db,
-        tenant_id=organization_id,
-        query=query,
-        limit=limit,
-        employee_id=employee_id,
-    )
-    relevant = [frag for frag in raw if _domain_relevance(domain, frag)]
+    queries = build_domain_queries(domain, request_text)
+    seen_chunks: set[str] = set()
+    relevant: list[dict[str, Any]] = []
+    query_log: list[str] = []
+    for query in queries:
+        query_log.append(query)
+        raw = retrieve_knowledge(
+            db,
+            tenant_id=organization_id,
+            query=query,
+            limit=limit,
+            employee_id=employee_id,
+        )
+        for frag in raw:
+            chunk_id = frag.get("chunk_id")
+            if chunk_id and chunk_id in seen_chunks:
+                continue
+            if chunk_id:
+                seen_chunks.add(chunk_id)
+            if _domain_relevance(domain, frag):
+                relevant.append(frag)
+        if len(relevant) >= limit:
+            break
+
     refs: list[dict[str, Any]] = []
-    for frag in relevant:
+    for frag in relevant[:limit]:
         refs.append(
             source_reference(
                 frag,
-                query=query,
+                query=queries[0],
                 employee_id=employee_id,
                 analysis_id=analysis_id,
                 domain=domain,
@@ -195,14 +220,14 @@ def fetch_specialist_knowledge(
                 organization_id=organization_id,
                 document_id=frag["document_id"],
                 user_id=user_id,
-                query=f"SALUD:{analysis_id}:{domain}:{query[:120]}",
+                query=f"SALUD:{analysis_id}:{domain}:{queries[0][:120]}",
             )
-    analysis = analyze_fragments(relevant)
+    analysis = analyze_fragments(relevant[:limit])
     return {
         "dominio": domain,
-        "consulta": query,
+        "consulta": ", ".join(query_log),
         "especialista_id": employee_id,
-        "fragmentos": len(relevant),
+        "fragmentos": len(relevant[:limit]),
         "fuentes": refs,
         "analisis": analysis,
         "experiencia_separada": True,

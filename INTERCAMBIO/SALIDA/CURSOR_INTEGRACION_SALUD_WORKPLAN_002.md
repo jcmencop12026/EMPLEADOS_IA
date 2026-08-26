@@ -14,7 +14,7 @@
 | HEAD base (OPERACIONES #13) | `7c536d2` (`origin/cursor/operations-center-940-12b6`) |
 | HEAD base (SALUD #14) | `9ee91eb` (`origin/cursor/salud-ips-engine-960`) — verificado remoto |
 | HEAD integración (inicial) | `7c536d2` |
-| HEAD integración (final) | `a511ea1` |
+| HEAD integración (final) | `b3b5e31` |
 | Git root | `/workspace` (= `D:\EMPLEADOS_IA`) |
 
 Rama creada desde OPERACIONES-940 certificado; merge de SALUD-960 sin modificar ramas origen.
@@ -126,7 +126,7 @@ WorkPlan visible en `/operaciones` y detalle `/operaciones/:id` con:
 | `npm run build` | **PASS** |
 | `npm audit --audit-level=moderate` | **0 vulnerabilidades** |
 | Alembic upgrade → downgrade `4355c73adcb8` → upgrade | **PASS** |
-| `git diff --check origin/main...HEAD` | Trailing whitespace en docs `INTERCAMBIO/SALIDA/` heredados de ramas previas (no introducidos por el puente) |
+| `git diff --check origin/main...HEAD` | **PASS** (corregido trailing whitespace en informes) |
 
 **Nota local:** ejecutar pytest sin `DATABASE_URL` heredado de sesiones previas (`env -u DATABASE_URL pytest`) para SQLite fresco con schema actual.
 
@@ -134,14 +134,12 @@ WorkPlan visible en `/operaciones` y detalle `/operaciones/:id` con:
 
 ## 11. GitHub Actions / PostgreSQL
 
-Workflow `.github/workflows/qa.yml` incluye:
-- PostgreSQL 16
-- `alembic upgrade head` + downgrade/upgrade
-- pytest completo
-- frontend build + npm audit
-- `git diff --check`
-
-Pendiente de ejecución en CI tras push de la rama (recomendado reauditar con run verde).
+| Job | Run | Resultado |
+|-----|-----|-----------|
+| Backend y PostgreSQL | [32918547155](https://github.com/jcmencop12026/EMPLEADOS_IA/actions/runs/32918547155) | **PASS** |
+| Frontend | idem | **PASS** |
+| Validación Git (`git diff --check`) | idem | **PASS** |
+| Pruebas Windows | idem | **PASS** |
 
 ---
 
