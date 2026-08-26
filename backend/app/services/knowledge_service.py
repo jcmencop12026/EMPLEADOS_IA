@@ -230,9 +230,9 @@ def delete_document(db: Session, *, organization_id: str, document_id: str, user
     if not row:
         raise LookupError("El documento no existe o no está disponible.")
     knowledge_storage.delete_stored_file(row.storage_key)
-    db.query(KnowledgeChunk).filter(KnowledgeChunk.document_id == row.id).delete()
-    db.query(EmployeeKnowledgeGrant).filter(EmployeeKnowledgeGrant.document_id == row.id).delete()
-    _log_activity(db, document_id=row.id, organization_id=organization_id, user_id=user_id, action="ELIMINACION")
+    db.query(KnowledgeChunk).filter(KnowledgeChunk.document_id == row.id).delete(synchronize_session=False)
+    db.query(EmployeeKnowledgeGrant).filter(EmployeeKnowledgeGrant.document_id == row.id).delete(synchronize_session=False)
+    db.query(KnowledgeActivity).filter(KnowledgeActivity.document_id == row.id).delete(synchronize_session=False)
     db.delete(row)
     db.commit()
 
