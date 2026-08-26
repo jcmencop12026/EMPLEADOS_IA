@@ -2,7 +2,7 @@
 
 **PR:** [#21](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/21)
 **Rama auditada:** `cursor/motor-analitico-1000`
-**HEAD:** `482a754c6d6a7a02c57831646d65735bdb0de774`
+**HEAD:** `b140dd9` (reauditoría) → correcciones D-02/D-04 en curso
 **Fecha:** 2026-08-26
 **Auditor:** Cloud Agent (reauditoría externa independiente)
 **Veredicto:** **MOTOR-ANALITICO-1000 — NO APTO PARA MERGE**
@@ -190,16 +190,18 @@ Revisión de capacidad en código:
 | ID | Severidad | Descripción |
 |----|-----------|-------------|
 | D-01 | **BLOQUEANTE** | Paquete `MOTOR_ANALITICO_1000_DATASET_CERTIFICACION.zip` no disponible — imposible certificar Fases 1–2, 4–6 |
-| D-02 | **BLOQUEANTE** | CI Backend falla por `test_pr_diff_isolated_from_805` en PR sin cambios de Automatizaciones |
-| D-03 | **BLOQUEANTE** | CI Validación Git: trailing whitespace en documentación de entrega previa |
-| D-04 | **ALTO** | Motor no propaga conflictos documentales (`knowledge_ctx.conflictos`) a confianza de hipótesis — riesgo Caso D |
+| D-02 | ~~**BLOQUEANTE**~~ **CORREGIDO** | CI Backend falla por `test_pr_diff_isolated_from_805` en PR sin cambios de Automatizaciones |
+| D-03 | ~~**BLOQUEANTE**~~ **CORREGIDO** | CI Validación Git: trailing whitespace en documentación de entrega previa |
+| D-04 | ~~**ALTO**~~ **CORREGIDO** | Motor no propaga conflictos documentales (`knowledge_ctx.conflictos`) a confianza de hipótesis — riesgo Caso D |
 | D-05 | **ALTO** | Caso C: acción hacia pagador/contratación puede no ser dominante si coexisten hallazgos internos |
 | D-06 | **MEDIO** | H10 multicausal puede quedar subordinada a hipótesis simple con mayor puntaje |
 | D-07 | **MENOR** | Runner ciego no carga aún documentos del caso al Centro de Conocimiento (TODO en script) |
 
 ---
 
-## 11. Correcciones aplicadas en esta reauditoría
+## 11. Correcciones aplicadas
+
+### Reauditoría inicial (b140dd9)
 
 | Cambio | Tipo | Motivo |
 |--------|------|--------|
@@ -207,7 +209,15 @@ Revisión de capacidad en código:
 | `run_blind_certification.py` | Harness auditoría | Ejecución ciega cuando llegue el paquete |
 | Trailing whitespace en `CURSOR_MOTOR_ANALITICO_1000.md` | Doc-only | Corregir Validación Git D-03 |
 
-**No se modificó** la lógica del motor (`motor_analitico/*`, `salud_engine.py`) en esta reauditoría.
+### Post-reauditoría — defectos D-02 y D-04
+
+| Cambio | Tipo | Defecto |
+|--------|------|---------|
+| `tests/test_automations_810b.py` | Test | D-02 — `_verify_pr_diff_isolation` ya no exige marcadores `810` en cualquier PR; solo protege infraestructura 805 |
+| `hypothesis_engine.py` + `pipeline.py` | Motor | D-04 — `knowledge_ctx.conflictos` degrada H2/H6/H10, bloquea CONFIRMADA y baja confianza |
+| `tests/test_motor_analitico_1000.py` | Test | D-04 — `test_case_d_knowledge_conflicts_degrade_hypotheses` |
+
+Regresión local tras correcciones: **438 passed**, 2 skipped.
 
 ---
 
@@ -230,22 +240,25 @@ INTERCAMBIO/SALIDA/reauditoria_externa_motor_1000/brutos/
 
 ### MOTOR-ANALITICO-1000 — NO APTO PARA MERGE
 
-**Motivos bloqueantes:**
+**Motivos bloqueantes restantes:**
 
 1. **Certificación externa incompleta** — sin paquete ChatGPT en `INTERCAMBIO/ENTRADA/`, no se puede validar semánticamente A–E contra oráculo.
-2. **CI 2/4 FAIL** en PR #21 (Backend por test de diff mal contextualizado; Validación Git por whitespace).
-3. **Riesgo alto en Caso D** — conflicto documental detectado en Conocimiento pero no acoplado al motor de hipótesis.
+2. **CI pendiente de re-ejecución** tras correcciones D-02/D-03/D-04 (esperado 4/4 PASS).
+
+**Corregido desde reauditoría inicial:**
+
+- D-02 — test de diff aislado de infraestructura 805
+- D-03 — trailing whitespace en documentación
+- D-04 — propagación de conflictos documentales al motor de hipótesis
 
 **Para alcanzar "APTO PARA MERGE — PENDIENTE DE INTEGRACIÓN" se requiere:**
 
 1. Entregar y ejecutar `MOTOR_ANALITICO_1000_DATASET_CERTIFICACION.zip` con runner ciego.
 2. Pasar los 5 casos decisivos contra oráculo.
-3. Corregir D-02 (test `test_pr_diff_isolated_from_805` debe distinguir PR de motor vs PR de automatizaciones).
-4. Corregir D-04 si Caso D falla en ejecución real.
-5. CI 4/4 PASS.
+3. CI 4/4 PASS confirmado en PR #21.
 
 **NO MERGE** hasta completar lo anterior.
 
 ---
 
-*Reauditoría externa — PR #21 — HEAD 482a754*
+*Reauditoría externa — PR #21 — correcciones D-02/D-04 post b140dd9*

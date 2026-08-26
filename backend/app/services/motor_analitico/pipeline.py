@@ -27,7 +27,7 @@ def run_motor_analitico(
 ) -> dict[str, Any]:
     """Ejecuta etapas del motor analítico sobre resultados SALUD existentes."""
     sufficiency = assess_data_sufficiency(data_profiles, indicators, request_text)
-    hypotheses = generate_hypotheses(indicators, datasets, sufficiency, hallazgos)
+    hypotheses = generate_hypotheses(indicators, datasets, sufficiency, hallazgos, knowledge_ctx)
     primary = primary_hypothesis(hypotheses)
     contrasts = build_contrasts(hypotheses, specialists, hallazgos)
     alternatives = generate_alternatives(hallazgos, hypotheses, indicators)

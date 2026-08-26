@@ -27,26 +27,32 @@ def generate_hypotheses(
     datasets: dict[str, list[dict]],
     data_sufficiency: dict[str, Any],
     hallazgos: list[dict[str, Any]],
+    knowledge_ctx: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Genera hipótesis alternativas con evidencia a favor/en contra."""
     if data_sufficiency.get("clasificacion") == "INSUFICIENTE":
         return _insufficient_hypotheses(data_sufficiency)
 
     scores = _score_all_hypotheses(indicators, datasets, hallazgos)
+    if knowledge_ctx:
+        _apply_knowledge_conflicts(scores, knowledge_ctx)
     hypotheses: list[dict[str, Any]] = []
 
     for item in HYPOTHESIS_CATALOG:
         hid = item["id"]
         sc = scores.get(hid, {"a_favor": [], "en_contra": [], "faltante": [], "score": 0.0})
-        estado = _classify_status(sc["score"], sc["a_favor"], sc["en_contra"], data_sufficiency)
+        estado = _classify_status(sc["score"], sc["a_favor"], sc["en_contra"], data_sufficiency, knowledge_ctx)
         impacto = _estimate_impact(hid, indicators, hallazgos)
+        confianza = _confidence_label(sc["score"])
+        if knowledge_ctx and (knowledge_ctx.get("conflictos") or knowledge_ctx.get("requiere_validacion")):
+            confianza = _downgrade_confidence(confianza)
         hypotheses.append({
             "id": hid,
             "titulo": item["titulo"],
             "dominio": item["dominio"],
             "tipo": "HIPOTESIS",
             "estado": estado,
-            "confianza": _confidence_label(sc["score"]),
+            "confianza": confianza,
             "evidencia_a_favor": sc["a_favor"],
             "evidencia_en_contra": sc["en_contra"],
             "informacion_faltante": sc["faltante"],
@@ -197,17 +203,62 @@ def _score_all_hypotheses(
     return result
 
 
+def _apply_knowledge_conflicts(scores: dict[str, dict[str, Any]], knowledge_ctx: dict[str, Any]) -> None:
+    """Reduce confianza causal cuando hay documentos contradictorios (Caso D)."""
+    if not knowledge_ctx.get("conflictos") and not knowledge_ctx.get("requiere_validacion"):
+        return
+
+    limites: list[int] = []
+    for bundle in knowledge_ctx.get("conflictos", []):
+        analisis = bundle.get("analisis", {})
+        limites.extend(analisis.get("limites_unicos", []))
+
+    detalle = (
+        f"Plazos documentales contradictorios: {limites}"
+        if limites
+        else "Documentos autorizados con información contradictoria"
+    )
+    mensaje_faltante = "Validar vigencia y jerarquía documental antes de confirmar causa"
+
+    for hid in ("H2", "H6", "H10"):
+        scores[hid]["en_contra"].append(detalle)
+        scores[hid]["faltante"].append(mensaje_faltante)
+        scores[hid]["score"] = max(scores[hid]["score"] - 0.25, 0.0)
+
+    strong = sum(1 for hid in ("H2", "H3", "H4", "H7", "H8") if scores[hid]["score"] >= 0.3)
+    if strong >= 2:
+        scores["H10"]["a_favor"].append(f"{strong} frentes con evidencia; conflicto documental pendiente")
+        scores["H10"]["score"] = min(scores["H10"]["score"] + 0.15, 0.75)
+
+
+def _downgrade_confidence(level: str) -> str:
+    if level == "ALTA":
+        return "MEDIA"
+    if level == "MEDIA":
+        return "BAJA"
+    return "BAJA"
+
+
 def _count_devueltas(glosas: list[dict]) -> int:
     return sum(1 for g in glosas if str(g.get("estado", "")).upper() == "DEVUELTA")
 
 
-def _classify_status(score: float, a_favor: list, en_contra: list, sufficiency: dict) -> str:
+def _classify_status(
+    score: float,
+    a_favor: list,
+    en_contra: list,
+    sufficiency: dict,
+    knowledge_ctx: dict[str, Any] | None = None,
+) -> str:
     if sufficiency.get("clasificacion") == "INSUFICIENTE":
         return "NO DEMOSTRADA"
-    if score >= 0.65 and len(a_favor) >= 2 and len(en_contra) <= 1:
+    has_conflict = bool(
+        knowledge_ctx and (knowledge_ctx.get("conflictos") or knowledge_ctx.get("requiere_validacion"))
+    )
+    if score >= 0.65 and len(a_favor) >= 2 and len(en_contra) <= 1 and not has_conflict:
         return "CONFIRMADA"
     if score >= 0.45 and a_favor:
-        return "PROBABLE"
+        return "PROBABLE" if not has_conflict else "POSIBLE"
     if score >= 0.25:
         return "POSIBLE"
     if en_contra and not a_favor:

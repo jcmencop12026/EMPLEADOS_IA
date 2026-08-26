@@ -225,6 +225,35 @@ def test_specialist_selection_has_reason(motor_db):
         assert a["score"] > 0
 
 
+def test_case_d_knowledge_conflicts_degrade_hypotheses():
+    """D-04: conflictos documentales deben degradar hipótesis causales (10 vs 15 días)."""
+    from app.services.motor_analitico.hypothesis_engine import generate_hypotheses
+
+    datasets = get_motor_dataset("D")
+    profiles = {k: profile_data_quality(k, v) for k, v in datasets.items()}
+    indicators = compute_all_indicators(datasets)
+    sufficiency = {"clasificacion": "SUFICIENTE", "dominios": list(datasets.keys())}
+    knowledge_ctx = {
+        "conflictos": [
+            {
+                "analisis": {
+                    "limites_unicos": [10, 15],
+                    "requiere_validacion": True,
+                }
+            }
+        ],
+        "requiere_validacion": True,
+    }
+
+    hypotheses = generate_hypotheses(
+        indicators, datasets, sufficiency, hallazgos=[], knowledge_ctx=knowledge_ctx
+    )
+    h2 = next(h for h in hypotheses if h["id"] == "H2")
+    assert h2["estado"] != "CONFIRMADA"
+    assert any("contradict" in str(e).lower() for e in h2.get("evidencia_en_contra", []))
+    assert any("documental" in str(i).lower() for i in h2.get("informacion_faltante", []))
+
+
 def test_consultor_case_rich_output(motor_db):
     org_id, user_id = _admin_ctx(motor_db)
     analysis = _run_case_inline(motor_db, org_id, user_id, "CONSULTOR")
