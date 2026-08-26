@@ -4,7 +4,7 @@
 **Estado:** **LISTO PARA REAUDITORÍA** (NO MERGE)  
 **Base main:** `96ad42b`  
 **Rama:** `cursor/main-cert-migrations-control-001`  
-**HEAD final:** _(ver commit tras push)_
+**HEAD final:** `9bce435`
 
 ---
 
