@@ -1,7 +1,7 @@
 # CURSOR — MOTOR-ANALITICO-1000
 
-**Rama:** `cursor/motor-analitico-1000`  
-**Base:** `main` @ `9d5c8de`  
+**Rama:** `cursor/motor-analitico-1000`
+**Base:** `main` @ `9d5c8de`
 **Estado:** **MOTOR-ANALITICO-1000 LISTO PARA REAUDITORÍA** (NO MERGE)
 
 ---
@@ -112,17 +112,17 @@ El motor registra **por qué** cada especialista fue seleccionado en `trazabilid
 
 **Hallazgos (HECHO):**
 
-1. 3 facturas sin radicar  
-2. Demora promedio factura→radicación: 36,6 días  
+1. 3 facturas sin radicar
+2. Demora promedio factura→radicación: 36,6 días
 3. Alta concentración en un pagador: 100%
 
 **Contraste de especialistas:** especialista de radicación APOYA; otro CUESTIONA/COMPLEMENTA; consolidador sintetiza.
 
 **Priorización (top 3):**
 
-1. Control diario de pendientes de radicación con alertas automáticas  
-2. Auditoría de cuellos de botella facturación→radicación  
-3. Outsourcing parcial de radicación para picos  
+1. Control diario de pendientes de radicación con alertas automáticas
+2. Auditoría de cuellos de botella facturación→radicación
+3. Outsourcing parcial de radicación para picos
 
 **Escenario PROBABLE:** valor recuperable estimado ~$36.360.000 (PROYECTADO — no real).
 
@@ -183,5 +183,5 @@ pytest.ini
 
 ---
 
-**MOTOR-ANALITICO-1000 — LISTO PARA REAUDITORÍA**  
+**MOTOR-ANALITICO-1000 — LISTO PARA REAUDITORÍA**
 **NO MERGE** (pendiente aprobación humana)
