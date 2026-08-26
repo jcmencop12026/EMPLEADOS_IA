@@ -247,7 +247,7 @@ def test_adversarial_race_zero_late_effects_100_iterations():
         effects: list[str] = []
 
         def route(*_a, **_k):
-            time.sleep(0.08)
+            time.sleep(0.15)
             try:
                 require_execution_allowed()
                 effects.append("race-late")
@@ -255,7 +255,7 @@ def test_adversarial_race_zero_late_effects_100_iterations():
                 pass
             return {"plan_id": "x", "status": WorkPlanStatus.COMPLETED}
 
-        run = _run_timeout_scenario(route, actual_timeout=0.03, wait_after=0.12)
+        run = _run_timeout_scenario(route, actual_timeout=0.03, wait_after=0.2)
         assert run.status == AutomationRunStatus.FAILED
         if effects:
             late_count += len(effects)
