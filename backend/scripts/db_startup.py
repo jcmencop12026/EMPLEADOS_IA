@@ -168,6 +168,13 @@ def _ensure_all_indexes(engine: Engine) -> None:
 
 
 def run_bootstrap(database_url: str) -> None:
+    from scripts.migration_control import MigrationControlError, run_database_preflight
+
+    try:
+        preflight = run_database_preflight(database_url)
+    except MigrationControlError as exc:
+        raise DbStartupError(str(exc)) from exc
+
     from sqlalchemy.orm import sessionmaker
 
     from app.seed import bootstrap
@@ -196,6 +203,12 @@ def prepare_database(database_url: str) -> dict[str, Any]:
         return report.to_dict()
 
     if scenario == "B":
+        from scripts.migration_control import MigrationControlError, run_database_preflight
+
+        try:
+            run_database_preflight(database_url)
+        except MigrationControlError as exc:
+            raise DbStartupError(str(exc)) from exc
         report.inventory = inventory_legacy_db(db_path)
         report.alembic_revision = get_alembic_revision(db_path)
         report.action = "none"

@@ -73,9 +73,40 @@ def _payload(**overrides) -> AutomationCreate:
     return AutomationCreate(**data)
 
 
+def _verify_805_infrastructure(root: Path) -> None:
+    """Infraestructura 805 + Automatizaciones debe existir en el árbol final."""
+    required = [
+        "backend/scripts/db_startup.py",
+        "backend/scripts/schema_repair.py",
+        "tests/test_db_startup_805e.py",
+        "tests/test_schema_repair_805b.py",
+        "backend/app/services/automation_service.py",
+        "backend/app/routers/automations.py",
+        "tests/test_automations_810.py",
+    ]
+    missing = [rel for rel in required if not (root / rel).is_file()]
+    assert not missing, f"Infraestructura requerida ausente: {missing}"
+
+
+def _verify_pr_diff_isolation(lines: list[str]) -> None:
+    """Contexto PR — el diff no debe eliminar infraestructura 805."""
+    forbidden_prefixes = ("backend/scripts/db_startup", "tests/test_db_startup", "tests/test_schema_repair")
+    for line in lines:
+        status, path = line.split("\t", 1)
+        for prefix in forbidden_prefixes:
+            if path.startswith(prefix):
+                assert status != "D", f"No debe eliminarse: {path}"
+    automation_markers = ("automation", "Automatiz", "810")
+    assert any(any(m.lower() in line.lower() for m in automation_markers) for line in lines), (
+        "Diff PR sin cambios de Automatizaciones/810"
+    )
+
+
 def test_pr_diff_isolated_from_805():
-    """A1 — el diff contra main no debe eliminar infraestructura 805."""
+    """A1 — en PR valida aislamiento; en main/post-merge valida infraestructura presente."""
     root = Path(__file__).resolve().parents[1]
+    _verify_805_infrastructure(root)
+
     subprocess.run(["git", "fetch", "origin", "main"], cwd=root, capture_output=True, check=False)
     result = subprocess.run(
         ["git", "diff", "--name-status", "origin/main...HEAD"],
@@ -85,14 +116,21 @@ def test_pr_diff_isolated_from_805():
         check=True,
     )
     lines = [line for line in result.stdout.strip().splitlines() if line]
-    forbidden_prefixes = ("backend/scripts/db_startup", "tests/test_db_startup", "tests/test_schema_repair")
-    for line in lines:
-        status, path = line.split("\t", 1)
-        for prefix in forbidden_prefixes:
-            if path.startswith(prefix):
-                assert status != "D", f"No debe eliminarse: {path}"
-    automation_markers = ("automation", "Automatiz", "810")
-    assert any(any(m.lower() in line.lower() for m in automation_markers) for line in lines)
+    if lines:
+        _verify_pr_diff_isolation(lines)
+    # Sin diff (main/post-merge): la infraestructura ya fue verificada arriba.
+
+
+def test_pr_diff_fails_when_infrastructure_removed(tmp_path: Path):
+    """Regresión — eliminar un archivo crítico debe fallar la verificación."""
+    root = Path(__file__).resolve().parents[1]
+    fake_root = tmp_path / "repo"
+    fake_root.mkdir()
+    target = fake_root / "backend/scripts/db_startup.py"
+    target.parent.mkdir(parents=True)
+    target.write_text("# stub", encoding="utf-8")
+    with pytest.raises(AssertionError, match="Infraestructura requerida ausente"):
+        _verify_805_infrastructure(fake_root)
 
 
 def test_cross_tenant_employee_create_rejected(client: TestClient, auth_headers):

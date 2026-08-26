@@ -69,6 +69,13 @@ jobs:
           print("PostgreSQL OK")
           PY
 
+      - name: Validar gobierno de migraciones
+        working-directory: backend
+        run: |
+          PYTHONPATH=. python scripts/validate_migrations.py
+          PYTHONPATH=. alembic heads | tee /tmp/alembic_heads.txt
+          test "$(grep -c '(head)' /tmp/alembic_heads.txt)" -eq 1
+
       - name: Migraciones Alembic (upgrade head)
         working-directory: backend
         run: |
@@ -165,6 +172,10 @@ jobs:
 
       - name: Verificar espacios en blanco conflictivos
         run: git fetch origin main && git diff --check origin/main...HEAD
+
+      - name: Validar gobierno de migraciones (ledger + head único)
+        working-directory: backend
+        run: PYTHONPATH=. python scripts/validate_migrations.py
 
   pruebas-windows:
     name: Pruebas Windows
