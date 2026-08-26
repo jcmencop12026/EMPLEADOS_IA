@@ -8,7 +8,9 @@ from app.config import settings
 from app.database import Base, SessionLocal, engine
 from app import automation_models  # noqa: F401
 from app import finops_models  # noqa: F401
+from app import knowledge_models  # noqa: F401 — registra tablas
 from app import orchestration_models, notifications  # noqa: F401 — registra tablas/suscriptores
+from app import salud_models  # noqa: F401 — registra tablas IPS
 from app.routers import (
     admin,
     agent_factory,
@@ -22,6 +24,7 @@ from app.routers import (
     notifications as notification_routes,
     operations,
     organization,
+    salud,
     test_lab,
     tools,
 )
@@ -82,6 +85,7 @@ app.include_router(automations.runs_router)
 app.include_router(notification_routes.notifications_router)
 app.include_router(notification_routes.rules_router)
 app.include_router(finops.router)
+app.include_router(salud.router)
 
 
 @app.get("/health")

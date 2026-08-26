@@ -23,6 +23,11 @@ const MENU: NavSection[] = [
     ],
   },
   {
+    id: "salud",
+    label: "Salud",
+    items: [{ to: "/salud/diagnostico", label: "Diagnóstico IPS" }],
+  },
+  {
     id: "empleados",
     label: "Empleados IA",
     items: [

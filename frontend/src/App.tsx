@@ -11,20 +11,24 @@ import { AdminRolesPage } from "./pages/admin/AdminRolesPage";
 import { AdminSecurityPage } from "./pages/admin/AdminSecurityPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { AuditPage } from "./pages/AuditPage";
+import { CapabilitiesPage } from "./pages/CapabilitiesPage";
+import { CostosValorPage } from "./pages/CostosValorPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
 import { EmployeeWizardPage } from "./pages/EmployeeWizardPage";
 import { ExecutionDetailPage } from "./pages/ExecutionDetailPage";
 import { ExecutionsPage } from "./pages/ExecutionsPage";
-import { LoginPage } from "./pages/LoginPage";
-import { OperationsCenterPage } from "./pages/OperationsCenterPage";
-import { NotificationsPage } from "./pages/NotificationsPage";
-import { CapabilitiesPage } from "./pages/CapabilitiesPage";
+import { KnowledgeDetailPage } from "./pages/KnowledgeDetailPage";
 import { KnowledgePage } from "./pages/KnowledgePage";
+import { LoginPage } from "./pages/LoginPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
+import { OperationDetailPage } from "./pages/OperationDetailPage";
+import { OperationsCenterPage } from "./pages/OperationsCenterPage";
+import { OperationsHubPage } from "./pages/OperationsHubPage";
 import { TestLabPage } from "./pages/TestLabPage";
 import { ToolsPage } from "./pages/ToolsPage";
-import { CostosValorPage } from "./pages/CostosValorPage";
 import { getToken } from "./api";
 
 export default function App() {
@@ -37,7 +41,10 @@ export default function App() {
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route index element={<DashboardPage />} />
-          <Route path="operaciones" element={<OperationsCenterPage />} />
+          <Route path="operaciones" element={<OperationsHubPage />} />
+          <Route path="operaciones/solicitud" element={<OperationsCenterPage />} />
+          <Route path="operaciones/:operationId" element={<OperationDetailPage />} />
+          <Route path="salud/diagnostico" element={<DiagnosticoIpsPage />} />
           <Route path="ejecuciones" element={<ExecutionsPage />} />
           <Route path="ejecuciones/:planId" element={<ExecutionDetailPage />} />
           <Route path="aprobaciones" element={<ApprovalsPage />} />
@@ -46,12 +53,13 @@ export default function App() {
           <Route path="automatizaciones/nueva" element={<AutomationWizardPage />} />
           <Route path="automatizaciones/:automationId/editar" element={<AutomationWizardPage />} />
           <Route path="automatizaciones/:automationId/ejecuciones" element={<AutomationRunsPage />} />
+          <Route path="conocimiento" element={<KnowledgePage />} />
+          <Route path="conocimiento/:documentId" element={<KnowledgeDetailPage />} />
           <Route path="empleados/nuevo" element={<EmployeeWizardPage />} />
           <Route path="empleados/:employeeId/editar" element={<EmployeeWizardPage />} />
           <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />
           <Route path="capacidades" element={<CapabilitiesPage />} />
           <Route path="herramientas" element={<ToolsPage />} />
-          <Route path="conocimiento" element={<KnowledgePage />} />
           <Route path="test-lab" element={<TestLabPage />} />
           <Route path="costos-valor" element={<CostosValorPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />

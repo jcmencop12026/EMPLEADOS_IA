@@ -313,6 +313,8 @@ class WorkPlan(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, index=True)
+    prioridad: Mapped[str] = mapped_column(String(20), default="MEDIA", index=True)
+    vencimiento: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
 
     tasks: Mapped[list["EmployeeTask"]] = relationship(back_populates="work_plan", order_by="EmployeeTask.sequence")
 

@@ -15,9 +15,11 @@ if "JWT_SECRET" not in os.environ:
 
 from app import automation_models  # noqa: F401, E402
 from app import finops_models  # noqa: F401, E402
+from app import knowledge_models  # noqa: F401, E402
 from app import models  # noqa: F401, E402
 from app import notifications  # noqa: F401, E402
 from app import orchestration_models  # noqa: F401, E402
+from app import salud_models  # noqa: F401, E402
 from app.database import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.seed import bootstrap  # noqa: E402

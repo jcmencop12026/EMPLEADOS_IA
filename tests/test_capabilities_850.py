@@ -104,7 +104,7 @@ def test_tools_crud(client, token):
 
 def test_knowledge_crud_and_ingest(client, token):
     created = client.post(
-        "/api/knowledge",
+        "/api/knowledge/sources",
         headers=auth_header(token),
         json={"name": "Manual interno", "source_type": "TEXT", "description": "Notas"},
     )
@@ -112,7 +112,7 @@ def test_knowledge_crud_and_ingest(client, token):
     source = created.json()
 
     ingest = client.post(
-        f"/api/knowledge/{source['id']}/ingest",
+        f"/api/knowledge/sources/{source['id']}/ingest",
         headers=auth_header(token),
         json={"content": "Texto de conocimiento de prueba para ingesta V1"},
     )
@@ -153,7 +153,7 @@ def test_employee_tool_assignment(client, token):
 def test_employee_knowledge_assignment(client, token):
     emp_id = _create_employee(client, token)
     source = client.post(
-        "/api/knowledge",
+        "/api/knowledge/sources",
         headers=auth_header(token),
         json={"name": "Base DOCINT", "source_type": "TEXT"},
     ).json()
@@ -346,7 +346,7 @@ def test_test_lab_knowledge_not_assigned(client, token):
     tools = client.get("/api/tools", headers=auth_header(token)).json()
     docint_cap = next(c for c in caps if c["code"] == "docint")
     docint_tool = next(t for t in tools if t["code"] == "docint")
-    source = client.post("/api/knowledge", headers=auth_header(token), json={"name": "KB", "source_type": "TEXT"}).json()
+    source = client.post("/api/knowledge/sources", headers=auth_header(token), json={"name": "KB", "source_type": "TEXT"}).json()
 
     client.post(f"/api/capabilities/employees/{emp_id}/assign/{docint_cap['id']}", headers=auth_header(token))
     client.post(

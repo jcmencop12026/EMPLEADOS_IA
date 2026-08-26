@@ -60,6 +60,9 @@ ADMIN_PERMISSIONS = {
 OPERATIONS_PERMISSIONS = {
     "operations.view",
     "operations.execute",
+    "operations.manage",
+    "operations.cancel",
+    "operations.reassign",
     "operations.approve",
 }
 
@@ -88,9 +91,20 @@ TOOL_PERMISSIONS = {
     "tool.manage",
 }
 
+SALUD_PERMISSIONS = {
+    "salud.cargar_datos",
+    "salud.ejecutar_analisis",
+    "salud.consultar_diagnostico",
+    "salud.aceptar_recomendaciones",
+    "salud.administrar_experiencia",
+}
+
 KNOWLEDGE_PERMISSIONS = {
     "knowledge.view",
     "knowledge.manage",
+    "knowledge.upload",
+    "knowledge.delete",
+    "knowledge.use",
 }
 
 TEST_LAB_PERMISSIONS = {
@@ -121,6 +135,9 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "alert_rule.manage": ("Alertas", "Gestionar reglas de alerta"),
     "operations.view": ("Operaciones", "Ver ejecuciones y operaciones"),
     "operations.execute": ("Operaciones", "Ejecutar solicitudes"),
+    "operations.manage": ("Operaciones", "Gestionar operaciones"),
+    "operations.cancel": ("Operaciones", "Cancelar operaciones"),
+    "operations.reassign": ("Operaciones", "Reasignar operaciones"),
     "operations.approve": ("Operaciones", "Aprobar solicitudes"),
     "automation.view": ("Automatizaciones", "Ver automatizaciones"),
     "automation.create": ("Automatizaciones", "Crear automatizaciones"),
@@ -152,6 +169,14 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "tool.manage": ("Herramientas", "Gestionar herramientas"),
     "knowledge.view": ("Conocimiento", "Ver fuentes de conocimiento"),
     "knowledge.manage": ("Conocimiento", "Gestionar fuentes de conocimiento"),
+    "knowledge.upload": ("Conocimiento", "Cargar documentos"),
+    "knowledge.delete": ("Conocimiento", "Eliminar documentos"),
+    "knowledge.use": ("Conocimiento", "Consultar conocimiento"),
+    "salud.cargar_datos": ("Salud IPS", "Cargar datos de salud"),
+    "salud.ejecutar_analisis": ("Salud IPS", "Ejecutar análisis de salud"),
+    "salud.consultar_diagnostico": ("Salud IPS", "Consultar diagnóstico IPS"),
+    "salud.aceptar_recomendaciones": ("Salud IPS", "Aceptar recomendaciones"),
+    "salud.administrar_experiencia": ("Salud IPS", "Administrar experiencia de salud"),
     "test_lab.view": ("Test Lab", "Ver ejecuciones de Test Lab"),
     "test_lab.run": ("Test Lab", "Ejecutar pruebas en Test Lab"),
     "finops.view": ("FinOps", "Ver costos y valor"),
@@ -178,6 +203,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | KNOWLEDGE_PERMISSIONS
         | TEST_LAB_PERMISSIONS
         | FINOPS_PERMISSIONS
+        | SALUD_PERMISSIONS
     ),
     "operator": {
         "employee.view",
@@ -189,6 +215,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "alert_rule.view",
         "operations.view",
         "operations.execute",
+        "operations.manage",
+        "operations.cancel",
+        "operations.reassign",
         "operations.approve",
         "automation.view",
         "automation.create",
@@ -203,11 +232,18 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "capability.view",
         "tool.view",
         "knowledge.view",
+        "knowledge.manage",
+        "knowledge.upload",
+        "knowledge.use",
         "test_lab.view",
         "test_lab.run",
         "finops.view",
         "finops.manage",
         "finops.budget",
+        "salud.cargar_datos",
+        "salud.ejecutar_analisis",
+        "salud.consultar_diagnostico",
+        "salud.aceptar_recomendaciones",
     },
     "viewer": {
         "employee.view",
@@ -220,8 +256,10 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "capability.view",
         "tool.view",
         "knowledge.view",
+        "knowledge.use",
         "test_lab.view",
         "finops.view",
+        "salud.consultar_diagnostico",
     },
 }
 

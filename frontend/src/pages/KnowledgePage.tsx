@@ -1,128 +1,258 @@
-import { useEffect, useState } from "react";
-import type { CatalogItem } from "../api";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import type { KnowledgeDocumentItem } from "../api";
 import {
-  createKnowledgeSource,
-  fetchKnowledgeCatalog,
-  ingestKnowledge,
-  setKnowledgeStatus,
+  deactivateKnowledgeDocument,
+  deleteKnowledgeDocument,
+  fetchKnowledgeDocuments,
+  reprocessKnowledgeDocument,
+  uploadKnowledgeFile,
 } from "../api";
 
-export function KnowledgePage() {
-  const [items, setItems] = useState<CatalogItem[]>([]);
-  const [search, setSearch] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [ingestId, setIngestId] = useState<string | null>(null);
-  const [ingestText, setIngestText] = useState("");
-  const [form, setForm] = useState({ name: "", code: "", source_type: "TEXT", description: "" });
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pendiente",
+  PROCESSING: "Procesando",
+  AVAILABLE: "Disponible",
+  ERROR: "Con error",
+  INACTIVE: "Inactivo",
+};
 
-  async function load() {
+const SOURCE_LABELS: Record<string, string> = {
+  FILE: "Archivo",
+  TEXT: "Texto",
+  URL: "URL",
+  INTEGRATION: "Integración",
+};
+
+function formatBytes(size: number | null | undefined) {
+  if (!size) return "—";
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function KnowledgePage() {
+  const [rows, setRows] = useState<KnowledgeDocumentItem[]>([]);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [sourceType, setSourceType] = useState("");
+  const [sortAsc, setSortAsc] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [showCols, setShowCols] = useState({
+    tipo: true,
+    fuente: true,
+    empresa: false,
+    tamano: true,
+    carga: true,
+    actualizacion: true,
+    procesado: true,
+    uso: true,
+  });
+
+  const load = async () => {
     setLoading(true);
-    setError(null);
+    setError("");
     try {
-      setItems(await fetchKnowledgeCatalog(search || undefined));
+      const data = await fetchKnowledgeDocuments();
+      setRows(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "No se pudieron cargar las fuentes");
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
+  const filtered = useMemo(
+    () =>
+      rows
+        .filter((row) => {
+          const haystack = `${row.name} ${row.file_type || ""}`.toLowerCase();
+          return (
+            (!search || haystack.includes(search.toLowerCase())) &&
+            (!status || row.status === status) &&
+            (!sourceType || row.source_type === sourceType)
+          );
+        })
+        .sort((a, b) => (sortAsc ? 1 : -1) * a.updated_at.localeCompare(b.updated_at)),
+    [rows, search, status, sourceType, sortAsc],
+  );
+
+  const onUpload = async (file: File | null) => {
+    if (!file) return;
+    setUploading(true);
+    setError("");
     try {
-      await createKnowledgeSource(form);
-      setShowForm(false);
+      await uploadKnowledgeFile(file);
       await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al crear");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setUploading(false);
     }
-  }
+  };
 
-  async function handleIngest(e: React.FormEvent) {
-    e.preventDefault();
-    if (!ingestId) return;
-    setError(null);
-    try {
-      await ingestKnowledge(ingestId, ingestText, "text/plain");
-      setIngestId(null);
-      setIngestText("");
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error en ingesta");
-    }
-  }
+  const onDelete = async (id: string) => {
+    if (!window.confirm("¿Eliminar este documento?")) return;
+    await deleteKnowledgeDocument(id);
+    await load();
+  };
+
+  const onReprocess = async (id: string) => {
+    await reprocessKnowledgeDocument(id);
+    await load();
+  };
+
+  const onDeactivate = async (id: string) => {
+    await deactivateKnowledgeDocument(id);
+    await load();
+  };
 
   return (
     <div className="ops-page">
       <header className="page-header">
-        <h1>Fuentes de conocimiento</h1>
-        <p className="muted">Definición de fuentes consultables por Empleados IA</p>
+        <h1>Centro de conocimiento</h1>
+        <p className="muted">Fuentes y documentos empresariales para Empleados IA autorizados.</p>
       </header>
+
       <div className="ops-actions">
-        <input placeholder="Buscar…" value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
-        <button type="button" className="btn" onClick={load}>Buscar</button>
-        <button type="button" className="btn primary" onClick={() => setShowForm((v) => !v)}>+ Nueva</button>
+        <label className="btn primary" title="Cargar archivo">
+          {uploading ? "Cargando…" : "+ Cargar archivo"}
+          <input
+            type="file"
+            hidden
+            accept=".txt,.csv,.json,.pdf,.docx,.xlsx"
+            onChange={(e) => void onUpload(e.target.files?.[0] || null)}
+          />
+        </label>
+        <input
+          placeholder="Buscar por nombre o tipo"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          aria-label="Buscar"
+        />
+        <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filtrar estado">
+          <option value="">Todos los estados</option>
+          {Object.entries(STATUS_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <select value={sourceType} onChange={(e) => setSourceType(e.target.value)} aria-label="Filtrar fuente">
+          <option value="">Todas las fuentes</option>
+          {Object.entries(SOURCE_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <button type="button" className="btn" title="Ordenar por actualización" onClick={() => setSortAsc(!sortAsc)}>
+          ↕ Actualización
+        </button>
+        <button type="button" className="btn" title="Actualizar lista" onClick={() => void load()}>
+          ↻
+        </button>
       </div>
-      {showForm && (
-        <form className="panel form-grid" onSubmit={handleCreate}>
-          <input required placeholder="Nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <input placeholder="Código (opcional)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
-          <select value={form.source_type} onChange={(e) => setForm({ ...form, source_type: e.target.value })}>
-            <option value="TEXT">Texto / Nota</option>
-            <option value="FILE">Archivo</option>
-            <option value="URL">URL / Web</option>
-            <option value="DATABASE">Base de datos</option>
-            <option value="API">API</option>
-          </select>
-          <textarea placeholder="Descripción" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-          <button type="submit" className="btn primary">Guardar</button>
-        </form>
-      )}
-      {ingestId && (
-        <form className="panel form-grid" onSubmit={handleIngest}>
-          <h3>Ingesta de texto</h3>
-          <textarea required rows={5} value={ingestText} onChange={(e) => setIngestText(e.target.value)} placeholder="Contenido…" />
-          <div className="ops-actions">
-            <button type="submit" className="btn primary">Procesar</button>
-            <button type="button" className="btn" onClick={() => setIngestId(null)}>Cancelar</button>
-          </div>
-        </form>
-      )}
-      {loading && <p className="muted">Cargando…</p>}
+
+      <div className="panel" style={{ marginBottom: 12 }}>
+        <span className="muted">Columnas: </span>
+        {Object.entries({
+          tipo: "Tipo",
+          fuente: "Fuente",
+          empresa: "Empresa",
+          tamano: "Tamaño",
+          carga: "Fecha de carga",
+          actualizacion: "Fecha de actualización",
+          procesado: "Procesado",
+          uso: "Uso",
+        }).map(([key, label]) => (
+          <label key={key} style={{ marginRight: 10 }}>
+            <input
+              type="checkbox"
+              checked={showCols[key as keyof typeof showCols]}
+              onChange={(e) => setShowCols((prev) => ({ ...prev, [key]: e.target.checked }))}
+            />{" "}
+            {label}
+          </label>
+        ))}
+      </div>
+
+      {loading && <p className="muted">Cargando documentos…</p>}
       {error && <p className="error">{error}</p>}
-      {!loading && !error && items.length === 0 && <p className="muted">Sin fuentes registradas.</p>}
-      {!loading && items.length > 0 && (
-        <div className="panel table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Estado</th><th>Acciones</th></tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.id}>
-                  <td className="mono">{item.code}</td>
-                  <td>{item.name}</td>
-                  <td>{item.source_type}</td>
-                  <td><span className="badge">{item.status}</span></td>
-                  <td>
-                    {item.source_type === "TEXT" && (
-                      <button type="button" className="btn-link" onClick={() => setIngestId(item.id)}>Ingestar</button>
-                    )}
-                    <button type="button" className="btn-link" onClick={() => setKnowledgeStatus(item.id, item.status !== "ACTIVA").then(load)}>
-                      {item.status === "ACTIVA" ? "Desactivar" : "Activar"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {!loading && !error && filtered.length === 0 && (
+        <p className="muted">No hay documentos para los filtros seleccionados.</p>
       )}
+
+      <div className="panel table-wrap">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              {showCols.tipo && <th>Tipo</th>}
+              {showCols.fuente && <th>Fuente</th>}
+              <th>Estado</th>
+              {showCols.empresa && <th>Empresa</th>}
+              {showCols.tamano && <th>Tamaño</th>}
+              {showCols.carga && <th>Fecha de carga</th>}
+              {showCols.actualizacion && <th>Fecha de actualización</th>}
+              {showCols.procesado && <th>Procesado</th>}
+              {showCols.uso && <th>Uso</th>}
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((row) => (
+              <tr key={row.id}>
+                <td>
+                  <strong>{row.name}</strong>
+                  {row.error_message && <div className="error">{row.error_message}</div>}
+                </td>
+                {showCols.tipo && <td>{row.file_type || "—"}</td>}
+                {showCols.fuente && <td>{SOURCE_LABELS[row.source_type] || row.source_type}</td>}
+                <td>
+                  <span className={`badge status-${row.status}`}>{STATUS_LABELS[row.status] || row.status}</span>
+                </td>
+                {showCols.empresa && <td className="mono">{row.organization_id.slice(0, 8)}…</td>}
+                {showCols.tamano && <td>{formatBytes(row.size_bytes)}</td>}
+                {showCols.carga && <td>{new Date(row.created_at).toLocaleString()}</td>}
+                {showCols.actualizacion && <td>{new Date(row.updated_at).toLocaleString()}</td>}
+                {showCols.procesado && <td>{row.processed_at ? new Date(row.processed_at).toLocaleString() : "—"}</td>}
+                {showCols.uso && <td>{row.association_count || 0}</td>}
+                <td className="notification-actions">
+                  <Link to={`/conocimiento/${row.id}`} title="Ver detalle">
+                    👁
+                  </Link>
+                  <button type="button" title="Reprocesar" onClick={() => void onReprocess(row.id)}>
+                    ↻
+                  </button>
+                  <a
+                    href={`/api/knowledge/${row.id}/download`}
+                    title="Descargar"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.open(`/api/knowledge/${row.id}/download`, "_blank");
+                    }}
+                  >
+                    ⬇
+                  </a>
+                  <button type="button" title="Desactivar" onClick={() => void onDeactivate(row.id)}>
+                    ⏸
+                  </button>
+                  <button type="button" title="Eliminar" onClick={() => void onDelete(row.id)}>
+                    ×
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
