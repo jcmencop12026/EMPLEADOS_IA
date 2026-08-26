@@ -12,7 +12,12 @@ from app.models import Organization, User
 from app.orchestration_models import AIEmployee
 from app.security import hash_password
 from app.services.knowledge_retrieval import retrieve_knowledge
-from app.services.salud_knowledge import analyze_fragments, apply_knowledge_to_hallazgos, extract_deadline_days
+from app.services.salud_knowledge import (
+    analyze_fragments,
+    apply_knowledge_to_hallazgos,
+    extract_deadline_days,
+    source_reference,
+)
 from conftest import TestingSessionLocal, auth_header
 
 pytestmark = [pytest.mark.salud, pytest.mark.knowledge]
@@ -282,3 +287,65 @@ def test_apply_knowledge_does_not_promote_hypothesis_to_fact():
     indicators = {"radicacion": {"disponible": False}}
     result = apply_knowledge_to_hallazgos(hallazgos, knowledge_ctx, indicators)
     assert all(h.get("kind", h.get("tipo", "HECHO")) != "HIPOTESIS" or True for h in result)
+
+
+def test_inactive_grant_denied(client, token):
+    emp_id = _radicacion_employee_id()
+    doc = _create_text_doc(client, token, "Contrato inactivo", "Plazo máximo radicación 10 días.").json()
+    _grant(client, token, emp_id, doc["id"])
+    revoked = client.delete(f"/api/knowledge/employees/{emp_id}/grant/{doc['id']}", headers=auth_header(token))
+    assert revoked.status_code == 204
+    db = TestingSessionLocal()
+    try:
+        admin = db.query(User).filter(User.username == "admin").first()
+        result = retrieve_knowledge(
+            db, tenant_id=admin.organization_id, query="radicación", employee_id=emp_id, limit=5,
+            filters={"document_id": doc["id"]},
+        )
+        assert result == []
+    finally:
+        db.close()
+
+
+def test_direct_document_id_cross_tenant_denied(client):
+    token_a = _create_org_user(client, "Org Doc A", f"da-{uuid.uuid4().hex[:6]}", "Da*")
+    token_b = _create_org_user(client, "Org Doc B", f"db-{uuid.uuid4().hex[:6]}", "Db*")
+    doc_b = _create_text_doc(client, token_b, "Secreto B", "TEXTO_SECRETO_B plazo 10 días").json()
+    denied = client.get(f"/api/knowledge/{doc_b['id']}", headers=auth_header(token_a))
+    assert denied.status_code == 404
+    retrieve = client.post(
+        "/api/knowledge/retrieve",
+        headers=auth_header(token_a),
+        json={"query": "TEXTO_SECRETO_B", "limit": 5, "filters": {"document_id": doc_b["id"]}},
+    )
+    assert retrieve.status_code == 200
+    assert retrieve.json() == []
+
+
+def test_contractual_question_without_contract(client):
+    token_iso = _create_org_user(client, "Org sin contrato", f"sc-{uuid.uuid4().hex[:6]}", "Sc*")
+    analysis = _run_analysis(client, token_iso, ips_name="IPS sin contrato").json()
+    q = client.post(
+        f"/api/salud/pregunta/{analysis['id']}",
+        headers=auth_header(token_iso),
+        json={"pregunta": "¿El retraso de radicación incumple lo pactado con esta entidad?"},
+    )
+    assert q.status_code == 200
+    assert "insuficiente" in q.json()["respuesta"].lower()
+
+
+def test_source_reference_preserves_document_title():
+    frag = {
+        "document_id": "doc-1",
+        "chunk_id": "chunk-1",
+        "document_name": "Contrato EPS X 2026",
+        "content": "Plazo 10 días",
+        "metadata": {"tipo": "contrato"},
+        "relevance": 0.8,
+    }
+    ref = source_reference(
+        frag, query="radicación", employee_id="emp-1", analysis_id="an-1", domain="radicacion",
+    )
+    assert ref["titulo"] == "Contrato EPS X 2026"
+    assert ref["document_id"] == "doc-1"
+    assert ref["chunk_id"] == "chunk-1"

@@ -370,7 +370,7 @@ def apply_knowledge_to_hallazgos(
                     "Existen documentos autorizados con plazos distintos. "
                     "Se requiere validación humana antes de concluir cumplimiento contractual."
                 ),
-                "kind": "INFORMACION_INSUFICIENTE",
+                "kind": "INSUFICIENTE",
                 "indicator_code": "conflicto_conocimiento",
                 "indicator_value": None,
                 "severity": "MEDIA",
