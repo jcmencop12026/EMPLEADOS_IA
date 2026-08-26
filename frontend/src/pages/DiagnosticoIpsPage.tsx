@@ -17,6 +17,8 @@ type Hallazgo = {
   valor?: string;
   evidencia?: Record<string, unknown>;
   fuentes?: Array<Record<string, string>>;
+  fuentes_consultadas?: string[];
+  evidencia_documental?: Array<Record<string, unknown>>;
   criterios_confianza?: Record<string, unknown>;
 };
 
@@ -74,6 +76,12 @@ type Diagnostico = {
     consolidador?: Especialista;
   };
   comparacion_historica: { disponible?: boolean; comparaciones?: Record<string, unknown> };
+  conocimiento?: {
+    utilizado?: boolean;
+    mensaje?: string | null;
+    fuentes?: Array<{ titulo?: string; document_id?: string }>;
+    requiere_validacion?: boolean;
+  };
   experiencia: { casos_similares?: Array<{ ips_name: string; similitud: number; evaluacion?: string }> };
 };
 
@@ -332,8 +340,11 @@ export function DiagnosticoIpsPage() {
           <li><strong>Recomendación:</strong> {propRel?.accion_propuesta ?? "Ver oportunidades"}</li>
           <li><strong>Acción propuesta:</strong> {propRel?.accion_propuesta ?? "—"}</li>
         </ol>
+        {h.fuentes_consultadas && h.fuentes_consultadas.length > 0 && (
+          <p className="muted">Fuentes documentales: {h.fuentes_consultadas.join(" · ")}</p>
+        )}
         {h.fuentes && h.fuentes.length > 0 && (
-          <p className="muted">Fuentes: {h.fuentes.map((f) => `${f.dataset ?? ""} ${f.calculo ?? f.regla ?? ""}`).join(" · ")}</p>
+          <p className="muted">Fuentes de datos: {h.fuentes.map((f) => `${f.dataset ?? ""} ${f.calculo ?? f.regla ?? ""}`).join(" · ")}</p>
         )}
         <div className="ops-actions">
           <button type="button" className="btn" title="Marcar hallazgo como correcto" onClick={() => enviarFeedback(h.id, "CORRECTO")}>Correcto</button>
@@ -349,6 +360,12 @@ export function DiagnosticoIpsPage() {
       <header className="page-header">
         <h1>Diagnóstico IPS</h1>
         <p className="muted">Motor especializado · Análisis financiero y operativo</p>
+        {diag && (
+          <p className="muted">
+            Conocimiento documental: {diag.conocimiento?.utilizado ? "utilizado" : (diag.conocimiento?.mensaje ?? "sin documentos autorizados adicionales")}
+            {diag.conocimiento?.requiere_validacion ? " · requiere validación humana" : ""}
+          </p>
+        )}
       </header>
 
       <section className="panel ops-main salud-toolbar">
@@ -438,13 +455,20 @@ export function DiagnosticoIpsPage() {
               {renderIndicadores()}
               <h3 className="salud-sub">Trazabilidad de valores</h3>
               <div className="salud-traza-grid">
-                {Object.entries(diag.trazabilidad).map(([k, v]) => (
+                {Object.entries(diag.trazabilidad)
+                  .filter(([k]) => k !== "conocimiento")
+                  .map(([k, v]) => (
                   <div key={k} className="salud-traza-item">
                     <span>{k.replace(/_/g, " ")}</span>
-                    <strong>{formatMoney(v)}</strong>
+                    <strong>{typeof v === "number" ? formatMoney(v) : String(v)}</strong>
                   </div>
                 ))}
               </div>
+              {diag.conocimiento?.fuentes && diag.conocimiento.fuentes.length > 0 && (
+                <p className="muted">
+                  Conocimiento consultado: {diag.conocimiento.fuentes.map((f) => f.titulo).filter(Boolean).join(" · ")}
+                </p>
+              )}
             </section>
           )}
 

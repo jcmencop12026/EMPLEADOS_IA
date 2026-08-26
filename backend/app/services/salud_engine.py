@@ -19,6 +19,11 @@ from app.salud_models import (
 from app.services.salud_experience import save_experience_case
 from app.services.salud_findings import build_executive_summary, generate_hallazgos, generate_propuestas
 from app.services.salud_indicators import compute_all_indicators
+from app.services.salud_knowledge import (
+    apply_knowledge_to_hallazgos,
+    collect_analysis_knowledge,
+    log_salud_knowledge_audit,
+)
 from app.services.salud_normalization import profile_data_quality
 from app.services.salud_specialist_selection import select_specialists
 from app.services.salud_workplan_bridge import (
@@ -109,6 +114,16 @@ def run_ips_analysis(
         db, organization_id, request_text, list(datasets.keys()),
     )
 
+    knowledge_ctx = collect_analysis_knowledge(
+        db,
+        organization_id=organization_id,
+        analysis_id=analysis.id,
+        user_id=user_id,
+        request_text=request_text,
+        ips_name=ips_name,
+        specialists=specialists,
+    )
+
     indicators = compute_all_indicators(datasets)
 
     # Asignar hallazgos por especialista según dominio
@@ -128,6 +143,8 @@ def run_ips_analysis(
         if h["title"] not in seen_titles:
             seen_titles.add(h["title"])
             unique_hallazgos.append(h)
+
+    unique_hallazgos = apply_knowledge_to_hallazgos(unique_hallazgos, knowledge_ctx, indicators)
 
     propuestas = generate_propuestas(unique_hallazgos)
     summary = build_executive_summary(unique_hallazgos, propuestas, indicators)
@@ -200,14 +217,34 @@ def run_ips_analysis(
     analysis.data_profile_json = json.dumps(data_profiles, ensure_ascii=False)
     analysis.available_analyses_json = json.dumps(available, ensure_ascii=False)
     analysis.indicators_json = json.dumps(indicators, ensure_ascii=False)
-    analysis.traceability_json = json.dumps(indicators.get("trazabilidad", {}), ensure_ascii=False)
+    analysis.traceability_json = json.dumps(
+        {
+            **indicators.get("trazabilidad", {}),
+            "conocimiento": knowledge_ctx,
+        },
+        ensure_ascii=False,
+    )
     analysis.specialists_json = json.dumps(specialists, ensure_ascii=False)
     analysis.summary_json = json.dumps({
         "resumen_ejecutivo": summary,
         "comparacion_historica": historical,
         "total_hallazgos": len(persisted_hallazgos),
         "total_propuestas": len(persisted_propuestas),
+        "conocimiento": {
+            "utilizado": knowledge_ctx.get("utilizado"),
+            "mensaje": knowledge_ctx.get("mensaje"),
+            "fuentes": knowledge_ctx.get("fuentes_consultadas", []),
+            "requiere_validacion": knowledge_ctx.get("requiere_validacion"),
+        },
     }, ensure_ascii=False)
+
+    log_salud_knowledge_audit(
+        db,
+        organization_id=organization_id,
+        analysis_id=analysis.id,
+        user_id=user_id,
+        knowledge_ctx=knowledge_ctx,
+    )
 
     save_experience_case(
         db, organization_id,
@@ -424,12 +461,20 @@ def get_diagnostico(db: Session, org_id: str, analysis_id: str) -> dict[str, Any
         "plan_accion": [json.loads(pl.tasks_json or "[]") for pl in plans],
         "especialistas": json.loads(analysis.specialists_json or "{}"),
         "comparacion_historica": summary.get("comparacion_historica", {}),
+        "conocimiento": summary.get("conocimiento", {}),
         "experiencia": {"casos_similares": casos},
         "creado": analysis.created_at.isoformat() if analysis.created_at else None,
     }
 
 
 def _hallazgo_to_dict(h: IpsHallazgo) -> dict[str, Any]:
+    sources = json.loads(h.sources_json or "[]")
+    fuentes_titulos = [
+        s.get("titulo") or s.get("document_name")
+        for s in sources
+        if isinstance(s, dict) and (s.get("titulo") or s.get("document_name"))
+    ]
+    evidence = json.loads(h.evidence_json or "{}")
     return {
         "id": h.id,
         "categoria": h.category,
@@ -444,8 +489,10 @@ def _hallazgo_to_dict(h: IpsHallazgo) -> dict[str, Any]:
         "criterios_confianza": json.loads(h.confidence_criteria_json or "{}"),
         "causa_probable": h.probable_cause,
         "impacto_economico": h.economic_impact,
-        "evidencia": json.loads(h.evidence_json or "{}"),
+        "evidencia": evidence,
         "fuentes": json.loads(h.sources_json or "[]"),
+        "fuentes_consultadas": fuentes_titulos,
+        "evidencia_documental": evidence.get("fuentes_documentales") or evidence.get("documental"),
     }
 
 

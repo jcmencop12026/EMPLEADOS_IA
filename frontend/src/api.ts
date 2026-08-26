@@ -29,7 +29,14 @@ export async function api<T>(
     const text = await res.text();
     throw new Error(text || res.statusText);
   }
-  return res.json() as Promise<T>;
+  if (res.status === 204) {
+    return undefined as T;
+  }
+  const text = await res.text();
+  if (!text) {
+    return undefined as T;
+  }
+  return JSON.parse(text) as T;
 }
 
 export type UserMe = {
@@ -226,6 +233,7 @@ export async function activateEmployee(id: string): Promise<Record<string, unkno
   return api(`/api/agent-factory/employees/${id}/activate`, { method: "POST" });
 }
 
+
 export type OperationSummary = {
   running: number;
   pending: number;
@@ -315,4 +323,102 @@ export async function updateOperation(
 
 export async function runOperation(id: string): Promise<PlanResult> {
   return api<PlanResult>(`/api/operations/center/${id}/run`, { method: "POST" });
+}
+
+export type KnowledgeDocumentItem = {
+  id: string;
+  organization_id: string;
+  name: string;
+  source_type: string;
+  file_type: string | null;
+  mime_type: string | null;
+  status: string;
+  original_filename: string | null;
+  size_bytes: number | null;
+  version: number;
+  is_active: boolean;
+  error_message: string | null;
+  association_count: number;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+  processed_at: string | null;
+  has_content: boolean;
+};
+
+export type KnowledgeDocumentDetail = KnowledgeDocumentItem & {
+  processed_content: string | null;
+  chunks_count: number;
+};
+
+export type KnowledgeActivityItem = {
+  id: string;
+  action: string;
+  detail: string | null;
+  user_id: string | null;
+  created_at: string;
+};
+
+export async function fetchKnowledgeDocuments(): Promise<KnowledgeDocumentItem[]> {
+  return api<KnowledgeDocumentItem[]>("/api/knowledge");
+}
+
+export async function fetchKnowledgeDocument(id: string): Promise<KnowledgeDocumentDetail> {
+  return api<KnowledgeDocumentDetail>(`/api/knowledge/${id}`);
+}
+
+export async function fetchKnowledgeActivity(id: string): Promise<KnowledgeActivityItem[]> {
+  return api<KnowledgeActivityItem[]>(`/api/knowledge/${id}/activity`);
+}
+
+export async function updateKnowledgeDocument(
+  id: string,
+  data: { name?: string; metadata?: Record<string, unknown>; is_active?: boolean },
+): Promise<KnowledgeDocumentItem> {
+  return api<KnowledgeDocumentItem>(`/api/knowledge/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function deleteKnowledgeDocument(id: string): Promise<void> {
+  await api(`/api/knowledge/${id}`, { method: "DELETE" });
+}
+
+export async function reprocessKnowledgeDocument(id: string): Promise<KnowledgeDocumentDetail> {
+  return api<KnowledgeDocumentDetail>(`/api/knowledge/${id}/reprocess`, { method: "POST" });
+}
+
+export async function deactivateKnowledgeDocument(id: string): Promise<KnowledgeDocumentItem> {
+  return api<KnowledgeDocumentItem>(`/api/knowledge/${id}/deactivate`, { method: "POST" });
+}
+
+export async function uploadKnowledgeFile(file: File, name?: string): Promise<KnowledgeDocumentItem> {
+  const form = new FormData();
+  form.append("file", file);
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const url = name ? `/api/knowledge/upload?name=${encodeURIComponent(name)}` : "/api/knowledge/upload";
+  const res = await fetch(url, { method: "POST", headers, body: form });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || res.statusText);
+  }
+  return res.json() as Promise<KnowledgeDocumentItem>;
+}
+
+export async function createKnowledgeText(name: string, content: string): Promise<KnowledgeDocumentItem> {
+  return api<KnowledgeDocumentItem>("/api/knowledge/text", {
+    method: "POST",
+    body: JSON.stringify({ name, content }),
+  });
+}
+
+export async function searchKnowledge(q: string): Promise<Array<{ id: string; name: string; snippet: string | null }>> {
+  return api(`/api/knowledge/search?q=${encodeURIComponent(q)}`);
+}
+
+export async function retrieveKnowledge(query: string, employeeId?: string): Promise<Array<Record<string, unknown>>> {
+  return api("/api/knowledge/retrieve", {
+    method: "POST",
+    body: JSON.stringify({ query, employee_id: employeeId, limit: 10 }),
+  });
 }

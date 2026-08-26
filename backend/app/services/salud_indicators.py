@@ -96,11 +96,14 @@ def calc_radicacion(fact_records: list[dict], rad_records: list[dict]) -> dict[s
 
     no_radicadas = [inv for inv in fact_map if inv not in rad_map]
     dias_radicacion: list[float] = []
+    dias_por_factura: list[dict[str, Any]] = []
     for inv, rr in rad_map.items():
         ff = _parse_date(fact_map.get(inv, {}).get("fecha_factura"))
         fr = _parse_date(rr.get("fecha_radicacion"))
         if ff and fr:
-            dias_radicacion.append((fr - ff).days)
+            delta = (fr - ff).days
+            dias_radicacion.append(delta)
+            dias_por_factura.append({"numero_factura": inv, "dias": delta})
 
     return {
         "disponible": True,
@@ -110,7 +113,7 @@ def calc_radicacion(fact_records: list[dict], rad_records: list[dict]) -> dict[s
         "facturas_no_radicadas": len(no_radicadas),
         "porcentaje_radicado": _safe_pct(valor_radicado, valor_facturado) if fact_map else INSUFICIENTE,
         "tiempo_promedio_factura_radicacion_dias": round(sum(dias_radicacion) / len(dias_radicacion), 1) if dias_radicacion else INSUFICIENTE,
-        "evidencia": {"facturas": len(fact_map), "radicadas": len(rad_map)},
+        "evidencia": {"facturas": len(fact_map), "radicadas": len(rad_map), "dias_por_factura": dias_por_factura},
     }
 
 

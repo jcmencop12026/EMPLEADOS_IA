@@ -13,6 +13,10 @@ def responder_pregunta(pregunta: str, diagnostico: dict[str, Any]) -> dict[str, 
     indicadores = diagnostico.get("indicadores", {})
     trazabilidad = diagnostico.get("trazabilidad", {})
     hallazgos = diagnostico.get("hallazgos", [])
+    conocimiento = diagnostico.get("conocimiento", {})
+
+    if any(k in text for k in ("pactado", "contrato", "incumple", "cumplimiento contractual", "entidad")):
+        return _respuesta_contractual(indicadores, hallazgos, conocimiento, text)
 
     if "caja" in text or "recaudo" in text or "menos caja" in text:
         return _respuesta_caja(indicadores, trazabilidad, hallazgos)
@@ -155,4 +159,79 @@ def _insuficiente(dominio: str) -> dict[str, Any]:
         "evidencia": [],
         "incertidumbre": "ALTA",
         "accion_sugerida": f"Cargar datos de {dominio} para habilitar este análisis.",
+    }
+
+
+def _respuesta_contractual(
+    indicadores: dict,
+    hallazgos: list,
+    conocimiento: dict,
+    text: str,
+) -> dict[str, Any]:
+    if not conocimiento.get("utilizado"):
+        return {
+            "respuesta": "Información insuficiente para determinar el cumplimiento contractual.",
+            "evidencia": [],
+            "incertidumbre": "ALTA",
+            "accion_sugerida": "Cargar y autorizar documentos contractuales en el Centro de Conocimiento.",
+            "clasificacion": "INFORMACION_INSUFICIENTE",
+        }
+
+    if conocimiento.get("requiere_validacion"):
+        return {
+            "respuesta": (
+                "Existen documentos autorizados con plazos distintos. "
+                "Se requiere validación humana antes de concluir cumplimiento contractual."
+            ),
+            "evidencia": conocimiento.get("fuentes", []),
+            "incertidumbre": "ALTA",
+            "accion_sugerida": "Validar vigencia y jerarquía documental con el equipo contractual.",
+            "clasificacion": "INFORMACION_INSUFICIENTE",
+        }
+
+    breach = next(
+        (
+            h
+            for h in hallazgos
+            if "incumplimiento contractual" in (h.get("titulo") or "").lower()
+            or h.get("indicador") == "incumplimiento_plazo_radicacion"
+        ),
+        None,
+    )
+    if breach:
+        fuentes = [
+            f.get("titulo")
+            for f in (breach.get("fuentes_consultadas") or breach.get("fuentes") or [])
+            if isinstance(f, dict) and f.get("titulo")
+        ]
+        return {
+            "respuesta": breach.get("descripcion", breach.get("titulo", "")),
+            "evidencia": breach.get("evidencia", {}),
+            "fuentes": fuentes,
+            "incertidumbre": "BAJA" if breach.get("confianza") == "ALTA" else "MEDIA",
+            "accion_sugerida": "Revisar proceso de radicación y tiempos operativos.",
+            "clasificacion": breach.get("tipo", "HECHO"),
+        }
+
+    if "radic" in text:
+        rad = indicadores.get("radicacion", {})
+        if rad.get("disponible"):
+            return {
+                "respuesta": (
+                    "Con los datos y documentos autorizados disponibles no se detectó incumplimiento contractual explícito, "
+                    "pero sí demoras operativas en radicación."
+                ),
+                "evidencia": [{"radicacion": rad}],
+                "fuentes": [f.get("titulo") for f in conocimiento.get("fuentes", []) if f.get("titulo")],
+                "incertidumbre": "MEDIA",
+                "accion_sugerida": None,
+                "clasificacion": "INFERENCIA",
+            }
+
+    return {
+        "respuesta": "Información insuficiente para determinar el cumplimiento contractual.",
+        "evidencia": [],
+        "incertidumbre": "ALTA",
+        "accion_sugerida": None,
+        "clasificacion": "INFORMACION_INSUFICIENTE",
     }

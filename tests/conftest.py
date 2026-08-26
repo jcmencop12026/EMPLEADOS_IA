@@ -11,6 +11,7 @@ _TEST_DB = tempfile.mktemp(suffix=".db")
 os.environ.setdefault("DATABASE_URL", f"sqlite:///{_TEST_DB}")
 os.environ.setdefault("JWT_SECRET", "test-secret-mvp-cert803")
 
+from app import knowledge_models  # noqa: F401 — registra tablas
 from app.database import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.seed import bootstrap  # noqa: E402

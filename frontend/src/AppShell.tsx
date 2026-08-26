@@ -8,6 +8,7 @@ const NAV = [
   { to: "/salud/diagnostico", label: "Diagnóstico IPS" },
   { to: "/ejecuciones", label: "Ejecuciones" },
   { to: "/directorio", label: "Directorio" },
+  { to: "/conocimiento", label: "Conocimiento" },
   { to: "/organizacion", label: "Organización" },
   { to: "/auditoria", label: "Auditoría" },
 ];

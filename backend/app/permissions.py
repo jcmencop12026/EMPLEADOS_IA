@@ -29,7 +29,15 @@ SALUD_PERMISSIONS = {
     "salud.administrar_experiencia",
 }
 
-ALL_PERMISSIONS = EMPLOYEE_PERMISSIONS | OPERATIONS_PERMISSIONS | SALUD_PERMISSIONS
+KNOWLEDGE_PERMISSIONS = {
+    "knowledge.view",
+    "knowledge.manage",
+    "knowledge.upload",
+    "knowledge.delete",
+    "knowledge.use",
+}
+
+ALL_PERMISSIONS = EMPLOYEE_PERMISSIONS | OPERATIONS_PERMISSIONS | SALUD_PERMISSIONS | KNOWLEDGE_PERMISSIONS
 
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "admin": ALL_PERMISSIONS,
@@ -47,8 +55,18 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "salud.ejecutar_analisis",
         "salud.consultar_diagnostico",
         "salud.aceptar_recomendaciones",
+        "knowledge.view",
+        "knowledge.manage",
+        "knowledge.upload",
+        "knowledge.use",
     },
-    "viewer": {"employee.view", "operations.view", "salud.consultar_diagnostico"},
+    "viewer": {
+        "employee.view",
+        "operations.view",
+        "salud.consultar_diagnostico",
+        "knowledge.view",
+        "knowledge.use",
+    },
 }
 
 
