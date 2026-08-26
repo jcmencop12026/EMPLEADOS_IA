@@ -1,116 +1,97 @@
 # CURSOR — SALUD-CONOCIMIENTO-971
 
-**Estado:** `SALUD-CONOCIMIENTO-971 LISTO PARA REAUDITORÍA`
-**Fecha:** 2026-08-26
+**Estado:** `APTO PARA MERGE — PENDIENTE DE INTEGRACIÓN`
+**Fecha cierre:** 2026-08-26
 **Rama:** `cursor/integracion-salud-conocimiento-003-12b6`
-**NO MERGE**
+**HEAD final:** `119d56b`
+**PR:** #18 (draft)
+**NO MERGE a main**
 
 ---
 
-## 1. Bases integradas
+## 1. CI real (GitHub Actions)
 
-| Componente | PR | Rama | HEAD verificado |
-|------------|-----|------|-----------------|
-| CONOCIMIENTO-930 | #11 | `cursor/knowledge-center-930-12b6` | `2ff59d3` |
-| SALUD-960 + OPERACIONES | #17 | `cursor/integracion-salud-workplan-002` | `b3b5e31` |
-| SALUD-960 certificado | #14 | `cursor/salud-ips-engine-960` | `9ee91eb` |
+| Job | Run `32924491837` | HEAD |
+|-----|-------------------|------|
+| Backend y PostgreSQL | **PASS** | `119d56b` |
+| Frontend | **PASS** | `119d56b` |
+| Validación Git | **PASS** | `119d56b` |
+| Pruebas Windows | **PASS** | `119d56b` |
 
-HEAD integración final: `9a00625` (previo a push con fixes de consulta)
+**Resultado: 4/4 PASS**
 
----
+### Correcciones aplicadas en esta rama
 
-## 2. Arquitectura reutilizada (sin duplicar)
-
-- `KnowledgeDocument`, `KnowledgeChunk`, `KnowledgeActivity`, `EmployeeKnowledgeGrant`
-- `retrieve_knowledge()` — contrato RAG V1 existente
-- Permisos `knowledge.*` + `salud.*` combinados
-- Trazabilidad en `IpsAnalysis.traceability_json` y `summary_json` (sin tablas paralelas)
-
-**Nuevo servicio:** `backend/app/services/salud_knowledge.py`
-
-Flujo:
-
-```
-Diagnóstico IPS
-→ Orquestador / select_specialists
-→ consulta por dominio y especialista (EmployeeKnowledgeGrant)
-→ retrieve_knowledge (consultas cortas por token)
-→ análisis datos + evidencia documental
-→ hallazgos (HECHO / INFERENCIA / INFORMACION_INSUFICIENTE)
-→ propuestas
-→ plan de acción → Operaciones (vía PR #17)
-```
+| Commit | Causa raíz | Fix |
+|--------|------------|-----|
+| `fc7aabd` | `IpsHallazgo.kind = "INFORMACION_INSUFICIENTE"` (24 chars) excedía `String(20)` en PostgreSQL | `kind = "INSUFICIENTE"` en hallazgos de conflicto |
+| `119d56b` | `DELETE knowledge_documents` violaba FK `knowledge_activities_document_id_fkey` (actividades `CONSULTA_SALUD`) | Borrar `KnowledgeActivity` asociadas antes del documento en `delete_document()` |
 
 ---
 
-## 3. Archivos principales
+## 2. Bases integradas (grafo de contenido)
 
-| Archivo | Cambio |
-|---------|--------|
-| `backend/app/services/salud_knowledge.py` | **nuevo** — autorización, consulta, conflictos, incumplimiento contractual |
-| `backend/app/services/salud_engine.py` | Integra conocimiento en pipeline y diagnóstico |
-| `backend/app/services/salud_indicators.py` | `dias_por_factura` para cruce contractual |
-| `backend/app/services/salud_questions.py` | Preguntas de cumplimiento contractual |
-| `frontend/src/pages/DiagnosticoIpsPage.tsx` | Indicador conocimiento + fuentes en hallazgos/trazabilidad |
-| `backend/alembic/versions/971a1b2c3d4e_merge_conocimiento_salud_971.py` | Merge heads `930a1` + `970a1b2c3d4e` |
-| `tests/test_salud_conocimiento_971.py` | **nuevo** — 16 tests |
+| Componente | PR | Rama | HEAD | Contenido en #18 |
+|------------|-----|------|------|------------------|
+| CONOCIMIENTO-930 | #11 | `cursor/knowledge-center-930-12b6` | `2ff59d3` | **Sí** (ancestro) |
+| OPERACIONES-940 | #13 | `cursor/operations-center-940-12b6` | `7c536d2` | **Sí** (ancestro) |
+| SALUD-960 | #14 | `cursor/salud-ips-engine-960` | `9ee91eb` | **Sí** (ancestro) |
+| SALUD→WorkPlan | #17 | `cursor/integracion-salud-workplan-002` | `6728b11` | **Parcial** — #18 contiene base `b3b5e31`; commit doc `6728b11` de #17 no está en #18 |
 
-Merge CONOCIMIENTO-930: modelos, router, UI conocimiento, tests `test_knowledge_930.py`.
+**Conclusión:** mergear #11, #13, #14 y #17 por separado es redundante si se mergea **#18** como paquete SALUD+Operaciones+Conocimiento.
 
 ---
 
-## 4. Comportamiento verificado
+## 3. Reauditoría adversarial focal (15/15)
 
-| Requisito | Estado |
-|-----------|--------|
-| Solo conocimiento autorizado (`EmployeeKnowledgeGrant`) | PASS |
-| Multi-tenant adversarial | PASS |
-| Contrato 10 días vs radicación día 18 | PASS (hallazgo HECHO + fuentes) |
-| Documentos contradictorios (10 vs 15 días) | PASS (requiere validación) |
-| Documento irrelevante (RRHH) | PASS (filtrado) |
-| Sin conocimiento → análisis continúa | PASS |
-| Experiencia separada de conocimiento | PASS |
-| Pregunta natural contractual | PASS |
-| No alucinación de cláusulas | PASS |
-| Auditoría `CONSULTA_SALUD` en `KnowledgeActivity` | PASS |
+| # | Control | Evidencia |
+|---|---------|-----------|
+| 1 | Tenant A no recupera documento/chunk de B | `test_cross_tenant_knowledge_denied`, `test_direct_document_id_cross_tenant_denied` |
+| 2 | Empleado sin `EmployeeKnowledgeGrant` → DENY | `test_employee_without_grant_gets_no_fragments` |
+| 3 | Grant inactivo/inexistente → DENY | `test_inactive_grant_denied`, `test_permission_fail_closed_retrieve` |
+| 4 | Documento no autorizado por ID directo → DENY | `test_direct_document_id_cross_tenant_denied` |
+| 5 | Búsqueda no infiere contenido de otro tenant | `test_cross_tenant_knowledge_denied` |
+| 6 | Documento irrelevante no contamina análisis | `test_irrelevant_document_not_used` |
+| 7 | Documentos contradictorios no producen certeza falsa | `test_contradictory_documents_flag_validation`, `test_apply_knowledge_does_not_promote_hypothesis_to_fact` |
+| 8 | Sin conocimiento adicional SALUD continúa | `test_without_knowledge_analysis_still_runs` |
+| 9 | Experiencia y conocimiento separados | `test_experience_separate_from_knowledge` |
+| 10 | Pregunta contractual sin contrato → insuficiente | `test_contractual_question_without_contract` |
+| 11 | Contrato 10 días + radicación 18 días → diferencia correcta | `test_contract_relevant_finding` |
+| 12 | No inventar cláusulas, páginas o fuentes | `test_no_hallucination_invented_clause` |
+| 13 | Fuente mostrada pertenece al documento utilizado | `test_source_visible_in_hallazgo`, `test_source_reference_preserves_document_title` |
+| 14 | Especialista no recibe todo el conocimiento | `test_specialist_scoped_consultation` |
+| 15 | Fallo de recuperación no abre acceso | `test_permission_fail_closed_retrieve` (fail closed) |
 
 ---
 
-## 5. Tests
+## 4. Regresión local
 
 | Comando | Resultado |
 |---------|-----------|
-| `pytest tests/test_salud_conocimiento_971.py -q` | **16/16 PASS** |
-| `pytest` completo | **145/145 PASS** |
+| `pytest tests/test_salud_conocimiento_971.py -q` | **20/20 PASS** |
+| `pytest` completo | **149/149 PASS** |
 | `npm run build` | PASS |
 | `npm audit` | 0 vulnerabilidades |
-| Alembic upgrade/downgrade/upgrade | PASS |
+| `git diff --check` | PASS |
+| Alembic `upgrade head` (SQLite) | PASS → head `971a1b2c3d4e` |
+| Alembic `downgrade -1` | Ambiguous walk (merge migration — esperado en rama aislada) |
+
+PostgreSQL confirmado en CI run `32924491837`.
 
 ---
 
-## 6. GitHub Actions / PostgreSQL
+## 5. Arquitectura (sin rediseño)
 
-Pendiente de run en PR de esta rama tras push.
-
----
-
-## 7. UI
-
-En `/salud/diagnostico`:
-- Indicador «Conocimiento documental: utilizado / sin documentos…»
-- Fuentes documentales por hallazgo (títulos, sin IDs técnicos)
-- Sección trazabilidad con conocimiento consultado
+- Servicio: `backend/app/services/salud_knowledge.py`
+- Integración: `salud_engine.py`, `salud_questions.py`, `salud_indicators.py`
+- UI: `frontend/src/pages/DiagnosticoIpsPage.tsx`
+- Migración merge: `971a1b2c3d4e_merge_conocimiento_salud_971.py`
+- Reutiliza `retrieve_knowledge()`, `EmployeeKnowledgeGrant`, `KnowledgeActivity` — sin modelos paralelos
 
 ---
 
-## 8. Pendientes reales
+## 6. Conclusión
 
-1. CI PostgreSQL verde en PR de integración
-2. Demo E2E visual «IPS DEMO CON CONOCIMIENTO» (flujo completo hasta Operaciones) — validar en entorno con servidores
-3. PR #17 declarado **APTO PARA MERGE** con CI 4/4 PASS (run `32918547155`)
+**PR #18 — APTO PARA MERGE — PENDIENTE DE INTEGRACIÓN**
 
----
-
-## 9. Conclusión
-
-**SALUD-CONOCIMIENTO-971 LISTO PARA REAUDITORÍA** — integración funcional sin duplicar modelos de conocimiento.
+Integración SALUD↔Conocimiento certificada (CI 4/4, 20 tests adversariales, PostgreSQL verde). Pendiente de integración consolidada con PRs de plataforma (#6, #7, #9, #16) según mapa `CURSOR_MAPA_INTEGRACION_CONSOLIDADA_001.md`.
