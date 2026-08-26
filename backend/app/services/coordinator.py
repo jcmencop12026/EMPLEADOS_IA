@@ -492,6 +492,17 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
         )
 
         if decision == ExecutionDecision.DENY:
+            publish(
+                EventMessage(
+                    event_type="TOOL_DENIED",
+                    organization_id=plan.organization_id,
+                    work_plan_id=plan.id,
+                    task_id=task.id,
+                    user_id=user_id,
+                    payload={"employee_id": task.employee_id, "tool_id": task.tool_id},
+                ),
+                db,
+            )
             raise AuthorizationError("Ejecución denegada por política de autorización")
 
         inputs = json.loads(task.inputs_json or "{}")
