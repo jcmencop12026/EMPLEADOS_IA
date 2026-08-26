@@ -83,6 +83,25 @@ type Diagnostico = {
     requiere_validacion?: boolean;
   };
   experiencia: { casos_similares?: Array<{ ips_name: string; similitud: number; evaluacion?: string }> };
+  suficiencia_datos?: { clasificacion?: string; puntaje?: number; limitaciones?: string[] };
+  hipotesis?: Array<{
+    id: string;
+    titulo: string;
+    estado: string;
+    confianza: string;
+    dominio: string;
+    evidencia_a_favor?: string[];
+    evidencia_en_contra?: string[];
+    informacion_faltante?: unknown[];
+    impacto_potencial?: number | string;
+  }>;
+  hipotesis_principal?: { id: string; titulo: string; estado: string } | null;
+  contrastes?: Array<{ hipotesis_titulo: string; especialista: string; postura: string; argumento: string }>;
+  alternativas?: Array<{ alternativa_id: string; descripcion: string; fundamento: string; plazo?: string; confianza?: string }>;
+  priorizacion?: { metodologia?: string; ranking?: Array<{ ranking: number; titulo: string; prioridad: number; por_que_primero?: string; tipo?: string }> };
+  escenarios?: { escenarios?: Record<string, { nombre: string; valor_recuperable_estimado?: number | string; supuestos?: string[] }> };
+  finops?: Array<{ referencia: string; beneficio_esperado?: number; certidumbre?: string; roi?: number; advertencia?: string }>;
+  recomendacion_consolidada?: Record<string, unknown>;
 };
 
 const SECCIONES = [
@@ -90,10 +109,14 @@ const SECCIONES = [
   { id: "calidad", label: "Calidad de datos" },
   { id: "indicadores", label: "Indicadores" },
   { id: "hallazgos", label: "Hallazgos" },
+  { id: "hipotesis", label: "Hipótesis" },
   { id: "oportunidades", label: "Oportunidades" },
+  { id: "alternativas", label: "Alternativas" },
+  { id: "impacto", label: "Impacto/FINOPS" },
   { id: "plan", label: "Plan de acción" },
   { id: "seguimiento", label: "Seguimiento" },
   { id: "especialistas", label: "Especialistas" },
+  { id: "trazabilidad", label: "Trazabilidad" },
   { id: "experiencia", label: "Experiencia" },
 ] as const;
 
@@ -148,7 +171,38 @@ export function DiagnosticoIpsPage() {
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [planMsg, setPlanMsg] = useState<string | null>(null);
   const [lastWorkPlanId, setLastWorkPlanId] = useState<string | null>(null);
-  const [modoDemo, setModoDemo] = useState<"completo" | "parcial" | null>(null);
+  const [modoDemo, setModoDemo] = useState<"completo" | "parcial" | string | null>(null);
+
+  const ejecutarAnalisisMotor = useCallback(async (caseId: string) => {
+    setLoading(true);
+    setError(null);
+    setRespuesta(null);
+    setFeedbackMsg(null);
+    setPlanMsg(null);
+    setLastWorkPlanId(null);
+    setHallazgoSel(null);
+    setPropSel(new Set());
+    setModoDemo(caseId);
+    try {
+      const demo = await api<{ request_text: string; datasets: Record<string, unknown[]> }>(`/api/salud/motor/demo/${caseId}`);
+      const res = await api<{ id: string }>("/api/salud/analisis", {
+        method: "POST",
+        body: JSON.stringify({
+          ips_name: `IPS Motor ${caseId}`,
+          request_text: demo.request_text,
+          inline_datasets: demo.datasets,
+        }),
+      });
+      const full = await api<Diagnostico>(`/api/salud/diagnostico/${res.id}`);
+      setDiag(full);
+      setSeccion("resumen");
+      if (full.hallazgos.length > 0) setHallazgoSel(full.hallazgos[0]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al ejecutar análisis motor");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const ejecutarAnalisis = useCallback(async (parcial: boolean) => {
     setLoading(true);
@@ -375,6 +429,11 @@ export function DiagnosticoIpsPage() {
         <button type="button" className="btn" disabled={loading} onClick={() => ejecutarAnalisis(true)} title="Solo facturación — debe mostrar Información insuficiente en otros dominios">
           {loading && modoDemo === "parcial" ? "Analizando…" : "Demo datos incompletos"}
         </button>
+        {["A", "B", "C", "D", "E", "CONSULTOR"].map((c) => (
+          <button key={c} type="button" className="btn" disabled={loading} onClick={() => ejecutarAnalisisMotor(c)} title={`Caso adversarial ${c}`}>
+            {loading && modoDemo === c ? "…" : `Caso ${c}`}
+          </button>
+        ))}
         {diag && <span className="badge">{diag.ips_name} · {diag.estado}</span>}
         {error && <p className="error">{error}</p>}
         {feedbackMsg && <p className="salud-ok">{feedbackMsg}</p>}
@@ -408,6 +467,15 @@ export function DiagnosticoIpsPage() {
           {seccion === "resumen" && (
             <section className="panel" id="seccion-resumen">
               <h2>Resumen ejecutivo</h2>
+              {diag.suficiencia_datos?.clasificacion && (
+                <p className="muted">Suficiencia de datos: <strong>{diag.suficiencia_datos.clasificacion}</strong></p>
+              )}
+              {diag.hipotesis_principal && (
+                <p className="muted">Hipótesis principal: {diag.hipotesis_principal.titulo} ({diag.hipotesis_principal.estado})</p>
+              )}
+              {diag.recomendacion_consolidada?.recomendacion && (
+                <p><strong>Recomendación:</strong> {String(diag.recomendacion_consolidada.recomendacion)}</p>
+              )}
               <div className="salud-resumen-grid">
                 <div>
                   <h3>Principales problemas</h3>
@@ -496,6 +564,117 @@ export function DiagnosticoIpsPage() {
                   </table>
                 </div>
                 {hallazgoSel && renderHallazgoDetalle(hallazgoSel)}
+              </div>
+            </section>
+          )}
+
+          {seccion === "hipotesis" && (
+            <section className="panel" id="seccion-hipotesis">
+              <h2>Causas e hipótesis</h2>
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr><th>ID</th><th>Hipótesis</th><th>Estado</th><th>Confianza</th><th>Dominio</th><th>Evidencia a favor</th></tr>
+                  </thead>
+                  <tbody>
+                    {(diag.hipotesis ?? []).map((h) => (
+                      <tr key={h.id}>
+                        <td>{h.id}</td>
+                        <td>{h.titulo}</td>
+                        <td>{h.estado}</td>
+                        <td>{h.confianza}</td>
+                        <td>{DOMINIO_ES[h.dominio] ?? h.dominio}</td>
+                        <td className="cell-truncate">{(h.evidencia_a_favor ?? []).join("; ") || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {(diag.contrastes ?? []).length > 0 && (
+                <>
+                  <h3 className="salud-sub">Contraste entre especialistas</h3>
+                  <ul>
+                    {diag.contrastes!.map((c, i) => (
+                      <li key={i}><strong>{c.especialista}</strong> ({c.postura}): {c.argumento}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </section>
+          )}
+
+          {seccion === "alternativas" && (
+            <section className="panel" id="seccion-alternativas">
+              <h2>Alternativas evaluadas</h2>
+              {(diag.alternativas ?? []).map((a) => (
+                <div key={a.alternativa_id} className="salud-prop-card">
+                  <strong>{a.descripcion}</strong>
+                  <p className="muted">{a.fundamento}</p>
+                  <p className="muted">Plazo: {a.plazo} · Confianza: {a.confianza}</p>
+                </div>
+              ))}
+              <h3 className="salud-sub">Priorización</h3>
+              <p className="muted">{diag.priorizacion?.metodologia}</p>
+              <ol>
+                {(diag.priorizacion?.ranking ?? []).slice(0, 8).map((r) => (
+                  <li key={`${r.ranking}-${r.titulo}`}>{r.titulo} — prioridad {r.prioridad?.toFixed(1)}. {r.por_que_primero}</li>
+                ))}
+              </ol>
+            </section>
+          )}
+
+          {seccion === "impacto" && (
+            <section className="panel" id="seccion-impacto">
+              <h2>Impacto y FINOPS</h2>
+              <div className="salud-kpi-grid">
+                {Object.entries(diag.escenarios?.escenarios ?? {}).map(([k, sc]) => (
+                  <div key={k} className="salud-kpi-card">
+                    <h3>{sc.nombre}</h3>
+                    <p>{formatMoney(sc.valor_recuperable_estimado)}</p>
+                    <p className="muted">{(sc.supuestos ?? []).join(" ")}</p>
+                  </div>
+                ))}
+              </div>
+              <h3 className="salud-sub">Valor por propuesta (estimado)</h3>
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead><tr><th>Referencia</th><th>Beneficio</th><th>Certidumbre</th><th>ROI</th></tr></thead>
+                  <tbody>
+                    {(diag.finops ?? []).map((f) => (
+                      <tr key={f.referencia}>
+                        <td className="cell-truncate">{f.referencia}</td>
+                        <td>{formatMoney(f.beneficio_esperado)}</td>
+                        <td>{f.certidumbre}</td>
+                        <td>{f.roi ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {seccion === "trazabilidad" && (
+            <section className="panel" id="seccion-trazabilidad">
+              <h2>Trazabilidad del motor</h2>
+              <ol className="salud-cadena">
+                <li><strong>Solicitud:</strong> {String(diag.recomendacion_consolidada?.solicitud ?? "—")}</li>
+                <li><strong>Suficiencia:</strong> {diag.suficiencia_datos?.clasificacion ?? "—"}</li>
+                <li><strong>Hipótesis principal:</strong> {diag.hipotesis_principal?.titulo ?? "—"}</li>
+                <li><strong>Especialistas:</strong> {(diag.especialistas.asignaciones ?? []).length}</li>
+                <li><strong>Contrastes:</strong> {(diag.contrastes ?? []).length}</li>
+                <li><strong>Alternativas:</strong> {(diag.alternativas ?? []).length}</li>
+              </ol>
+              <h3 className="salud-sub">Cadena financiera</h3>
+              <div className="salud-traza-grid">
+                {Object.entries(diag.trazabilidad)
+                  .filter(([k]) => !["conocimiento", "motor"].includes(k))
+                  .map(([k, v]) => (
+                  <div key={k} className="salud-traza-item">
+                    <span>{k.replace(/_/g, " ")}</span>
+                    <strong>{typeof v === "number" ? formatMoney(v) : String(v)}</strong>
+                  </div>
+                ))}
               </div>
             </section>
           )}

@@ -14,6 +14,89 @@ def responder_pregunta(pregunta: str, diagnostico: dict[str, Any]) -> dict[str, 
     trazabilidad = diagnostico.get("trazabilidad", {})
     hallazgos = diagnostico.get("hallazgos", [])
     conocimiento = diagnostico.get("conocimiento", {})
+    hipotesis = diagnostico.get("hipotesis", [])
+    recomendacion = diagnostico.get("recomendacion_consolidada", {})
+    priorizacion = diagnostico.get("priorizacion", {})
+
+    if any(k in text for k in ("por qué recomiendas", "porque recomiendas", "por qué esto", "porque esto")):
+        return {
+            "respuesta": recomendacion.get("por_que_recomendamos") or recomendacion.get("por_que_podria", "Sin recomendación consolidada."),
+            "evidencia": recomendacion.get("que_demostrado", []),
+            "incertidumbre": "BAJA" if recomendacion.get("calidad_datos") == "SUFICIENTE" else "MEDIA",
+            "accion_sugerida": recomendacion.get("recomendacion"),
+            "clasificacion": "RECOMENDACION",
+        }
+
+    if any(k in text for k in ("qué evidencia", "que evidencia", "evidencia tienes")):
+        ev = []
+        for h in hipotesis[:3]:
+            ev.extend(h.get("evidencia_a_favor", []))
+        return {
+            "respuesta": "; ".join(ev[:5]) if ev else "No hay evidencia trazable para esta pregunta.",
+            "evidencia": ev,
+            "incertidumbre": "BAJA" if ev else "ALTA",
+            "clasificacion": "HECHO" if ev else "INFORMACION_INSUFICIENTE",
+        }
+
+    if any(k in text for k in ("qué falta", "que falta", "información falta", "informacion falta")):
+        missing = diagnostico.get("suficiencia_datos", {}).get("informacion_faltante_critica", [])
+        return {
+            "respuesta": "; ".join(m.get("que_falta", str(m)) for m in missing) if missing else "No se identificó información crítica faltante.",
+            "evidencia": missing,
+            "incertidumbre": "ALTA" if missing else "BAJA",
+            "clasificacion": "INFORMACION_INSUFICIENTE" if missing else "HECHO",
+        }
+
+    if any(k in text for k in ("experiencias similares", "casos similares")):
+        casos = diagnostico.get("experiencia", {}).get("casos_similares", [])
+        return {
+            "respuesta": f"Se encontraron {len(casos)} casos similares en experiencia de la organización.",
+            "evidencia": casos,
+            "incertidumbre": "MEDIA",
+            "clasificacion": "HECHO",
+        }
+
+    if any(k in text for k in ("cuánto podría recuperar", "cuanto podria recuperar", "cuánto vale", "cuanto vale")):
+        esc = diagnostico.get("escenarios", {}).get("escenarios", {}).get("PROBABLE", {})
+        val = esc.get("valor_recuperable_estimado")
+        return {
+            "respuesta": f"Escenario probable: valor recuperable estimado ${val:,.0f} (PROYECTADO)." if isinstance(val, (int, float)) else "No cuantificable con datos actuales.",
+            "evidencia": [esc],
+            "incertidumbre": "MEDIA",
+            "clasificacion": "PROYECTADO",
+            "advertencia": "Estimación — no es resultado real.",
+        }
+
+    if any(k in text for k in ("qué debería hacer primero", "que deberia hacer primero", "hacer primero")):
+        top = (priorizacion.get("ranking") or [{}])[0]
+        return {
+            "respuesta": top.get("por_que_primero") or top.get("accion", "Sin priorización calculada."),
+            "evidencia": [top],
+            "incertidumbre": "BAJA" if top else "ALTA",
+            "accion_sugerida": top.get("accion"),
+            "clasificacion": "RECOMENDACION",
+        }
+
+    if any(k in text for k in ("por qué aumentó", "porque aumento", "cartera")):
+        primary = diagnostico.get("hipotesis_principal")
+        if primary:
+            return {
+                "respuesta": f"Hipótesis principal ({primary.get('estado')}): {primary.get('titulo')}. {'; '.join(primary.get('evidencia_a_favor', [])[:2])}",
+                "evidencia": primary.get("evidencia_a_favor", []),
+                "incertidumbre": "BAJA" if primary.get("estado") == "CONFIRMADA" else "MEDIA",
+                "clasificacion": "HIPOTESIS",
+            }
+        return _respuesta_cartera(indicadores, hallazgos)
+
+    if any(k in text for k in ("depende de nosotros", "nuestro proceso", "interno")):
+        internal = [h for h in hipotesis if h.get("dominio") in ("radicacion", "facturacion", "proceso", "soportes")]
+        external = [h for h in hipotesis if h.get("dominio") in ("pagador", "glosas", "devoluciones")]
+        return {
+            "respuesta": f"Factores internos probables: {', '.join(h['titulo'] for h in internal[:2]) or 'ninguno dominante'}. Externos: {', '.join(h['titulo'] for h in external[:2]) or 'ninguno dominante'}.",
+            "evidencia": [{"interno": internal[:2], "externo": external[:2]}],
+            "incertidumbre": "MEDIA",
+            "clasificacion": "INFERENCIA",
+        }
 
     if any(k in text for k in ("pactado", "contrato", "incumple", "cumplimiento contractual", "entidad")):
         return _respuesta_contractual(indicadores, hallazgos, conocimiento, text)

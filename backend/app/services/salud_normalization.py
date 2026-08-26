@@ -61,6 +61,13 @@ FIELD_PROFILES: dict[str, dict[str, list[str]]] = {
         "valor_recuperado": ["valor_recuperado", "Valor Recuperado", "recovered"],
         "estado": ["estado", "Estado"],
     },
+    "devoluciones": {
+        "numero_factura": ["numero_factura", "Nro Factura"],
+        "valor_devuelto": ["valor_devuelto", "Valor Devuelto", "amount"],
+        "motivo": ["motivo", "Motivo", "reason"],
+        "pagador": ["pagador", "Pagador", "entidad"],
+        "fecha_devolucion": ["fecha_devolucion", "Fecha Devolución", "date"],
+    },
 }
 
 

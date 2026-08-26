@@ -197,6 +197,27 @@ def calc_cartera(cartera_records: list[dict], pago_records: list[dict] | None = 
     }
 
 
+def calc_devoluciones(devolucion_records: list[dict]) -> dict[str, Any]:
+    devol = normalize_dataset("devoluciones", devolucion_records)
+    valores = [_to_float(d.get("valor_devuelto")) for d in devol]
+    valores_ok = [v for v in valores if v is not None]
+    if not valores_ok:
+        return {"disponible": False, "mensaje": INSUFICIENTE}
+
+    por_pagador: dict[str, float] = defaultdict(float)
+    for d in devol:
+        v = _to_float(d.get("valor_devuelto")) or 0
+        por_pagador[str(d.get("pagador", "Sin pagador"))] += v
+
+    return {
+        "disponible": True,
+        "valor_devuelto_total": sum(valores_ok),
+        "cantidad": len(valores_ok),
+        "por_pagador": dict(por_pagador),
+        "evidencia": {"registros": len(devol)},
+    }
+
+
 def calc_contratos(contrato_records: list[dict]) -> dict[str, Any]:
     contratos = normalize_dataset("contratos", contrato_records)
     if not contratos:
@@ -315,6 +336,13 @@ def compute_all_indicators(datasets: dict[str, list[dict]]) -> dict[str, Any]:
             result["disponibles"].append("contratos")
     else:
         result["contratos"] = {"disponible": False, "mensaje": INSUFICIENTE}
+
+    if "devoluciones" in datasets:
+        result["devoluciones"] = calc_devoluciones(datasets["devoluciones"])
+        if result["devoluciones"].get("disponible"):
+            result["disponibles"].append("devoluciones")
+    else:
+        result["devoluciones"] = {"disponible": False, "mensaje": INSUFICIENTE}
 
     result["trazabilidad"] = calc_traceability(
         datasets.get("facturacion", []),
