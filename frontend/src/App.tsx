@@ -24,6 +24,7 @@ import { CapabilitiesPage } from "./pages/CapabilitiesPage";
 import { KnowledgePage } from "./pages/KnowledgePage";
 import { TestLabPage } from "./pages/TestLabPage";
 import { ToolsPage } from "./pages/ToolsPage";
+import { CostosValorPage } from "./pages/CostosValorPage";
 import { getToken } from "./api";
 
 export default function App() {
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="herramientas" element={<ToolsPage />} />
           <Route path="conocimiento" element={<KnowledgePage />} />
           <Route path="test-lab" element={<TestLabPage />} />
+          <Route path="costos-valor" element={<CostosValorPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
           <Route path="administracion/usuarios" element={<AdminUsersPage />} />
           <Route path="administracion/roles" element={<AdminRolesPage />} />

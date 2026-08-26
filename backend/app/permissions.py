@@ -98,6 +98,13 @@ TEST_LAB_PERMISSIONS = {
     "test_lab.run",
 }
 
+FINOPS_PERMISSIONS = {
+    "finops.view",
+    "finops.manage",
+    "finops.budget",
+    "finops.rates",
+}
+
 ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "employee.view": ("Empleados IA", "Ver directorio de empleados"),
     "employee.create": ("Empleados IA", "Crear empleados"),
@@ -147,6 +154,10 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "knowledge.manage": ("Conocimiento", "Gestionar fuentes de conocimiento"),
     "test_lab.view": ("Test Lab", "Ver ejecuciones de Test Lab"),
     "test_lab.run": ("Test Lab", "Ejecutar pruebas en Test Lab"),
+    "finops.view": ("FinOps", "Ver costos y valor"),
+    "finops.manage": ("FinOps", "Gestionar costos y valor"),
+    "finops.budget": ("FinOps", "Gestionar presupuestos"),
+    "finops.rates": ("FinOps", "Gestionar tarifas"),
 }
 
 SYSTEM_ROLE_CODES = {"admin", "operator", "viewer"}
@@ -166,6 +177,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | TOOL_PERMISSIONS
         | KNOWLEDGE_PERMISSIONS
         | TEST_LAB_PERMISSIONS
+        | FINOPS_PERMISSIONS
     ),
     "operator": {
         "employee.view",
@@ -193,6 +205,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "knowledge.view",
         "test_lab.view",
         "test_lab.run",
+        "finops.view",
+        "finops.manage",
+        "finops.budget",
     },
     "viewer": {
         "employee.view",
@@ -206,6 +221,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "tool.view",
         "knowledge.view",
         "test_lab.view",
+        "finops.view",
     },
 }
 

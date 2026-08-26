@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from app.config import settings
 from app.database import Base, SessionLocal, engine
 from app import automation_models  # noqa: F401
+from app import finops_models  # noqa: F401
 from app import orchestration_models, notifications  # noqa: F401 — registra tablas/suscriptores
 from app.routers import (
     admin,
@@ -16,6 +17,7 @@ from app.routers import (
     auth,
     automations,
     capabilities,
+    finops,
     knowledge,
     notifications as notification_routes,
     operations,
@@ -79,6 +81,7 @@ app.include_router(automations.router)
 app.include_router(automations.runs_router)
 app.include_router(notification_routes.notifications_router)
 app.include_router(notification_routes.rules_router)
+app.include_router(finops.router)
 
 
 @app.get("/health")

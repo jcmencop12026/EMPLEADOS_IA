@@ -38,6 +38,7 @@ const MENU: NavSection[] = [
     id: "analisis",
     label: "Análisis y control",
     items: [
+      { to: "/costos-valor", label: "Costos y valor" },
       { to: "/notificaciones", label: "Notificaciones" },
       { to: "/auditoria", label: "Auditoría" },
     ],
