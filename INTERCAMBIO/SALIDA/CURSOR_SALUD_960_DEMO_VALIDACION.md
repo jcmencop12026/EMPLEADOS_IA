@@ -1,8 +1,8 @@
 # CURSOR — SALUD-960 — DEMO FUNCIONAL Y CONTROL VISUAL
 
-**Estado:** `SALUD-960 DEMO VALIDADA`  
-**Rama:** `cursor/salud-ips-engine-960`  
-**PR:** #14  
+**Estado:** `SALUD-960 DEMO VALIDADA`
+**Rama:** `cursor/salud-ips-engine-960`
+**PR:** #14
 **NO MERGE · NO APTO PARA MERGE**
 
 ---

@@ -1,7 +1,7 @@
 # CURSOR — OPERACIONES-940 Centro de Operaciones V1
 
-**Fecha:** 2026-08-25  
-**Estado:** OPERACIONES-940 LISTO PARA REAUDITORÍA  
+**Fecha:** 2026-08-25
+**Estado:** OPERACIONES-940 LISTO PARA REAUDITORÍA
 **No declarado apto para merge — NO MERGE**
 
 ---

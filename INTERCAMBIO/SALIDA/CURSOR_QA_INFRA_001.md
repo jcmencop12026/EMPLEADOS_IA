@@ -1,7 +1,7 @@
 # CURSOR — QA-INFRA-001 Certificación automática V1
 
-**Fecha:** 2026-08-25  
-**Estado:** QA-INFRA-001 LISTO PARA VALIDACIÓN EN GITHUB  
+**Fecha:** 2026-08-25
+**Estado:** QA-INFRA-001 LISTO PARA VALIDACIÓN EN GITHUB
 **No declarado PASS en GitHub Actions remoto — NO MERGE**
 
 ---

@@ -1,8 +1,8 @@
 # CURSOR — INTEGRACIÓN SALUD → WORKPLAN (ENTREGA-002)
 
-**Estado:** `SALUD → WORKPLAN LISTO PARA REAUDITORÍA`  
-**Fecha:** 2026-08-25  
-**Rama:** `cursor/integracion-salud-workplan-002`  
+**Estado:** `SALUD → WORKPLAN LISTO PARA REAUDITORÍA`
+**Fecha:** 2026-08-25
+**Rama:** `cursor/integracion-salud-workplan-002`
 **NO MERGE**
 
 ---
@@ -82,21 +82,21 @@ IpsActionPlan → WorkPlan real → EmployeeTask(s) → visible en /operaciones
 
 ## 5. Idempotencia
 
-`find_idempotent_action_plan()` compara conjunto normalizado de `propuesta_ids` por `organization_id` + `analysis_id`.  
+`find_idempotent_action_plan()` compara conjunto normalizado de `propuesta_ids` por `organization_id` + `analysis_id`.
 Reintento con mismo conjunto (orden distinto) devuelve el mismo `IpsActionPlan` y `work_plan_id` — **sin duplicar WorkPlan**.
 
 ---
 
 ## 6. Multiempresa
 
-Propuestas de otro tenant → HTTP 400.  
+Propuestas de otro tenant → HTTP 400.
 WorkPlan de tenant B no accesible desde token de tenant A → HTTP 404 en `/api/operations/center/{id}`.
 
 ---
 
 ## 7. Responsable
 
-`resolve_unique_employee()` asigna solo si hay **exactamente un** `AIEmployee` activo (`ACTIVE`/`PUBLISHED`/`CERTIFIED`) con nombre o código coincidente.  
+`resolve_unique_employee()` asigna solo si hay **exactamente un** `AIEmployee` activo (`ACTIVE`/`PUBLISHED`/`CERTIFIED`) con nombre o código coincidente.
 Ambigüedad o inexistencia → tarea sin `employee_id`.
 
 ---
@@ -178,6 +178,6 @@ Flujo validado manualmente en VM:
 
 ## 14. Conclusión
 
-Integración controlada **SALUD-960 + OPERACIONES-940** con puente funcional, idempotente y multi-tenant.  
-Estado: **SALUD → WORKPLAN LISTO PARA REAUDITORÍA**.  
+Integración controlada **SALUD-960 + OPERACIONES-940** con puente funcional, idempotente y multi-tenant.
+Estado: **SALUD → WORKPLAN LISTO PARA REAUDITORÍA**.
 **NO MERGE** hasta aprobación explícita.

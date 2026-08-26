@@ -1,8 +1,8 @@
 # CURSOR — SALUD-960 — INFORME DE IMPLEMENTACIÓN
 
-**Estado:** `SALUD-960 LISTO PARA REAUDITORÍA`  
-**Rama:** `cursor/salud-ips-engine-960`  
-**Base:** `main`  
+**Estado:** `SALUD-960 LISTO PARA REAUDITORÍA`
+**Rama:** `cursor/salud-ips-engine-960`
+**Base:** `main`
 **NO MERGE**
 
 ---

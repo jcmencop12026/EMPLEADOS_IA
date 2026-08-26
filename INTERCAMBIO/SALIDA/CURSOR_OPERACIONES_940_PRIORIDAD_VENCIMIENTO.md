@@ -1,9 +1,9 @@
 # OPERACIONES-940 — Prioridad y Vencimiento Persistentes
 
-**Estado:** `OPERACIONES-940 PRIORIDAD/VENCIMIENTO LISTO PARA REAUDITORÍA`  
-**Rama:** `cursor/operations-center-940-12b6`  
-**HEAD inicial:** `b73c396`  
-**HEAD final:** `a8a1c2b`  
+**Estado:** `OPERACIONES-940 PRIORIDAD/VENCIMIENTO LISTO PARA REAUDITORÍA`
+**Rama:** `cursor/operations-center-940-12b6`
+**HEAD inicial:** `b73c396`
+**HEAD final:** `a8a1c2b`
 **NO MERGE**
 
 ---

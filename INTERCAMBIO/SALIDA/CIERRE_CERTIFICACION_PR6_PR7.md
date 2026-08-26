@@ -1,6 +1,6 @@
 # CIERRE CERTIFICACIÓN PR #6 y PR #7
 
-**Fecha:** 2026-08-25  
+**Fecha:** 2026-08-25
 **Estado general:** Infraestructura CI cerrada — certificación local PASS — CI GitHub PR #6/#7 pendiente de ejecución visible
 
 ---
@@ -87,7 +87,7 @@ PYTHONPATH=backend:. pytest -m "certification and not certification_intensive" -
 
 Push realizado con workflow corregido. **Runs no visibles aún en `gh run list`** (PR #6 en estado DRAFT puede limitar triggers). Validación local confirma suites de certificación.
 
-**Estado PR #6:** `APTO PARA MERGE — PENDIENTE DE INTEGRACIÓN`  
+**Estado PR #6:** `APTO PARA MERGE — PENDIENTE DE INTEGRACIÓN`
 (condicionado a: merge PR #15 en `main` + CI verde en PR #6 tras activación)
 
 ---
@@ -116,7 +116,7 @@ PYTHONPATH=backend:. pytest -m "certification and notifications" -q
 | build / audit | PASS |
 | Workflow CI en rama | Sí (`ad32dbb` + fix `f31052c`) |
 
-**Estado PR #7:** `APTO PARA MERGE — PENDIENTE DE INTEGRACIÓN`  
+**Estado PR #7:** `APTO PARA MERGE — PENDIENTE DE INTEGRACIÓN`
 (condicionado a: merge PR #15 + CI verde en PR #7)
 
 ---
