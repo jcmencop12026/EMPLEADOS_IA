@@ -36,6 +36,13 @@ from app.services.authorization import AuthorizationError
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    from scripts.migration_control import MigrationControlError, run_database_preflight
+
+    try:
+        run_database_preflight(settings.database_url)
+    except MigrationControlError as exc:
+        raise RuntimeError(str(exc)) from exc
+
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:

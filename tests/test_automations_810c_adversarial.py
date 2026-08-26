@@ -40,6 +40,10 @@ from app.services.execution_guard import (
 )
 from app.services.execution_workspace import WorkerCommitForbiddenError
 from app.schemas_automation import AutomationCreate, RecurrenceConfig
+from tests.certification.process_tree_helpers import (
+    build_parent_child_grandchild_harness,
+    build_parent_child_harness,
+)
 from tests.certification.scheduler_helpers import create_minimal_automation
 from conftest import TestingSessionLocal
 
@@ -243,7 +247,7 @@ def test_adversarial_race_zero_late_effects_100_iterations():
         effects: list[str] = []
 
         def route(*_a, **_k):
-            time.sleep(0.08)
+            time.sleep(0.15)
             try:
                 require_execution_allowed()
                 effects.append("race-late")
@@ -251,7 +255,7 @@ def test_adversarial_race_zero_late_effects_100_iterations():
                 pass
             return {"plan_id": "x", "status": WorkPlanStatus.COMPLETED}
 
-        run = _run_timeout_scenario(route, actual_timeout=0.03, wait_after=0.12)
+        run = _run_timeout_scenario(route, actual_timeout=0.03, wait_after=0.2)
         assert run.status == AutomationRunStatus.FAILED
         if effects:
             late_count += len(effects)
@@ -409,45 +413,31 @@ def test_adversarial_qa_sync_race_session_attr_raw_sql_100_iterations():
 def test_adversarial_process_tree_parent_child_grandchild_no_late_effects():
     """Process tree — padre → hijo → nieto terminados, cero efecto tardío."""
     for _ in range(3):
-        parent_marker = tempfile.mktemp(suffix=".parent.marker")
-        child_marker = tempfile.mktemp(suffix=".child.marker")
-        grand_marker = tempfile.mktemp(suffix=".grand.marker")
-        for path in (parent_marker, child_marker, grand_marker):
-            if os.path.exists(path):
-                os.unlink(path)
-
-        parent_script = (
-            "import subprocess, sys, time\n"
-            f"child_marker = {child_marker!r}\n"
-            f"grand_marker = {grand_marker!r}\n"
-            f"parent_marker = {parent_marker!r}\n"
-            "grand = subprocess.Popen([sys.executable, '-c', "
-            "'import time; time.sleep(30); open(\\'' + grand_marker + '\\',\\'w\\').write(\\'g\\')'])\n"
-            "subprocess.Popen([sys.executable, '-c', "
-            "'import time; time.sleep(30); open(\\'' + child_marker + '\\',\\'w\\').write(\\'c\\')'])\n"
-            "time.sleep(30)\n"
-            "open(parent_marker, 'w').write('p')\n"
-        )
+        harness = build_parent_child_grandchild_harness()
         proc_holder: list[subprocess.Popen] = []
 
         def route(*_a, **_k):
-            proc = run_subprocess([sys.executable, "-c", parent_script])
+            proc = run_subprocess([sys.executable, harness.script_path], env=harness.env)
             proc_holder.append(proc)
             time.sleep(0.25)
             require_execution_allowed()
             return {"plan_id": "x", "status": WorkPlanStatus.COMPLETED}
 
-        run = _run_timeout_scenario(route, wait_after=1.5)
-        assert run.status == AutomationRunStatus.FAILED
-        assert proc_holder
-        proc = proc_holder[0]
-        assert proc.poll() is not None
-        if proc.pid:
-            assert not process_tree_alive(proc.pid)
-        time.sleep(1.5)
-        assert not os.path.exists(parent_marker)
-        assert not os.path.exists(child_marker)
-        assert not os.path.exists(grand_marker)
+        try:
+            run = _run_timeout_scenario(route, wait_after=1.5)
+            assert run.status == AutomationRunStatus.FAILED
+            assert proc_holder
+            proc = proc_holder[0]
+            assert proc.poll() is not None
+            if proc.pid:
+                assert not process_tree_alive(proc.pid)
+            time.sleep(1.5)
+            assert not os.path.exists(harness.parent_marker)
+            assert not os.path.exists(harness.child_marker)
+            assert harness.grand_marker and not os.path.exists(harness.grand_marker)
+        finally:
+            harness.cleanup_script()
+            harness.cleanup_markers()
 
 
 def test_adversarial_stale_thread_cannot_confirm_db_effect():
@@ -539,40 +529,30 @@ def test_fence_token_invalidates_atomically():
 def test_adversarial_process_tree_parent_child_no_late_effects():
     """Process tree — padre+hijo terminados, cero efecto tardío (repetido)."""
     for _ in range(3):
-        parent_marker = tempfile.mktemp(suffix=".parent.marker")
-        child_marker = tempfile.mktemp(suffix=".child.marker")
-        for path in (parent_marker, child_marker):
-            if os.path.exists(path):
-                os.unlink(path)
-
-        parent_script = (
-            "import subprocess, sys, time\n"
-            f"child_marker = {child_marker!r}\n"
-            f"parent_marker = {parent_marker!r}\n"
-            "subprocess.Popen([sys.executable, '-c', "
-            "'import time; time.sleep(30); open(\\'' + child_marker + '\\',\\'w\\').write(\\'c\\')'])\n"
-            "time.sleep(30)\n"
-            "open(parent_marker, 'w').write('p')\n"
-        )
+        harness = build_parent_child_harness()
         proc_holder: list[subprocess.Popen] = []
 
         def route(*_a, **_k):
-            proc = run_subprocess([sys.executable, "-c", parent_script])
+            proc = run_subprocess([sys.executable, harness.script_path], env=harness.env)
             proc_holder.append(proc)
             time.sleep(0.25)
             require_execution_allowed()
             return {"plan_id": "x", "status": WorkPlanStatus.COMPLETED}
 
-        run = _run_timeout_scenario(route, wait_after=1.5)
-        assert run.status == AutomationRunStatus.FAILED
-        assert proc_holder
-        proc = proc_holder[0]
-        assert proc.poll() is not None
-        if proc.pid:
-            assert not process_tree_alive(proc.pid)
-        time.sleep(1.5)
-        assert not os.path.exists(parent_marker)
-        assert not os.path.exists(child_marker)
+        try:
+            run = _run_timeout_scenario(route, wait_after=1.5)
+            assert run.status == AutomationRunStatus.FAILED
+            assert proc_holder
+            proc = proc_holder[0]
+            assert proc.poll() is not None
+            if proc.pid:
+                assert not process_tree_alive(proc.pid)
+            time.sleep(1.5)
+            assert not os.path.exists(harness.parent_marker)
+            assert not os.path.exists(harness.child_marker)
+        finally:
+            harness.cleanup_script()
+            harness.cleanup_markers()
 
 
 def test_adversarial_commit_outside_gate_detected():
@@ -730,23 +710,20 @@ def test_lock_order_commit_blocked_after_db_invalidation():
 
 def test_subprocess_tree_terminate_unit():
     """Unitario — terminate_process_tree mata padre e hijo."""
-    child_marker = tempfile.mktemp(suffix=".child.unit")
-    if os.path.exists(child_marker):
-        os.unlink(child_marker)
-    parent_script = (
-        "import subprocess, sys, time\n"
-        f"marker = {child_marker!r}\n"
-        "subprocess.Popen([sys.executable, '-c', "
-        "'import time; time.sleep(20); open(\\'' + marker + '\\',\\'w\\').write(\\'x\\')'])\n"
-        "time.sleep(20)\n"
-    )
+    harness = build_parent_child_harness("unit")
     proc = subprocess.Popen(
-        [sys.executable, "-c", parent_script],
+        [sys.executable, harness.script_path],
+        env=harness.env,
         start_new_session=os.name != "nt",
         creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
     )
-    time.sleep(0.3)
-    terminate_process_tree(proc)
-    assert proc.poll() is not None
-    time.sleep(1.0)
-    assert not os.path.exists(child_marker)
+    try:
+        time.sleep(0.3)
+        terminate_process_tree(proc)
+        assert proc.poll() is not None
+        time.sleep(1.0)
+        assert not os.path.exists(harness.parent_marker)
+        assert not os.path.exists(harness.child_marker)
+    finally:
+        harness.cleanup_script()
+        harness.cleanup_markers()

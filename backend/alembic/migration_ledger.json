@@ -1,0 +1,26 @@
+{
+  "baseline_head": "972a1b2c3d4e",
+  "protected_revisions": [
+    "4355c73adcb8",
+    "5b2eb2437398",
+    "820a1",
+    "820a2",
+    "930a1",
+    "940a1b2c3d4e",
+    "960a1b2c3d4e",
+    "970a1b2c3d4e",
+    "971a1b2c3d4e",
+    "972a1b2c3d4e",
+    "a810f1c2d3e4",
+    "a840c4d5e6f7",
+    "a850c4d5e6f8",
+    "b810c2f3e4d5",
+    "b840c3e4f5a6",
+    "c950a1b2c3d4"
+  ],
+  "upgrade_from_baseline": {
+    "enabled": false,
+    "baseline_revision": null,
+    "note": "Baseline N-1 pendiente de certificación explícita; mecanismo listo en scripts/migration_control.py"
+  }
+}
