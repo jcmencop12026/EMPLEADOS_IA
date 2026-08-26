@@ -4,7 +4,7 @@
 **Estado:** **LISTO PARA REAUDITORÍA** (NO MERGE)
 **Base main:** `96ad42b`
 **Rama:** `cursor/main-cert-migrations-control-001`
-**HEAD final:** `ab5a427`
+**HEAD final:** `b6a2e0f`
 
 ---
 
