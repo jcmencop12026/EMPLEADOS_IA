@@ -1,10 +1,10 @@
 # CURSOR — MAIN-CERT-001 + MIGRATIONS-CONTROL-001
 
-**Fecha:** 2026-08-26  
-**Estado:** **LISTO PARA REAUDITORÍA** (NO MERGE)  
-**Base main:** `96ad42b`  
-**Rama:** `cursor/main-cert-migrations-control-001`  
-**HEAD final:** `9bce435`
+**Fecha:** 2026-08-26
+**Estado:** **LISTO PARA REAUDITORÍA** (NO MERGE)
+**Base main:** `96ad42b`
+**Rama:** `cursor/main-cert-migrations-control-001`
+**HEAD final:** `ab5a427`
 
 ---
 
