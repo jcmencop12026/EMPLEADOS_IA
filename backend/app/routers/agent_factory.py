@@ -38,7 +38,7 @@ def list_employees(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    check_permission(user, "employee.view")
+    check_permission(user, "employee.view", db)
     return agent_factory.list_employees(
         db, user.organization_id, status=lifecycle_status, specialty=specialty, capability=capability,
     )
@@ -46,7 +46,7 @@ def list_employees(
 
 @router.get("/employees/{employee_id}")
 def get_employee(employee_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "employee.view")
+    check_permission(user, "employee.view", db)
     detail = agent_factory.get_employee_detail(db, user.organization_id, employee_id)
     if not detail:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empleado no encontrado")
@@ -59,7 +59,7 @@ def create_employee(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    check_permission(user, "employee.create")
+    check_permission(user, "employee.create", db)
     return agent_factory.create_employee(
         db, user.organization_id, user.id,
         name=body.name, specialty=body.specialty, role=body.role,
@@ -74,7 +74,7 @@ def update_employee(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    check_permission(user, "employee.edit")
+    check_permission(user, "employee.edit", db)
     result = agent_factory.update_employee(
         db, user.organization_id, user.id, employee_id, body.model_dump(exclude_unset=True),
     )
@@ -85,7 +85,7 @@ def update_employee(
 
 @router.post("/employees/{employee_id}/test")
 def test_employee(employee_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "employee.test")
+    check_permission(user, "employee.test", db)
     result = agent_factory.run_employee_tests(db, user.organization_id, user.id, employee_id)
     if result.get("error"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
@@ -94,7 +94,7 @@ def test_employee(employee_id: str, db: Session = Depends(get_db), user: User = 
 
 @router.post("/employees/{employee_id}/certify")
 def certify_employee(employee_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "employee.certify")
+    check_permission(user, "employee.certify", db)
     result = agent_factory.certify_employee(db, user.organization_id, user.id, employee_id)
     if result.get("error"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
@@ -103,7 +103,7 @@ def certify_employee(employee_id: str, db: Session = Depends(get_db), user: User
 
 @router.post("/employees/{employee_id}/publish")
 def publish_employee(employee_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "employee.publish")
+    check_permission(user, "employee.publish", db)
     result = agent_factory.publish_employee(db, user.organization_id, user.id, employee_id)
     if result.get("error"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
@@ -112,7 +112,7 @@ def publish_employee(employee_id: str, db: Session = Depends(get_db), user: User
 
 @router.post("/employees/{employee_id}/activate")
 def activate_employee(employee_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "employee.activate")
+    check_permission(user, "employee.activate", db)
     result = agent_factory.activate_employee(db, user.organization_id, user.id, employee_id)
     if result.get("error"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
@@ -121,7 +121,7 @@ def activate_employee(employee_id: str, db: Session = Depends(get_db), user: Use
 
 @router.post("/employees/{employee_id}/pause")
 def pause_employee(employee_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "employee.admin")
+    check_permission(user, "employee.admin", db)
     result = agent_factory.pause_employee(db, user.organization_id, user.id, employee_id)
     if result.get("error"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
@@ -130,7 +130,7 @@ def pause_employee(employee_id: str, db: Session = Depends(get_db), user: User =
 
 @router.get("/employees/{employee_id}/metrics")
 def employee_metrics(employee_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "employee.view")
+    check_permission(user, "employee.view", db)
     result = agent_factory.get_employee_metrics(db, user.organization_id, employee_id)
     if result.get("error"):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result["error"])
@@ -139,17 +139,17 @@ def employee_metrics(employee_id: str, db: Session = Depends(get_db), user: User
 
 @router.get("/templates", response_model=list[TemplateOut])
 def list_templates(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "employee.view")
+    check_permission(user, "employee.view", db)
     return agent_factory.list_templates(db)
 
 
 @router.get("/capabilities")
 def list_capabilities(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "employee.view")
+    check_permission(user, "employee.view", db)
     return agent_factory.list_capabilities(db, user.organization_id)
 
 
 @router.get("/tools")
 def list_tools(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "employee.view")
+    check_permission(user, "employee.view", db)
     return agent_factory.list_tools(db, user.organization_id)

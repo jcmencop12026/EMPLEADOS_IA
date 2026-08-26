@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -6,8 +8,8 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.events.bus import EventMessage, publish
 from app.models import Organization, User
-from app.schemas import LoginRequest, TokenResponse, UserMe
 from app.permissions import user_permissions
+from app.schemas import LoginRequest, TokenResponse, UserMe
 from app.security import create_access_token, verify_password
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -29,7 +31,11 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
             )
             db.commit()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales incorrectas")
+    if not user.is_active or user.status != "ACTIVE":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario inactivo o bloqueado")
     token = create_access_token(user.id, {"role": user.role, "org": user.organization_id})
+    user.last_login_at = datetime.now(timezone.utc)
+    db.commit()
     write_audit(
         db,
         action="auth.login",
@@ -50,5 +56,8 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         role=user.role,
         organization_id=user.organization_id,
         organization_name=org.name if org else "",
-        permissions=sorted(user_permissions(user)),
+        email=user.email,
+        full_name=user.full_name,
+        status=user.status,
+        permissions=sorted(user_permissions(user, db)),
     )

@@ -8,6 +8,7 @@ from app.database import Base, SessionLocal, engine
 from app import automation_models  # noqa: F401
 from app import orchestration_models, notifications  # noqa: F401 — registra tablas/suscriptores
 from app.routers import (
+    admin,
     agent_factory,
     assistant,
     audit,
@@ -53,6 +54,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(organization.router)
+app.include_router(admin.router)
 app.include_router(audit.router)
 app.include_router(assistant.router)
 app.include_router(agent_factory.router)

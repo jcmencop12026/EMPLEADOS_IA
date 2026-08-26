@@ -99,7 +99,7 @@ def approval_decide(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    check_permission(user, "operations.approve")
+    check_permission(user, "operations.approve", db)
     result = decide_approval(
         db,
         approval_id=approval_id,

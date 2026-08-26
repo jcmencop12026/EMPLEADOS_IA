@@ -51,7 +51,6 @@ function userMessage(status: number, detail: string): string {
   return detail || "No se pudo completar la solicitud.";
 }
 
-
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   if (!headers.has("Content-Type") && options.body) {
@@ -100,13 +99,58 @@ export type UserMe = {
   role: string;
   organization_id: string;
   organization_name: string;
+  email?: string | null;
+  full_name?: string | null;
+  status?: string;
   permissions: string[];
 };
 
 export type Organization = {
   id: string;
   name: string;
+  status?: string;
+  timezone?: string;
   created_at: string;
+  updated_at?: string | null;
+};
+
+export type AdminUser = {
+  id: string;
+  username: string;
+  email: string | null;
+  full_name: string | null;
+  role: string;
+  status: string;
+  is_active: boolean;
+  organization_id: string;
+  last_login_at: string | null;
+  created_at: string;
+  updated_at: string | null;
+};
+
+export type AdminRole = {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  is_system: boolean;
+  is_active: boolean;
+  organization_id: string | null;
+};
+
+export type OrgConfig = {
+  language: string;
+  timezone: string;
+  date_format: string;
+  time_format: string;
+};
+
+export type SecuritySummary = {
+  users_active: number;
+  users_inactive: number;
+  users_blocked: number;
+  roles_total: number;
+  recent_events: Array<{ action: string; detail: string | null; created_at: string }>;
 };
 
 export type AuditLog = {
@@ -296,7 +340,6 @@ export async function transitionNotification(id: string, action: "read" | "ackno
   return api<NotificationItem>(`/api/notifications/${id}/${action}`, { method: "POST" });
 }
 
-
 export type EmployeeTemplate = { code: string; name: string; description?: string; specialty: string };
 export type CapabilityItem = { id: string; code: string; name: string; risk_level: string };
 export type ToolItem = { id: string; code: string; name: string; executor_type: string; risk_level: string };
@@ -439,4 +482,79 @@ export async function runAutomationNow(id: string): Promise<AutomationRunItem> {
 
 export async function fetchAutomationRuns(automationId: string): Promise<AutomationRunItem[]> {
   return api<AutomationRunItem[]>(`/api/automations/${automationId}/runs`);
+}
+
+export async function fetchAdminUsers(q?: string, status?: string): Promise<AdminUser[]> {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (status) params.set("status", status);
+  const qs = params.toString();
+  return api<AdminUser[]>(`/api/admin/users${qs ? `?${qs}` : ""}`);
+}
+
+export async function createAdminUser(data: Record<string, unknown>): Promise<AdminUser> {
+  return api<AdminUser>("/api/admin/users", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateAdminUser(id: string, data: Record<string, unknown>): Promise<AdminUser> {
+  return api<AdminUser>(`/api/admin/users/${id}`, { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function setAdminUserStatus(id: string, status: string): Promise<AdminUser> {
+  return api<AdminUser>(`/api/admin/users/${id}/status`, { method: "POST", body: JSON.stringify({ status }) });
+}
+
+export async function resetAdminUserPassword(id: string): Promise<{ temporary_password: string }> {
+  return api(`/api/admin/users/${id}/reset-password`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchAdminRoles(): Promise<AdminRole[]> {
+  return api<AdminRole[]>("/api/admin/roles");
+}
+
+export async function fetchPermissionMatrix(): Promise<{
+  permissions: Array<{ code: string; module: string; description: string | null }>;
+  roles: AdminRole[];
+  matrix: Record<string, Record<string, boolean>>;
+}> {
+  return api("/api/admin/roles/permission-matrix");
+}
+
+export async function createAdminRole(data: {
+  code: string;
+  name: string;
+  description?: string | null;
+}): Promise<AdminRole> {
+  return api<AdminRole>("/api/admin/roles", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateRolePermissions(roleId: string, permissionCodes: string[]): Promise<AdminRole> {
+  return api<AdminRole>(`/api/admin/roles/${roleId}/permissions`, {
+    method: "PUT",
+    body: JSON.stringify({ permission_codes: permissionCodes }),
+  });
+}
+
+export async function fetchAdminOrganization(): Promise<Organization> {
+  return api<Organization>("/api/admin/organization");
+}
+
+export async function updateAdminOrganization(data: Record<string, unknown>): Promise<Organization> {
+  return api<Organization>("/api/admin/organization", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function fetchOrgConfig(): Promise<OrgConfig> {
+  return api<OrgConfig>("/api/admin/config");
+}
+
+export async function updateOrgConfig(data: Partial<OrgConfig>): Promise<OrgConfig> {
+  return api<OrgConfig>("/api/admin/config", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function fetchSecuritySummary(): Promise<SecuritySummary> {
+  return api<SecuritySummary>("/api/admin/security");
+}
+
+export async function fetchMe(): Promise<UserMe> {
+  return api<UserMe>("/api/auth/me");
 }

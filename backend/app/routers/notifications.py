@@ -23,9 +23,9 @@ ALLOWED_TRANSITIONS = {
 }
 
 
-def _visible(query, user: User):
+def _visible(query, user: User, db: Session):
     query = query.filter(Notification.organization_id == user.organization_id)
-    if "notification.manage" not in user_permissions(user):
+    if "notification.manage" not in user_permissions(user, db):
         query = query.filter(
             or_(Notification.recipient_user_id.is_(None), Notification.recipient_user_id == user.id),
             or_(Notification.recipient_role.is_(None), Notification.recipient_role == user.role),
@@ -47,7 +47,7 @@ def _notification_out(row: Notification) -> dict:
 
 
 def _get_notification(notification_id: str, db: Session, user: User) -> Notification:
-    row = _visible(db.query(Notification).filter(Notification.id == notification_id), user).first()
+    row = _visible(db.query(Notification).filter(Notification.id == notification_id), user, db).first()
     if not row:
         raise HTTPException(status_code=404, detail="Notificación no encontrada")
     return row
@@ -61,8 +61,8 @@ def list_notifications(
     search: str | None = None, sort: str = "desc", limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db), user: User = Depends(get_current_user),
 ):
-    check_permission(user, "notification.view")
-    query = _visible(db.query(Notification), user)
+    check_permission(user, "notification.view", db)
+    query = _visible(db.query(Notification), user, db)
     if status_filter: query = query.filter(Notification.status == status_filter.upper())
     if severity: query = query.filter(Notification.severity == severity.upper())
     if type_filter: query = query.filter(Notification.type == type_filter.upper())
@@ -78,22 +78,24 @@ def list_notifications(
 
 @notifications_router.get("/unread-count")
 def unread_count(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "notification.view")
-    count = _visible(db.query(Notification).filter(Notification.status == "NEW"), user).count()
+    check_permission(user, "notification.view", db)
+    count = _visible(db.query(Notification).filter(Notification.status == "NEW"), user, db).count()
     return {"count": count}
 
 
 @notifications_router.get("/{notification_id}")
 def get_notification(notification_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "notification.view")
+    check_permission(user, "notification.view", db)
     return _notification_out(_get_notification(notification_id, db, user))
 
 
 def _transition(notification_id: str, target: str, db: Session, user: User):
     permission = "notification.acknowledge" if target == "ACKNOWLEDGED" else "notification.view"
     if target == "READ": permission = "notification.view"
-    check_permission(user, permission)
-    row = _get_notification(notification_id, db, user)
+    check_permission(user, permission, db)
+    row = _visible(db.query(Notification).filter(Notification.id == notification_id), user, db).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Notificación no encontrada")
     if target not in ALLOWED_TRANSITIONS.get(row.status, set()):
         raise HTTPException(status_code=409, detail=f"Transición inválida: {row.status} -> {target}")
     now = datetime.now(timezone.utc)
@@ -150,13 +152,13 @@ def _get_rule(rule_id: str, db: Session, user: User) -> AlertRule:
 
 @rules_router.get("")
 def list_rules(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "alert_rule.view")
+    check_permission(user, "alert_rule.view", db)
     return [_rule_out(row) for row in db.query(AlertRule).filter(AlertRule.organization_id == user.organization_id).order_by(AlertRule.name).all()]
 
 
 @rules_router.post("", status_code=status.HTTP_201_CREATED)
 def create_rule(body: AlertRuleIn, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "alert_rule.manage")
+    check_permission(user, "alert_rule.manage", db)
     _validate_recipient_user(db, user.organization_id, body.recipient_user_id)
     row = AlertRule(organization_id=user.organization_id, created_by=user.id, name=body.name,
                     event_type=body.event_type.upper(), condition_json=json.dumps(body.condition) if body.condition else None,
@@ -169,7 +171,7 @@ def create_rule(body: AlertRuleIn, db: Session = Depends(get_db), user: User = D
 
 @rules_router.put("/{rule_id}")
 def update_rule(rule_id: str, body: AlertRuleIn, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "alert_rule.manage")
+    check_permission(user, "alert_rule.manage", db)
     row = _get_rule(rule_id, db, user)
     _validate_recipient_user(db, user.organization_id, body.recipient_user_id)
     for key in ("name", "severity", "recipient_user_id", "recipient_role", "channel", "enabled"):
@@ -180,7 +182,7 @@ def update_rule(rule_id: str, body: AlertRuleIn, db: Session = Depends(get_db), 
 
 
 def _toggle(rule_id: str, enabled: bool, db: Session, user: User):
-    check_permission(user, "alert_rule.manage")
+    check_permission(user, "alert_rule.manage", db)
     row = _get_rule(rule_id, db, user); row.enabled = enabled; db.commit()
     write_audit(db, action=f"alert_rule.{'enabled' if enabled else 'disabled'}",
                 organization_id=user.organization_id, user_id=user.id, detail=row.id)

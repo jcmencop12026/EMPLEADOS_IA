@@ -41,7 +41,13 @@ const MENU: NavSection[] = [
   {
     id: "admin",
     label: "Administración",
-    items: [{ to: "/organizacion", label: "Organización" }],
+    items: [
+      { to: "/administracion/usuarios", label: "Usuarios" },
+      { to: "/administracion/roles", label: "Roles y permisos" },
+      { to: "/administracion/organizacion", label: "Organización" },
+      { to: "/administracion/configuracion", label: "Configuración" },
+      { to: "/administracion/seguridad", label: "Seguridad" },
+    ],
   },
 ];
 
@@ -109,8 +115,14 @@ export function AppShell() {
                   <span className="nav-label">{item.label}</span>
                 </span>
               ) : (
-                <NavLink key={item.to} to={item.to} end={item.end} title={item.label}>
-                  <span className="nav-icon">●</span>
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  title={item.label}
+                  className={section.id === "admin" ? "nav-sub" : undefined}
+                >
+                  <span className="nav-icon">{section.id === "admin" ? "○" : "●"}</span>
                   <span className="nav-label">{item.label}</span>
                 </NavLink>
               ),
