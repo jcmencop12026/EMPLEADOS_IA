@@ -70,7 +70,6 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   }
 
   if (!res.ok) {
-    const text = await res.text();
     const detail = parseDetail(text);
     const message = userMessage(res.status, detail);
     console.error("[api]", res.status, path, detail);
@@ -557,4 +556,147 @@ export async function fetchSecuritySummary(): Promise<SecuritySummary> {
 
 export async function fetchMe(): Promise<UserMe> {
   return api<UserMe>("/api/auth/me");
+}
+
+export type CatalogItem = {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  status: string;
+  risk_level: string;
+  category?: string;
+  tool_type?: string;
+  source_type?: string;
+  requires_approval?: boolean;
+};
+
+export type AssignmentLists<T> = { assigned: T[]; available: T[] };
+
+export async function fetchCapabilitiesCatalog(search?: string): Promise<CatalogItem[]> {
+  const q = search ? `?search=${encodeURIComponent(search)}` : "";
+  return api<CatalogItem[]>(`/api/capabilities${q}`);
+}
+
+export async function createCapability(data: Record<string, unknown>): Promise<CatalogItem> {
+  return api("/api/capabilities", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateCapability(id: string, data: Record<string, unknown>): Promise<CatalogItem> {
+  return api(`/api/capabilities/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function setCapabilityStatus(id: string, active: boolean): Promise<CatalogItem> {
+  return api(`/api/capabilities/${id}/${active ? "activate" : "deactivate"}`, { method: "POST" });
+}
+
+export async function fetchToolsCatalog(search?: string): Promise<CatalogItem[]> {
+  const q = search ? `?search=${encodeURIComponent(search)}` : "";
+  return api<CatalogItem[]>(`/api/tools${q}`);
+}
+
+export async function createTool(data: Record<string, unknown>): Promise<CatalogItem> {
+  return api("/api/tools", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateTool(id: string, data: Record<string, unknown>): Promise<CatalogItem> {
+  return api(`/api/tools/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function setToolStatus(id: string, active: boolean): Promise<CatalogItem> {
+  return api(`/api/tools/${id}/${active ? "activate" : "deactivate"}`, { method: "POST" });
+}
+
+export async function fetchKnowledgeCatalog(search?: string): Promise<CatalogItem[]> {
+  const q = search ? `?search=${encodeURIComponent(search)}` : "";
+  return api<CatalogItem[]>(`/api/knowledge${q}`);
+}
+
+export async function createKnowledgeSource(data: Record<string, unknown>): Promise<CatalogItem> {
+  return api("/api/knowledge", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateKnowledgeSource(id: string, data: Record<string, unknown>): Promise<CatalogItem> {
+  return api(`/api/knowledge/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function setKnowledgeStatus(id: string, active: boolean): Promise<CatalogItem> {
+  return api(`/api/knowledge/${id}/${active ? "activate" : "deactivate"}`, { method: "POST" });
+}
+
+export async function ingestKnowledge(id: string, content: string, contentType?: string): Promise<Record<string, unknown>> {
+  return api(`/api/knowledge/${id}/ingest`, {
+    method: "POST",
+    body: JSON.stringify({ content, content_type: contentType }),
+  });
+}
+
+export async function fetchEmployeeCapabilities(employeeId: string): Promise<AssignmentLists<CatalogItem>> {
+  return api(`/api/capabilities/employees/${employeeId}/assignments`);
+}
+
+export async function assignEmployeeCapability(employeeId: string, capabilityId: string): Promise<AssignmentLists<CatalogItem>> {
+  return api(`/api/capabilities/employees/${employeeId}/assign/${capabilityId}`, { method: "POST" });
+}
+
+export async function removeEmployeeCapability(employeeId: string, capabilityId: string): Promise<AssignmentLists<CatalogItem>> {
+  return api(`/api/capabilities/employees/${employeeId}/assign/${capabilityId}`, { method: "DELETE" });
+}
+
+export async function fetchEmployeeTools(employeeId: string): Promise<AssignmentLists<CatalogItem & { permission?: string }>> {
+  return api(`/api/tools/employees/${employeeId}/assignments`);
+}
+
+export async function assignEmployeeTool(employeeId: string, toolId: string, permission = "ALLOW"): Promise<AssignmentLists<CatalogItem>> {
+  return api(`/api/tools/employees/${employeeId}/assign`, {
+    method: "POST",
+    body: JSON.stringify({ tool_id: toolId, permission }),
+  });
+}
+
+export async function removeEmployeeTool(employeeId: string, toolId: string): Promise<AssignmentLists<CatalogItem>> {
+  return api(`/api/tools/employees/${employeeId}/assign/${toolId}`, { method: "DELETE" });
+}
+
+export async function fetchEmployeeKnowledge(employeeId: string): Promise<AssignmentLists<CatalogItem>> {
+  return api(`/api/knowledge/employees/${employeeId}/assignments`);
+}
+
+export async function assignEmployeeKnowledge(employeeId: string, sourceId: string): Promise<AssignmentLists<CatalogItem>> {
+  return api(`/api/knowledge/employees/${employeeId}/assign/${sourceId}`, { method: "POST" });
+}
+
+export async function removeEmployeeKnowledge(employeeId: string, sourceId: string): Promise<AssignmentLists<CatalogItem>> {
+  return api(`/api/knowledge/employees/${employeeId}/assign/${sourceId}`, { method: "DELETE" });
+}
+
+export type TestLabRun = {
+  id: string;
+  employee_id: string;
+  employee_name?: string;
+  task_description: string;
+  status: string;
+  capability_code?: string;
+  tool_code?: string;
+  knowledge_source_ids?: string[];
+  work_plan_id?: string;
+  execution_id?: string;
+  result?: Record<string, unknown>;
+  error_message?: string;
+  duration_ms?: number;
+  cost?: number;
+  cost_label?: string;
+  tokens_in?: number;
+  tokens_out?: number;
+  approval_id?: string;
+  created_at?: string;
+  completed_at?: string;
+};
+
+export async function fetchTestLabRuns(): Promise<TestLabRun[]> {
+  return api<TestLabRun[]>("/api/test-lab/runs");
+}
+
+export async function runTestLab(data: Record<string, unknown>): Promise<TestLabRun> {
+  return api<TestLabRun>("/api/test-lab/run", { method: "POST", body: JSON.stringify(data) });
 }

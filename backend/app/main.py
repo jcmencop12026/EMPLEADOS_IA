@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.database import Base, SessionLocal, engine
@@ -14,13 +15,18 @@ from app.routers import (
     audit,
     auth,
     automations,
+    capabilities,
+    knowledge,
     notifications as notification_routes,
     operations,
     organization,
+    test_lab,
+    tools,
 )
 from app.seed import bootstrap
-from app.services.automation_scheduler import start_scheduler, stop_scheduler
 from app.services.automation_events import register_automation_event_handlers
+from app.services.automation_scheduler import start_scheduler, stop_scheduler
+from app.services.authorization import AuthorizationError
 
 
 @asynccontextmanager
@@ -43,6 +49,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+@app.exception_handler(AuthorizationError)
+async def authorization_error_handler(_request, exc: AuthorizationError):
+    return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+
 origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
@@ -58,6 +70,10 @@ app.include_router(admin.router)
 app.include_router(audit.router)
 app.include_router(assistant.router)
 app.include_router(agent_factory.router)
+app.include_router(capabilities.router)
+app.include_router(tools.router)
+app.include_router(knowledge.router)
+app.include_router(test_lab.router)
 app.include_router(operations.router)
 app.include_router(automations.router)
 app.include_router(automations.runs_router)

@@ -28,6 +28,10 @@ const MENU: NavSection[] = [
     items: [
       { to: "/directorio", label: "Directorio" },
       { to: "/empleados/nuevo", label: "Crear empleado" },
+      { to: "/capacidades", label: "Capacidades" },
+      { to: "/herramientas", label: "Herramientas" },
+      { to: "/conocimiento", label: "Conocimiento" },
+      { to: "/test-lab", label: "Test Lab" },
     ],
   },
   {

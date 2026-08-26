@@ -78,6 +78,26 @@ AUDIT_PERMISSIONS = {
     "audit.view",
 }
 
+CAPABILITY_PERMISSIONS = {
+    "capability.view",
+    "capability.manage",
+}
+
+TOOL_PERMISSIONS = {
+    "tool.view",
+    "tool.manage",
+}
+
+KNOWLEDGE_PERMISSIONS = {
+    "knowledge.view",
+    "knowledge.manage",
+}
+
+TEST_LAB_PERMISSIONS = {
+    "test_lab.view",
+    "test_lab.run",
+}
+
 ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "employee.view": ("Empleados IA", "Ver directorio de empleados"),
     "employee.create": ("Empleados IA", "Crear empleados"),
@@ -119,6 +139,14 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "admin.config.view": ("Administración", "Ver configuración"),
     "admin.config.edit": ("Administración", "Editar configuración"),
     "admin.security.view": ("Administración", "Ver panel de seguridad"),
+    "capability.view": ("Capacidades", "Ver catálogo de capacidades"),
+    "capability.manage": ("Capacidades", "Gestionar capacidades"),
+    "tool.view": ("Herramientas", "Ver catálogo de herramientas"),
+    "tool.manage": ("Herramientas", "Gestionar herramientas"),
+    "knowledge.view": ("Conocimiento", "Ver fuentes de conocimiento"),
+    "knowledge.manage": ("Conocimiento", "Gestionar fuentes de conocimiento"),
+    "test_lab.view": ("Test Lab", "Ver ejecuciones de Test Lab"),
+    "test_lab.run": ("Test Lab", "Ejecutar pruebas en Test Lab"),
 }
 
 SYSTEM_ROLE_CODES = {"admin", "operator", "viewer"}
@@ -134,6 +162,10 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | OPERATIONS_PERMISSIONS
         | AUTOMATION_PERMISSIONS
         | AUDIT_PERMISSIONS
+        | CAPABILITY_PERMISSIONS
+        | TOOL_PERMISSIONS
+        | KNOWLEDGE_PERMISSIONS
+        | TEST_LAB_PERMISSIONS
     ),
     "operator": {
         "employee.view",
@@ -156,6 +188,11 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "audit.view",
         "admin.organization.view",
         "admin.config.view",
+        "capability.view",
+        "tool.view",
+        "knowledge.view",
+        "test_lab.view",
+        "test_lab.run",
     },
     "viewer": {
         "employee.view",
@@ -165,6 +202,10 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "automation.view_runs",
         "audit.view",
         "admin.organization.view",
+        "capability.view",
+        "tool.view",
+        "knowledge.view",
+        "test_lab.view",
     },
 }
 
