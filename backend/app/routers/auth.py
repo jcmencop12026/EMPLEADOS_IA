@@ -1,10 +1,14 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.audit import write_audit
 from app.database import get_db
 from app.deps import get_current_user
+from app.events.bus import EventMessage, publish
 from app.models import Organization, User
+from app.permissions import user_permissions
 from app.schemas import LoginRequest, TokenResponse, UserMe
 from app.security import create_access_token, verify_password
 
@@ -15,8 +19,23 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 def login(body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == body.username).first()
     if not user or not verify_password(body.password, user.password_hash):
+        if user:
+            publish(
+                EventMessage(
+                    event_type="TENANT_SECURITY_EVENT",
+                    organization_id=user.organization_id,
+                    user_id=user.id,
+                    payload={"kind": "invalid_login", "username": body.username},
+                ),
+                db,
+            )
+            db.commit()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales incorrectas")
+    if not user.is_active or user.status != "ACTIVE":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario inactivo o bloqueado")
     token = create_access_token(user.id, {"role": user.role, "org": user.organization_id})
+    user.last_login_at = datetime.now(timezone.utc)
+    db.commit()
     write_audit(
         db,
         action="auth.login",
@@ -24,6 +43,7 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
         user_id=user.id,
         detail=user.username,
     )
+    db.commit()
     return TokenResponse(access_token=token)
 
 
@@ -36,4 +56,8 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         role=user.role,
         organization_id=user.organization_id,
         organization_name=org.name if org else "",
+        email=user.email,
+        full_name=user.full_name,
+        status=user.status,
+        permissions=sorted(user_permissions(user, db)),
     )

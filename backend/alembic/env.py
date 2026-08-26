@@ -7,7 +7,9 @@ from sqlalchemy import engine_from_config, pool
 from app.config import settings
 from app.database import Base
 from app import models  # noqa: F401
+from app import knowledge_models  # noqa: F401
 from app import orchestration_models  # noqa: F401
+from app import finops_models  # noqa: F401
 
 config = context.config
 db_url = os.environ.get("DATABASE_URL") or config.get_main_option("sqlalchemy.url") or settings.database_url

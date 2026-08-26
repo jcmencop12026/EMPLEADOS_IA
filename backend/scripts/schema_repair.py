@@ -12,13 +12,15 @@ from typing import Any
 
 from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text, create_engine, inspect, text
 from sqlalchemy.engine import Engine
-from sqlalchemy.types import TypeEngine
+from sqlalchemy.types import Numeric, TypeEngine
 
 from app.database import Base
+from app import automation_models  # noqa: F401
 from app import models  # noqa: F401
 from app import orchestration_models  # noqa: F401
+from app import finops_models  # noqa: F401
 
-HEAD_REVISION = "5b2eb2437398"
+HEAD_REVISION = "c950a1b2c3d4"
 REV_801 = "4355c73adcb8"
 
 # Columnas legacy conocidas que no existen en el modelo actual y rompen INSERT ORM.
@@ -33,6 +35,7 @@ _TYPE_MAP: dict[type[TypeEngine], str] = {
     Boolean: "INTEGER",
     Integer: "INTEGER",
     Float: "REAL",
+    Numeric: "NUMERIC",
     DateTime: "TEXT",
 }
 
@@ -109,6 +112,9 @@ def _types_compatible(expected: str, actual: str) -> bool:
         return True
     if expected == "TEXT" and actual in {"VARCHAR", "CHAR", "CLOB"}:
         return True
+    numeric_types = {"REAL", "NUMERIC", "DECIMAL"}
+    if expected in numeric_types and actual in numeric_types:
+        return True
     return False
 
 
@@ -120,7 +126,7 @@ def _normalize_sqlite_type(declared: str) -> str:
         return "TEXT"
     if "BLOB" in upper:
         return "BLOB"
-    if "REAL" in upper or "FLOA" in upper or "DOUB" in upper:
+    if "REAL" in upper or "FLOA" in upper or "DOUB" in upper or "NUM" in upper or "DEC" in upper:
         return "REAL"
     if "DATE" in upper or "TIME" in upper:
         return "DATETIME"

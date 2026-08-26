@@ -1,7 +1,7 @@
 # CURSOR — QA-INFRA-001 Certificación automática V1
 
 **Fecha:** 2026-08-25
-**Estado:** QA-INFRA-001 PASS EN GITHUB
+**Estado:** QA-INFRA-001 LISTO PARA VALIDACIÓN EN GITHUB
 **No declarado PASS en GitHub Actions remoto — NO MERGE**
 
 ---
@@ -11,63 +11,73 @@
 | Campo | Valor |
 |-------|-------|
 | Código | QA-INFRA-001 |
-| PR | #12 |
 | Rama | `cursor/qa-infra-001-12b6` |
-| HEAD anterior (auditado) | `d0a119823178a5b918248f23cc429a20a0dcf955` |
-| HEAD nuevo | `52f5e92030b22c2eee8843b510d805355d209be2` |
+| Base | `main` (`b887a2e`) |
+| HEAD inicial | `b887a2e77c646a5b0c82d47837dfaaaed9c491ce` |
+| HEAD final | `d0a119823178a5b918248f23cc429a20a0dcf955` |
 
 ---
 
-## CORRECCIÓN FOCAL (post-auditoría GitHub)
+## ARCHIVOS CREADOS / MODIFICADOS
 
-### 1. Backend y PostgreSQL — FAIL
-
-| Campo | Detalle |
-|-------|---------|
-| Migración | `5b2eb2437398_agent_factory_802.py` |
-| SQL problemático | `UPDATE ai_employees SET shadow_mode = 0 WHERE shadow_mode IS NULL` |
-| Excepción | `psycopg2.errors.DatatypeMismatch: column "shadow_mode" is of type boolean but expression is of type integer` |
-| Causa | PostgreSQL no acepta literal entero `0` en columna `BOOLEAN`; SQLite sí lo tolera |
-| Corrección | `op.get_bind().execute(sa.text(...), {"shadow_mode": False})` con bindparam tipado |
-
-### 2. Validación Git — FAIL
-
-| Archivo | Líneas | Causa |
-|---------|--------|-------|
-| `INTERCAMBIO/SALIDA/CURSOR_QA_INFRA_001.md` | 3-4 | Trailing whitespace (`  ` al final de línea markdown) |
-
-Eliminado sin desactivar `git diff --check`.
-
-### 3. Búsqueda de patrones equivalentes
-
-Revisadas todas las migraciones en `upgrade head`:
-
-- Único patrón `boolean = 0` encontrado: `shadow_mode` en `5b2eb2437398`
-- `version = 1` es entero → compatible con PostgreSQL
-
-### 4. Nuevo bloqueo tras shadow_mode (downgrade PostgreSQL)
-
-| Campo | Detalle |
-|-------|---------|
-| Paso CI | `alembic downgrade 4355c73adcb8` |
-| Migración | `5b2eb2437398_agent_factory_802.py` (downgrade) |
-| SQL/op | `op.drop_constraint(None, 'ai_employees', type_='foreignkey')` |
-| Excepción | `CompileError: Can't emit DROP CONSTRAINT ... it has no name` |
-| Causa | PostgreSQL exige nombre explícito; upgrade crea `fk_ai_employees_owner` y `fk_ai_employees_created_by` |
-| Corrección | `drop_constraint` con nombres explícitos en downgrade |
-
-**Nota:** `upgrade head` ya PASS en GitHub tras corrección `shadow_mode`.
+| Archivo | Cambio |
+|---------|--------|
+| `.github/workflows/qa.yml` | Workflow Certificación QA |
+| `.python-version` | Python 3.12 (versión del proyecto) |
+| `pytest.ini` | Marcadores focales para CI |
+| `tests/conftest.py` | Respeta `DATABASE_URL` externo (PostgreSQL CI) |
+| `tests/test_*.py` | Marcadores `auth`, `tenant`, `operations`, `migrations`, `windows` |
+| `DOCS/QA_INFRA_001.md` | Documentación en español |
 
 ---
 
-| Campo | Valor |
-|-------|-------|
-| Archivo migración | `backend/alembic/versions/5b2eb2437398_agent_factory_802.py` |
-| Archivo informe | `INTERCAMBIO/SALIDA/CURSOR_QA_INFRA_001.md` |
+## JOBS DEL WORKFLOW
+
+| Job (español) | Runner | Controles |
+|---------------|--------|-----------|
+| Backend y PostgreSQL | `ubuntu-latest` | pip, pytest, Alembic, PostgreSQL 16 efímero |
+| Frontend | `ubuntu-latest` | npm ci, build, audit |
+| Validación Git | `ubuntu-latest` | git diff --check |
+| Pruebas Windows | `windows-latest` | pytest test_db_startup_805e.py |
+
+**Triggers:** `pull_request`, `workflow_dispatch` (con parámetro `grupo_focal`).
+
+**Sin:** despliegues, `continue-on-error` en controles obligatorios, dashboard QA.
 
 ---
 
-## RESULTADOS LOCALES (post-corrección)
+## POSTGRESQL
+
+- Service container `postgres:16` en job Linux
+- `DATABASE_URL=postgresql+psycopg2://empleados_test:empleados_test@localhost:5432/empleados_ia_test`
+- Credenciales solo de testing; sin secretos reales
+- Paso explícito de conexión (`SELECT 1`)
+
+**PostgreSQL local en agente:** no disponible para certificación local completa.
+
+---
+
+## MIGRACIONES (CI)
+
+Secuencia en job Backend:
+
+1. `alembic upgrade head`
+2. `alembic downgrade 4355c73adcb8` (revisión base)
+3. `alembic upgrade head`
+
+Head actual en main: `5b2eb2437398`. Sin múltiples heads detectados.
+
+---
+
+## MARCADORES PYTEST
+
+`auth`, `tenant`, `knowledge`, `notifications`, `automations`, `migrations`, `operations`, `windows`
+
+Ejemplo CI manual: `grupo_focal: operations` o `grupo_focal: tests/test_orchestrator_e2e.py`
+
+---
+
+## RESULTADOS LOCALES
 
 | Comando | Resultado |
 |---------|-----------|
@@ -75,23 +85,32 @@ Revisadas todas las migraciones en `upgrade head`:
 | `npm run build` | PASS |
 | `npm audit` | 0 vulnerabilities |
 | `git diff --check` | PASS |
-| PostgreSQL real local | **NO DISPONIBLE** en este entorno |
+| Sintaxis `qa.yml` | PASS (YAML válido) |
+| GitHub Actions remoto | **NO EJECUTADO** — validar al abrir PR |
 
 ---
 
-## GITHUB ACTIONS (run 32802558368)
+## LIMITACIONES
 
-| Job | Resultado |
-|-----|-----------|
-| Backend y PostgreSQL | **PASS** (50s) |
-| Frontend | **PASS** (16s) |
-| Validación Git | **PASS** (5s) |
-| Pruebas Windows | **PASS** (54s) |
+1. No se afirma PASS remoto de GitHub sin ejecución allí.
+2. Tests `automations` / scheduler de PR #6 no existen en `main`; marcador preparado.
+3. Job Windows ejecuta tests SQLite existentes; listo para `-m windows` cuando se integren tests de automatizaciones.
+4. PostgreSQL real certificado en CI solo tras primera ejecución en GitHub.
+
+---
+
+## QUÉ SE VALIDARÁ AUTOMÁTICAMENTE AL ABRIR PR
+
+- Tests backend completos contra PostgreSQL efímero
+- Migraciones Alembic upgrade/downgrade/upgrade
+- Build frontend y auditoría npm
+- Espacios en blanco conflictivos en diff
+- Tests Windows de arranque SQLite
 
 ---
 
 ## ESTADO FINAL
 
-**QA-INFRA-001 PASS EN GITHUB**
+**QA-INFRA-001 LISTO PARA VALIDACIÓN EN GITHUB**
 
 No merge.

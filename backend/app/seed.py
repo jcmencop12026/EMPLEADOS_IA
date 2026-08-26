@@ -5,6 +5,8 @@ from app.config import settings
 from app.models import Organization, User
 from app.security import hash_password
 from app.seed_orchestration import bootstrap_orchestration
+from app.seed_permissions import bootstrap_permissions
+from app.seed_salud import bootstrap_salud
 
 
 def bootstrap(db: Session) -> None:
@@ -35,3 +37,5 @@ def bootstrap(db: Session) -> None:
         db.commit()
 
     bootstrap_orchestration(db, org.id)
+    bootstrap_permissions(db)
+    bootstrap_salud(db, org.id)

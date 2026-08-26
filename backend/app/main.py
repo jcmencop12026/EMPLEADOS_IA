@@ -2,12 +2,36 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.database import Base, SessionLocal, engine
-from app import orchestration_models  # noqa: F401 — registra tablas
-from app.routers import agent_factory, assistant, audit, auth, operations, organization
+from app import automation_models  # noqa: F401
+from app import finops_models  # noqa: F401
+from app import knowledge_models  # noqa: F401 — registra tablas
+from app import orchestration_models, notifications  # noqa: F401 — registra tablas/suscriptores
+from app import salud_models  # noqa: F401 — registra tablas IPS
+from app.routers import (
+    admin,
+    agent_factory,
+    assistant,
+    audit,
+    auth,
+    automations,
+    capabilities,
+    finops,
+    knowledge,
+    notifications as notification_routes,
+    operations,
+    organization,
+    salud,
+    test_lab,
+    tools,
+)
 from app.seed import bootstrap
+from app.services.automation_events import register_automation_event_handlers
+from app.services.automation_scheduler import start_scheduler, stop_scheduler
+from app.services.authorization import AuthorizationError
 
 
 @asynccontextmanager
@@ -18,7 +42,10 @@ async def lifespan(_app: FastAPI):
         bootstrap(db)
     finally:
         db.close()
+    register_automation_event_handlers()
+    start_scheduler()
     yield
+    stop_scheduler()
 
 
 app = FastAPI(
@@ -26,6 +53,12 @@ app = FastAPI(
     version=settings.app_version,
     lifespan=lifespan,
 )
+
+
+@app.exception_handler(AuthorizationError)
+async def authorization_error_handler(_request, exc: AuthorizationError):
+    return JSONResponse(status_code=400, content={"detail": str(exc)})
+
 
 origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 app.add_middleware(
@@ -38,10 +71,21 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(organization.router)
+app.include_router(admin.router)
 app.include_router(audit.router)
 app.include_router(assistant.router)
 app.include_router(agent_factory.router)
+app.include_router(capabilities.router)
+app.include_router(tools.router)
+app.include_router(knowledge.router)
+app.include_router(test_lab.router)
 app.include_router(operations.router)
+app.include_router(automations.router)
+app.include_router(automations.runs_router)
+app.include_router(notification_routes.notifications_router)
+app.include_router(notification_routes.rules_router)
+app.include_router(finops.router)
+app.include_router(salud.router)
 
 
 @app.get("/health")

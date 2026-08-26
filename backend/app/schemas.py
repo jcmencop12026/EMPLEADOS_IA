@@ -19,6 +19,10 @@ class UserMe(BaseModel):
     role: str
     organization_id: str
     organization_name: str
+    email: str | None = None
+    full_name: str | None = None
+    status: str = "ACTIVE"
+    permissions: list[str] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 
@@ -26,7 +30,10 @@ class UserMe(BaseModel):
 class OrganizationOut(BaseModel):
     id: str
     name: str
+    status: str = "ACTIVE"
+    timezone: str = "America/Bogota"
     created_at: datetime
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 

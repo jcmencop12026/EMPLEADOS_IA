@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import type { PlanResult } from "../api";
-import { submitWorkRequest } from "../api";
+import { ApiError, type PlanResult, submitWorkRequest } from "../api";
+import { label, EXECUTION_STATUS } from "../lib/labels";
 
 const SAMPLE_RIPS = {
   usuarios: [
@@ -39,7 +39,7 @@ export function OperationsCenterPage() {
       const res = await submitWorkRequest(query, context ?? { tool: mode, rips: SAMPLE_RIPS });
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al ejecutar");
+      setError(e instanceof ApiError ? e.message : "Error al ejecutar la solicitud.");
     } finally {
       setLoading(false);
     }
@@ -111,7 +111,9 @@ export function OperationsCenterPage() {
         <section className="panel result-panel">
           <div className="result-header">
             <h2>Resultado</h2>
-            <span className={`badge status-${result.status}`}>{result.status}</span>
+            <span className={`badge status-${result.status}`} title={result.status}>
+              {label(EXECUTION_STATUS, result.status)}
+            </span>
           </div>
           <p>{result.summary || result.objective}</p>
           {result.confidence != null && (

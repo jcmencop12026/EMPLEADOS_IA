@@ -204,4 +204,63 @@ def _upgrade_existing(db: Session, organization_id: str) -> None:
             db.add(EmployeeToolGrant(employee_id=emp.id, tool_id=tool.id, permission=perm))
 
     _seed_templates(db, organization_id)
+    _ensure_baseline_employees(db, organization_id)
     db.commit()
+
+
+def _ensure_baseline_employees(db: Session, organization_id: str) -> None:
+    """Garantiza empleados núcleo DOCINT/RIPS si fueron eliminados por tests previos."""
+    if db.query(AIEmployee).filter(
+        AIEmployee.organization_id == organization_id,
+        AIEmployee.code == "docint-analyst",
+    ).first():
+        return
+
+    cap_docint = db.query(Capability).filter(
+        Capability.organization_id == organization_id, Capability.code == "docint"
+    ).first()
+    cap_rips = db.query(Capability).filter(
+        Capability.organization_id == organization_id, Capability.code == "rips"
+    ).first()
+    tool_docint = (
+        db.query(Tool).filter(Tool.organization_id == organization_id, Tool.code == "docint").first()
+        if cap_docint
+        else None
+    )
+    tool_rips = (
+        db.query(Tool).filter(Tool.organization_id == organization_id, Tool.code == "rips").first()
+        if cap_rips
+        else None
+    )
+    if not cap_docint or not tool_docint:
+        return
+
+    emp_docint = _make_employee(
+        organization_id, "docint-analyst", "Analista Documental IA", "DOCINT",
+        "Analista documental", "Analizar documentos y detectar problemas estructurales",
+        RiskLevel.MEDIUM, "docint-rules-v1",
+    )
+    db.add(emp_docint)
+    db.flush()
+    pairs: list[tuple] = [(emp_docint, cap_docint, tool_docint, ToolPermission.ALLOW)]
+    if cap_rips and tool_rips:
+        emp_rips = _make_employee(
+            organization_id, "rips-auditor", "Auditor RIPS IA", "RIPS Salud IPS",
+            "Auditor RIPS", "Validar archivos RIPS y reportar inconsistencias",
+            RiskLevel.HIGH, "rips-validator-v1",
+        )
+        db.add(emp_rips)
+        db.flush()
+        pairs.append((emp_rips, cap_rips, tool_rips, ToolPermission.REQUIRES_APPROVAL))
+
+    for emp, cap, tool, perm in pairs:
+        db.add(EmployeeCapability(employee_id=emp.id, capability_id=cap.id))
+        db.add(EmployeeToolGrant(employee_id=emp.id, tool_id=tool.id, permission=perm))
+        db.add(EmployeeLimits(employee_id=emp.id))
+        db.add(EmployeeModelPolicy(employee_id=emp.id, preferred_provider="rule-engine", preferred_model=emp.model_name))
+        db.add(EmployeeInstructions(
+            employee_id=emp.id,
+            system_purpose=f"Especialista {emp.specialty}",
+            role_text=emp.role,
+            objective_text=emp.objective,
+        ))

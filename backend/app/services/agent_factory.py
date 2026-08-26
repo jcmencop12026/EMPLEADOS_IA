@@ -6,7 +6,6 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.audit import write_audit
 from app.enums import (
     CertificationResult,
     EmployeeEventType,
@@ -80,8 +79,8 @@ def _employee_config_snapshot(db: Session, employee: AIEmployee) -> dict[str, An
             "maturity": employee.maturity,
             "shadow_mode": employee.shadow_mode,
         },
-        "capabilities": [{"code": c.code, "name": c.name} for c in caps],
-        "tools": [{"code": t.code, "permission": g.permission} for t, g in tools],
+        "capabilities": [{"id": c.id, "code": c.code, "name": c.name} for c in caps],
+        "tools": [{"id": t.id, "code": t.code, "permission": g.permission} for t, g in tools],
         "knowledge": [{"type": k.source_type, "name": k.name} for k in knowledge],
         "model_policy": {
             "provider": policy.preferred_provider if policy else employee.model_provider,
@@ -109,7 +108,7 @@ def _emit(db: Session, org_id: str, user_id: str, event_type: str, employee_id: 
         ),
         db,
     )
-    write_audit(db, action=event_type, organization_id=org_id, user_id=user_id, detail=json.dumps(payload or {})[:2000])
+    db.commit()
 
 
 def list_employees(
@@ -285,23 +284,46 @@ def update_employee(
     if "capability_ids" in payload:
         db.query(EmployeeCapability).filter(EmployeeCapability.employee_id == emp.id).delete()
         for cap_id in payload["capability_ids"]:
-            db.add(EmployeeCapability(employee_id=emp.id, capability_id=cap_id))
+            cap = db.query(Capability).filter(Capability.id == cap_id, Capability.organization_id == org_id).first()
+            if not cap:
+                return {"error": "Capacidad no válida para la organización"}
+            db.add(EmployeeCapability(employee_id=emp.id, capability_id=cap.id, is_active=True))
 
     if "tools" in payload:
         db.query(EmployeeToolGrant).filter(EmployeeToolGrant.employee_id == emp.id).delete()
         for t in payload["tools"]:
-            db.add(EmployeeToolGrant(employee_id=emp.id, tool_id=t["tool_id"], permission=t.get("permission", ToolPermission.ALLOW)))
+            tool = db.query(Tool).filter(Tool.id == t["tool_id"], Tool.organization_id == org_id).first()
+            if not tool:
+                return {"error": "Herramienta no válida para la organización"}
+            db.add(EmployeeToolGrant(employee_id=emp.id, tool_id=tool.id, permission=t.get("permission", ToolPermission.ALLOW)))
 
     if "knowledge" in payload:
         db.query(EmployeeKnowledgeSource).filter(EmployeeKnowledgeSource.employee_id == emp.id).delete()
         for k in payload["knowledge"]:
-            db.add(EmployeeKnowledgeSource(
-                organization_id=org_id,
-                employee_id=emp.id,
-                source_type=k["source_type"],
-                name=k["name"],
-                config_json=json.dumps(k.get("config", {})),
-            ))
+            if k.get("knowledge_source_id"):
+                from app.orchestration_models import KnowledgeSource
+                source = db.query(KnowledgeSource).filter(
+                    KnowledgeSource.id == k["knowledge_source_id"],
+                    KnowledgeSource.organization_id == org_id,
+                ).first()
+                if not source:
+                    return {"error": "Fuente de conocimiento no válida para la organización"}
+                db.add(EmployeeKnowledgeSource(
+                    organization_id=org_id,
+                    employee_id=emp.id,
+                    knowledge_source_id=source.id,
+                    source_type=source.source_type,
+                    name=source.name,
+                    config_json=source.config_json,
+                ))
+            else:
+                db.add(EmployeeKnowledgeSource(
+                    organization_id=org_id,
+                    employee_id=emp.id,
+                    source_type=k["source_type"],
+                    name=k["name"],
+                    config_json=json.dumps(k.get("config", {})),
+                ))
 
     if "model_policy" in payload:
         policy = db.query(EmployeeModelPolicy).filter(EmployeeModelPolicy.employee_id == emp.id).first()
@@ -309,17 +331,24 @@ def update_employee(
             policy = EmployeeModelPolicy(employee_id=emp.id)
             db.add(policy)
         mp = payload["model_policy"]
-        policy.preferred_provider = mp.get("preferred_provider")
-        policy.preferred_model = mp.get("preferred_model")
-        policy.allowed_models_json = json.dumps(mp.get("allowed_models", []))
-        policy.fallback_model = mp.get("fallback_model")
-        policy.max_tokens = mp.get("max_tokens")
-        policy.temperature = mp.get("temperature")
-        policy.timeout_seconds = mp.get("timeout_seconds")
-        policy.budget_daily = mp.get("budget_daily")
-        policy.cost_ceiling = mp.get("cost_ceiling")
-        emp.model_provider = mp.get("preferred_provider")
-        emp.model_name = mp.get("preferred_model")
+        for key in (
+            "preferred_provider",
+            "preferred_model",
+            "fallback_model",
+            "max_tokens",
+            "temperature",
+            "timeout_seconds",
+            "budget_daily",
+            "cost_ceiling",
+        ):
+            if key in mp:
+                setattr(policy, key, mp[key])
+        if "allowed_models" in mp:
+            policy.allowed_models_json = json.dumps(mp["allowed_models"])
+        if "preferred_provider" in mp:
+            emp.model_provider = mp["preferred_provider"]
+        if "preferred_model" in mp:
+            emp.model_name = mp["preferred_model"]
 
     if "limits" in payload:
         limits = db.query(EmployeeLimits).filter(EmployeeLimits.employee_id == emp.id).first()

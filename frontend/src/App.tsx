@@ -1,16 +1,34 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./AppShell";
 import { RequireAuth } from "./RequireAuth";
+import { ApprovalsPage } from "./pages/ApprovalsPage";
+import { AutomationRunsPage } from "./pages/AutomationRunsPage";
+import { AutomationWizardPage } from "./pages/AutomationWizardPage";
+import { AutomationsPage } from "./pages/AutomationsPage";
+import { AdminConfigPage } from "./pages/admin/AdminConfigPage";
+import { AdminOrganizationPage } from "./pages/admin/AdminOrganizationPage";
+import { AdminRolesPage } from "./pages/admin/AdminRolesPage";
+import { AdminSecurityPage } from "./pages/admin/AdminSecurityPage";
+import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { AuditPage } from "./pages/AuditPage";
+import { CapabilitiesPage } from "./pages/CapabilitiesPage";
+import { CostosValorPage } from "./pages/CostosValorPage";
+import { DashboardPage } from "./pages/DashboardPage";
+import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
 import { EmployeeWizardPage } from "./pages/EmployeeWizardPage";
 import { ExecutionDetailPage } from "./pages/ExecutionDetailPage";
 import { ExecutionsPage } from "./pages/ExecutionsPage";
-import { HomePage } from "./pages/HomePage";
+import { KnowledgeDetailPage } from "./pages/KnowledgeDetailPage";
+import { KnowledgePage } from "./pages/KnowledgePage";
 import { LoginPage } from "./pages/LoginPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
+import { OperationDetailPage } from "./pages/OperationDetailPage";
 import { OperationsCenterPage } from "./pages/OperationsCenterPage";
-import { OrganizationPage } from "./pages/OrganizationPage";
+import { OperationsHubPage } from "./pages/OperationsHubPage";
+import { TestLabPage } from "./pages/TestLabPage";
+import { ToolsPage } from "./pages/ToolsPage";
 import { getToken } from "./api";
 
 export default function App() {
@@ -22,18 +40,39 @@ export default function App() {
       />
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route index element={<HomePage />} />
-          <Route path="operaciones" element={<OperationsCenterPage />} />
+          <Route index element={<DashboardPage />} />
+          <Route path="operaciones" element={<OperationsHubPage />} />
+          <Route path="operaciones/solicitud" element={<OperationsCenterPage />} />
+          <Route path="operaciones/:operationId" element={<OperationDetailPage />} />
+          <Route path="salud/diagnostico" element={<DiagnosticoIpsPage />} />
           <Route path="ejecuciones" element={<ExecutionsPage />} />
           <Route path="ejecuciones/:planId" element={<ExecutionDetailPage />} />
+          <Route path="aprobaciones" element={<ApprovalsPage />} />
           <Route path="directorio" element={<DirectoryPage />} />
+          <Route path="automatizaciones" element={<AutomationsPage />} />
+          <Route path="automatizaciones/nueva" element={<AutomationWizardPage />} />
+          <Route path="automatizaciones/:automationId/editar" element={<AutomationWizardPage />} />
+          <Route path="automatizaciones/:automationId/ejecuciones" element={<AutomationRunsPage />} />
+          <Route path="conocimiento" element={<KnowledgePage />} />
+          <Route path="conocimiento/:documentId" element={<KnowledgeDetailPage />} />
           <Route path="empleados/nuevo" element={<EmployeeWizardPage />} />
+          <Route path="empleados/:employeeId/editar" element={<EmployeeWizardPage />} />
           <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />
-          <Route path="organizacion" element={<OrganizationPage />} />
+          <Route path="capacidades" element={<CapabilitiesPage />} />
+          <Route path="herramientas" element={<ToolsPage />} />
+          <Route path="test-lab" element={<TestLabPage />} />
+          <Route path="costos-valor" element={<CostosValorPage />} />
+          <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
+          <Route path="administracion/usuarios" element={<AdminUsersPage />} />
+          <Route path="administracion/roles" element={<AdminRolesPage />} />
+          <Route path="administracion/organizacion" element={<AdminOrganizationPage />} />
+          <Route path="administracion/configuracion" element={<AdminConfigPage />} />
+          <Route path="administracion/seguridad" element={<AdminSecurityPage />} />
           <Route path="auditoria" element={<AuditPage />} />
+          <Route path="notificaciones" element={<NotificationsPage />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }
