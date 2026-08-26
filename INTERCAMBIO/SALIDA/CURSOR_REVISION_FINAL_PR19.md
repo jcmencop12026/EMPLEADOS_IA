@@ -10,7 +10,7 @@
 | Proyecto | EMPLEADOS_IA |
 | Rama | `cursor/preintegracion-consolidada-002` |
 | HEAD inicial (reportado) | `2916bc7` |
-| HEAD final (revisión) | `2916bc7` |
+| HEAD final (revisión) | `fcf52c1` |
 | Base `main` | `1697dd2` |
 | PR | [#19](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/19) (draft) |
 
