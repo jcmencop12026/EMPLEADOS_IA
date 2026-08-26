@@ -1,18 +1,121 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { clearToken } from "./api";
+import { getCachedUser } from "./auth/session";
+import { logout } from "./auth/session";
 
-const NAV = [
-  { to: "/", label: "Inicio", end: true },
-  { to: "/operaciones", label: "Centro Operaciones" },
-  { to: "/ejecuciones", label: "Ejecuciones" },
-  { to: "/directorio", label: "Directorio" },
-  { to: "/organizacion", label: "Organización" },
-  { to: "/auditoria", label: "Auditoría" },
+type NavItem = { to: string; label: string; end?: boolean };
+type NavSection = { id: string; label: string; items: NavItem[]; future?: boolean };
+
+const MENU: NavSection[] = [
+  {
+    id: "inicio",
+    label: "Inicio",
+    items: [{ to: "/", label: "Panel de control", end: true }],
+  },
+  {
+    id: "operaciones",
+    label: "Operaciones",
+    items: [
+      { to: "/operaciones", label: "Centro de operaciones" },
+      { to: "/ejecuciones", label: "Ejecuciones" },
+      { to: "/aprobaciones", label: "Aprobaciones" },
+    ],
+  },
+  {
+    id: "empleados",
+    label: "Empleados IA",
+    items: [
+      { to: "/directorio", label: "Directorio" },
+      { to: "/empleados/nuevo", label: "Crear empleado" },
+    ],
+  },
+  {
+    id: "analisis",
+    label: "Análisis y control",
+    items: [{ to: "/auditoria", label: "Auditoría" }],
+  },
+  {
+    id: "admin",
+    label: "Administración",
+    items: [{ to: "/organizacion", label: "Organización" }],
+  },
 ];
 
+const FUTURE_SECTIONS: NavSection[] = [
+  {
+    id: "futuro",
+    label: "Próximamente",
+    future: true,
+    items: [
+      { to: "#", label: "Automatizaciones (PR #6)" },
+      { to: "#", label: "Notificaciones (PR #7)" },
+    ],
+  },
+];
+
+const COLLAPSE_KEY = "eaios_menu_collapsed";
+const SECTION_KEY = "eaios_menu_sections";
+
+function loadSections(): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem(SECTION_KEY) || "{}") as Record<string, boolean>;
+  } catch {
+    return {};
+  }
+}
+
 export function AppShell() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
+  const [sections, setSections] = useState<Record<string, boolean>>(loadSections);
+  const user = getCachedUser();
+
+  useEffect(() => {
+    localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0");
+  }, [collapsed]);
+
+  useEffect(() => {
+    localStorage.setItem(SECTION_KEY, JSON.stringify(sections));
+  }, [sections]);
+
+  function toggleSection(id: string) {
+    setSections((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }));
+  }
+
+  const isOpen = (id: string) => sections[id] ?? true;
+
+  function renderSection(section: NavSection) {
+    const open = isOpen(section.id);
+    return (
+      <div key={section.id} className={`nav-section ${section.future ? "nav-section-future" : ""}`}>
+        <button
+          type="button"
+          className="nav-section-title"
+          onClick={() => toggleSection(section.id)}
+          title={section.label}
+        >
+          <span className="nav-icon">{open ? "▾" : "▸"}</span>
+          <span className="nav-label">{section.label}</span>
+        </button>
+        {open && (
+          <div className="nav-section-items">
+            {section.items.map((item) =>
+              section.future || item.to === "#" ? (
+                <span key={item.label} className="nav-future" title="Integración pendiente">
+                  <span className="nav-icon">○</span>
+                  <span className="nav-label">{item.label}</span>
+                </span>
+              ) : (
+                <NavLink key={item.to} to={item.to} end={item.end} title={item.label}>
+                  <span className="nav-icon">●</span>
+                  <span className="nav-label">{item.label}</span>
+                </NavLink>
+              ),
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={`layout ${collapsed ? "sidebar-collapsed" : ""}`}>
@@ -28,30 +131,26 @@ export function AppShell() {
             {collapsed ? "»" : "«"}
           </button>
         </div>
-        <nav>
-          {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} title={item.label}>
-              <span className="nav-icon">●</span>
-              <span className="nav-label">{item.label}</span>
-            </NavLink>
-          ))}
+        <nav className="nav-hierarchical">
+          {MENU.map(renderSection)}
+          {FUTURE_SECTIONS.map(renderSection)}
         </nav>
-        <button
-          type="button"
-          className="btn-link"
-          title="Cerrar sesión"
-          onClick={() => {
-            clearToken();
-            window.location.href = "/login";
-          }}
-        >
-          <span className="nav-icon">⎋</span>
-          <span className="nav-label">Cerrar sesión</span>
-        </button>
+        <div className="sidebar-footer">
+          {user && (
+            <div className="sidebar-user" title={`${user.username} · ${user.organization_name}`}>
+              <span className="nav-icon">◉</span>
+              <span className="nav-label">{user.username}</span>
+            </div>
+          )}
+          <button type="button" className="btn-link" title="Cerrar sesión" onClick={logout}>
+            <span className="nav-icon">⎋</span>
+            <span className="nav-label">Cerrar sesión</span>
+          </button>
+        </div>
       </aside>
       <div className="main">
         <header className="topbar">
-          EMPLEADOS_IA · Orquestador E2E · Workspace Salud
+          <span>EMPLEADOS_IA · Orquestador E2E · Workspace Salud</span>
         </header>
         <section className="content">
           <Outlet />

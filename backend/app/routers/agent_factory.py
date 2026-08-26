@@ -76,7 +76,7 @@ def update_employee(
 ):
     check_permission(user, "employee.edit")
     result = agent_factory.update_employee(
-        db, user.organization_id, user.id, employee_id, body.model_dump(exclude_none=True),
+        db, user.organization_id, user.id, employee_id, body.model_dump(exclude_unset=True),
     )
     if result.get("error"):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result["error"])

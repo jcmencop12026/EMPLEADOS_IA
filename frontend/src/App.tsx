@@ -1,13 +1,14 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./AppShell";
 import { RequireAuth } from "./RequireAuth";
+import { ApprovalsPage } from "./pages/ApprovalsPage";
 import { AuditPage } from "./pages/AuditPage";
+import { DashboardPage } from "./pages/DashboardPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
 import { EmployeeWizardPage } from "./pages/EmployeeWizardPage";
 import { ExecutionDetailPage } from "./pages/ExecutionDetailPage";
 import { ExecutionsPage } from "./pages/ExecutionsPage";
-import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { OperationsCenterPage } from "./pages/OperationsCenterPage";
 import { OrganizationPage } from "./pages/OrganizationPage";
@@ -22,18 +23,20 @@ export default function App() {
       />
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route index element={<HomePage />} />
+          <Route index element={<DashboardPage />} />
           <Route path="operaciones" element={<OperationsCenterPage />} />
           <Route path="ejecuciones" element={<ExecutionsPage />} />
           <Route path="ejecuciones/:planId" element={<ExecutionDetailPage />} />
+          <Route path="aprobaciones" element={<ApprovalsPage />} />
           <Route path="directorio" element={<DirectoryPage />} />
           <Route path="empleados/nuevo" element={<EmployeeWizardPage />} />
+          <Route path="empleados/:employeeId/editar" element={<EmployeeWizardPage />} />
           <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />
           <Route path="organizacion" element={<OrganizationPage />} />
           <Route path="auditoria" element={<AuditPage />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }

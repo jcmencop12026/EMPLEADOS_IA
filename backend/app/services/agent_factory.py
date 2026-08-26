@@ -80,8 +80,8 @@ def _employee_config_snapshot(db: Session, employee: AIEmployee) -> dict[str, An
             "maturity": employee.maturity,
             "shadow_mode": employee.shadow_mode,
         },
-        "capabilities": [{"code": c.code, "name": c.name} for c in caps],
-        "tools": [{"code": t.code, "permission": g.permission} for t, g in tools],
+        "capabilities": [{"id": c.id, "code": c.code, "name": c.name} for c in caps],
+        "tools": [{"id": t.id, "code": t.code, "permission": g.permission} for t, g in tools],
         "knowledge": [{"type": k.source_type, "name": k.name} for k in knowledge],
         "model_policy": {
             "provider": policy.preferred_provider if policy else employee.model_provider,
@@ -309,17 +309,24 @@ def update_employee(
             policy = EmployeeModelPolicy(employee_id=emp.id)
             db.add(policy)
         mp = payload["model_policy"]
-        policy.preferred_provider = mp.get("preferred_provider")
-        policy.preferred_model = mp.get("preferred_model")
-        policy.allowed_models_json = json.dumps(mp.get("allowed_models", []))
-        policy.fallback_model = mp.get("fallback_model")
-        policy.max_tokens = mp.get("max_tokens")
-        policy.temperature = mp.get("temperature")
-        policy.timeout_seconds = mp.get("timeout_seconds")
-        policy.budget_daily = mp.get("budget_daily")
-        policy.cost_ceiling = mp.get("cost_ceiling")
-        emp.model_provider = mp.get("preferred_provider")
-        emp.model_name = mp.get("preferred_model")
+        for key in (
+            "preferred_provider",
+            "preferred_model",
+            "fallback_model",
+            "max_tokens",
+            "temperature",
+            "timeout_seconds",
+            "budget_daily",
+            "cost_ceiling",
+        ):
+            if key in mp:
+                setattr(policy, key, mp[key])
+        if "allowed_models" in mp:
+            policy.allowed_models_json = json.dumps(mp["allowed_models"])
+        if "preferred_provider" in mp:
+            emp.model_provider = mp["preferred_provider"]
+        if "preferred_model" in mp:
+            emp.model_name = mp["preferred_model"]
 
     if "limits" in payload:
         limits = db.query(EmployeeLimits).filter(EmployeeLimits.employee_id == emp.id).first()

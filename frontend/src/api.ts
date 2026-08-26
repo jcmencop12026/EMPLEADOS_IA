@@ -1,5 +1,17 @@
 const TOKEN_KEY = "eaios_token";
 
+export class ApiError extends Error {
+  status: number;
+  detail: string;
+
+  constructor(status: number, message: string, detail = message) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -12,10 +24,35 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-export async function api<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
+function parseDetail(text: string): string {
+  try {
+    const data = JSON.parse(text) as { detail?: unknown };
+    const detail = data.detail;
+    if (typeof detail === "string") return detail;
+    if (Array.isArray(detail)) {
+      return detail
+        .map((item) => (typeof item === "object" && item && "msg" in item ? String((item as { msg: string }).msg) : String(item)))
+        .join("; ");
+    }
+    if (detail && typeof detail === "object") return JSON.stringify(detail);
+  } catch {
+    /* texto plano */
+  }
+  return text;
+}
+
+function userMessage(status: number, detail: string): string {
+  if (status === 401) return "Su sesión ha vencido. Inicie sesión nuevamente.";
+  if (status === 403) return "No tiene permisos para realizar esta acción.";
+  if (status === 404) return "El recurso solicitado no fue encontrado.";
+  if (status === 409) return detail || "La operación no puede completarse por un conflicto de estado.";
+  if (status === 422) return detail || "Los datos enviados no son válidos.";
+  if (status >= 500) return "Ocurrió un error al procesar la solicitud.";
+  return detail || "No se pudo completar la solicitud.";
+}
+
+
+export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   if (!headers.has("Content-Type") && options.body) {
     headers.set("Content-Type", "application/json");
@@ -24,10 +61,35 @@ export async function api<T>(
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
-  const res = await fetch(path, { ...options, headers });
+
+  let res: Response;
+  try {
+    res = await fetch(path, { ...options, headers });
+  } catch (err) {
+    console.error("[api] network error", path, err);
+    throw new ApiError(0, "No se pudo conectar con el servidor. Verifique que el backend esté en ejecución.");
+  }
+
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || res.statusText);
+    const detail = parseDetail(text);
+    const message = userMessage(res.status, detail);
+    console.error("[api]", res.status, path, detail);
+    if (res.status === 401) {
+      const isLoginAttempt = path === "/api/auth/login";
+      if (!isLoginAttempt) {
+        clearToken();
+        sessionStorage.removeItem("eaios_user");
+        if (!window.location.pathname.startsWith("/login")) {
+          window.location.href = "/login?expired=1";
+        }
+      }
+    }
+    throw new ApiError(res.status, message, detail);
+  }
+
+  if (res.status === 204) {
+    return undefined as T;
   }
   return res.json() as Promise<T>;
 }
@@ -135,6 +197,17 @@ export type WorkEventItem = {
   created_at: string;
 };
 
+export type DashboardSummary = {
+  employees_total: number;
+  employees_active: number;
+  executions_total: number;
+  executions_running: number;
+  executions_failed: number;
+  approvals_pending: number;
+  recent_events: WorkEventItem[];
+  recent_audit: AuditLog[];
+};
+
 export async function submitWorkRequest(
   message: string,
   context?: Record<string, unknown>,
@@ -174,6 +247,34 @@ export async function decideApproval(
 
 export async function fetchEvents(): Promise<WorkEventItem[]> {
   return api<WorkEventItem[]>("/api/operations/events");
+}
+
+export async function fetchAuditLogs(): Promise<AuditLog[]> {
+  return api<AuditLog[]>("/api/audit/logs");
+}
+
+export async function fetchOrganization(): Promise<Organization> {
+  return api<Organization>("/api/organization");
+}
+
+export async function fetchDashboardSummary(): Promise<DashboardSummary> {
+  const [employees, executions, approvals, events, audit] = await Promise.all([
+    fetchEmployees(),
+    fetchExecutions(),
+    fetchApprovals(),
+    fetchEvents(),
+    fetchAuditLogs(),
+  ]);
+  return {
+    employees_total: employees.length,
+    employees_active: employees.filter((e) => e.lifecycle_status === "ACTIVE").length,
+    executions_total: executions.length,
+    executions_running: executions.filter((e) => e.status === "RUNNING" || e.status === "PLANNING").length,
+    executions_failed: executions.filter((e) => e.status === "FAILED").length,
+    approvals_pending: approvals.length,
+    recent_events: events.slice(0, 8),
+    recent_audit: audit.slice(0, 8),
+  };
 }
 
 export type EmployeeTemplate = { code: string; name: string; description?: string; specialty: string };
