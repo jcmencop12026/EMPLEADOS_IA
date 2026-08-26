@@ -164,11 +164,12 @@ Flujo validado manualmente en VM:
 |---|----------|-----------|
 | 1 | Archivos `.patch` / `.md` de entrada ausentes | Info — adaptación manual |
 | 2 | `test_salud_960.py` importaba `tests.conftest` (corregido) | Bajo — fix aplicado |
-| 3 | `git diff --check` falla por trailing whitespace en informes previos mergeados | Bajo — preexistente |
-| 4 | CI GitHub Actions pendiente de run en rama de integración | Medio — verificar post-push |
+| 3 | `git diff --check` | **Resuelto** en `b3b5e31` |
+| 4 | CI GitHub Actions | **4/4 PASS** run `32918547155` |
+
+**Estado final PR #17:** **APTO PARA MERGE — PENDIENTE DE INTEGRACIÓN** (NO MERGE)
 
 **Pendientes para reauditoría:**
-- Confirmar CI verde en PostgreSQL
 - Revisión de seguridad multi-tenant en entorno staging
 - Validar en Windows (`D:\EMPLEADOS_IA`) con archivos de entrada si se re-suben
 
@@ -177,5 +178,8 @@ Flujo validado manualmente en VM:
 ## 14. Conclusión
 
 Integración controlada **SALUD-960 + OPERACIONES-940** con puente funcional, idempotente y multi-tenant.
-Estado: **SALUD → WORKPLAN LISTO PARA REAUDITORÍA**.
+
+**PR #17: APTO PARA MERGE — PENDIENTE DE INTEGRACIÓN**
+
+Estado técnico: **SALUD → WORKPLAN LISTO PARA REAUDITORÍA**.
 **NO MERGE** hasta aprobación explícita.
