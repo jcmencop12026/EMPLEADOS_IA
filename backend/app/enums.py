@@ -126,3 +126,35 @@ class EmployeeEventType(StrEnum):
     EMPLOYEE_ACTIVATED = "employee.activated"
     EMPLOYEE_PAUSED = "employee.paused"
     EMPLOYEE_VERSION_CHANGED = "employee.version_changed"
+
+
+class AutomationStatus(StrEnum):
+    DRAFT = "DRAFT"
+    ACTIVE = "ACTIVE"
+    PAUSED = "PAUSED"
+    DISABLED = "DISABLED"
+    ERROR = "ERROR"
+
+
+class AutomationTriggerType(StrEnum):
+    SCHEDULE = "SCHEDULE"
+    MANUAL = "MANUAL"
+    INTERNAL_EVENT = "INTERNAL_EVENT"
+
+
+class ScheduleType(StrEnum):
+    ONE_TIME = "ONE_TIME"
+    DAILY = "DAILY"
+    WEEKLY = "WEEKLY"
+    MONTHLY = "MONTHLY"
+    INTERVAL = "INTERVAL"
+
+
+class AutomationRunStatus(StrEnum):
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
+    WAITING_APPROVAL = "WAITING_APPROVAL"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+    SKIPPED = "SKIPPED"

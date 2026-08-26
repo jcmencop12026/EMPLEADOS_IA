@@ -19,6 +19,7 @@ const MENU: NavSection[] = [
       { to: "/operaciones", label: "Centro de operaciones" },
       { to: "/ejecuciones", label: "Ejecuciones" },
       { to: "/aprobaciones", label: "Aprobaciones" },
+      { to: "/automatizaciones", label: "Automatizaciones" },
     ],
   },
   {
@@ -46,10 +47,7 @@ const FUTURE_SECTIONS: NavSection[] = [
     id: "futuro",
     label: "Próximamente",
     future: true,
-    items: [
-      { to: "#", label: "Automatizaciones (PR #6)" },
-      { to: "#", label: "Notificaciones (PR #7)" },
-    ],
+    items: [{ to: "#", label: "Notificaciones (PR #7)" }],
   },
 ];
 

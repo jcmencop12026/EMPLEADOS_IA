@@ -20,8 +20,21 @@ OPERATIONS_PERMISSIONS = {
     "operations.approve",
 }
 
+AUTOMATION_PERMISSIONS = {
+    "automation.view",
+    "automation.create",
+    "automation.edit",
+    "automation.activate",
+    "automation.pause",
+    "automation.run",
+    "automation.delete",
+    "automation.view_runs",
+}
+
+ALL_PERMISSIONS = EMPLOYEE_PERMISSIONS | OPERATIONS_PERMISSIONS | AUTOMATION_PERMISSIONS
+
 ROLE_PERMISSIONS: dict[str, set[str]] = {
-    "admin": EMPLOYEE_PERMISSIONS | OPERATIONS_PERMISSIONS,
+    "admin": ALL_PERMISSIONS,
     "operator": {
         "employee.view",
         "employee.create",
@@ -30,10 +43,19 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "operations.view",
         "operations.execute",
         "operations.approve",
+        "automation.view",
+        "automation.create",
+        "automation.edit",
+        "automation.activate",
+        "automation.pause",
+        "automation.run",
+        "automation.view_runs",
     },
     "viewer": {
         "employee.view",
         "operations.view",
+        "automation.view",
+        "automation.view_runs",
     },
 }
 

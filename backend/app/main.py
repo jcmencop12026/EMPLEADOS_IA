@@ -6,8 +6,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import Base, SessionLocal, engine
 from app import orchestration_models  # noqa: F401 — registra tablas
-from app.routers import agent_factory, assistant, audit, auth, operations, organization
+from app import automation_models  # noqa: F401
+from app.routers import agent_factory, assistant, audit, auth, automations, operations, organization
 from app.seed import bootstrap
+from app.services.automation_scheduler import start_scheduler, stop_scheduler
+from app.services.automation_events import register_automation_event_handlers
 
 
 @asynccontextmanager
@@ -18,7 +21,10 @@ async def lifespan(_app: FastAPI):
         bootstrap(db)
     finally:
         db.close()
+    register_automation_event_handlers()
+    start_scheduler()
     yield
+    stop_scheduler()
 
 
 app = FastAPI(
@@ -42,6 +48,8 @@ app.include_router(audit.router)
 app.include_router(assistant.router)
 app.include_router(agent_factory.router)
 app.include_router(operations.router)
+app.include_router(automations.router)
+app.include_router(automations.runs_router)
 
 
 @app.get("/health")
