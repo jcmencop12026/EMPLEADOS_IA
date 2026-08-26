@@ -44,6 +44,17 @@ def test_coordinator_route_rips(client, token):
 
 
 def test_assistant_ask_docint(client, token):
+    from app.models import User
+    from app.seed_orchestration import bootstrap_orchestration
+
+    db = TestingSessionLocal()
+    try:
+        admin = db.query(User).filter(User.username == "admin").first()
+        bootstrap_orchestration(db, admin.organization_id)
+        db.commit()
+    finally:
+        db.close()
+
     res = client.post(
         "/api/assistant/ask",
         headers=auth_header(token),
@@ -178,6 +189,17 @@ def test_docint_rips_e2e_findings(client, token):
 
 
 def test_unexpected_execution_error_publishes_system_error(client, token, monkeypatch):
+    from app.models import User
+    from app.seed_orchestration import bootstrap_orchestration
+
+    db = TestingSessionLocal()
+    try:
+        admin = db.query(User).filter(User.username == "admin").first()
+        bootstrap_orchestration(db, admin.organization_id)
+        db.commit()
+    finally:
+        db.close()
+
     from app.services import coordinator
     from app.orchestration_models import WorkEvent
 

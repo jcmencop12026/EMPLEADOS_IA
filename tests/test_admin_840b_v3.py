@@ -18,6 +18,8 @@ from app.security import hash_password
 from conftest import TestingSessionLocal
 from tests.test_admin_840 import _create_org_admin, _token
 
+_IS_POSTGRESQL = os.environ.get("DATABASE_URL", "").startswith("postgresql")
+
 
 def _alembic_cfg(db_url: str) -> Config:
     backend = Path(__file__).resolve().parents[1] / "backend"
@@ -164,6 +166,7 @@ def test_migration_canonical_integer_one_stays_active(monkeypatch):
             os.unlink(db_path)
 
 
+@pytest.mark.skipif(_IS_POSTGRESQL, reason="Corrupción SQLite no aplica en PostgreSQL")
 @pytest.mark.parametrize(
     "corrupt_value",
     ["yes", "TRUE", "2", "null", "", "on", "false", 0],

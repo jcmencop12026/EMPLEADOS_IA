@@ -490,6 +490,8 @@ def test_nonexistent_role_denies_no_fallback(client: TestClient):
 
 def test_duplicate_global_role_denies(client: TestClient):
     """Roles globales duplicados → DENY (ambigüedad)."""
+    if os.environ.get("DATABASE_URL", "").startswith("postgresql"):
+        pytest.skip("PostgreSQL impide duplicados globales por uq_roles_global_code")
     db = TestingSessionLocal()
     try:
         org, _, _ = _create_org_admin(db, "Dup Global")
