@@ -14,6 +14,14 @@ EMPLOYEE_PERMISSIONS = {
     "employee.admin",
 }
 
+NOTIFICATION_PERMISSIONS = {
+    "notification.view",
+    "notification.manage",
+    "notification.acknowledge",
+    "alert_rule.view",
+    "alert_rule.manage",
+}
+
 OPERATIONS_PERMISSIONS = {
     "operations.view",
     "operations.execute",
@@ -31,7 +39,12 @@ AUTOMATION_PERMISSIONS = {
     "automation.view_runs",
 }
 
-ALL_PERMISSIONS = EMPLOYEE_PERMISSIONS | OPERATIONS_PERMISSIONS | AUTOMATION_PERMISSIONS
+ALL_PERMISSIONS = (
+    EMPLOYEE_PERMISSIONS
+    | NOTIFICATION_PERMISSIONS
+    | OPERATIONS_PERMISSIONS
+    | AUTOMATION_PERMISSIONS
+)
 
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "admin": ALL_PERMISSIONS,
@@ -40,6 +53,9 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "employee.create",
         "employee.edit",
         "employee.test",
+        "notification.view",
+        "notification.acknowledge",
+        "alert_rule.view",
         "operations.view",
         "operations.execute",
         "operations.approve",
@@ -53,6 +69,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     },
     "viewer": {
         "employee.view",
+        "notification.view",
         "operations.view",
         "automation.view",
         "automation.view_runs",

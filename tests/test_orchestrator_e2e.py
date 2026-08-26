@@ -84,6 +84,10 @@ def test_approval_flow(client, token):
     assert approvals.status_code == 200
     pending = [a for a in approvals.json() if a["work_plan_id"] == plan["plan_id"]]
     assert pending
+    notifications = client.get("/api/notifications", headers=auth_header(token)).json()
+    approval_notice = next(n for n in notifications if n["type"] == "APPROVAL_REQUIRED"
+                           and n["source_id"] == plan["plan_id"])
+    assert approval_notice["metadata"]["approval_id"] == pending[0]["id"]
 
     approved = client.post(
         f"/api/operations/approvals/{pending[0]['id']}/decide",
@@ -92,6 +96,9 @@ def test_approval_flow(client, token):
     )
     assert approved.status_code == 200
     assert approved.json()["status"] == "COMPLETED"
+    events = client.get("/api/operations/events", headers=auth_header(token)).json()
+    decision = [e for e in events if e.get("work_plan_id") == plan["plan_id"] and e["event_type"] == "approval.completed"]
+    assert decision
 
 
 def test_approval_rejected(client, token):
@@ -114,6 +121,16 @@ def test_approval_rejected(client, token):
     )
     assert rejected.status_code == 200
     assert rejected.json()["status"] == "FAILED"
+    db = TestingSessionLocal()
+    try:
+        from app.notifications import normalize_event_type
+        from app.orchestration_models import WorkEvent
+        event = db.query(WorkEvent).filter(WorkEvent.work_plan_id == plan["plan_id"],
+                                           WorkEvent.event_type == "approval.completed").one()
+        import json
+        assert normalize_event_type(event.event_type, json.loads(event.payload_json)) == "APPROVAL_REJECTED"
+    finally:
+        db.close()
 
 
 def test_tenant_isolation(client, token):
@@ -139,6 +156,8 @@ def test_traceability_events(client, token):
     assert events.status_code == 200
     types = {e["event_type"] for e in events.json()}
     assert "work.requested" in types
+    assert "task.started" in types
+    assert types & {"work.completed", "work.failed"}
 
 
 def test_docint_rips_e2e_findings(client, token):
@@ -156,6 +175,26 @@ def test_docint_rips_e2e_findings(client, token):
     events = client.get("/api/operations/events", headers=auth_header(token)).json()
     plan_events = [e for e in events if e.get("work_plan_id") == data["plan_id"]]
     assert len(plan_events) >= 2
+
+
+def test_unexpected_execution_error_publishes_system_error(client, token, monkeypatch):
+    from app.services import coordinator
+    from app.orchestration_models import WorkEvent
+
+    def fail_tool(tool_code, inputs):
+        raise RuntimeError("controlled system failure")
+
+    monkeypatch.setattr(coordinator, "_run_tool", fail_tool)
+    result = client.post("/api/assistant/ask", headers=auth_header(token), json={
+        "message": "system error integration", "context": {"tool": "docint", "documents": []},
+    }).json()
+    assert result["status"] == "FAILED"
+    db = TestingSessionLocal()
+    try:
+        assert db.query(WorkEvent).filter(WorkEvent.work_plan_id == result["plan_id"],
+                                          WorkEvent.event_type == "SYSTEM_ERROR").first()
+    finally:
+        db.close()
 
 
 def test_employees_directory(client, token):

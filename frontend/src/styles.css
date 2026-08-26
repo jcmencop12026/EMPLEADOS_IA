@@ -76,7 +76,26 @@ body {
   padding: 8px 16px;
   font-size: 12px;
   color: #64748b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
+
+.notification-bell { position: relative; text-decoration: none; font-size: 16px; }
+.notification-badge { position: absolute; top: -7px; right: -10px; min-width: 17px; padding: 1px 4px; border-radius: 9px; background: #dc2626; color: white; font-size: 9px; text-align: center; }
+.notification-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.notification-filters input, .notification-filters select { min-height: 30px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px 7px; }
+.notification-grid-wrap { overflow-x: auto; }
+.notification-grid th { width: auto; white-space: nowrap; }
+.notification-grid td { vertical-align: top; }
+.notification-new { background: #f8fbff; }
+.notification-message { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.severity { font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 8px; background: #e2e8f0; }
+.severity-high { color: #9a3412; background: #ffedd5; }
+.severity-critical { color: #991b1b; background: #fee2e2; }
+.severity-low { color: #166534; background: #dcfce7; }
+.notification-actions { white-space: nowrap; }
+.notification-actions button, .notification-actions a { border: 0; background: transparent; color: #2563eb; cursor: pointer; padding: 2px 5px; text-decoration: none; font-weight: 600; }
 
 .content {
   padding: 16px;

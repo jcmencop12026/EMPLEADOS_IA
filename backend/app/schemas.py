@@ -19,6 +19,7 @@ class UserMe(BaseModel):
     role: str
     organization_id: str
     organization_name: str
+    permissions: list[str] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 

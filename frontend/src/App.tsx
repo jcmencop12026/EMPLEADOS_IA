@@ -15,6 +15,7 @@ import { ExecutionsPage } from "./pages/ExecutionsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OperationsCenterPage } from "./pages/OperationsCenterPage";
 import { OrganizationPage } from "./pages/OrganizationPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
 import { getToken } from "./api";
 
 export default function App() {
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />
           <Route path="organizacion" element={<OrganizationPage />} />
           <Route path="auditoria" element={<AuditPage />} />
+          <Route path="notificaciones" element={<NotificationsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />

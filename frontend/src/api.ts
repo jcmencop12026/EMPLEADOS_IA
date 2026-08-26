@@ -100,6 +100,7 @@ export type UserMe = {
   role: string;
   organization_id: string;
   organization_name: string;
+  permissions: string[];
 };
 
 export type Organization = {
@@ -276,6 +277,25 @@ export async function fetchDashboardSummary(): Promise<DashboardSummary> {
     recent_audit: audit.slice(0, 8),
   };
 }
+
+export type NotificationItem = {
+  id: string; type: string; severity: string; title: string; message: string;
+  source_type: string; source_id?: string; recipient_user_id?: string; recipient_role?: string;
+  status: string; channel: string; created_at: string; metadata?: Record<string, unknown>;
+};
+
+export async function fetchNotifications(filters = ""): Promise<NotificationItem[]> {
+  return api<NotificationItem[]>(`/api/notifications${filters ? `?${filters}` : ""}`);
+}
+
+export async function fetchUnreadCount(): Promise<number> {
+  return (await api<{ count: number }>("/api/notifications/unread-count")).count;
+}
+
+export async function transitionNotification(id: string, action: "read" | "acknowledge" | "dismiss") {
+  return api<NotificationItem>(`/api/notifications/${id}/${action}`, { method: "POST" });
+}
+
 
 export type EmployeeTemplate = { code: string; name: string; description?: string; specialty: string };
 export type CapabilityItem = { id: string; code: string; name: string; risk_level: string };

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { getCachedUser } from "./auth/session";
-import { logout } from "./auth/session";
+import { fetchUnreadCount } from "./api";
+import { getCachedUser, logout } from "./auth/session";
 
 type NavItem = { to: string; label: string; end?: boolean };
 type NavSection = { id: string; label: string; items: NavItem[]; future?: boolean };
@@ -33,21 +33,15 @@ const MENU: NavSection[] = [
   {
     id: "analisis",
     label: "Análisis y control",
-    items: [{ to: "/auditoria", label: "Auditoría" }],
+    items: [
+      { to: "/notificaciones", label: "Notificaciones" },
+      { to: "/auditoria", label: "Auditoría" },
+    ],
   },
   {
     id: "admin",
     label: "Administración",
     items: [{ to: "/organizacion", label: "Organización" }],
-  },
-];
-
-const FUTURE_SECTIONS: NavSection[] = [
-  {
-    id: "futuro",
-    label: "Próximamente",
-    future: true,
-    items: [{ to: "#", label: "Notificaciones (PR #7)" }],
   },
 ];
 
@@ -65,6 +59,7 @@ function loadSections(): Record<string, boolean> {
 export function AppShell() {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
   const [sections, setSections] = useState<Record<string, boolean>>(loadSections);
+  const [unread, setUnread] = useState(0);
   const user = getCachedUser();
 
   useEffect(() => {
@@ -74,6 +69,17 @@ export function AppShell() {
   useEffect(() => {
     localStorage.setItem(SECTION_KEY, JSON.stringify(sections));
   }, [sections]);
+
+  useEffect(() => {
+    const refresh = () => fetchUnreadCount().then(setUnread).catch(() => undefined);
+    refresh();
+    const timer = window.setInterval(refresh, 60000);
+    window.addEventListener("notifications-changed", refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("notifications-changed", refresh);
+    };
+  }, []);
 
   function toggleSection(id: string) {
     setSections((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }));
@@ -131,7 +137,6 @@ export function AppShell() {
         </div>
         <nav className="nav-hierarchical">
           {MENU.map(renderSection)}
-          {FUTURE_SECTIONS.map(renderSection)}
         </nav>
         <div className="sidebar-footer">
           {user && (
@@ -149,6 +154,9 @@ export function AppShell() {
       <div className="main">
         <header className="topbar">
           <span>EMPLEADOS_IA · Orquestador E2E · Workspace Salud</span>
+          <NavLink className="notification-bell" to="/notificaciones" title="Centro de notificaciones">
+            🔔{unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}
+          </NavLink>
         </header>
         <section className="content">
           <Outlet />
