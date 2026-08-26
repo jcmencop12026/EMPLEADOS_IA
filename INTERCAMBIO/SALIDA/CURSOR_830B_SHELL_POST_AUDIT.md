@@ -1,8 +1,8 @@
 # CURSOR-830B — Corrección post-auditoría Codex (PR #8)
 
-**Rama:** `cursor/shell-auth-dashboard-830`  
-**PR:** #8 (draft, sin merge)  
-**HEAD ANTERIOR:** `8498adf`  
+**Rama:** `cursor/shell-auth-dashboard-830`
+**PR:** #8 (draft, sin merge)
+**HEAD ANTERIOR:** `8498adf`
 **HEAD NUEVO:** _(post-commit)_
 
 ## Correcciones

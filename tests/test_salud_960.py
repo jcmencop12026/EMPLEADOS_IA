@@ -206,9 +206,10 @@ def test_resultado_posterior(demo_datasets, auth_headers, client):
 
 
 def test_seleccion_especialistas(salud_db):
-    org = salud_db.query(Organization).first()
+    from app.models import User
+    admin = salud_db.query(User).filter(User.username == "admin").first()
     plan = select_specialists(
-        salud_db, org.id,
+        salud_db, admin.organization_id,
         "Analiza la situación financiera y operativa de esta IPS.",
         ["facturacion", "radicacion", "glosas", "cartera"],
     )

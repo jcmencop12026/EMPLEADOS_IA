@@ -247,13 +247,8 @@ def test_sqlite_canonical_active_allows_when_permission_present():
         db.commit()
 
         bind = db.get_bind()
-        with bind.connect() as conn:
-            conn.execute(
-                __import__("sqlalchemy").text("UPDATE roles SET is_active = 1 WHERE id = :id"),
-                {"id": role.id},
-            )
-            conn.commit()
-
+        role.is_active = True
+        db.commit()
         db.expire_all()
         perms = user_permissions(user, db)
         assert "employee.view" in perms

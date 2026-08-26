@@ -124,15 +124,15 @@ def test_capability_requires_approval(client, token):
     emp_id = _create_employee(client, token, "Cap Req Approval")
     _assign_employee(client, token, emp_id, "docint", "docint", "ALLOW")
     db = TestingSessionLocal()
-    org = db.query(Organization).first()
     admin = db.query(User).filter(User.username == "admin").first()
+    org_id = admin.organization_id
     cap = db.query(Capability).filter(Capability.code == "docint").first()
     tool = db.query(Tool).filter(Tool.code == "docint").first()
     cap.requires_approval = True
     tool.requires_approval = False
     db.commit()
     decision, _, _ = evaluate_tool_execution(
-        db, org_id=org.id, employee_id=emp_id, tool_id=tool.id, capability_id=cap.id, user_id=admin.id,
+        db, org_id=org_id, employee_id=emp_id, tool_id=tool.id, capability_id=cap.id, user_id=admin.id,
     )
     cap.requires_approval = False
     db.commit()
@@ -144,12 +144,12 @@ def test_capability_deny_overrides_tool_allow(client, token):
     emp_id = _create_employee(client, token, "Grant Deny")
     _assign_employee(client, token, emp_id, "docint", "docint", "DENY")
     db = TestingSessionLocal()
-    org = db.query(Organization).first()
     admin = db.query(User).filter(User.username == "admin").first()
+    org_id = admin.organization_id
     tool = db.query(Tool).filter(Tool.code == "docint").first()
     cap = db.query(Capability).filter(Capability.code == "docint").first()
     decision, _, _ = evaluate_tool_execution(
-        db, org_id=org.id, employee_id=emp_id, tool_id=tool.id, capability_id=cap.id, user_id=admin.id,
+        db, org_id=org_id, employee_id=emp_id, tool_id=tool.id, capability_id=cap.id, user_id=admin.id,
     )
     db.close()
     assert decision == ExecutionDecision.DENY
@@ -159,15 +159,15 @@ def test_tool_requires_approval_overrides_capability_allow(client, token):
     emp_id = _create_employee(client, token, "Tool Req")
     _assign_employee(client, token, emp_id, "docint", "docint", "ALLOW")
     db = TestingSessionLocal()
-    org = db.query(Organization).first()
     admin = db.query(User).filter(User.username == "admin").first()
+    org_id = admin.organization_id
     tool = db.query(Tool).filter(Tool.code == "docint").first()
     cap = db.query(Capability).filter(Capability.code == "docint").first()
     cap.requires_approval = False
     tool.requires_approval = True
     db.commit()
     decision, _, _ = evaluate_tool_execution(
-        db, org_id=org.id, employee_id=emp_id, tool_id=tool.id, capability_id=cap.id, user_id=admin.id,
+        db, org_id=org_id, employee_id=emp_id, tool_id=tool.id, capability_id=cap.id, user_id=admin.id,
     )
     tool.requires_approval = False
     db.commit()
@@ -179,12 +179,12 @@ def test_arbitrary_permission_does_not_authorize_tool(client, token):
     """Admin API permissions no sustituyen asignación employee/tool."""
     emp_id = _create_employee(client, token, "No Assignment")
     db = TestingSessionLocal()
-    org = db.query(Organization).first()
     admin = db.query(User).filter(User.username == "admin").first()
+    org_id = admin.organization_id
     tool = db.query(Tool).filter(Tool.code == "docint").first()
     cap = db.query(Capability).filter(Capability.code == "docint").first()
     decision, _, _ = evaluate_tool_execution(
-        db, org_id=org.id, employee_id=emp_id, tool_id=tool.id, capability_id=cap.id, user_id=admin.id,
+        db, org_id=org_id, employee_id=emp_id, tool_id=tool.id, capability_id=cap.id, user_id=admin.id,
     )
     db.close()
     assert decision == ExecutionDecision.DENY
@@ -193,12 +193,12 @@ def test_arbitrary_permission_does_not_authorize_tool(client, token):
 def test_no_capability_assignment_deny(client, token):
     emp_id = _create_employee(client, token, "No Cap")
     db = TestingSessionLocal()
-    org = db.query(Organization).first()
     admin = db.query(User).filter(User.username == "admin").first()
+    org_id = admin.organization_id
     tool = db.query(Tool).filter(Tool.code == "docint").first()
     cap = db.query(Capability).filter(Capability.code == "docint").first()
     decision, _, _ = evaluate_tool_execution(
-        db, org_id=org.id, employee_id=emp_id, tool_id=tool.id, capability_id=cap.id, user_id=admin.id,
+        db, org_id=org_id, employee_id=emp_id, tool_id=tool.id, capability_id=cap.id, user_id=admin.id,
     )
     db.close()
     assert decision == ExecutionDecision.DENY
@@ -246,9 +246,11 @@ def test_test_lab_uses_same_policy_as_production(client, token):
 
 
 def test_git_diff_check_clean():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
     result = subprocess.run(
         ["git", "diff", "--check"],
-        cwd="/workspace",
+        cwd=root,
         capture_output=True,
         text=True,
     )

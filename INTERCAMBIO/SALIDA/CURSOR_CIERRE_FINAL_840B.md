@@ -1,7 +1,7 @@
 # CURSOR — Cierre final PR #9 / 840B
 
-**Fecha:** 2026-08-24  
-**Estado:** CORREGIDO Y LISTO PARA QA FINAL  
+**Fecha:** 2026-08-24
+**Estado:** CORREGIDO Y LISTO PARA QA FINAL
 **No declarado apto para merge**
 
 ---
