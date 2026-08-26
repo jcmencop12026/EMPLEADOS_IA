@@ -15,6 +15,7 @@ from app.enums import (
     EmployeeStatus,
     EmployeeTaskStatus,
     ExecutorType,
+    ToolPermission,
     WorkEventType,
     WorkPlanStatus,
 )
@@ -26,6 +27,7 @@ from app.orchestration_models import (
     EmployeeCapability,
     EmployeeKnowledgeSource,
     EmployeeTask,
+    EmployeeToolGrant,
     EmployeeLimits,
     FinOpsRecord,
     KnowledgeSource,
@@ -99,6 +101,13 @@ def _find_employee_for_capability(db: Session, org_id: str, capability_id: str) 
     )
     capability = db.query(Capability).filter(Capability.id == capability_id).first()
     domain = capability.code if capability else "estrategico"
+    tool = (
+        db.query(Tool)
+        .filter(Tool.organization_id == org_id, Tool.capability_id == capability_id, Tool.is_active.is_(True))
+        .first()
+        if capability
+        else None
+    )
 
     candidates: list[tuple[float, AIEmployee]] = []
     for link in links:
@@ -115,6 +124,17 @@ def _find_employee_for_capability(db: Session, org_id: str, capability_id: str) 
             )
             .first()
         )
+        if employee and tool:
+            grant = (
+                db.query(EmployeeToolGrant)
+                .filter(
+                    EmployeeToolGrant.employee_id == employee.id,
+                    EmployeeToolGrant.tool_id == tool.id,
+                )
+                .first()
+            )
+            if not grant or grant.permission == ToolPermission.DENY:
+                continue
         if employee:
             if domain.startswith("ips-") or domain == "rips":
                 score_data = score_employee_for_domain(db, org_id, employee, domain.replace("ips-", ""))
