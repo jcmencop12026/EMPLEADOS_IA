@@ -11,6 +11,7 @@ from app import finops_models  # noqa: F401
 from app import knowledge_models  # noqa: F401 — registra tablas
 from app import orchestration_models, notifications  # noqa: F401 — registra tablas/suscriptores
 from app import salud_models  # noqa: F401 — registra tablas IPS
+from app import experience_models  # noqa: F401 — experiencia transversal core
 from app.routers import (
     admin,
     agent_factory,
@@ -25,6 +26,7 @@ from app.routers import (
     operations,
     organization,
     salud,
+    experience,
     test_lab,
     tools,
 )
@@ -93,6 +95,7 @@ app.include_router(notification_routes.notifications_router)
 app.include_router(notification_routes.rules_router)
 app.include_router(finops.router)
 app.include_router(salud.router)
+app.include_router(experience.router)
 
 
 @app.get("/health")

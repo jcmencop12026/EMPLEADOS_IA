@@ -90,25 +90,38 @@ def run_motor_analitico(
 
 def _specialist_trace(specialists: dict[str, Any]) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
-    for a in specialists.get("asignaciones", []):
-        factors = a.get("factors", {})
-        top_factor = max(factors.items(), key=lambda x: x[1])[0] if factors else "capacidades"
+    lider = specialists.get("lider") or {}
+    if lider:
         items.append({
-            "nombre": a.get("employee_name"),
-            "dominio": a.get("domain"),
-            "score": a.get("score"),
-            "razon_seleccion": f"Mayor puntaje en {a.get('domain')} por {top_factor} ({factors.get(top_factor, 0)})",
-            "factores": factors,
+            "nombre": lider.get("employee_name"),
+            "dominio": specialists.get("dominio_principal") or lider.get("domain"),
+            "rol": "LIDER",
+            "score": lider.get("score"),
+            "razon_seleccion": specialists.get("razon_seleccion_global") or lider.get("razon_seleccion"),
+            "factores": lider.get("factores"),
         })
-    if specialists.get("consolidador"):
-        c = specialists["consolidador"]
+    for member in specialists.get("equipo", []):
+        if member.get("rol") == "LIDER":
+            continue
         items.append({
-            "nombre": c.get("employee_name"),
-            "dominio": "consolidador",
-            "score": c.get("score"),
-            "razon_seleccion": "Consolidador estratégico con mayor puntaje en dominio estratégico",
-            "factores": c.get("factors"),
+            "nombre": member.get("employee_name"),
+            "dominio": member.get("domain"),
+            "rol": member.get("rol"),
+            "score": member.get("score"),
+            "razon_seleccion": member.get("razon_rol") or member.get("razon_seleccion"),
+            "factores": member.get("factores"),
         })
+    if not items:
+        for a in specialists.get("asignaciones", []):
+            factors = a.get("factors") or a.get("factores") or {}
+            top_factor = max(factors.items(), key=lambda x: x[1])[0] if factors else "capacidades"
+            items.append({
+                "nombre": a.get("employee_name"),
+                "dominio": a.get("domain"),
+                "score": a.get("score"),
+                "razon_seleccion": f"Mayor puntaje en {a.get('domain')} por {top_factor}",
+                "factores": factors,
+            })
     return items
 
 
