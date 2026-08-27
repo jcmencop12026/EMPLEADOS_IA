@@ -1,8 +1,8 @@
 # CURSOR — ORQUESTADOR-EXPERIENCIA-1010
 
-**Rama:** `cursor/orquestador-experiencia-1010-12b6`  
-**Base:** `main` @ `4a42c80`  
-**Estado:** **LISTO PARA REAUDITORÍA**  
+**Rama:** `cursor/orquestador-experiencia-1010-12b6`
+**Base:** `main` @ `4a42c80`
+**Estado:** **LISTO PARA REAUDITORÍA**
 **Veredicto:** No merge a `main` ejecutado.
 
 ---
@@ -99,7 +99,7 @@ Detectado desde solicitud (no solo datos disponibles):
 | D | estrategico | Analista Estratégico IPS IA |
 | E | estrategico (datos insuficientes) | Analista Estratégico IPS IA |
 
-**Antes:** Analista de Cartera IA en los 5 casos.  
+**Antes:** Analista de Cartera IA en los 5 casos.
 **Ahora:** 4 líderes distintos; E y D comparten estratégico con justificación diferente.
 
 ---
@@ -136,25 +136,25 @@ Caso D integral → validador con especialidad distinta al líder estratégico.
 
 **Archivo:** `tests/test_orquestador_experiencia_1010.py` — 23 tests:
 
-1. experiencia exitosa  
-2. fracaso  
-3. sin seguimiento  
-4. feedback bueno + resultado malo  
-5. similitud alta  
-6. similitud baja  
-7. candidatos diferente experiencia  
-8. costo diferente  
-9. validador diversidad  
-10. tenant isolation  
-11. experiencia contradictoria  
-12. experiencia antigua  
-13. actualización resultado  
-14. líder por tipo problema (parametrizado A–E)  
-15. anti-líder-prefabricado  
-16. fail-closed  
-17. detect insuficiente  
-18. demo B experiencia  
-19. API selección equipo  
+1. experiencia exitosa
+2. fracaso
+3. sin seguimiento
+4. feedback bueno + resultado malo
+5. similitud alta
+6. similitud baja
+7. candidatos diferente experiencia
+8. costo diferente
+9. validador diversidad
+10. tenant isolation
+11. experiencia contradictoria
+12. experiencia antigua
+13. actualización resultado
+14. líder por tipo problema (parametrizado A–E)
+15. anti-líder-prefabricado
+16. fail-closed
+17. detect insuficiente
+18. demo B experiencia
+19. API selección equipo
 
 ---
 
