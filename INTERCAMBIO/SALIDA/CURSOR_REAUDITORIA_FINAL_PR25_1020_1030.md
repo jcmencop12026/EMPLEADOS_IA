@@ -15,7 +15,7 @@
 |------------|-----|-------|
 | `origin/main` (HEAD) | `f9e0406` | Merge PR #23 (E2E-INTEGRAL-1020) |
 | PR #25 HEAD anterior certificado | `ae746ee` | Pre-rebase sobre main sin #23 |
-| PR #25 HEAD final (post-rebase) | ver commit final tras push | Rebase sobre `f9e0406` |
+| PR #25 HEAD final (post-rebase) | `4ac956f` | Rebase sobre `f9e0406` + reauditoría ciega |
 | Ancestro común `origin/main` ↔ PR #25 | `f9e0406` | Rama directamente sobre main actualizado |
 
 ### Commits exclusivos PR #25 (sobre `origin/main`)
@@ -23,7 +23,7 @@
 1. `90beef9` — feat(1030): inteligencia proactiva y centro de oportunidades
 2. `7ab26c6` — docs(integracion): informes 1020+1030 y fix git check whitespace
 3. `2d79119` — docs: informe entrega final recuperación PR23 + integración 1020/1030
-4. *(commit final reauditoría)* — reauditoría ciega 1030 + fix whitespace + informe final
+4. `4ac956f` — reauditoría ciega 1030 + fix whitespace + informe final
 
 ### Diff vs `origin/main`
 
@@ -269,11 +269,18 @@ Evidencia: `TRAZABILIDAD.json`, `test_32_trazabilidad`
 
 ---
 
-## 23. CI GITHUB (HEAD FINAL)
+## 23. CI GITHUB (HEAD FINAL `4ac956f`)
 
-Pendiente confirmación 4/4 en HEAD post-rebase (no válido HEAD anterior `ae746ee`).
+Run: https://github.com/jcmencop12026/EMPLEADOS_IA/actions/runs/33116393626
 
-Jobs requeridos: Backend/PostgreSQL, Frontend, Windows, Validación Git.
+| Job | Resultado |
+|-----|-----------|
+| Validación Git | **PASS** |
+| Backend y PostgreSQL | **PASS** |
+| Pruebas Windows | **PASS** |
+| Frontend | **PASS** |
+
+**CI 4/4 PASS** sobre HEAD final post-rebase (no válido CI de `ae746ee`).
 
 ---
 
@@ -292,8 +299,7 @@ PR #24 no cerrado automáticamente.
 
 1. **PAQUETE EXTERNO NO DISPONIBLE** — certificación adversarial externa incompleta
 2. Comparación oráculo (`casos_oraculo.csv`, `MATRIZ_EVALUACION_1030.csv`, `PX_CONTROLES.json`) pendiente
-3. CI GitHub HEAD final — pendiente confirmación en push
-4. E2E GUI manual (G-05) no ejecutado en esta reauditoría
+3. E2E GUI manual (G-05) no ejecutado en esta reauditoría
 
 ---
 
@@ -304,7 +310,6 @@ PR #24 no cerrado automáticamente.
 ### Defectos bloqueantes concretos
 
 1. **Certificación externa 1030 incompleta** — `OPORTUNIDADES_PROACTIVAS_1030_CERTIFICACION.zip` no disponible en entorno Cloud Agent; no se puede declarar PASS adversarial externo ni comparar contra oráculo oficial.
-2. **CI GitHub** — pendiente confirmación 4/4 sobre HEAD final post-rebase (no válido certificar con CI de `ae746ee`).
 
 ### Aspectos PASS (no bloqueantes para revisión técnica interna)
 
@@ -314,6 +319,7 @@ PR #24 no cerrado automáticamente.
 - Certificación ciega interna OP-A…F, NS-1/2, PX-1…4: OK
 - Regresión 515 tests + PostgreSQL: OK
 - Migraciones head único `1030a1b2c3d4e`: OK
+- CI GitHub 4/4 HEAD `4ac956f`: OK
 
 **NO MERGE** — pendiente integración humana tras resolver bloqueantes.
 
