@@ -1,10 +1,10 @@
 # REAUDITORÍA EXTERNA — MOTOR-ANALITICO-1000 (CIERRE DEFINITIVO)
 
-**PR:** [#21](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/21)  
-**Rama auditada:** `cursor/motor-analitico-1000`  
-**HEAD mínimo esperado:** `f0b9929` (paquete versionado)  
-**Fecha certificación:** 2026-08-27  
-**Auditor:** Cloud Agent (certificación externa ciega + controles adversariales)  
+**PR:** [#21](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/21)
+**Rama auditada:** `cursor/motor-analitico-1000`
+**HEAD mínimo esperado:** `f0b9929` (paquete versionado)
+**Fecha certificación:** 2026-08-27
+**Auditor:** Cloud Agent (certificación externa ciega + controles adversariales)
 
 ---
 
@@ -64,7 +64,7 @@ Evaluación por equivalencia analítica (no coincidencia textual con oráculo).
 
 **Criterios evaluados por caso (Fase 2):** suficiencia, especialistas, hallazgo, hipótesis, evidencia a favor/en contra, confianza, alternativas, priorización, escenarios, acción recomendada, impacto/FINOPS, información faltante, trazabilidad.
 
-**Evidencia congelada (Fase 1 ciega):**  
+**Evidencia congelada (Fase 1 ciega):**
 `INTERCAMBIO/SALIDA/reauditoria_externa_motor_1000/brutos/CASO_*_antes_oraculo.json`
 
 ---
