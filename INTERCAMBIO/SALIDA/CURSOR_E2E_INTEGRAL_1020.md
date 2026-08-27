@@ -1,9 +1,9 @@
 # CURSOR — E2E-INTEGRAL-1020
 
-**Fecha:** 2026-08-27  
-**Rama:** `cursor/e2e-integral-1020-12b6`  
-**Base:** `main` @ `cc77d83` (PR #22 integrado)  
-**Veredicto:** **E2E-INTEGRAL-1020 — APTO PARA REAUDITORÍA**  
+**Fecha:** 2026-08-27
+**Rama:** `cursor/e2e-integral-1020-12b6`
+**Base:** `main` @ `cc77d83` (PR #22 integrado)
+**Veredicto:** **E2E-INTEGRAL-1020 — APTO PARA REAUDITORÍA**
 **NO MERGE**
 
 ---

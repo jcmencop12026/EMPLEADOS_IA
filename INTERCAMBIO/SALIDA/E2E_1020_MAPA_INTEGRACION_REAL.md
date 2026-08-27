@@ -1,7 +1,7 @@
 # E2E-1020 — Mapa de integración real
 
-**Fecha:** 2026-08-27  
-**Rama:** `cursor/e2e-integral-1020-12b6`  
+**Fecha:** 2026-08-27
+**Rama:** `cursor/e2e-integral-1020-12b6`
 **Base:** `main` @ `cc77d83` (incluye PR #22 ORQUESTADOR-EXPERIENCIA-1010)
 
 ## Leyenda de estados
