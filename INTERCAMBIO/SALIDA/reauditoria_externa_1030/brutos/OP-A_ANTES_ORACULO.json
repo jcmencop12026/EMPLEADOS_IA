@@ -1,0 +1,113 @@
+{
+  "caso": "OP-A",
+  "timestamp": "2026-08-27T20:54:05.445404+00:00",
+  "pipeline": {
+    "signal_id": "f7ae13e8-a97d-44ae-9f7e-42b5ab2f84e9",
+    "opportunity_id": "cb7c3978-8ec2-4a25-96fd-fe0f5347d785",
+    "codigo": "OPP-00001",
+    "estado": "PRIORIZADA",
+    "pertinencia": "POSPONER",
+    "prioridad_score": 0.7506,
+    "siguiente_accion": {
+      "que": "Ejecutar acción de recuperación financiera prioritaria",
+      "por_que": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN",
+      "cuando": "OBSERVAR",
+      "quien": "Equipo IA asignado",
+      "quien_id": null,
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Automatización",
+      "costo_estimado": 0.0,
+      "autorizacion": "PROHIBIDA",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": false
+    },
+    "capacidad": {
+      "empleados_disponibles": 0,
+      "herramientas_activas": 0,
+      "ejecutable": false,
+      "requiere_aprobacion": false,
+      "human_gate": "PROHIBIDA",
+      "limitaciones": [
+        "Sin empleados IA activos"
+      ],
+      "mensaje": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN"
+    },
+    "deduplicated": false
+  },
+  "oportunidad": {
+    "id": "cb7c3978-8ec2-4a25-96fd-fe0f5347d785",
+    "codigo": "OPP-00001",
+    "estado": "PRIORIZADA",
+    "dominio": "financiero",
+    "tipo": "FINANCIERA",
+    "pertinencia": "POSPONER",
+    "momento": "OBSERVAR",
+    "prioridad_score": 0.7506,
+    "prioridad_componentes": {
+      "impacto": 0.25,
+      "urgencia": 0.2,
+      "confianza": 0.105,
+      "riesgo_inverso": 0.04,
+      "esfuerzo_inverso": 0.05,
+      "valor_esperado": 0.0576,
+      "probabilidad": 0.048
+    },
+    "siguiente_accion": {
+      "que": "Ejecutar acción de recuperación financiera prioritaria",
+      "por_que": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN",
+      "cuando": "OBSERVAR",
+      "quien": "Equipo IA asignado",
+      "quien_id": null,
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Automatización",
+      "costo_estimado": 0.0,
+      "autorizacion": "PROHIBIDA",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": false
+    },
+    "valor_potencial": 8000000.0,
+    "valor_materializado": 0.0,
+    "contexto": {
+      "componentes": {
+        "organization_id": "02b54396-24b6-4542-b6cf-f797be426c99",
+        "dominio": "financiero",
+        "indicadores": {
+          "cartera_vencida": 45000000,
+          "dias_mora": 90
+        },
+        "historico": {},
+        "eventos": [],
+        "conocimiento_autorizado": null,
+        "workplans_abiertos": 0,
+        "oportunidades_similares": 0,
+        "payload": {
+          "titulo": "Recuperación financiera urgente",
+          "tipo_oportunidad": "FINANCIERA",
+          "indicadores": {
+            "cartera_vencida": 45000000,
+            "dias_mora": 90
+          },
+          "impacto_estimado": 12000000,
+          "valor_potencial": 8000000,
+          "urgencia": "CRITICA",
+          "riesgo": "ALTO",
+          "esfuerzo": "MEDIO",
+          "source_reference": "op-a-294f81"
+        }
+      },
+      "suficiencia": "PARCIAL",
+      "faltantes": [
+        "histórico"
+      ],
+      "conflicto": false
+    }
+  }
+}

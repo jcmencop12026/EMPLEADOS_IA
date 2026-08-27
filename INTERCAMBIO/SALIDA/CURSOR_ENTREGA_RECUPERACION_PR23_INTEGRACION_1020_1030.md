@@ -1,8 +1,8 @@
 # CURSOR — ENTREGA FINAL
 # RECUPERACIÓN PR23 + INTEGRACIÓN 1020+1030
 
-**Fecha:** 2026-08-27  
-**Proyecto:** EMPLEADOS_IA (`D:\EMPLEADOS_IA`)  
+**Fecha:** 2026-08-27
+**Proyecto:** EMPLEADOS_IA (`D:\EMPLEADOS_IA`)
 **NO MERGE automático a main**
 
 ---
@@ -65,7 +65,7 @@ Checks en cada PR:
 
 ### 4.2 FAIL Backend/PostgreSQL
 
-**Test:** `test_adversarial_race_zero_late_effects_100_iterations`  
+**Test:** `test_adversarial_race_zero_late_effects_100_iterations`
 **Síntoma:** 3/100 efectos tardíos (`race-late`) en CI.
 
 **Causa raíz:** En `invalidate_run_execution()`, el fence en memoria se invalidaba **después** del lock y commit en BD. El worker podía despertar del `sleep(0.15)` antes de `controller.invalidate()`, pasando `require_execution_allowed()` con token aún válido.
