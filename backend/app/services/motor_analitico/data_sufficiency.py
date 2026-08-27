@@ -49,7 +49,12 @@ def assess_data_sufficiency(
             })
 
     avg = sum(scores) / len(scores) if scores else 0.0
-    if not data_profiles or avg < 0.35 or (missing_critical and len(missing_critical) >= 3):
+    cash_question = any(k in text for k in ("caja", "cartera", "recuper", "recaudo", "flujo"))
+    if cash_question and "cartera" not in data_profiles:
+        clasificacion = "INSUFICIENTE"
+    elif len(data_profiles) <= 1 and missing_critical:
+        clasificacion = "INSUFICIENTE"
+    elif not data_profiles or avg < 0.35 or (missing_critical and len(missing_critical) >= 3):
         clasificacion = "INSUFICIENTE"
     elif missing_critical or avg < 0.7:
         clasificacion = "PARCIAL"
@@ -95,12 +100,6 @@ def _required_dimensions(text: str) -> list[str]:
 
 
 def _build_limitations(clasificacion: str, missing: list[dict]) -> list[str]:
-    limits: list[str] = []
-    if clasificacion == "INSUFICIENTE":
-        limits.append("No se debe inferir causalidad con la información disponible.")
-    if missing:
-        limits.append(f"Faltan {len(missing)} dimensiones críticas para la solicitud.")
-    return limits
     limits: list[str] = []
     if clasificacion == "INSUFICIENTE":
         limits.append("No se debe inferir causalidad con la información disponible.")

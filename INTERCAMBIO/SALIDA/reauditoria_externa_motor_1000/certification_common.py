@@ -15,6 +15,7 @@ SALIDA = Path(__file__).resolve().parent
 ZIP_NAME = "MOTOR_ANALITICO_1000_DATASET_CERTIFICACION.zip"
 CASES = ("CASO_A", "CASO_B", "CASO_C", "CASO_D", "CASO_E")
 DOC_DIR_NAMES = ("documentos", "conocimiento", "docs", "autorizados", "documentacion")
+EXCLUDE_JSON = frozenset({"resultado_esperado.json", "documentos.json", "MANIFIESTO.json"})
 
 
 def find_package_root() -> Path:
@@ -51,6 +52,11 @@ def load_json_file(path: Path) -> list[dict[str, Any]]:
     return [data]
 
 
+def _read_csv(path: Path) -> list[dict[str, Any]]:
+    with path.open(encoding="utf-8-sig") as fh:
+        return list(csv.DictReader(fh))
+
+
 def load_operational_datasets(case_dir: Path) -> dict[str, list[dict[str, Any]]]:
     datasets: dict[str, list[dict[str, Any]]] = {}
     datos = case_dir / "datos"
@@ -61,11 +67,13 @@ def load_operational_datasets(case_dir: Path) -> dict[str, list[dict[str, Any]]]
             if f.suffix.lower() == ".json":
                 datasets[f.stem] = load_json_file(f)
             elif f.suffix.lower() == ".csv":
-                with f.open(encoding="utf-8") as fh:
-                    datasets[f.stem] = list(csv.DictReader(fh))
+                datasets[f.stem] = _read_csv(f)
+    for f in sorted(case_dir.glob("*.csv")):
+        datasets[f.stem] = _read_csv(f)
     for f in case_dir.glob("*.json"):
-        if f.name != "resultado_esperado.json":
-            datasets[f.stem] = load_json_file(f)
+        if f.name in EXCLUDE_JSON:
+            continue
+        datasets[f.stem] = load_json_file(f)
     return datasets
 
 
@@ -95,22 +103,19 @@ def load_case_documents(db, organization_id: str, user_id: str, case_dir: Path) 
     if not employees:
         return doc_ids
 
-    grant_codes = ("radicacion", "contrato", "glosa", "cartera", "estrateg", "consolid")
+    grant_codes = ("radicacion", "contrato", "glosa", "cartera", "estrateg", "consolid", "contract")
     grant_targets = [e for e in employees if any(c in (e.code or "").lower() for c in grant_codes)]
     if not grant_targets:
         grant_targets = employees[:3]
 
-    for doc_path in iter_case_documents(case_dir):
-        content = doc_path.read_text(encoding="utf-8")
-        meta_path = doc_path.with_suffix(".metadata.json")
-        metadata = {"tipo": "contrato", "area": "radicacion"}
-        if meta_path.is_file():
-            metadata.update(json.loads(meta_path.read_text(encoding="utf-8")))
+    def _ingest(name: str, content: str, metadata: dict[str, Any]) -> None:
+        if not content.strip():
+            return
         doc = create_text_document(
             db,
             organization_id=organization_id,
             user_id=user_id,
-            name=doc_path.stem,
+            name=name,
             content=content,
             metadata=metadata,
         )
@@ -123,6 +128,27 @@ def load_case_documents(db, organization_id: str, user_id: str, case_dir: Path) 
                 document_id=doc["id"],
                 user_id=user_id,
             )
+
+    doc_json = case_dir / "documentos.json"
+    if doc_json.is_file():
+        items = json.loads(doc_json.read_text(encoding="utf-8"))
+        if isinstance(items, list):
+            for item in items:
+                content = item.get("contenido") or item.get("content") or ""
+                metadata = {
+                    "tipo": str(item.get("tipo", "contrato")).lower(),
+                    "area": "radicacion",
+                    "documento_id": item.get("documento_id"),
+                }
+                _ingest(item.get("titulo") or item.get("documento_id") or "Documento", content, metadata)
+
+    for doc_path in iter_case_documents(case_dir):
+        content = doc_path.read_text(encoding="utf-8")
+        meta_path = doc_path.with_suffix(".metadata.json")
+        metadata = {"tipo": "contrato", "area": "radicacion"}
+        if meta_path.is_file():
+            metadata.update(json.loads(meta_path.read_text(encoding="utf-8")))
+        _ingest(doc_path.stem, content, metadata)
     return doc_ids
 
 

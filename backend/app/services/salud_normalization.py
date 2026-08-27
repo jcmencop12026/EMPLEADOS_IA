@@ -16,9 +16,10 @@ FIELD_PROFILES: dict[str, dict[str, list[str]]] = {
     "radicacion": {
         "fecha_factura": ["fecha_factura", "Fecha Factura", "fec_fact"],
         "fecha_radicacion": ["fecha_radicacion", "Fecha Radicación", "fec_radic", "submission_date"],
-        "numero_factura": ["numero_factura", "Nro Factura", "num_fact"],
+        "numero_factura": ["numero_factura", "Nro Factura", "num_fact", "factura"],
         "valor_radicado": ["valor_radicado", "Valor Radicado", "valor", "amount"],
         "pagador": ["pagador", "Pagador", "entidad", "eps"],
+        "dias_factura_a_radicacion": ["dias_factura_a_radicacion", "dias_factura_radicacion"],
     },
     "glosas": {
         "numero_factura": ["numero_factura", "Nro Factura", "num_fact"],
@@ -34,13 +35,14 @@ FIELD_PROFILES: dict[str, dict[str, list[str]]] = {
         "saldo": ["saldo", "Saldo", "balance", "amount_due"],
         "fecha_vencimiento": ["fecha_vencimiento", "Fecha Vencimiento", "due_date"],
         "pagador": ["pagador", "Pagador", "entidad"],
-        "dias_mora": ["dias_mora", "Días Mora", "days_overdue"],
+        "dias_mora": ["dias_mora", "Días Mora", "days_overdue", "dias_cartera"],
     },
     "pagos": {
-        "numero_factura": ["numero_factura", "Nro Factura"],
+        "numero_factura": ["numero_factura", "Nro Factura", "factura"],
         "valor_pagado": ["valor_pagado", "Valor Pagado", "amount_paid", "valor"],
         "fecha_pago": ["fecha_pago", "Fecha Pago", "payment_date"],
         "pagador": ["pagador", "Pagador", "entidad"],
+        "dias_desde_radicacion_a_pago": ["dias_desde_radicacion_a_pago", "dias_radicacion_pago"],
     },
     "contratos": {
         "contrato": ["contrato", "Contrato", "contract_id"],

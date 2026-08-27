@@ -67,7 +67,26 @@ def generate_hypotheses(
 
 def primary_hypothesis(hypotheses: list[dict[str, Any]]) -> dict[str, Any] | None:
     viable = [h for h in hypotheses if h["estado"] not in ("REFUTADA", "NO DEMOSTRADA")]
-    return viable[0] if viable else (hypotheses[0] if hypotheses else None)
+    if not viable:
+        return hypotheses[0] if hypotheses else None
+
+    h10 = next((h for h in viable if h["id"] == "H10"), None)
+    ranked = sorted(viable, key=lambda h: (-h.get("puntaje", 0), STATUS_ORDER.index(h["estado"]) if h["estado"] in STATUS_ORDER else 99))
+    top = ranked[0]
+
+    if h10 and top["id"] != "H10":
+        multi_domain = any("dominios" in str(e).lower() for e in h10.get("evidencia_a_favor", []))
+        strong_simple = [
+            h for h in viable
+            if h["id"] in ("H2", "H3", "H4", "H7", "H8") and h.get("puntaje", 0) >= 0.35
+        ]
+        if multi_domain and (
+            len(strong_simple) >= 2
+            or h10.get("puntaje", 0) >= top.get("puntaje", 0) - 0.12
+        ):
+            return h10
+
+    return top
 
 
 def _insufficient_hypotheses(sufficiency: dict[str, Any]) -> list[dict[str, Any]]:
@@ -186,7 +205,9 @@ def _score_all_hypotheses(
         result["H8"]["score"] += 0.35
 
     # H9 proceso interno
-    internal_issues = sum(1 for h in hallazgos if h.get("category") in ("radicacion", "facturacion"))
+    internal_issues = sum(
+        1 for h in hallazgos if (h.get("category") or h.get("categoria")) in ("radicacion", "facturacion")
+    )
     if internal_issues >= 2 or (isinstance(tiempo_rad, (int, float)) and tiempo_rad > 10):
         result["H9"]["a_favor"].append("Múltiples hallazgos en procesos internos")
         result["H9"]["score"] += 0.3
@@ -195,10 +216,22 @@ def _score_all_hypotheses(
         result["H9"]["score"] -= 0.2
 
     # H10 combinación
+    categories = {
+        h.get("category") or h.get("categoria")
+        for h in hallazgos
+        if h.get("category") or h.get("categoria")
+    }
+    if len(categories) >= 2:
+        result["H10"]["a_favor"].append(
+            f"Hallazgos simultáneos en {len(categories)} dominios: {', '.join(sorted(categories))}"
+        )
+        result["H10"]["score"] += min(0.12 * len(categories), 0.4)
     strong = sum(1 for hid in ("H2", "H3", "H4", "H7", "H8") if result[hid]["score"] >= 0.35)
     if strong >= 2:
         result["H10"]["a_favor"].append(f"{strong} hipótesis con evidencia significativa simultánea")
         result["H10"]["score"] = min(sum(result[h]["score"] for h in ("H2", "H3", "H4", "H7", "H8")) / 3, 0.85)
+    elif len(categories) >= 3 and result["H10"]["score"] >= 0.3:
+        result["H10"]["score"] = min(result["H10"]["score"] + 0.2, 0.75)
 
     return result
 

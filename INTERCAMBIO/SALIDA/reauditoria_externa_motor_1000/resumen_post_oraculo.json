@@ -1,0 +1,327 @@
+{
+  "fase": "POST_CIEGA",
+  "comparacion_oraculo": [
+    {
+      "caso": "CASO_A",
+      "checks": {
+        "hipotesis": true,
+        "suficiencia": true,
+        "hallazgo": true,
+        "confianza": true,
+        "accion": true,
+        "datos_faltantes": true
+      },
+      "veredicto": "PASS",
+      "resumen": {
+        "caso": "CASO_A",
+        "suficiencia": "PARCIAL",
+        "especialista_lider": "Analista de Cartera IA",
+        "hallazgo_principal": "Cartera vencida 91+ días: $74,250,000",
+        "hipotesis_principal": "H2 — Radicación tardía",
+        "confianza": "MEDIA",
+        "accion_1": "Control diario de pendientes de radicación con alertas automáticas",
+        "valor": 26730000.0,
+        "datos_faltantes": [
+          {
+            "dimension": "pagos",
+            "que_falta": "Datos de pagos",
+            "por_que": "Necesario para evaluar hipótesis sobre pagos en la solicitud.",
+            "que_permitiria": "Calcular indicadores de pagos y contrastar causas."
+          }
+        ]
+      },
+      "oracle_keys": [
+        "causa_dominante",
+        "accion_1",
+        "especialistas"
+      ]
+    },
+    {
+      "caso": "CASO_B",
+      "checks": {
+        "hipotesis": true,
+        "suficiencia": true,
+        "hallazgo": true,
+        "confianza": true,
+        "accion": true,
+        "datos_faltantes": true
+      },
+      "veredicto": "PASS",
+      "resumen": {
+        "caso": "CASO_B",
+        "suficiencia": "PARCIAL",
+        "especialista_lider": "Analista de Cartera IA",
+        "hallazgo_principal": "Cartera vencida 91+ días: $172,500,000",
+        "hipotesis_principal": "H4 — Glosas elevadas",
+        "confianza": "MEDIA",
+        "accion_1": "Factoring selectivo de cartera con pagadores de riesgo bajo",
+        "valor": 31050000.0,
+        "datos_faltantes": [
+          {
+            "dimension": "pagos",
+            "que_falta": "Datos de pagos",
+            "por_que": "Necesario para evaluar hipótesis sobre pagos en la solicitud.",
+            "que_permitiria": "Calcular indicadores de pagos y contrastar causas."
+          }
+        ]
+      },
+      "oracle_keys": [
+        "causa_dominante",
+        "accion_1",
+        "especialistas"
+      ]
+    },
+    {
+      "caso": "CASO_C",
+      "checks": {
+        "hipotesis": true,
+        "suficiencia": true,
+        "hallazgo": true,
+        "confianza": true,
+        "accion": true,
+        "datos_faltantes": true
+      },
+      "veredicto": "PASS",
+      "resumen": {
+        "caso": "CASO_C",
+        "suficiencia": "PARCIAL",
+        "especialista_lider": "Analista de Cartera IA",
+        "hallazgo_principal": "Cartera vencida 91+ días: $117,000,000",
+        "hipotesis_principal": "H7 — Comportamiento tardío del pagador",
+        "confianza": "ALTA",
+        "accion_1": "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+        "valor": 25920000.0,
+        "datos_faltantes": [
+          {
+            "dimension": "pagos",
+            "que_falta": "Datos de pagos",
+            "por_que": "Necesario para evaluar hipótesis sobre pagos en la solicitud.",
+            "que_permitiria": "Calcular indicadores de pagos y contrastar causas."
+          }
+        ]
+      },
+      "oracle_keys": [
+        "causa_dominante",
+        "accion_1",
+        "especialistas"
+      ]
+    },
+    {
+      "caso": "CASO_D",
+      "checks": {
+        "hipotesis": true,
+        "suficiencia": true,
+        "hallazgo": true,
+        "confianza": true,
+        "accion": true,
+        "datos_faltantes": true,
+        "conflicto_documental": true
+      },
+      "veredicto": "PASS",
+      "resumen": {
+        "caso": "CASO_D",
+        "suficiencia": "PARCIAL",
+        "especialista_lider": "Analista de Cartera IA",
+        "hallazgo_principal": "Cartera vencida 91+ días: $69,850,000",
+        "hipotesis_principal": "H10 — Combinación de factores",
+        "confianza": "BAJA",
+        "accion_1": "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+        "valor": 27626400.0,
+        "datos_faltantes": []
+      },
+      "oracle_keys": [
+        "causa_dominante",
+        "accion_1",
+        "especialistas",
+        "debe_detectar_conflicto"
+      ]
+    },
+    {
+      "caso": "CASO_E",
+      "checks": {
+        "hipotesis": true,
+        "suficiencia": true,
+        "hallazgo": true,
+        "confianza": true,
+        "accion": true,
+        "datos_faltantes": true,
+        "no_alucinacion_e": true,
+        "h0_e": true,
+        "sin_finops_e": true
+      },
+      "veredicto": "PASS",
+      "resumen": {
+        "caso": "CASO_E",
+        "suficiencia": "INSUFICIENTE",
+        "especialista_lider": "Analista de Cartera IA",
+        "hallazgo_principal": null,
+        "hipotesis_principal": "H0 — Información insuficiente para establecer causa",
+        "confianza": "BAJA",
+        "accion_1": null,
+        "valor": null,
+        "datos_faltantes": [
+          {
+            "dimension": "cartera",
+            "que_falta": "Datos de cartera",
+            "por_que": "Necesario para evaluar hipótesis sobre cartera en la solicitud.",
+            "que_permitiria": "Calcular indicadores de cartera y contrastar causas."
+          }
+        ]
+      },
+      "oracle_keys": [
+        "causa_dominante",
+        "accion_1",
+        "especialistas",
+        "faltantes"
+      ]
+    }
+  ],
+  "anti_prefabricado": {
+    "veredicto": "PASS",
+    "hipotesis_principales": [
+      "H2",
+      "H4",
+      "H7",
+      "H10",
+      "H0"
+    ],
+    "hipotesis_unicas": 5,
+    "rankings_unicos": 5,
+    "min_requerido": {
+      "hipotesis": 3,
+      "rankings": 2
+    }
+  },
+  "trazabilidad": [
+    {
+      "caso": "CASO_A",
+      "veredicto": "PASS",
+      "hallazgos_trazables": true,
+      "hipotesis_trazables": true,
+      "conocimiento_documentado": true
+    },
+    {
+      "caso": "CASO_B",
+      "veredicto": "PASS",
+      "hallazgos_trazables": true,
+      "hipotesis_trazables": true,
+      "conocimiento_documentado": true
+    },
+    {
+      "caso": "CASO_C",
+      "veredicto": "PASS",
+      "hallazgos_trazables": true,
+      "hipotesis_trazables": true,
+      "conocimiento_documentado": true
+    },
+    {
+      "caso": "CASO_D",
+      "veredicto": "PASS",
+      "hallazgos_trazables": true,
+      "hipotesis_trazables": true,
+      "conocimiento_documentado": true
+    },
+    {
+      "caso": "CASO_E",
+      "veredicto": "PASS",
+      "hallazgos_trazables": true,
+      "hipotesis_trazables": true,
+      "conocimiento_documentado": true
+    }
+  ],
+  "tenant_isolation": {
+    "veredicto": "PASS",
+    "secreto_b_filtrado": false,
+    "acceso_cruzado_denegado": true
+  },
+  "matriz": [
+    {
+      "caso": "CASO_A",
+      "suficiencia": "PARCIAL",
+      "especialista_lider": "Analista de Cartera IA",
+      "hallazgo_principal": "Cartera vencida 91+ días: $74,250,000",
+      "hipotesis_principal": "H2 — Radicación tardía",
+      "confianza": "MEDIA",
+      "accion_1": "Control diario de pendientes de radicación con alertas automáticas",
+      "valor": 26730000.0,
+      "datos_faltantes": [
+        {
+          "dimension": "pagos",
+          "que_falta": "Datos de pagos",
+          "por_que": "Necesario para evaluar hipótesis sobre pagos en la solicitud.",
+          "que_permitiria": "Calcular indicadores de pagos y contrastar causas."
+        }
+      ],
+      "veredicto": "PASS"
+    },
+    {
+      "caso": "CASO_B",
+      "suficiencia": "PARCIAL",
+      "especialista_lider": "Analista de Cartera IA",
+      "hallazgo_principal": "Cartera vencida 91+ días: $172,500,000",
+      "hipotesis_principal": "H4 — Glosas elevadas",
+      "confianza": "MEDIA",
+      "accion_1": "Factoring selectivo de cartera con pagadores de riesgo bajo",
+      "valor": 31050000.0,
+      "datos_faltantes": [
+        {
+          "dimension": "pagos",
+          "que_falta": "Datos de pagos",
+          "por_que": "Necesario para evaluar hipótesis sobre pagos en la solicitud.",
+          "que_permitiria": "Calcular indicadores de pagos y contrastar causas."
+        }
+      ],
+      "veredicto": "PASS"
+    },
+    {
+      "caso": "CASO_C",
+      "suficiencia": "PARCIAL",
+      "especialista_lider": "Analista de Cartera IA",
+      "hallazgo_principal": "Cartera vencida 91+ días: $117,000,000",
+      "hipotesis_principal": "H7 — Comportamiento tardío del pagador",
+      "confianza": "ALTA",
+      "accion_1": "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+      "valor": 25920000.0,
+      "datos_faltantes": [
+        {
+          "dimension": "pagos",
+          "que_falta": "Datos de pagos",
+          "por_que": "Necesario para evaluar hipótesis sobre pagos en la solicitud.",
+          "que_permitiria": "Calcular indicadores de pagos y contrastar causas."
+        }
+      ],
+      "veredicto": "PASS"
+    },
+    {
+      "caso": "CASO_D",
+      "suficiencia": "PARCIAL",
+      "especialista_lider": "Analista de Cartera IA",
+      "hallazgo_principal": "Cartera vencida 91+ días: $69,850,000",
+      "hipotesis_principal": "H10 — Combinación de factores",
+      "confianza": "BAJA",
+      "accion_1": "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+      "valor": 27626400.0,
+      "datos_faltantes": [],
+      "veredicto": "PASS"
+    },
+    {
+      "caso": "CASO_E",
+      "suficiencia": "INSUFICIENTE",
+      "especialista_lider": "Analista de Cartera IA",
+      "hallazgo_principal": null,
+      "hipotesis_principal": "H0 — Información insuficiente para establecer causa",
+      "confianza": "BAJA",
+      "accion_1": null,
+      "valor": null,
+      "datos_faltantes": [
+        {
+          "dimension": "cartera",
+          "que_falta": "Datos de cartera",
+          "por_que": "Necesario para evaluar hipótesis sobre cartera en la solicitud.",
+          "que_permitiria": "Calcular indicadores de cartera y contrastar causas."
+        }
+      ],
+      "veredicto": "PASS"
+    }
+  ]
+}

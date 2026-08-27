@@ -1,0 +1,9 @@
+﻿id,control,bloqueante,criterio
+R01,Diagnóstico diferencial,Sí,A/B/C/D/E no producen mismo diagnóstico/ranking mecánico.
+R02,No alucinación,Sí,E no inventa causas/cifras/fuentes.
+R03,Causalidad,Sí,No confunde cartera con causa.
+R04,Especialistas,Sí,Equipo varía según evidencia.
+R05,Contradicción,Sí,D detecta 10 vs 15 días.
+R06,Trazabilidad,Sí,Hallazgos y propuestas rastreables.
+R07,Priorización,Sí,Acción #1 cambia según caso.
+R08,Plan ejecutable,Sí,Salida aprobada convertible a WorkPlan.

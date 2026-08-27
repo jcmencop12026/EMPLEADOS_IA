@@ -98,6 +98,11 @@ def calc_radicacion(fact_records: list[dict], rad_records: list[dict]) -> dict[s
     dias_radicacion: list[float] = []
     dias_por_factura: list[dict[str, Any]] = []
     for inv, rr in rad_map.items():
+        precomputed = _to_float(rr.get("dias_factura_a_radicacion"))
+        if precomputed is not None:
+            dias_radicacion.append(precomputed)
+            dias_por_factura.append({"numero_factura": inv, "dias": precomputed})
+            continue
         ff = _parse_date(fact_map.get(inv, {}).get("fecha_factura"))
         fr = _parse_date(rr.get("fecha_radicacion"))
         if ff and fr:

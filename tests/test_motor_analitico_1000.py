@@ -254,6 +254,35 @@ def test_case_d_knowledge_conflicts_degrade_hypotheses():
     assert any("documental" in str(i).lower() for i in h2.get("informacion_faltante", []))
 
 
+def test_data_sufficiency_cash_question_without_cartera():
+    """Caso E: pregunta de caja sin dataset de cartera → INSUFICIENTE."""
+    from app.services.motor_analitico.data_sufficiency import assess_data_sufficiency
+
+    profiles = {
+        "facturacion": {
+            "registros": 8,
+            "completitud": 0.9,
+            "nivel_calidad": "BUENA",
+            "duplicados": 0,
+            "inconsistencias": [],
+            "fechas": {},
+        }
+    }
+    indicators = {
+        "facturacion": {"disponible": True},
+        "cartera": {"disponible": False},
+        "radicacion": {"disponible": False},
+        "glosas": {"disponible": False},
+        "pagos": {"disponible": False},
+    }
+    result = assess_data_sufficiency(
+        profiles,
+        indicators,
+        "¿Por qué disminuyó nuestra caja y cuánto podríamos recuperar?",
+    )
+    assert result["clasificacion"] == "INSUFICIENTE"
+
+
 def test_consultor_case_rich_output(motor_db):
     org_id, user_id = _admin_ctx(motor_db)
     analysis = _run_case_inline(motor_db, org_id, user_id, "CONSULTOR")

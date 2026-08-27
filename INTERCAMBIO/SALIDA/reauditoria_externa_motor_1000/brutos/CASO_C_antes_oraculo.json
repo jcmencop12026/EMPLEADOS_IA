@@ -1,0 +1,2085 @@
+{
+  "caso": "CASO_C",
+  "solicitud": "Una entidad afecta el recaudo. Determina si el problema es interno o del pagador.",
+  "documentos_cargados": [
+    "5246f246-2e3a-4da7-a223-9a35f7dd3a22"
+  ],
+  "suficiencia": "PARCIAL",
+  "informacion_faltante": [
+    {
+      "dimension": "pagos",
+      "que_falta": "Datos de pagos",
+      "por_que": "Necesario para evaluar hipótesis sobre pagos en la solicitud.",
+      "que_permitiria": "Calcular indicadores de pagos y contrastar causas."
+    }
+  ],
+  "especialista_lider": "Analista de Cartera IA",
+  "razon_seleccion": "Mayor puntaje en cartera por capacidades (1.0)",
+  "hallazgos": [
+    {
+      "id": "324b08a9-4be0-41eb-a041-404f1bb6bb53",
+      "categoria": "cartera",
+      "titulo": "Cartera vencida 91+ días: $117,000,000",
+      "descripcion": "Existe saldo en mora superior a 91 días por $117,000,000.",
+      "tipo": "HECHO",
+      "indicador": "aging_91_mas",
+      "valor": "$117,000,000",
+      "severidad": "ALTA",
+      "prioridad": 77.5,
+      "confianza": "MEDIA",
+      "criterios_confianza": {
+        "completitud": "baja",
+        "consistencia": "si",
+        "casos": 30,
+        "fuerza_asociacion": 0.15,
+        "puntaje": 0.55
+      },
+      "causa_probable": null,
+      "impacto_economico": 117000000.0,
+      "evidencia": {
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 27000000.0,
+          "61-90": 0.0,
+          "91+": 117000000.0
+        }
+      },
+      "fuentes": [
+        {
+          "dataset": "cartera",
+          "calculo": "aging"
+        }
+      ],
+      "fuentes_consultadas": [],
+      "evidencia_documental": null
+    }
+  ],
+  "hipotesis": [
+    {
+      "id": "H7",
+      "titulo": "Comportamiento tardío del pagador",
+      "dominio": "pagador",
+      "tipo": "HIPOTESIS",
+      "estado": "CONFIRMADA",
+      "confianza": "ALTA",
+      "evidencia_a_favor": [
+        "Proceso interno ágil pero cartera/recaudo desalineados",
+        "Concentración de mora en Sin pagador"
+      ],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 117000000.0,
+      "puntaje": 0.7,
+      "relacion_causal": "hipotesis_causal"
+    },
+    {
+      "id": "H3",
+      "titulo": "Devoluciones del pagador",
+      "dominio": "devoluciones",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [
+        "Dataset de devoluciones o glosas con estado DEVUELTA"
+      ],
+      "impacto_potencial": 117000000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H5",
+      "titulo": "Soportes deficientes",
+      "dominio": "soportes",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 117000000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H6",
+      "titulo": "Condiciones contractuales",
+      "dominio": "contratos",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [
+        "Contratos para contrastar plazos pactados"
+      ],
+      "impacto_potencial": 117000000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H8",
+      "titulo": "Concentración en un pagador",
+      "dominio": "concentracion",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 117000000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H10",
+      "titulo": "Combinación de factores",
+      "dominio": "combinado",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 117000000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H1",
+      "titulo": "Facturación tardía",
+      "dominio": "facturacion",
+      "tipo": "HIPOTESIS",
+      "estado": "REFUTADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [
+        "Radicación alta (100.0%) reduce relevancia de facturación tardía"
+      ],
+      "informacion_faltante": [],
+      "impacto_potencial": 117000000.0,
+      "puntaje": -0.2,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H9",
+      "titulo": "Proceso interno ineficiente",
+      "dominio": "proceso",
+      "tipo": "HIPOTESIS",
+      "estado": "REFUTADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [
+        "Indicadores de radicación dentro de umbral"
+      ],
+      "informacion_faltante": [],
+      "impacto_potencial": 117000000.0,
+      "puntaje": -0.2,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H4",
+      "titulo": "Glosas elevadas",
+      "dominio": "glosas",
+      "tipo": "HIPOTESIS",
+      "estado": "REFUTADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [
+        "Glosa baja (0.0%)"
+      ],
+      "informacion_faltante": [],
+      "impacto_potencial": 117000000.0,
+      "puntaje": -0.3,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H2",
+      "titulo": "Radicación tardía",
+      "dominio": "radicacion",
+      "tipo": "HIPOTESIS",
+      "estado": "REFUTADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [
+        "Radicación ágil (3.5 días promedio)"
+      ],
+      "informacion_faltante": [],
+      "impacto_potencial": 117000000.0,
+      "puntaje": -0.35,
+      "relacion_causal": "asociacion"
+    }
+  ],
+  "hipotesis_principal": {
+    "id": "H7",
+    "titulo": "Comportamiento tardío del pagador",
+    "dominio": "pagador",
+    "tipo": "HIPOTESIS",
+    "estado": "CONFIRMADA",
+    "confianza": "ALTA",
+    "evidencia_a_favor": [
+      "Proceso interno ágil pero cartera/recaudo desalineados",
+      "Concentración de mora en Sin pagador"
+    ],
+    "evidencia_en_contra": [],
+    "informacion_faltante": [],
+    "impacto_potencial": 117000000.0,
+    "puntaje": 0.7,
+    "relacion_causal": "hipotesis_causal"
+  },
+  "contrastes": [
+    {
+      "hipotesis_id": "H7",
+      "hipotesis_titulo": "Comportamiento tardío del pagador",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+      "dominio": "pagador",
+      "postura": "APOYAR",
+      "argumento": "Evidencia consistente: Proceso interno ágil pero cartera/recaudo desalineados; Concentración de mora en Sin pagador",
+      "evidencia_citada": [
+        "Proceso interno ágil pero cartera/recaudo desalineados",
+        "Concentración de mora en Sin pagador"
+      ]
+    },
+    {
+      "hipotesis_id": "H7",
+      "hipotesis_titulo": "Comportamiento tardío del pagador",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+      "dominio": "cartera",
+      "postura": "COMPLEMENTAR",
+      "argumento": "Complementa con acciones en dominio pagador.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H3",
+      "hipotesis_titulo": "Devoluciones del pagador",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+      "dominio": "devoluciones",
+      "postura": "CUESTIONAR",
+      "argumento": "Información faltante impide confirmar — no convertir correlación en causalidad.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H3",
+      "hipotesis_titulo": "Devoluciones del pagador",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "Falta: Dataset de devoluciones o glosas con estado DEVUELTA",
+      "evidencia_citada": [
+        "Dataset de devoluciones o glosas con estado DEVUELTA"
+      ]
+    },
+    {
+      "hipotesis_id": "H5",
+      "hipotesis_titulo": "Soportes deficientes",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+      "dominio": "soportes",
+      "postura": "CUESTIONAR",
+      "argumento": "Asociación débil — requiere más datos.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H5",
+      "hipotesis_titulo": "Soportes deficientes",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "La correlación observada no demuestra causalidad directa.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H6",
+      "hipotesis_titulo": "Condiciones contractuales",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+      "dominio": "contratos",
+      "postura": "CUESTIONAR",
+      "argumento": "Información faltante impide confirmar — no convertir correlación en causalidad.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H6",
+      "hipotesis_titulo": "Condiciones contractuales",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "Falta: Contratos para contrastar plazos pactados",
+      "evidencia_citada": [
+        "Contratos para contrastar plazos pactados"
+      ]
+    },
+    {
+      "hipotesis_id": "H8",
+      "hipotesis_titulo": "Concentración en un pagador",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+      "dominio": "concentracion",
+      "postura": "CUESTIONAR",
+      "argumento": "Asociación débil — requiere más datos.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H8",
+      "hipotesis_titulo": "Concentración en un pagador",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "La correlación observada no demuestra causalidad directa.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H7",
+      "hipotesis_titulo": "Comportamiento tardío del pagador",
+      "especialista": "Analista Estratégico IPS IA",
+      "employee_id": "baa093b3-a41d-4348-a8c4-e35ebfc8c861",
+      "dominio": "consolidacion",
+      "postura": "COMPLEMENTAR",
+      "argumento": "Consolidador recibe 10 intervenciones de especialistas sobre 'Comportamiento tardío del pagador' — síntesis requerida antes de recomendar.",
+      "evidencia_citada": [],
+      "rol": "CONSOLIDADOR"
+    }
+  ],
+  "alternativas": [
+    {
+      "hallazgo_ref": "Cartera vencida 91+ días: $117,000,000",
+      "alternativa_id": "ALT-CAR-1",
+      "descripcion": "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+      "fundamento": "Comportamiento tardío del pagador",
+      "impacto_esperado": 117000000.0,
+      "costo_estimado": "BAJO",
+      "esfuerzo": "BAJO",
+      "plazo": "21 días",
+      "riesgo": "MEDIO",
+      "dependencias": [],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 27000000.0,
+          "61-90": 0.0,
+          "91+": 117000000.0
+        }
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Cartera vencida 91+ días: $117,000,000",
+      "alternativa_id": "ALT-CAR-2",
+      "descripcion": "Gestión prioritaria de cartera 91+ con negociación por pagador",
+      "fundamento": "Impacto directo en flujo de caja",
+      "impacto_esperado": 117000000.0,
+      "costo_estimado": "BAJO",
+      "esfuerzo": "MEDIO",
+      "plazo": "30 días",
+      "riesgo": "MEDIO",
+      "dependencias": [],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 27000000.0,
+          "61-90": 0.0,
+          "91+": 117000000.0
+        }
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Cartera vencida 91+ días: $117,000,000",
+      "alternativa_id": "ALT-CAR-3",
+      "descripcion": "Seguimiento contractual con pagadores de mayor mora",
+      "fundamento": "H7 — comportamiento del pagador cuando proceso interno es sólido",
+      "impacto_esperado": 117000000.0,
+      "costo_estimado": "MEDIO",
+      "esfuerzo": "MEDIO",
+      "plazo": "45 días",
+      "riesgo": "MEDIO",
+      "dependencias": [
+        "Jurídico",
+        "Cartera"
+      ],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 27000000.0,
+          "61-90": 0.0,
+          "91+": 117000000.0
+        }
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    }
+  ],
+  "priorizacion": {
+    "metodologia": "prioridad = impacto_económico(35%) + urgencia(25%) + confianza(15%) + esfuerzo_inverso(10%) + recuperabilidad(10%) + riesgo_inverso(5%)",
+    "ranking": [
+      {
+        "tipo": "alternativa",
+        "id": "ALT-CAR-1",
+        "titulo": "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+        "accion": "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+        "prioridad": 89.5,
+        "desglose": {
+          "impacto_economico": 35.0,
+          "urgencia": 25.0,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 10.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 3.0
+        },
+        "por_que_primero": "'Mesa de trabajo con pagador de mayor mora y evidencia de rad' prioriza por alto impacto económico (35.0 pts).",
+        "ranking": 1
+      },
+      {
+        "tipo": "alternativa",
+        "id": "ALT-CAR-2",
+        "titulo": "Gestión prioritaria de cartera 91+ con negociación por pagador",
+        "accion": "Gestión prioritaria de cartera 91+ con negociación por pagador",
+        "prioridad": 85.5,
+        "desglose": {
+          "impacto_economico": 35.0,
+          "urgencia": 25.0,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 3.0
+        },
+        "por_que_primero": "'Gestión prioritaria de cartera 91+ con negociación por pagad' prioriza por alto impacto económico (35.0 pts).",
+        "ranking": 2
+      },
+      {
+        "tipo": "alternativa",
+        "id": "ALT-CAR-3",
+        "titulo": "Seguimiento contractual con pagadores de mayor mora",
+        "accion": "Seguimiento contractual con pagadores de mayor mora",
+        "prioridad": 78.0,
+        "desglose": {
+          "impacto_economico": 35.0,
+          "urgencia": 17.5,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 3.0
+        },
+        "por_que_primero": "'Seguimiento contractual con pagadores de mayor mora' prioriza por alto impacto económico (35.0 pts).",
+        "ranking": 3
+      },
+      {
+        "tipo": "propuesta",
+        "id": "Cartera vencida 91+ días: $117,000,000",
+        "titulo": "Cartera vencida 91+ días: $117,000,000",
+        "accion": "Activar gestión de cobro prioritaria para facturas con mora superior a 91 días y negociar acuerdos de pago.",
+        "prioridad": 50.0,
+        "desglose": {
+          "impacto_economico": 0.0,
+          "urgencia": 25.0,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 5.5,
+          "riesgo_inverso": 3.0
+        },
+        "finops": {
+          "referencia": "Cartera vencida 91+ días: $117,000,000",
+          "costo_estimado": 2500000,
+          "beneficio_esperado": 25920000.0,
+          "valor_recuperable": 25920000.0,
+          "ahorro": 25920000.0,
+          "roi": 9.37,
+          "payback_dias": 60,
+          "certidumbre": "ESTIMADO",
+          "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+          "advertencia": "Estimación — no presentar como resultado real."
+        },
+        "por_que_primero": "'Cartera vencida 91+ días: $117,000,000' prioriza por urgencia operativa (25.0 pts).",
+        "ranking": 4
+      }
+    ],
+    "explicacion": "El ranking no es una suma arbitraria: cada factor tiene peso documentado en 'metodologia'."
+  },
+  "accion_1": "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+  "finops": [
+    {
+      "referencia": "Cartera vencida 91+ días: $117,000,000",
+      "costo_estimado": 2500000,
+      "beneficio_esperado": 25920000.0,
+      "valor_recuperable": 25920000.0,
+      "ahorro": 25920000.0,
+      "roi": 9.37,
+      "payback_dias": 60,
+      "certidumbre": "ESTIMADO",
+      "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+      "advertencia": "Estimación — no presentar como resultado real."
+    }
+  ],
+  "escenarios": {
+    "tipo": "PROYECTADO",
+    "escenarios": {
+      "CONSERVADOR": {
+        "nombre": "Conservador",
+        "valor_recuperable_estimado": 11520000.0,
+        "tasa_recuperacion": 0.08,
+        "time_reduction_days": 2,
+        "supuestos": [
+          "Hipótesis principal: Comportamiento tardío del pagador.  Efecto mínimo (8% recuperación)."
+        ],
+        "certidumbre": "PROYECTADO"
+      },
+      "PROBABLE": {
+        "nombre": "Probable",
+        "valor_recuperable_estimado": 25920000.0,
+        "tasa_recuperacion": 0.18,
+        "time_reduction_days": 5,
+        "supuestos": [
+          "Hipótesis principal: Comportamiento tardío del pagador.  Efecto moderado (18% recuperación)."
+        ],
+        "certidumbre": "PROYECTADO",
+        "accion_simulada": "Activar gestión de cobro prioritaria para facturas con mora superior a 91 días y negociar acuerdos de pago."
+      },
+      "OPTIMISTA": {
+        "nombre": "Optimista",
+        "valor_recuperable_estimado": 46080000.0,
+        "tasa_recuperacion": 0.32,
+        "time_reduction_days": 10,
+        "supuestos": [
+          "Hipótesis principal: Comportamiento tardío del pagador.  Efecto alto si ejecución disciplinada (32% recuperación)."
+        ],
+        "certidumbre": "PROYECTADO"
+      }
+    },
+    "advertencia": "Simulación con supuestos — no presentar como resultado real."
+  },
+  "recomendacion_consolidada": {
+    "que_ocurre": "Cartera vencida 91+ días: $117,000,000 — hipótesis principal: Comportamiento tardío del pagador",
+    "donde": "Dominios: cartera. Mayor exposición: Sin pagador.",
+    "desde_cuando": "2026-07 → 2026-07",
+    "cuanto_representa": 144000000.0,
+    "por_que_podria": "Comportamiento tardío del pagador",
+    "que_demostrado": [
+      "Comportamiento tardío del pagador"
+    ],
+    "que_no_demostrado": [
+      "Devoluciones del pagador",
+      "Soportes deficientes",
+      "Condiciones contractuales",
+      "Concentración en un pagador",
+      "Combinación de factores"
+    ],
+    "oportunidades": [
+      "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+      "Gestión prioritaria de cartera 91+ con negociación por pagador",
+      "Seguimiento contractual con pagadores de mayor mora",
+      "Cartera vencida 91+ días: $117,000,000"
+    ],
+    "alternativas_evaluadas": 4,
+    "recomendacion": "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+    "por_que_recomendamos": "'Mesa de trabajo con pagador de mayor mora y evidencia de rad' prioriza por alto impacto económico (35.0 pts).",
+    "cuanto_podria_valer": 25920000.0,
+    "que_hacer": [
+      "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+      "Gestión prioritaria de cartera 91+ con negociación por pagador",
+      "Seguimiento contractual con pagadores de mayor mora"
+    ],
+    "como_medir": [
+      "Días promedio factura→radicación (meta: <7)",
+      "Porcentaje de glosa (meta: reducir 5 p.p.)",
+      "Saldo cartera 91+ días",
+      "Seguimiento acción: Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna"
+    ],
+    "calidad_datos": "PARCIAL",
+    "especialistas_involucrados": 4,
+    "solicitud": "Una entidad afecta el recaudo. Determina si el problema es interno o del pagador."
+  },
+  "conocimiento": {
+    "utilizado": true,
+    "mensaje": null,
+    "fuentes": [
+      {
+        "tipo": "CONOCIMIENTO",
+        "document_id": "5246f246-2e3a-4da7-a223-9a35f7dd3a22",
+        "chunk_id": "4426dbef-f5f9-4b3d-9301-83143a873b67",
+        "titulo": "Contrato EPS LENTA",
+        "categoria": null,
+        "consulta": "radicación",
+        "especialista_id": "b21775fd-e08c-40d6-bdef-0c2fedc7b003",
+        "analysis_id": "58fa35e4-a09e-4295-997b-eefe8ce761e8",
+        "dominio": "radicacion",
+        "fecha": "2026-08-27T00:58:33.183464+00:00",
+        "relevancia": 1.0,
+        "extracto": "Pago a sesenta (60) días desde radicación válida."
+      }
+    ],
+    "requiere_validacion": false
+  },
+  "diagnostico_completo": {
+    "id": "58fa35e4-a09e-4295-997b-eefe8ce761e8",
+    "ips_name": "Cert CASO_C",
+    "estado": "COMPLETADO",
+    "resumen_ejecutivo": {
+      "principales_problemas": [
+        "Cartera vencida 91+ días: $117,000,000"
+      ],
+      "impacto_acumulado": 117000000.0,
+      "oportunidades_principales": [
+        "Cartera vencida 91+ días: $117,000,000"
+      ],
+      "indicadores_criticos": {
+        "valor_facturado": 360000000.0,
+        "porcentaje_radicado": 100.0,
+        "porcentaje_glosa": 0.0,
+        "saldo_total": 144000000.0
+      },
+      "acciones_prioritarias": [
+        "Activar gestión de cobro prioritaria para facturas con mora superior a 91 días y"
+      ]
+    },
+    "calidad_datos": {
+      "cartera": {
+        "fuente": "cartera",
+        "registros": 30,
+        "campos_disponibles": [
+          "dias_mora",
+          "saldo"
+        ],
+        "campos_faltantes": [
+          "numero_factura",
+          "fecha_vencimiento",
+          "pagador"
+        ],
+        "fechas": {
+          "minima": null,
+          "maxima": null
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {
+          "numero_factura": 30,
+          "fecha_vencimiento": 30,
+          "pagador": 30
+        },
+        "inconsistencias": [],
+        "completitud": 0.4,
+        "nivel_calidad": "BAJA"
+      },
+      "facturacion": {
+        "fuente": "facturacion",
+        "registros": 30,
+        "campos_disponibles": [
+          "contrato",
+          "fecha_factura",
+          "numero_factura",
+          "pagador",
+          "valor_facturado"
+        ],
+        "campos_faltantes": [],
+        "fechas": {
+          "minima": "2026-07-01",
+          "maxima": "2026-07-28"
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {},
+        "inconsistencias": [],
+        "completitud": 1.0,
+        "nivel_calidad": "ALTA"
+      },
+      "glosas": {
+        "fuente": "glosas",
+        "registros": 30,
+        "campos_disponibles": [
+          "valor_glosado"
+        ],
+        "campos_faltantes": [
+          "numero_factura",
+          "causal",
+          "pagador",
+          "servicio",
+          "estado",
+          "fecha_glosa"
+        ],
+        "fechas": {
+          "minima": null,
+          "maxima": null
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {
+          "numero_factura": 30,
+          "causal": 30,
+          "pagador": 30,
+          "servicio": 30,
+          "estado": 30,
+          "fecha_glosa": 30
+        },
+        "inconsistencias": [],
+        "completitud": 0.143,
+        "nivel_calidad": "INSUFICIENTE"
+      },
+      "pagos": {
+        "fuente": "pagos",
+        "registros": 30,
+        "campos_disponibles": [
+          "dias_desde_radicacion_a_pago",
+          "numero_factura",
+          "valor_pagado"
+        ],
+        "campos_faltantes": [
+          "fecha_pago",
+          "pagador"
+        ],
+        "fechas": {
+          "minima": null,
+          "maxima": null
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {
+          "fecha_pago": 30,
+          "pagador": 30
+        },
+        "inconsistencias": [],
+        "completitud": 0.6,
+        "nivel_calidad": "MEDIA"
+      },
+      "radicacion": {
+        "fuente": "radicacion",
+        "registros": 30,
+        "campos_disponibles": [
+          "dias_factura_a_radicacion",
+          "numero_factura",
+          "valor_radicado"
+        ],
+        "campos_faltantes": [
+          "fecha_factura",
+          "fecha_radicacion",
+          "pagador"
+        ],
+        "fechas": {
+          "minima": null,
+          "maxima": null
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {
+          "fecha_factura": 30,
+          "fecha_radicacion": 30,
+          "pagador": 30
+        },
+        "inconsistencias": [],
+        "completitud": 0.5,
+        "nivel_calidad": "BAJA"
+      }
+    },
+    "suficiencia_datos": {
+      "clasificacion": "PARCIAL",
+      "puntaje": 0.4,
+      "dimensiones": {
+        "cartera": {
+          "registros": 30,
+          "completitud": 0.4,
+          "nivel_calidad": "BAJA",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "Información insuficiente"
+        },
+        "facturacion": {
+          "registros": 30,
+          "completitud": 1.0,
+          "nivel_calidad": "ALTA",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "2026-07-01 → 2026-07-28"
+        },
+        "glosas": {
+          "registros": 30,
+          "completitud": 0.143,
+          "nivel_calidad": "INSUFICIENTE",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "Información insuficiente"
+        },
+        "pagos": {
+          "registros": 30,
+          "completitud": 0.6,
+          "nivel_calidad": "MEDIA",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "Información insuficiente"
+        },
+        "radicacion": {
+          "registros": 30,
+          "completitud": 0.5,
+          "nivel_calidad": "BAJA",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "Información insuficiente"
+        }
+      },
+      "informacion_faltante_critica": [
+        {
+          "dimension": "pagos",
+          "que_falta": "Datos de pagos",
+          "por_que": "Necesario para evaluar hipótesis sobre pagos en la solicitud.",
+          "que_permitiria": "Calcular indicadores de pagos y contrastar causas."
+        }
+      ],
+      "limitaciones": [
+        "Faltan 1 dimensiones críticas para la solicitud."
+      ]
+    },
+    "analisis_disponibles": {
+      "puede_realizar": [
+        "facturacion",
+        "radicacion",
+        "glosas",
+        "cartera",
+        "trazabilidad",
+        "comparacion_historica"
+      ],
+      "no_puede_realizar": [
+        {
+          "analisis": "contratos",
+          "faltante": [
+            "contratos"
+          ]
+        }
+      ]
+    },
+    "indicadores": {
+      "disponibles": [
+        "facturacion",
+        "radicacion",
+        "glosas",
+        "cartera"
+      ],
+      "no_disponibles": [],
+      "facturacion": {
+        "disponible": true,
+        "valor_facturado": 360000000.0,
+        "cantidad_facturas": 30,
+        "facturacion_por_pagador": {
+          "EPS_LENTA": 180000000.0,
+          "EPS_OK": 180000000.0
+        },
+        "facturacion_por_periodo": {
+          "2026-07": 360000000.0
+        },
+        "concentracion_principal_pagador_pct": 50.0,
+        "evidencia": {
+          "fuente": "facturacion",
+          "registros": 30
+        }
+      },
+      "radicacion": {
+        "disponible": true,
+        "valor_facturado": 360000000.0,
+        "valor_radicado": 360000000.0,
+        "diferencia_facturado_radicado": 0.0,
+        "facturas_no_radicadas": 0,
+        "porcentaje_radicado": 100.0,
+        "tiempo_promedio_factura_radicacion_dias": 3.5,
+        "evidencia": {
+          "facturas": 30,
+          "radicadas": 30,
+          "dias_por_factura": [
+            {
+              "numero_factura": "C-F001",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F002",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "C-F003",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F004",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "C-F005",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F006",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "C-F007",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F008",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "C-F009",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F010",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "C-F011",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F012",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "C-F013",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F014",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "C-F015",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F016",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "C-F017",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F018",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "C-F019",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F020",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "C-F021",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F022",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "C-F023",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F024",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "C-F025",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F026",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "C-F027",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F028",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "C-F029",
+              "dias": 3.0
+            },
+            {
+              "numero_factura": "C-F030",
+              "dias": 4.0
+            }
+          ]
+        }
+      },
+      "glosas": {
+        "disponible": true,
+        "valor_glosado": 0.0,
+        "porcentaje_glosa": 0.0,
+        "por_causal": {
+          "": 0.0
+        },
+        "por_pagador": {
+          "Sin pagador": 0.0
+        },
+        "por_servicio": {
+          "Sin servicio": 0.0
+        },
+        "por_estado": {
+          "Sin estado": 30
+        },
+        "evidencia": {
+          "registros": 30
+        }
+      },
+      "cartera": {
+        "disponible": true,
+        "saldo_total": 144000000.0,
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 27000000.0,
+          "61-90": 0.0,
+          "91+": 117000000.0
+        },
+        "por_entidad": {
+          "Sin pagador": 144000000.0
+        },
+        "recaudo": 311400000.0,
+        "evidencia": {
+          "registros": 30
+        }
+      },
+      "contratos": {
+        "disponible": false,
+        "mensaje": "Información insuficiente"
+      },
+      "devoluciones": {
+        "disponible": false,
+        "mensaje": "Información insuficiente"
+      },
+      "trazabilidad": {
+        "facturado": 360000000.0,
+        "radicado": 360000000.0,
+        "diferencia_facturado_radicado": 0.0,
+        "glosado": 0.0,
+        "recuperado_conciliado": "Información insuficiente",
+        "cuenta_por_cobrar": 144000000.0,
+        "pagado": 311400000.0
+      }
+    },
+    "trazabilidad": {
+      "facturado": 360000000.0,
+      "radicado": 360000000.0,
+      "diferencia_facturado_radicado": 0.0,
+      "glosado": 0.0,
+      "recuperado_conciliado": "Información insuficiente",
+      "cuenta_por_cobrar": 144000000.0,
+      "pagado": 311400000.0,
+      "conocimiento": {
+        "utilizado": true,
+        "mensaje": null,
+        "consultas": [
+          {
+            "dominio": "cartera",
+            "consulta": "política cartera, cobro cartera, acuerdos de pago",
+            "especialista_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+            "fragmentos": 0,
+            "fuentes": [],
+            "analisis": {
+              "plazos_detectados": [],
+              "conflicto": false,
+              "requiere_validacion": false,
+              "plazo_preferido_dias": null,
+              "limites_unicos": []
+            },
+            "experiencia_separada": true
+          },
+          {
+            "dominio": "facturacion",
+            "consulta": "manual facturación, procedimiento facturación",
+            "especialista_id": "c32b1558-daeb-4b00-902a-86c3a47dc839",
+            "fragmentos": 0,
+            "fuentes": [],
+            "analisis": {
+              "plazos_detectados": [],
+              "conflicto": false,
+              "requiere_validacion": false,
+              "plazo_preferido_dias": null,
+              "limites_unicos": []
+            },
+            "experiencia_separada": true
+          },
+          {
+            "dominio": "glosas",
+            "consulta": "procedimiento glosas, respuesta glosas, causales glosa",
+            "especialista_id": "ab60af15-00c9-49e7-9ad5-76a81adefcc3",
+            "fragmentos": 0,
+            "fuentes": [],
+            "analisis": {
+              "plazos_detectados": [],
+              "conflicto": false,
+              "requiere_validacion": false,
+              "plazo_preferido_dias": null,
+              "limites_unicos": []
+            },
+            "experiencia_separada": true
+          },
+          {
+            "dominio": "radicacion",
+            "consulta": "radicación, plazo, plazo radicación, procedimiento radicación",
+            "especialista_id": "b21775fd-e08c-40d6-bdef-0c2fedc7b003",
+            "fragmentos": 1,
+            "fuentes": [
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "5246f246-2e3a-4da7-a223-9a35f7dd3a22",
+                "chunk_id": "4426dbef-f5f9-4b3d-9301-83143a873b67",
+                "titulo": "Contrato EPS LENTA",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "b21775fd-e08c-40d6-bdef-0c2fedc7b003",
+                "analysis_id": "58fa35e4-a09e-4295-997b-eefe8ce761e8",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.183464+00:00",
+                "relevancia": 1.0,
+                "extracto": "Pago a sesenta (60) días desde radicación válida."
+              }
+            ],
+            "analisis": {
+              "plazos_detectados": [],
+              "conflicto": false,
+              "requiere_validacion": false,
+              "plazo_preferido_dias": null,
+              "limites_unicos": []
+            },
+            "experiencia_separada": true
+          }
+        ],
+        "fuentes_consultadas": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "5246f246-2e3a-4da7-a223-9a35f7dd3a22",
+            "chunk_id": "4426dbef-f5f9-4b3d-9301-83143a873b67",
+            "titulo": "Contrato EPS LENTA",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "b21775fd-e08c-40d6-bdef-0c2fedc7b003",
+            "analysis_id": "58fa35e4-a09e-4295-997b-eefe8ce761e8",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.183464+00:00",
+            "relevancia": 1.0,
+            "extracto": "Pago a sesenta (60) días desde radicación válida."
+          }
+        ],
+        "conflictos": [],
+        "requiere_validacion": false,
+        "analisis_global": {
+          "plazos_detectados": [],
+          "conflicto": false,
+          "requiere_validacion": false,
+          "plazo_preferido_dias": null,
+          "limites_unicos": []
+        }
+      },
+      "motor": {
+        "motor": "MOTOR-ANALITICO-1000",
+        "solicitud": "Una entidad afecta el recaudo. Determina si el problema es interno o del pagador.",
+        "suficiencia": "PARCIAL",
+        "hipotesis_principal": "H7",
+        "especialistas": [
+          {
+            "nombre": "Analista de Cartera IA",
+            "dominio": "cartera",
+            "score": 0.925,
+            "razon_seleccion": "Mayor puntaje en cartera por capacidades (1.0)",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          },
+          {
+            "nombre": "Analista de Facturación IA",
+            "dominio": "facturacion",
+            "score": 0.925,
+            "razon_seleccion": "Mayor puntaje en facturacion por capacidades (1.0)",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          },
+          {
+            "nombre": "Analista de Glosas IA",
+            "dominio": "glosas",
+            "score": 0.925,
+            "razon_seleccion": "Mayor puntaje en glosas por capacidades (1.0)",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          },
+          {
+            "nombre": "Analista de Radicación IA",
+            "dominio": "radicacion",
+            "score": 0.925,
+            "razon_seleccion": "Mayor puntaje en radicacion por capacidades (1.0)",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          },
+          {
+            "nombre": "Analista Estratégico IPS IA",
+            "dominio": "consolidador",
+            "score": 0.925,
+            "razon_seleccion": "Consolidador estratégico con mayor puntaje en dominio estratégico",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          }
+        ],
+        "contrastes_count": 11,
+        "alternativas_count": 3,
+        "conocimiento": {
+          "utilizado": true,
+          "mensaje": null,
+          "consultas": [
+            {
+              "dominio": "cartera",
+              "consulta": "política cartera, cobro cartera, acuerdos de pago",
+              "especialista_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+              "fragmentos": 0,
+              "fuentes": [],
+              "analisis": {
+                "plazos_detectados": [],
+                "conflicto": false,
+                "requiere_validacion": false,
+                "plazo_preferido_dias": null,
+                "limites_unicos": []
+              },
+              "experiencia_separada": true
+            },
+            {
+              "dominio": "facturacion",
+              "consulta": "manual facturación, procedimiento facturación",
+              "especialista_id": "c32b1558-daeb-4b00-902a-86c3a47dc839",
+              "fragmentos": 0,
+              "fuentes": [],
+              "analisis": {
+                "plazos_detectados": [],
+                "conflicto": false,
+                "requiere_validacion": false,
+                "plazo_preferido_dias": null,
+                "limites_unicos": []
+              },
+              "experiencia_separada": true
+            },
+            {
+              "dominio": "glosas",
+              "consulta": "procedimiento glosas, respuesta glosas, causales glosa",
+              "especialista_id": "ab60af15-00c9-49e7-9ad5-76a81adefcc3",
+              "fragmentos": 0,
+              "fuentes": [],
+              "analisis": {
+                "plazos_detectados": [],
+                "conflicto": false,
+                "requiere_validacion": false,
+                "plazo_preferido_dias": null,
+                "limites_unicos": []
+              },
+              "experiencia_separada": true
+            },
+            {
+              "dominio": "radicacion",
+              "consulta": "radicación, plazo, plazo radicación, procedimiento radicación",
+              "especialista_id": "b21775fd-e08c-40d6-bdef-0c2fedc7b003",
+              "fragmentos": 1,
+              "fuentes": [
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "5246f246-2e3a-4da7-a223-9a35f7dd3a22",
+                  "chunk_id": "4426dbef-f5f9-4b3d-9301-83143a873b67",
+                  "titulo": "Contrato EPS LENTA",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "b21775fd-e08c-40d6-bdef-0c2fedc7b003",
+                  "analysis_id": "58fa35e4-a09e-4295-997b-eefe8ce761e8",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.183464+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Pago a sesenta (60) días desde radicación válida."
+                }
+              ],
+              "analisis": {
+                "plazos_detectados": [],
+                "conflicto": false,
+                "requiere_validacion": false,
+                "plazo_preferido_dias": null,
+                "limites_unicos": []
+              },
+              "experiencia_separada": true
+            }
+          ],
+          "fuentes_consultadas": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "5246f246-2e3a-4da7-a223-9a35f7dd3a22",
+              "chunk_id": "4426dbef-f5f9-4b3d-9301-83143a873b67",
+              "titulo": "Contrato EPS LENTA",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "b21775fd-e08c-40d6-bdef-0c2fedc7b003",
+              "analysis_id": "58fa35e4-a09e-4295-997b-eefe8ce761e8",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:33.183464+00:00",
+              "relevancia": 1.0,
+              "extracto": "Pago a sesenta (60) días desde radicación válida."
+            }
+          ],
+          "conflictos": [],
+          "requiere_validacion": false,
+          "analisis_global": {
+            "plazos_detectados": [],
+            "conflicto": false,
+            "requiere_validacion": false,
+            "plazo_preferido_dias": null,
+            "limites_unicos": []
+          }
+        }
+      }
+    },
+    "hallazgos": [
+      {
+        "id": "324b08a9-4be0-41eb-a041-404f1bb6bb53",
+        "categoria": "cartera",
+        "titulo": "Cartera vencida 91+ días: $117,000,000",
+        "descripcion": "Existe saldo en mora superior a 91 días por $117,000,000.",
+        "tipo": "HECHO",
+        "indicador": "aging_91_mas",
+        "valor": "$117,000,000",
+        "severidad": "ALTA",
+        "prioridad": 77.5,
+        "confianza": "MEDIA",
+        "criterios_confianza": {
+          "completitud": "baja",
+          "consistencia": "si",
+          "casos": 30,
+          "fuerza_asociacion": 0.15,
+          "puntaje": 0.55
+        },
+        "causa_probable": null,
+        "impacto_economico": 117000000.0,
+        "evidencia": {
+          "aging": {
+            "0-30": 0.0,
+            "31-60": 27000000.0,
+            "61-90": 0.0,
+            "91+": 117000000.0
+          }
+        },
+        "fuentes": [
+          {
+            "dataset": "cartera",
+            "calculo": "aging"
+          }
+        ],
+        "fuentes_consultadas": [],
+        "evidencia_documental": null
+      }
+    ],
+    "hipotesis": [
+      {
+        "id": "H7",
+        "titulo": "Comportamiento tardío del pagador",
+        "dominio": "pagador",
+        "tipo": "HIPOTESIS",
+        "estado": "CONFIRMADA",
+        "confianza": "ALTA",
+        "evidencia_a_favor": [
+          "Proceso interno ágil pero cartera/recaudo desalineados",
+          "Concentración de mora en Sin pagador"
+        ],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 117000000.0,
+        "puntaje": 0.7,
+        "relacion_causal": "hipotesis_causal"
+      },
+      {
+        "id": "H3",
+        "titulo": "Devoluciones del pagador",
+        "dominio": "devoluciones",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [
+          "Dataset de devoluciones o glosas con estado DEVUELTA"
+        ],
+        "impacto_potencial": 117000000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H5",
+        "titulo": "Soportes deficientes",
+        "dominio": "soportes",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 117000000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H6",
+        "titulo": "Condiciones contractuales",
+        "dominio": "contratos",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [
+          "Contratos para contrastar plazos pactados"
+        ],
+        "impacto_potencial": 117000000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H8",
+        "titulo": "Concentración en un pagador",
+        "dominio": "concentracion",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 117000000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H10",
+        "titulo": "Combinación de factores",
+        "dominio": "combinado",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 117000000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H1",
+        "titulo": "Facturación tardía",
+        "dominio": "facturacion",
+        "tipo": "HIPOTESIS",
+        "estado": "REFUTADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [
+          "Radicación alta (100.0%) reduce relevancia de facturación tardía"
+        ],
+        "informacion_faltante": [],
+        "impacto_potencial": 117000000.0,
+        "puntaje": -0.2,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H9",
+        "titulo": "Proceso interno ineficiente",
+        "dominio": "proceso",
+        "tipo": "HIPOTESIS",
+        "estado": "REFUTADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [
+          "Indicadores de radicación dentro de umbral"
+        ],
+        "informacion_faltante": [],
+        "impacto_potencial": 117000000.0,
+        "puntaje": -0.2,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H4",
+        "titulo": "Glosas elevadas",
+        "dominio": "glosas",
+        "tipo": "HIPOTESIS",
+        "estado": "REFUTADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [
+          "Glosa baja (0.0%)"
+        ],
+        "informacion_faltante": [],
+        "impacto_potencial": 117000000.0,
+        "puntaje": -0.3,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H2",
+        "titulo": "Radicación tardía",
+        "dominio": "radicacion",
+        "tipo": "HIPOTESIS",
+        "estado": "REFUTADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [
+          "Radicación ágil (3.5 días promedio)"
+        ],
+        "informacion_faltante": [],
+        "impacto_potencial": 117000000.0,
+        "puntaje": -0.35,
+        "relacion_causal": "asociacion"
+      }
+    ],
+    "hipotesis_principal": {
+      "id": "H7",
+      "titulo": "Comportamiento tardío del pagador",
+      "dominio": "pagador",
+      "tipo": "HIPOTESIS",
+      "estado": "CONFIRMADA",
+      "confianza": "ALTA",
+      "evidencia_a_favor": [
+        "Proceso interno ágil pero cartera/recaudo desalineados",
+        "Concentración de mora en Sin pagador"
+      ],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 117000000.0,
+      "puntaje": 0.7,
+      "relacion_causal": "hipotesis_causal"
+    },
+    "contrastes": [
+      {
+        "hipotesis_id": "H7",
+        "hipotesis_titulo": "Comportamiento tardío del pagador",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+        "dominio": "pagador",
+        "postura": "APOYAR",
+        "argumento": "Evidencia consistente: Proceso interno ágil pero cartera/recaudo desalineados; Concentración de mora en Sin pagador",
+        "evidencia_citada": [
+          "Proceso interno ágil pero cartera/recaudo desalineados",
+          "Concentración de mora en Sin pagador"
+        ]
+      },
+      {
+        "hipotesis_id": "H7",
+        "hipotesis_titulo": "Comportamiento tardío del pagador",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+        "dominio": "cartera",
+        "postura": "COMPLEMENTAR",
+        "argumento": "Complementa con acciones en dominio pagador.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H3",
+        "hipotesis_titulo": "Devoluciones del pagador",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+        "dominio": "devoluciones",
+        "postura": "CUESTIONAR",
+        "argumento": "Información faltante impide confirmar — no convertir correlación en causalidad.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H3",
+        "hipotesis_titulo": "Devoluciones del pagador",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "Falta: Dataset de devoluciones o glosas con estado DEVUELTA",
+        "evidencia_citada": [
+          "Dataset de devoluciones o glosas con estado DEVUELTA"
+        ]
+      },
+      {
+        "hipotesis_id": "H5",
+        "hipotesis_titulo": "Soportes deficientes",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+        "dominio": "soportes",
+        "postura": "CUESTIONAR",
+        "argumento": "Asociación débil — requiere más datos.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H5",
+        "hipotesis_titulo": "Soportes deficientes",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "La correlación observada no demuestra causalidad directa.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H6",
+        "hipotesis_titulo": "Condiciones contractuales",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+        "dominio": "contratos",
+        "postura": "CUESTIONAR",
+        "argumento": "Información faltante impide confirmar — no convertir correlación en causalidad.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H6",
+        "hipotesis_titulo": "Condiciones contractuales",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "Falta: Contratos para contrastar plazos pactados",
+        "evidencia_citada": [
+          "Contratos para contrastar plazos pactados"
+        ]
+      },
+      {
+        "hipotesis_id": "H8",
+        "hipotesis_titulo": "Concentración en un pagador",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+        "dominio": "concentracion",
+        "postura": "CUESTIONAR",
+        "argumento": "Asociación débil — requiere más datos.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H8",
+        "hipotesis_titulo": "Concentración en un pagador",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "La correlación observada no demuestra causalidad directa.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H7",
+        "hipotesis_titulo": "Comportamiento tardío del pagador",
+        "especialista": "Analista Estratégico IPS IA",
+        "employee_id": "baa093b3-a41d-4348-a8c4-e35ebfc8c861",
+        "dominio": "consolidacion",
+        "postura": "COMPLEMENTAR",
+        "argumento": "Consolidador recibe 10 intervenciones de especialistas sobre 'Comportamiento tardío del pagador' — síntesis requerida antes de recomendar.",
+        "evidencia_citada": [],
+        "rol": "CONSOLIDADOR"
+      }
+    ],
+    "alternativas": [
+      {
+        "hallazgo_ref": "Cartera vencida 91+ días: $117,000,000",
+        "alternativa_id": "ALT-CAR-1",
+        "descripcion": "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+        "fundamento": "Comportamiento tardío del pagador",
+        "impacto_esperado": 117000000.0,
+        "costo_estimado": "BAJO",
+        "esfuerzo": "BAJO",
+        "plazo": "21 días",
+        "riesgo": "MEDIO",
+        "dependencias": [],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "aging": {
+            "0-30": 0.0,
+            "31-60": 27000000.0,
+            "61-90": 0.0,
+            "91+": 117000000.0
+          }
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Cartera vencida 91+ días: $117,000,000",
+        "alternativa_id": "ALT-CAR-2",
+        "descripcion": "Gestión prioritaria de cartera 91+ con negociación por pagador",
+        "fundamento": "Impacto directo en flujo de caja",
+        "impacto_esperado": 117000000.0,
+        "costo_estimado": "BAJO",
+        "esfuerzo": "MEDIO",
+        "plazo": "30 días",
+        "riesgo": "MEDIO",
+        "dependencias": [],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "aging": {
+            "0-30": 0.0,
+            "31-60": 27000000.0,
+            "61-90": 0.0,
+            "91+": 117000000.0
+          }
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Cartera vencida 91+ días: $117,000,000",
+        "alternativa_id": "ALT-CAR-3",
+        "descripcion": "Seguimiento contractual con pagadores de mayor mora",
+        "fundamento": "H7 — comportamiento del pagador cuando proceso interno es sólido",
+        "impacto_esperado": 117000000.0,
+        "costo_estimado": "MEDIO",
+        "esfuerzo": "MEDIO",
+        "plazo": "45 días",
+        "riesgo": "MEDIO",
+        "dependencias": [
+          "Jurídico",
+          "Cartera"
+        ],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "aging": {
+            "0-30": 0.0,
+            "31-60": 27000000.0,
+            "61-90": 0.0,
+            "91+": 117000000.0
+          }
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      }
+    ],
+    "priorizacion": {
+      "metodologia": "prioridad = impacto_económico(35%) + urgencia(25%) + confianza(15%) + esfuerzo_inverso(10%) + recuperabilidad(10%) + riesgo_inverso(5%)",
+      "ranking": [
+        {
+          "tipo": "alternativa",
+          "id": "ALT-CAR-1",
+          "titulo": "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+          "accion": "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+          "prioridad": 89.5,
+          "desglose": {
+            "impacto_economico": 35.0,
+            "urgencia": 25.0,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 10.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 3.0
+          },
+          "por_que_primero": "'Mesa de trabajo con pagador de mayor mora y evidencia de rad' prioriza por alto impacto económico (35.0 pts).",
+          "ranking": 1
+        },
+        {
+          "tipo": "alternativa",
+          "id": "ALT-CAR-2",
+          "titulo": "Gestión prioritaria de cartera 91+ con negociación por pagador",
+          "accion": "Gestión prioritaria de cartera 91+ con negociación por pagador",
+          "prioridad": 85.5,
+          "desglose": {
+            "impacto_economico": 35.0,
+            "urgencia": 25.0,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 3.0
+          },
+          "por_que_primero": "'Gestión prioritaria de cartera 91+ con negociación por pagad' prioriza por alto impacto económico (35.0 pts).",
+          "ranking": 2
+        },
+        {
+          "tipo": "alternativa",
+          "id": "ALT-CAR-3",
+          "titulo": "Seguimiento contractual con pagadores de mayor mora",
+          "accion": "Seguimiento contractual con pagadores de mayor mora",
+          "prioridad": 78.0,
+          "desglose": {
+            "impacto_economico": 35.0,
+            "urgencia": 17.5,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 3.0
+          },
+          "por_que_primero": "'Seguimiento contractual con pagadores de mayor mora' prioriza por alto impacto económico (35.0 pts).",
+          "ranking": 3
+        },
+        {
+          "tipo": "propuesta",
+          "id": "Cartera vencida 91+ días: $117,000,000",
+          "titulo": "Cartera vencida 91+ días: $117,000,000",
+          "accion": "Activar gestión de cobro prioritaria para facturas con mora superior a 91 días y negociar acuerdos de pago.",
+          "prioridad": 50.0,
+          "desglose": {
+            "impacto_economico": 0.0,
+            "urgencia": 25.0,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 5.5,
+            "riesgo_inverso": 3.0
+          },
+          "finops": {
+            "referencia": "Cartera vencida 91+ días: $117,000,000",
+            "costo_estimado": 2500000,
+            "beneficio_esperado": 25920000.0,
+            "valor_recuperable": 25920000.0,
+            "ahorro": 25920000.0,
+            "roi": 9.37,
+            "payback_dias": 60,
+            "certidumbre": "ESTIMADO",
+            "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+            "advertencia": "Estimación — no presentar como resultado real."
+          },
+          "por_que_primero": "'Cartera vencida 91+ días: $117,000,000' prioriza por urgencia operativa (25.0 pts).",
+          "ranking": 4
+        }
+      ],
+      "explicacion": "El ranking no es una suma arbitraria: cada factor tiene peso documentado en 'metodologia'."
+    },
+    "escenarios": {
+      "tipo": "PROYECTADO",
+      "escenarios": {
+        "CONSERVADOR": {
+          "nombre": "Conservador",
+          "valor_recuperable_estimado": 11520000.0,
+          "tasa_recuperacion": 0.08,
+          "time_reduction_days": 2,
+          "supuestos": [
+            "Hipótesis principal: Comportamiento tardío del pagador.  Efecto mínimo (8% recuperación)."
+          ],
+          "certidumbre": "PROYECTADO"
+        },
+        "PROBABLE": {
+          "nombre": "Probable",
+          "valor_recuperable_estimado": 25920000.0,
+          "tasa_recuperacion": 0.18,
+          "time_reduction_days": 5,
+          "supuestos": [
+            "Hipótesis principal: Comportamiento tardío del pagador.  Efecto moderado (18% recuperación)."
+          ],
+          "certidumbre": "PROYECTADO",
+          "accion_simulada": "Activar gestión de cobro prioritaria para facturas con mora superior a 91 días y negociar acuerdos de pago."
+        },
+        "OPTIMISTA": {
+          "nombre": "Optimista",
+          "valor_recuperable_estimado": 46080000.0,
+          "tasa_recuperacion": 0.32,
+          "time_reduction_days": 10,
+          "supuestos": [
+            "Hipótesis principal: Comportamiento tardío del pagador.  Efecto alto si ejecución disciplinada (32% recuperación)."
+          ],
+          "certidumbre": "PROYECTADO"
+        }
+      },
+      "advertencia": "Simulación con supuestos — no presentar como resultado real."
+    },
+    "finops": [
+      {
+        "referencia": "Cartera vencida 91+ días: $117,000,000",
+        "costo_estimado": 2500000,
+        "beneficio_esperado": 25920000.0,
+        "valor_recuperable": 25920000.0,
+        "ahorro": 25920000.0,
+        "roi": 9.37,
+        "payback_dias": 60,
+        "certidumbre": "ESTIMADO",
+        "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+        "advertencia": "Estimación — no presentar como resultado real."
+      }
+    ],
+    "recomendacion_consolidada": {
+      "que_ocurre": "Cartera vencida 91+ días: $117,000,000 — hipótesis principal: Comportamiento tardío del pagador",
+      "donde": "Dominios: cartera. Mayor exposición: Sin pagador.",
+      "desde_cuando": "2026-07 → 2026-07",
+      "cuanto_representa": 144000000.0,
+      "por_que_podria": "Comportamiento tardío del pagador",
+      "que_demostrado": [
+        "Comportamiento tardío del pagador"
+      ],
+      "que_no_demostrado": [
+        "Devoluciones del pagador",
+        "Soportes deficientes",
+        "Condiciones contractuales",
+        "Concentración en un pagador",
+        "Combinación de factores"
+      ],
+      "oportunidades": [
+        "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+        "Gestión prioritaria de cartera 91+ con negociación por pagador",
+        "Seguimiento contractual con pagadores de mayor mora",
+        "Cartera vencida 91+ días: $117,000,000"
+      ],
+      "alternativas_evaluadas": 4,
+      "recomendacion": "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+      "por_que_recomendamos": "'Mesa de trabajo con pagador de mayor mora y evidencia de rad' prioriza por alto impacto económico (35.0 pts).",
+      "cuanto_podria_valer": 25920000.0,
+      "que_hacer": [
+        "Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna",
+        "Gestión prioritaria de cartera 91+ con negociación por pagador",
+        "Seguimiento contractual con pagadores de mayor mora"
+      ],
+      "como_medir": [
+        "Días promedio factura→radicación (meta: <7)",
+        "Porcentaje de glosa (meta: reducir 5 p.p.)",
+        "Saldo cartera 91+ días",
+        "Seguimiento acción: Mesa de trabajo con pagador de mayor mora y evidencia de radicación oportuna"
+      ],
+      "calidad_datos": "PARCIAL",
+      "especialistas_involucrados": 4,
+      "solicitud": "Una entidad afecta el recaudo. Determina si el problema es interno o del pagador."
+    },
+    "oportunidades": [
+      {
+        "id": "21c4dbd8-c50a-467c-b1ea-a04df6c7e91b",
+        "problema": "Cartera vencida 91+ días: $117,000,000",
+        "evidencia": "Existe saldo en mora superior a 91 días por $117,000,000.",
+        "causa_probable": "Requiere validación con equipo operativo.",
+        "impacto": "Impacto estimado: $117,000,000",
+        "accion_propuesta": "Activar gestión de cobro prioritaria para facturas con mora superior a 91 días y negociar acuerdos de pago.",
+        "responsable_sugerido": "Analista de cartera",
+        "plazo": "30 días",
+        "indicador_seguimiento": "aging_91_mas",
+        "meta": "Reducir cartera 91+ en 20%",
+        "impacto_esperado": "Mitigar Cartera vencida 91+ días: $117,000,000",
+        "confianza": "MEDIA",
+        "prioridad": 50.0
+      }
+    ],
+    "work_plan_id": null,
+    "planes_accion": [],
+    "plan_accion": [],
+    "especialistas": {
+      "dominios": [
+        "cartera",
+        "facturacion",
+        "glosas",
+        "radicacion"
+      ],
+      "asignaciones": [
+        {
+          "employee_id": "7c8c295d-d499-42c5-a73b-b2a87d2eeed5",
+          "employee_code": "ips-cartera-analyst",
+          "employee_name": "Analista de Cartera IA",
+          "specialty": "Cartera IPS",
+          "domain": "cartera",
+          "score": 0.925,
+          "factors": {
+            "capacidades": 1.0,
+            "herramientas": 1.0,
+            "especialidad": 0.2,
+            "disponibilidad": 1.0,
+            "experiencia": 0.5
+          }
+        },
+        {
+          "employee_id": "c32b1558-daeb-4b00-902a-86c3a47dc839",
+          "employee_code": "ips-facturacion-analyst",
+          "employee_name": "Analista de Facturación IA",
+          "specialty": "Facturación IPS",
+          "domain": "facturacion",
+          "score": 0.925,
+          "factors": {
+            "capacidades": 1.0,
+            "herramientas": 1.0,
+            "especialidad": 0.2,
+            "disponibilidad": 1.0,
+            "experiencia": 0.5
+          }
+        },
+        {
+          "employee_id": "ab60af15-00c9-49e7-9ad5-76a81adefcc3",
+          "employee_code": "ips-glosas-analyst",
+          "employee_name": "Analista de Glosas IA",
+          "specialty": "Glosas IPS",
+          "domain": "glosas",
+          "score": 0.925,
+          "factors": {
+            "capacidades": 1.0,
+            "herramientas": 1.0,
+            "especialidad": 0.2,
+            "disponibilidad": 1.0,
+            "experiencia": 0.5
+          }
+        },
+        {
+          "employee_id": "b21775fd-e08c-40d6-bdef-0c2fedc7b003",
+          "employee_code": "ips-radicacion-analyst",
+          "employee_name": "Analista de Radicación IA",
+          "specialty": "Radicación IPS",
+          "domain": "radicacion",
+          "score": 0.925,
+          "factors": {
+            "capacidades": 1.0,
+            "herramientas": 1.0,
+            "especialidad": 0.2,
+            "disponibilidad": 1.0,
+            "experiencia": 0.5
+          }
+        }
+      ],
+      "consolidador": {
+        "employee_id": "baa093b3-a41d-4348-a8c4-e35ebfc8c861",
+        "employee_code": "ips-estrategico-analyst",
+        "employee_name": "Analista Estratégico IPS IA",
+        "specialty": "Analítica Estratégica IPS",
+        "domain": "estrategico",
+        "score": 0.925,
+        "factors": {
+          "capacidades": 1.0,
+          "herramientas": 1.0,
+          "especialidad": 0.2,
+          "disponibilidad": 1.0,
+          "experiencia": 0.5
+        }
+      }
+    },
+    "comparacion_historica": {
+      "disponible": false,
+      "mensaje": "Sin histórico previo para esta IPS"
+    },
+    "conocimiento": {
+      "utilizado": true,
+      "mensaje": null,
+      "fuentes": [
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "5246f246-2e3a-4da7-a223-9a35f7dd3a22",
+          "chunk_id": "4426dbef-f5f9-4b3d-9301-83143a873b67",
+          "titulo": "Contrato EPS LENTA",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "b21775fd-e08c-40d6-bdef-0c2fedc7b003",
+          "analysis_id": "58fa35e4-a09e-4295-997b-eefe8ce761e8",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T00:58:33.183464+00:00",
+          "relevancia": 1.0,
+          "extracto": "Pago a sesenta (60) días desde radicación válida."
+        }
+      ],
+      "requiere_validacion": false
+    },
+    "experiencia": {
+      "casos_similares": []
+    },
+    "creado": "2026-08-27T00:58:33.150587"
+  }
+}
