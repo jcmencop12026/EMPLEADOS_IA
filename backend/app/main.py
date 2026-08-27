@@ -12,6 +12,7 @@ from app import knowledge_models  # noqa: F401 — registra tablas
 from app import orchestration_models, notifications  # noqa: F401 — registra tablas/suscriptores
 from app import salud_models  # noqa: F401 — registra tablas IPS
 from app import experience_models  # noqa: F401 — experiencia transversal core
+from app import opportunity_models  # noqa: F401 — oportunidades proactivas 1030
 from app.routers import (
     admin,
     agent_factory,
@@ -27,12 +28,14 @@ from app.routers import (
     organization,
     salud,
     experience,
+    oportunidades,
     test_lab,
     tools,
 )
 from app.seed import bootstrap
 from app.services.automation_events import register_automation_event_handlers
 from app.services.automation_scheduler import start_scheduler, stop_scheduler
+from app.services.proactive_scheduler import start_proactive_scheduler, stop_proactive_scheduler
 from app.services.authorization import AuthorizationError
 
 
@@ -53,7 +56,9 @@ async def lifespan(_app: FastAPI):
         db.close()
     register_automation_event_handlers()
     start_scheduler()
+    start_proactive_scheduler()
     yield
+    stop_proactive_scheduler()
     stop_scheduler()
 
 
@@ -96,6 +101,7 @@ app.include_router(notification_routes.rules_router)
 app.include_router(finops.router)
 app.include_router(salud.router)
 app.include_router(experience.router)
+app.include_router(oportunidades.router)
 
 
 @app.get("/health")

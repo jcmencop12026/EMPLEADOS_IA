@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from decimal import Decimal
 from typing import Any
 
 from app.services.salud_indicators import INSUFICIENTE
@@ -49,8 +50,11 @@ def register_finops_values(
     user_id: str,
     analysis_id: str,
     estimates: list[dict[str, Any]],
+    work_plan_id: str | None = None,
+    opportunity_id: str | None = None,
+    employee_id: str | None = None,
 ) -> list[str]:
-    """Registra valores estimados en FINOPS cuando es cuantificable."""
+    """Registra valores estimados en FINOPS cuando es cuantificable — G-02."""
     from app.services.finops_service import registrar_valor
 
     ids: list[str] = []
@@ -62,14 +66,18 @@ def register_finops_values(
             db,
             organization_id=organization_id,
             user_id=user_id,
-            value_type="valor_recuperable_ips",
+            employee_id=employee_id,
+            work_plan_id=work_plan_id,
+            value_type=est.get("value_type", "valor_recuperable_ips"),
             certainty=est.get("certidumbre", "Estimado"),
             amount=Decimal(str(round(amount, 2))),
             currency="COP",
             methodology=est.get("metodologia"),
-            source=f"motor_analitico:{analysis_id}",
+            source=est.get("source") or f"motor_analitico:{analysis_id}",
             notes=est.get("referencia"),
         )
+        if opportunity_id:
+            row.opportunity_id = opportunity_id
         ids.append(row.id)
     return ids
 

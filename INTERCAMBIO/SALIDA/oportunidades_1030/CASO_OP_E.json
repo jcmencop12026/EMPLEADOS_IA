@@ -1,0 +1,35 @@
+{
+  "signal_id": "6cf1c736-488d-42fe-8282-3ebe12e1750a",
+  "opportunity_id": "fee6e538-ecd7-4da4-82b3-364a8ce663bc",
+  "codigo": "OPP-00005",
+  "estado": "DATOS_INSUFICIENTES",
+  "pertinencia": "SOLICITAR_DATOS",
+  "prioridad_score": 0.3952,
+  "siguiente_accion": {
+    "que": "Atender oportunidad: Datos insuficientes para conclusión",
+    "por_que": "Contexto insuficiente — faltan: indicadores, histórico",
+    "cuando": "AHORA",
+    "quien": "Equipo IA asignado",
+    "quien_id": "d3a401a1-deac-4f83-9385-ad9b8e608e05",
+    "herramienta": "Orquestador + capacidades asignadas",
+    "canal": "Automatización",
+    "costo_estimado": 0.0,
+    "autorizacion": "AUTOMATICA_BAJO_POLITICA",
+    "resultado_esperado": "Materializar valor potencial estimado",
+    "kpi_objetivo": "mejora_indicador_principal",
+    "reevaluar_en_horas": 72,
+    "escalar_si": "Sin avance en 7 días o KPI empeora",
+    "abandonar_si": "Capacidad no disponible tras 30 días",
+    "ejecutable": true
+  },
+  "capacidad": {
+    "empleados_disponibles": 9,
+    "herramientas_activas": 10,
+    "ejecutable": true,
+    "requiere_aprobacion": false,
+    "human_gate": "AUTOMATICA_BAJO_POLITICA",
+    "limitaciones": [],
+    "mensaje": "Capacidad disponible"
+  },
+  "deduplicated": false
+}

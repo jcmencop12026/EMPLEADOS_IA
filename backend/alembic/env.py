@@ -11,6 +11,7 @@ from app import knowledge_models  # noqa: F401
 from app import orchestration_models  # noqa: F401
 from app import finops_models  # noqa: F401
 from app import experience_models  # noqa: F401
+from app import opportunity_models  # noqa: F401
 
 config = context.config
 db_url = os.environ.get("DATABASE_URL") or config.get_main_option("sqlalchemy.url") or settings.database_url

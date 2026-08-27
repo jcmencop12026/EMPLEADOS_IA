@@ -931,3 +931,70 @@ export async function retrieveKnowledge(query: string, employeeId?: string): Pro
     body: JSON.stringify({ query, employee_id: employeeId, limit: 10 }),
   });
 }
+
+// --- Oportunidades proactivas (1030) ---
+
+export type OpportunityItem = {
+  id: string;
+  codigo: string;
+  tipo: string;
+  dominio: string;
+  titulo: string;
+  estado: string;
+  urgencia: string;
+  impacto_estimado: number | null;
+  valor_potencial: number | null;
+  valor_potencial_certidumbre: string;
+  valor_materializado: number | null;
+  confianza: number;
+  pertinencia: string | null;
+  momento: string | null;
+  prioridad_score: number | null;
+  siguiente_accion: Record<string, unknown> | null;
+  fecha_deteccion: string | null;
+};
+
+export type OpportunitySummary = {
+  oportunidades_detectadas: number;
+  pertinentes: number;
+  activadas: number;
+  materializadas: number;
+  valor_potencial_total: number;
+  valor_materializado_total: number;
+  pendientes_aprobacion: number;
+};
+
+export async function fetchOpportunities(params = ""): Promise<{ items: OpportunityItem[]; total: number }> {
+  return api(`/api/oportunidades${params ? `?${params}` : ""}`);
+}
+
+export async function fetchOpportunity(id: string): Promise<OpportunityItem> {
+  return api(`/api/oportunidades/${id}`);
+}
+
+export async function fetchOpportunitySummary(): Promise<OpportunitySummary> {
+  return api("/api/oportunidades/resumen");
+}
+
+export async function evaluateOpportunity(id: string): Promise<Record<string, unknown>> {
+  return api(`/api/oportunidades/${id}/evaluar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function approveOpportunity(id: string, aprobado = true, motivo?: string): Promise<OpportunityItem> {
+  return api(`/api/oportunidades/${id}/aprobar`, {
+    method: "POST",
+    body: JSON.stringify({ aprobado, motivo }),
+  });
+}
+
+export async function activateOpportunity(id: string): Promise<Record<string, unknown>> {
+  return api(`/api/oportunidades/${id}/activar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchOpportunityTrace(id: string): Promise<Record<string, unknown>> {
+  return api(`/api/oportunidades/${id}/trazabilidad`);
+}
+
+export async function prioritizeOpportunities(): Promise<Record<string, unknown>> {
+  return api("/api/oportunidades/priorizar", { method: "POST", body: JSON.stringify({}) });
+}
