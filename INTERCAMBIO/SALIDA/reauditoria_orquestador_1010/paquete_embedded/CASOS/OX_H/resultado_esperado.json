@@ -1,0 +1,6 @@
+{
+  "problema": "cross_tenant",
+  "tenant_ejecucion": "TENANT_A",
+  "experiencia_secreta": "TENANT_B",
+  "no_contaminar": true
+}

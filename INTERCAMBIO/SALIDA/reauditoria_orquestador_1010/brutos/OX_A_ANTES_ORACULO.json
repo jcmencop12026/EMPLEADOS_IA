@@ -1,0 +1,1184 @@
+{
+  "caso": "OX_A",
+  "organization_id": "c729d3a9-717c-4802-91d5-38e9e55c6cf4",
+  "solicitud": "¿Por qué aumentó mi cartera? Analiza si la radicación tardía está afectando el recaudo y los días entre facturación y radicación.",
+  "available_data": [
+    "radicacion",
+    "facturacion",
+    "cartera"
+  ],
+  "dominio_principal": "radicacion",
+  "tipo_problema": "radicacion_tardia",
+  "candidatos": [
+    {
+      "employee_id": "84321387-0c3c-4d7a-9d33-0d1da36da555",
+      "employee_code": "ips-radicacion-analyst",
+      "employee_name": "Analista de Radicación IA",
+      "specialty": "Radicación IPS",
+      "domain": "radicacion",
+      "score": 0.911,
+      "factores": {
+        "capacidad": 1.05,
+        "experiencia": 0.8,
+        "desempeno": 0.8,
+        "costo": 0.982,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 1.05,
+        "experiencia": 0.8,
+        "desempeno": 0.8,
+        "costo": 0.982,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "capacidades alineadas con radicacion; 4 experiencias exitosas en radicacion; especialidad Radicación IPS relevante; costo histórico $0.1800",
+      "experiencia_consultada": [
+        "37706e9a-caaa-487c-93af-4bd4132fa673",
+        "08223a1b-ee6f-4b3b-8774-7337ff9d2fcc",
+        "45e5ce95-e0c9-4cb4-a159-52a0ed0b6746",
+        "ff33ab9a-4042-4f21-b3ad-5d789ff89e4d"
+      ],
+      "finops": {
+        "score": 0.982,
+        "costo_promedio": 0.18,
+        "explicacion": "Costo promedio $0.1800 — no se penaliza excesivamente"
+      }
+    },
+    {
+      "employee_id": "0b1a9acd-616b-498e-b2a8-50fcf9665452",
+      "employee_code": "ips-cartera-analyst",
+      "employee_name": "Analista de Cartera IA",
+      "specialty": "Cartera IPS",
+      "domain": "radicacion",
+      "score": 0.646,
+      "factores": {
+        "capacidad": 0.55,
+        "experiencia": 0.396,
+        "desempeno": 0.396,
+        "costo": 0.998,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 0.55,
+        "experiencia": 0.396,
+        "desempeno": 0.396,
+        "costo": 0.998,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "18 fracasos previos en radicacion; costo histórico $0.0200",
+      "experiencia_consultada": [
+        "97c529fe-bcad-4b19-a2b9-c725e8ab4819",
+        "d4dc0607-94cf-4986-8e5c-ba9449ae70c5",
+        "5eab633a-e1e1-47d3-a5a5-ab77dc4f597b",
+        "46ffe246-ce30-422a-b1fa-32e1a3f55cdd",
+        "7dd7a3bb-a89b-48fc-95a2-6fe78cc820c3"
+      ],
+      "finops": {
+        "score": 0.998,
+        "costo_promedio": 0.02,
+        "explicacion": "Costo promedio $0.0200 — no se penaliza excesivamente"
+      }
+    },
+    {
+      "employee_id": "cd683760-2a10-467a-952c-e10c8782c3e5",
+      "employee_code": "ips-facturacion-analyst",
+      "employee_name": "Analista de Facturación IA",
+      "specialty": "Facturación IPS",
+      "domain": "radicacion",
+      "score": 0.59,
+      "factores": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "mejor puntaje disponible para radicacion",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      }
+    },
+    {
+      "employee_id": "ebd277f1-c2dd-4e23-99d2-c58c00f56dd1",
+      "employee_code": "ips-glosas-analyst",
+      "employee_name": "Analista de Glosas IA",
+      "specialty": "Glosas IPS",
+      "domain": "radicacion",
+      "score": 0.59,
+      "factores": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "mejor puntaje disponible para radicacion",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      }
+    },
+    {
+      "employee_id": "08fcb9a0-4413-444d-879d-8d4b09fd2065",
+      "employee_code": "ips-contractual-analyst",
+      "employee_name": "Analista Contractual IA",
+      "specialty": "Contratación IPS",
+      "domain": "radicacion",
+      "score": 0.59,
+      "factores": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "mejor puntaje disponible para radicacion",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      }
+    },
+    {
+      "employee_id": "0b1a9acd-616b-498e-b2a8-50fcf9665452",
+      "employee_code": "ips-cartera-analyst",
+      "employee_name": "Analista de Cartera IA",
+      "specialty": "Cartera IPS",
+      "domain": "cartera",
+      "score": 0.755,
+      "factores": {
+        "capacidad": 1.05,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.998,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 1.05,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.998,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "capacidades alineadas con cartera; especialidad Cartera IPS relevante; costo histórico $0.0200",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.998,
+        "costo_promedio": 0.02,
+        "explicacion": "Costo promedio $0.0200 — no se penaliza excesivamente"
+      }
+    },
+    {
+      "employee_id": "cd683760-2a10-467a-952c-e10c8782c3e5",
+      "employee_code": "ips-facturacion-analyst",
+      "employee_name": "Analista de Facturación IA",
+      "specialty": "Facturación IPS",
+      "domain": "cartera",
+      "score": 0.59,
+      "factores": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "mejor puntaje disponible para cartera",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      }
+    },
+    {
+      "employee_id": "ebd277f1-c2dd-4e23-99d2-c58c00f56dd1",
+      "employee_code": "ips-glosas-analyst",
+      "employee_name": "Analista de Glosas IA",
+      "specialty": "Glosas IPS",
+      "domain": "cartera",
+      "score": 0.59,
+      "factores": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "mejor puntaje disponible para cartera",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      }
+    },
+    {
+      "employee_id": "08fcb9a0-4413-444d-879d-8d4b09fd2065",
+      "employee_code": "ips-contractual-analyst",
+      "employee_name": "Analista Contractual IA",
+      "specialty": "Contratación IPS",
+      "domain": "cartera",
+      "score": 0.59,
+      "factores": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "mejor puntaje disponible para cartera",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      }
+    },
+    {
+      "employee_id": "44c22f1b-32b6-401e-a800-6d2ec5af554a",
+      "employee_code": "ips-estrategico-analyst",
+      "employee_name": "Analista Estratégico IPS IA",
+      "specialty": "Analítica Estratégica IPS",
+      "domain": "cartera",
+      "score": 0.59,
+      "factores": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "mejor puntaje disponible para cartera",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      }
+    },
+    {
+      "employee_id": "cd683760-2a10-467a-952c-e10c8782c3e5",
+      "employee_code": "ips-facturacion-analyst",
+      "employee_name": "Analista de Facturación IA",
+      "specialty": "Facturación IPS",
+      "domain": "facturacion",
+      "score": 0.715,
+      "factores": {
+        "capacidad": 1.05,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 1.05,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "capacidades alineadas con facturacion; especialidad Facturación IPS relevante",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      }
+    },
+    {
+      "employee_id": "ebd277f1-c2dd-4e23-99d2-c58c00f56dd1",
+      "employee_code": "ips-glosas-analyst",
+      "employee_name": "Analista de Glosas IA",
+      "specialty": "Glosas IPS",
+      "domain": "facturacion",
+      "score": 0.59,
+      "factores": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "mejor puntaje disponible para facturacion",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      }
+    },
+    {
+      "employee_id": "08fcb9a0-4413-444d-879d-8d4b09fd2065",
+      "employee_code": "ips-contractual-analyst",
+      "employee_name": "Analista Contractual IA",
+      "specialty": "Contratación IPS",
+      "domain": "facturacion",
+      "score": 0.59,
+      "factores": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "mejor puntaje disponible para facturacion",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      }
+    },
+    {
+      "employee_id": "44c22f1b-32b6-401e-a800-6d2ec5af554a",
+      "employee_code": "ips-estrategico-analyst",
+      "employee_name": "Analista Estratégico IPS IA",
+      "specialty": "Analítica Estratégica IPS",
+      "domain": "facturacion",
+      "score": 0.59,
+      "factores": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "mejor puntaje disponible para facturacion",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      }
+    },
+    {
+      "employee_id": "0b4568fa-bcac-4a94-bad9-aebdf1620b63",
+      "employee_code": "ips-rips-analyst",
+      "employee_name": "Analista RIPS IA",
+      "specialty": "RIPS Salud IPS",
+      "domain": "facturacion",
+      "score": 0.555,
+      "factores": {
+        "capacidad": 0.41,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 0.41,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "mejor puntaje disponible para facturacion",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      }
+    }
+  ],
+  "candidatos_evaluados": 15,
+  "lider": {
+    "employee_id": "84321387-0c3c-4d7a-9d33-0d1da36da555",
+    "employee_code": "ips-radicacion-analyst",
+    "employee_name": "Analista de Radicación IA",
+    "specialty": "Radicación IPS",
+    "domain": "radicacion",
+    "rol": null,
+    "score": 0.911,
+    "factores": {
+      "capacidad": 1.05,
+      "experiencia": 0.8,
+      "desempeno": 0.8,
+      "costo": 0.982,
+      "disponibilidad": 1.0,
+      "riesgo": 0.7,
+      "diversidad": 1.0
+    },
+    "razon_seleccion": "capacidades alineadas con radicacion; 4 experiencias exitosas en radicacion; especialidad Radicación IPS relevante; costo histórico $0.1800",
+    "finops": {
+      "score": 0.982,
+      "costo_promedio": 0.18,
+      "explicacion": "Costo promedio $0.1800 — no se penaliza excesivamente"
+    },
+    "experiencia_consultada": [
+      "37706e9a-caaa-487c-93af-4bd4132fa673",
+      "08223a1b-ee6f-4b3b-8774-7337ff9d2fcc",
+      "45e5ce95-e0c9-4cb4-a159-52a0ed0b6746",
+      "ff33ab9a-4042-4f21-b3ad-5d789ff89e4d"
+    ]
+  },
+  "complementarios": [
+    {
+      "employee_id": "0b1a9acd-616b-498e-b2a8-50fcf9665452",
+      "employee_code": "ips-cartera-analyst",
+      "employee_name": "Analista de Cartera IA",
+      "specialty": "Cartera IPS",
+      "domain": "cartera",
+      "rol": "ESPECIALISTA_COMPLEMENTARIO",
+      "score": 0.755,
+      "factores": {
+        "capacidad": 1.05,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.998,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "razon_seleccion": "capacidades alineadas con cartera; especialidad Cartera IPS relevante; costo histórico $0.0200",
+      "finops": {
+        "score": 0.998,
+        "costo_promedio": 0.02,
+        "explicacion": "Costo promedio $0.0200 — no se penaliza excesivamente"
+      },
+      "experiencia_consultada": []
+    },
+    {
+      "employee_id": "cd683760-2a10-467a-952c-e10c8782c3e5",
+      "employee_code": "ips-facturacion-analyst",
+      "employee_name": "Analista de Facturación IA",
+      "specialty": "Facturación IPS",
+      "domain": "facturacion",
+      "rol": "ESPECIALISTA_COMPLEMENTARIO",
+      "score": 0.715,
+      "factores": {
+        "capacidad": 1.05,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "razon_seleccion": "capacidades alineadas con facturacion; especialidad Facturación IPS relevante",
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      },
+      "experiencia_consultada": []
+    }
+  ],
+  "validador": {
+    "employee_id": "0b1a9acd-616b-498e-b2a8-50fcf9665452",
+    "employee_code": "ips-cartera-analyst",
+    "employee_name": "Analista de Cartera IA",
+    "specialty": "Cartera IPS",
+    "domain": "radicacion",
+    "rol": null,
+    "score": 0.646,
+    "factores": {
+      "capacidad": 0.55,
+      "experiencia": 0.396,
+      "desempeno": 0.396,
+      "costo": 0.998,
+      "disponibilidad": 1.0,
+      "riesgo": 0.7,
+      "diversidad": 1.0
+    },
+    "razon_seleccion": "18 fracasos previos en radicacion; costo histórico $0.0200",
+    "finops": {
+      "score": 0.998,
+      "costo_promedio": 0.02,
+      "explicacion": "Costo promedio $0.0200 — no se penaliza excesivamente"
+    },
+    "experiencia_consultada": [
+      "97c529fe-bcad-4b19-a2b9-c725e8ab4819",
+      "d4dc0607-94cf-4986-8e5c-ba9449ae70c5",
+      "5eab633a-e1e1-47d3-a5a5-ab77dc4f597b",
+      "46ffe246-ce30-422a-b1fa-32e1a3f55cdd",
+      "7dd7a3bb-a89b-48fc-95a2-6fe78cc820c3"
+    ]
+  },
+  "disidente": {
+    "employee_id": "ebd277f1-c2dd-4e23-99d2-c58c00f56dd1",
+    "employee_code": "ips-glosas-analyst",
+    "employee_name": "Analista de Glosas IA",
+    "specialty": "Glosas IPS",
+    "domain": "cartera",
+    "rol": null,
+    "score": 0.59,
+    "factores": {
+      "capacidad": 0.55,
+      "experiencia": 0.35,
+      "desempeno": 0.35,
+      "costo": 0.6,
+      "disponibilidad": 1.0,
+      "riesgo": 0.7,
+      "diversidad": 1.0
+    },
+    "razon_seleccion": "mejor puntaje disponible para cartera",
+    "finops": {
+      "score": 0.6,
+      "costo_promedio": null,
+      "explicacion": "Sin historial FINOPS — neutro"
+    },
+    "experiencia_consultada": []
+  },
+  "equipo": [
+    {
+      "employee_id": "84321387-0c3c-4d7a-9d33-0d1da36da555",
+      "employee_code": "ips-radicacion-analyst",
+      "employee_name": "Analista de Radicación IA",
+      "specialty": "Radicación IPS",
+      "domain": "radicacion",
+      "score": 0.911,
+      "factores": {
+        "capacidad": 1.05,
+        "experiencia": 0.8,
+        "desempeno": 0.8,
+        "costo": 0.982,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 1.05,
+        "experiencia": 0.8,
+        "desempeno": 0.8,
+        "costo": 0.982,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "capacidades alineadas con radicacion; 4 experiencias exitosas en radicacion; especialidad Radicación IPS relevante; costo histórico $0.1800",
+      "experiencia_consultada": [
+        "37706e9a-caaa-487c-93af-4bd4132fa673",
+        "08223a1b-ee6f-4b3b-8774-7337ff9d2fcc",
+        "45e5ce95-e0c9-4cb4-a159-52a0ed0b6746",
+        "ff33ab9a-4042-4f21-b3ad-5d789ff89e4d"
+      ],
+      "finops": {
+        "score": 0.982,
+        "costo_promedio": 0.18,
+        "explicacion": "Costo promedio $0.1800 — no se penaliza excesivamente"
+      },
+      "rol": "LIDER",
+      "razon_rol": "Líder por dominio principal 'radicacion': capacidades alineadas con radicacion; 4 experiencias exitosas en radicacion; especialidad Radicación IPS relevante; costo histórico $0.1800"
+    },
+    {
+      "employee_id": "0b1a9acd-616b-498e-b2a8-50fcf9665452",
+      "employee_code": "ips-cartera-analyst",
+      "employee_name": "Analista de Cartera IA",
+      "specialty": "Cartera IPS",
+      "domain": "cartera",
+      "score": 0.755,
+      "factores": {
+        "capacidad": 1.05,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.998,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 1.05,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.998,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "capacidades alineadas con cartera; especialidad Cartera IPS relevante; costo histórico $0.0200",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.998,
+        "costo_promedio": 0.02,
+        "explicacion": "Costo promedio $0.0200 — no se penaliza excesivamente"
+      },
+      "rol": "ESPECIALISTA_COMPLEMENTARIO",
+      "razon_rol": "Apoyo en dominio cartera"
+    },
+    {
+      "employee_id": "cd683760-2a10-467a-952c-e10c8782c3e5",
+      "employee_code": "ips-facturacion-analyst",
+      "employee_name": "Analista de Facturación IA",
+      "specialty": "Facturación IPS",
+      "domain": "facturacion",
+      "score": 0.715,
+      "factores": {
+        "capacidad": 1.05,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 1.05,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "capacidades alineadas con facturacion; especialidad Facturación IPS relevante",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      },
+      "rol": "ESPECIALISTA_COMPLEMENTARIO",
+      "razon_rol": "Apoyo en dominio facturacion"
+    },
+    {
+      "employee_id": "0b1a9acd-616b-498e-b2a8-50fcf9665452",
+      "employee_code": "ips-cartera-analyst",
+      "employee_name": "Analista de Cartera IA",
+      "specialty": "Cartera IPS",
+      "domain": "radicacion",
+      "score": 0.646,
+      "factores": {
+        "capacidad": 0.55,
+        "experiencia": 0.396,
+        "desempeno": 0.396,
+        "costo": 0.998,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 0.55,
+        "experiencia": 0.396,
+        "desempeno": 0.396,
+        "costo": 0.998,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "18 fracasos previos en radicacion; costo histórico $0.0200",
+      "experiencia_consultada": [
+        "97c529fe-bcad-4b19-a2b9-c725e8ab4819",
+        "d4dc0607-94cf-4986-8e5c-ba9449ae70c5",
+        "5eab633a-e1e1-47d3-a5a5-ab77dc4f597b",
+        "46ffe246-ce30-422a-b1fa-32e1a3f55cdd",
+        "7dd7a3bb-a89b-48fc-95a2-6fe78cc820c3"
+      ],
+      "finops": {
+        "score": 0.998,
+        "costo_promedio": 0.02,
+        "explicacion": "Costo promedio $0.0200 — no se penaliza excesivamente"
+      },
+      "razon_rol": "Validador con especialidad diferente (Cartera IPS) para diversidad ante impacto en radicacion",
+      "rol": "VALIDADOR"
+    },
+    {
+      "employee_id": "ebd277f1-c2dd-4e23-99d2-c58c00f56dd1",
+      "employee_code": "ips-glosas-analyst",
+      "employee_name": "Analista de Glosas IA",
+      "specialty": "Glosas IPS",
+      "domain": "cartera",
+      "score": 0.59,
+      "factores": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 0.55,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "mejor puntaje disponible para cartera",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      },
+      "razon_rol": "Disidente con perspectiva cartera para contrastar hipótesis",
+      "rol": "DISIDENTE"
+    }
+  ],
+  "experiencias_utilizadas": [
+    "37706e9a-caaa-487c-93af-4bd4132fa673",
+    "08223a1b-ee6f-4b3b-8774-7337ff9d2fcc",
+    "45e5ce95-e0c9-4cb4-a159-52a0ed0b6746",
+    "ff33ab9a-4042-4f21-b3ad-5d789ff89e4d"
+  ],
+  "factores_pesos": {
+    "capacidad": 0.25,
+    "experiencia": 0.2,
+    "desempeno": 0.15,
+    "costo": 0.1,
+    "disponibilidad": 0.1,
+    "riesgo": 0.1,
+    "diversidad": 0.1
+  },
+  "razon_seleccion_global": "Seleccionado Analista de Radicación IA como líder porque capacidades alineadas con radicacion; 4 experiencias exitosas en radicacion; especialidad Radicación IPS relevante; costo histórico $0.1800 en dominio principal 'radicacion' (tipo: radicacion_tardia)",
+  "selection_log_id": "1dbca744-78a2-4549-9f5b-0f2b58af5bd5",
+  "asignaciones": [
+    {
+      "employee_id": "84321387-0c3c-4d7a-9d33-0d1da36da555",
+      "employee_code": "ips-radicacion-analyst",
+      "employee_name": "Analista de Radicación IA",
+      "specialty": "Radicación IPS",
+      "domain": "radicacion",
+      "score": 0.911,
+      "factores": {
+        "capacidad": 1.05,
+        "experiencia": 0.8,
+        "desempeno": 0.8,
+        "costo": 0.982,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 1.05,
+        "experiencia": 0.8,
+        "desempeno": 0.8,
+        "costo": 0.982,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "capacidades alineadas con radicacion; 4 experiencias exitosas en radicacion; especialidad Radicación IPS relevante; costo histórico $0.1800",
+      "experiencia_consultada": [
+        "37706e9a-caaa-487c-93af-4bd4132fa673",
+        "08223a1b-ee6f-4b3b-8774-7337ff9d2fcc",
+        "45e5ce95-e0c9-4cb4-a159-52a0ed0b6746",
+        "ff33ab9a-4042-4f21-b3ad-5d789ff89e4d"
+      ],
+      "finops": {
+        "score": 0.982,
+        "costo_promedio": 0.18,
+        "explicacion": "Costo promedio $0.1800 — no se penaliza excesivamente"
+      }
+    },
+    {
+      "employee_id": "0b1a9acd-616b-498e-b2a8-50fcf9665452",
+      "employee_code": "ips-cartera-analyst",
+      "employee_name": "Analista de Cartera IA",
+      "specialty": "Cartera IPS",
+      "domain": "cartera",
+      "score": 0.755,
+      "factores": {
+        "capacidad": 1.05,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.998,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 1.05,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.998,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "capacidades alineadas con cartera; especialidad Cartera IPS relevante; costo histórico $0.0200",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.998,
+        "costo_promedio": 0.02,
+        "explicacion": "Costo promedio $0.0200 — no se penaliza excesivamente"
+      }
+    },
+    {
+      "employee_id": "cd683760-2a10-467a-952c-e10c8782c3e5",
+      "employee_code": "ips-facturacion-analyst",
+      "employee_name": "Analista de Facturación IA",
+      "specialty": "Facturación IPS",
+      "domain": "facturacion",
+      "score": 0.715,
+      "factores": {
+        "capacidad": 1.05,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "factors": {
+        "capacidad": 1.05,
+        "experiencia": 0.35,
+        "desempeno": 0.35,
+        "costo": 0.6,
+        "disponibilidad": 1.0,
+        "riesgo": 0.7,
+        "diversidad": 1.0
+      },
+      "pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "razon_seleccion": "capacidades alineadas con facturacion; especialidad Facturación IPS relevante",
+      "experiencia_consultada": [],
+      "finops": {
+        "score": 0.6,
+        "costo_promedio": null,
+        "explicacion": "Sin historial FINOPS — neutro"
+      }
+    }
+  ],
+  "setup_meta": {
+    "available_data": [
+      "radicacion",
+      "facturacion",
+      "cartera"
+    ]
+  }
+}

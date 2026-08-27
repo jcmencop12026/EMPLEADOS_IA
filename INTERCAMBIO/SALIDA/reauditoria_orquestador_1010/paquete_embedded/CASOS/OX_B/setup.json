@@ -1,0 +1,30 @@
+{
+  "available_data": ["glosas", "cartera", "facturacion"],
+  "experiencias": [
+    {
+      "employee_code": "ips-glosas-analyst",
+      "count": 5,
+      "dominio": "glosas",
+      "tipo_problema": "glosas_devoluciones",
+      "estado": "EXITO",
+      "resultado_real": "Recuperó 85% de glosas objetadas",
+      "kpi_despues": {"tasa_recuperacion": 0.85}
+    },
+    {
+      "employee_code": "ips-cartera-analyst",
+      "count": 12,
+      "dominio": "glosas",
+      "tipo_problema": "glosas_devoluciones",
+      "estado": "FRACASO",
+      "resultado_real": "Glosas persistieron sin recuperación"
+    },
+    {
+      "employee_code": "ips-radicacion-analyst",
+      "count": 3,
+      "dominio": "radicacion",
+      "tipo_problema": "radicacion_tardia",
+      "estado": "EXITO",
+      "resultado_real": "Radicación oportuna"
+    }
+  ]
+}
