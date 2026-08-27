@@ -20,7 +20,12 @@ from app.schemas_salud import (
     SpecialistSelectionRequest,
 )
 from app.services.salud_engine import create_action_plan, get_diagnostico, run_ips_analysis
-from app.services.salud_experience import buscar_casos_similares, get_employee_performance, record_feedback
+from app.services.salud_experience import (
+    buscar_casos_similares,
+    get_employee_performance,
+    record_feedback,
+    sync_action_result_to_core_experience,
+)
 from app.services.salud_normalization import profile_data_quality
 from app.services.salud_questions import responder_pregunta
 from app.services.salud_specialist_selection import select_specialists
@@ -154,8 +159,23 @@ def registrar_resultado(
         outcome=body.outcome,
     )
     db.add(result)
+    exp_record = sync_action_result_to_core_experience(
+        db,
+        user.organization_id,
+        propuesta_id=propuesta_id,
+        outcome=body.outcome,
+        resultado=body.resultado,
+        meta=body.meta,
+        kpi_antes=body.kpi_antes,
+        kpi_despues=body.kpi_despues,
+        feedback_humano=body.feedback_humano,
+    )
     db.commit()
-    return {"id": result.id, "outcome": result.outcome}
+    return {
+        "id": result.id,
+        "outcome": result.outcome,
+        "experiencia_core_id": exp_record.id if exp_record else None,
+    }
 
 
 @router.post("/pregunta/{analysis_id}")

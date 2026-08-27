@@ -1,0 +1,165 @@
+{
+  "analysis_id": "e9a613da-ccd8-4ccc-9317-11f6dc4a57fe",
+  "trace": {
+    "solicitud": "e9a613da-ccd8-4ccc-9317-11f6dc4a57fe",
+    "orquestacion": "e891199c-1f59-4c4b-99e9-602721e7b8f0",
+    "equipo": {
+      "lider": "Analista de Radicación IA",
+      "razon": "Seleccionado Analista de Radicación IA como líder porque capacidades alineadas con radicacion; especialidad Radicación IPS relevante en dominio principal 'radicacion' (tipo: radicacion_tardia)",
+      "validador": "Analista de Facturación IA"
+    },
+    "conocimiento": {
+      "utilizado": true,
+      "mensaje": null,
+      "fuentes": [
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "0e184151-d499-4ae8-9a8a-a816d41d0749",
+          "chunk_id": "6dd50702-08e2-49e2-bd7a-57375700e3ce",
+          "titulo": "Política radicación IPS E2E",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "eef97b20-e98f-4f31-bc0e-65cb958ee721",
+          "analysis_id": "e9a613da-ccd8-4ccc-9317-11f6dc4a57fe",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T16:28:37.863549+00:00",
+          "relevancia": 1.0,
+          "extracto": "El plazo máximo de radicación es de 10 días hábiles desde la emisión de la factura."
+        }
+      ],
+      "requiere_validacion": false
+    },
+    "analisis": {
+      "hipotesis_principal": {
+        "id": "H10",
+        "titulo": "Combinación de factores",
+        "dominio": "combinado",
+        "tipo": "HIPOTESIS",
+        "estado": "PROBABLE",
+        "confianza": "MEDIA",
+        "evidencia_a_favor": [
+          "Hallazgos simultáneos en 3 dominios: facturacion, glosas, radicacion",
+          "3 hipótesis con evidencia significativa simultánea"
+        ],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 232000000.0,
+        "puntaje": 0.45,
+        "relacion_causal": "hipotesis_causal"
+      },
+      "hallazgos": 5,
+      "motor": true
+    },
+    "recomendacion": {
+      "que_ocurre": "Incumplimiento contractual de radicación (+29 días); 2 facturas sin radicar; Demora promedio factura→radicación: 26.0 días — hipótesis principal: Radicación tardía",
+      "donde": "Dominios: facturacion, glosas, radicacion. Mayor exposición: EPS Mega.",
+      "desde_cuando": "2025-10 → 2026-01",
+      "cuanto_representa": 465000000.0,
+      "por_que_podria": "Radicación tardía",
+      "que_demostrado": [
+        "Radicación tardía"
+      ],
+      "que_no_demostrado": [
+        "Facturación tardía",
+        "Concentración en un pagador",
+        "Proceso interno ineficiente",
+        "Condiciones contractuales",
+        "Devoluciones del pagador"
+      ],
+      "oportunidades": [
+        "Control diario de pendientes de radicación con alertas automáticas",
+        "Auditoría de cuellos de botella entre facturación y radicación",
+        "Control diario de pendientes de radicación con alertas automáticas",
+        "Outsourcing parcial de radicación para picos de volumen",
+        "Auditoría de cuellos de botella entre facturación y radicación"
+      ],
+      "alternativas_evaluadas": 11,
+      "recomendacion": "Control diario de pendientes de radicación con alertas automáticas",
+      "por_que_recomendamos": "'Control diario de pendientes de radicación con alertas autom' prioriza por alto impacto económico (35.0 pts).",
+      "cuanto_podria_valer": 83700000.0,
+      "que_hacer": [
+        "Control diario de pendientes de radicación con alertas automáticas",
+        "Auditoría de cuellos de botella entre facturación y radicación",
+        "Control diario de pendientes de radicación con alertas automáticas"
+      ],
+      "como_medir": [
+        "Días promedio factura→radicación (meta: <7)",
+        "Porcentaje de glosa (meta: reducir 5 p.p.)",
+        "Saldo cartera 91+ días",
+        "Seguimiento acción: Control diario de pendientes de radicación con alertas automáticas"
+      ],
+      "calidad_datos": "PARCIAL",
+      "especialistas_involucrados": 4,
+      "solicitud": "Analiza radicación y cumplimiento contractual. Analiza por qué estamos demorando la recuperación de cartera, qué está afectando el flujo de caja y qué debemos hacer primero."
+    },
+    "work_plan_id": "2f2997d3-98bb-4368-ad29-9e4b901ee6de",
+    "finops": [
+      {
+        "referencia": "Incumplimiento contractual de radicación (+29 días)",
+        "costo_estimado": 2500000,
+        "beneficio_esperado": 83700000.0,
+        "valor_recuperable": 83700000.0,
+        "ahorro": 83700000.0,
+        "roi": 32.48,
+        "payback_dias": 60,
+        "certidumbre": "ESTIMADO",
+        "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+        "advertencia": "Estimación — no presentar como resultado real."
+      },
+      {
+        "referencia": "2 facturas sin radicar",
+        "costo_estimado": 4500000.0,
+        "beneficio_esperado": 34.8,
+        "valor_recuperable": 34.8,
+        "ahorro": 34.8,
+        "roi": -1.0,
+        "payback_dias": 90,
+        "certidumbre": "ESTIMADO",
+        "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+        "advertencia": "Estimación — no presentar como resultado real."
+      },
+      {
+        "referencia": "Demora promedio factura→radicación: 26.0 días",
+        "costo_estimado": 2500000,
+        "beneficio_esperado": 3.9,
+        "valor_recuperable": 3.9,
+        "ahorro": 3.9,
+        "roi": -1.0,
+        "payback_dias": 60,
+        "certidumbre": "ESTIMADO",
+        "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+        "advertencia": "Estimación — no presentar como resultado real."
+      },
+      {
+        "referencia": "Porcentaje de glosa elevado: 21.53%",
+        "costo_estimado": 2500000,
+        "beneficio_esperado": 20.25,
+        "valor_recuperable": 20.25,
+        "ahorro": 20.25,
+        "roi": -1.0,
+        "payback_dias": 60,
+        "certidumbre": "ESTIMADO",
+        "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+        "advertencia": "Estimación — no presentar como resultado real."
+      },
+      {
+        "referencia": "Alta concentración en un pagador: 95.69%",
+        "costo_estimado": 4500000.0,
+        "beneficio_esperado": 14.25,
+        "valor_recuperable": 14.25,
+        "ahorro": 14.25,
+        "roi": -1.0,
+        "payback_dias": 90,
+        "certidumbre": "ESTIMADO",
+        "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+        "advertencia": "Estimación — no presentar como resultado real."
+      }
+    ],
+    "experiencia_core_id": null
+  },
+  "diag_resumen": {
+    "lider": "Analista de Radicación IA",
+    "hallazgos": 5,
+    "work_plan_id": "2f2997d3-98bb-4368-ad29-9e4b901ee6de"
+  }
+}

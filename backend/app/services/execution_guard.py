@@ -317,6 +317,9 @@ def invalidate_run_execution(
     from app.enums import AutomationRunStatus
 
     controller = get_fence_controller(token.run_id)
+    # Invalidar memoria PRIMERO — evita efectos tardíos del worker tras timeout.
+    if controller:
+        controller.invalidate()
     row = (
         db.query(type(run))
         .filter(
@@ -340,8 +343,6 @@ def invalidate_run_execution(
         if run in db:
             db.refresh(run)
         updated = True
-    if controller:
-        controller.invalidate()
     return updated
 
 
