@@ -43,6 +43,7 @@ class FinOpsValueRecord(Base):
     organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
     employee_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("ai_employees.id"), nullable=True, index=True)
     work_plan_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("work_plans.id"), nullable=True, index=True)
+    opportunity_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     task_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("employee_tasks.id"), nullable=True)
     value_type: Mapped[str] = mapped_column(String(40), nullable=False)
     certainty: Mapped[str] = mapped_column(String(20), nullable=False, default="Estimado")

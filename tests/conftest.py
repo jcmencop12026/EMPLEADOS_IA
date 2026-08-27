@@ -21,10 +21,12 @@ from app import notifications  # noqa: F401, E402
 from app import orchestration_models  # noqa: F401, E402
 from app import salud_models  # noqa: F401, E402
 from app import experience_models  # noqa: F401, E402
+from app import opportunity_models  # noqa: F401, E402
 from app.database import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.seed import bootstrap  # noqa: E402
 from app.services import automation_scheduler  # noqa: E402
+from app.services import proactive_scheduler  # noqa: E402
 
 _db_url = os.environ["DATABASE_URL"]
 _connect_args = {"check_same_thread": False} if _db_url.startswith("sqlite") else {}
@@ -52,7 +54,9 @@ automation_scheduler.SessionLocal = TestingSessionLocal
 def client() -> TestClient:
     with TestClient(app) as test_client:
         automation_scheduler.stop_scheduler()
+        proactive_scheduler.stop_proactive_scheduler()
         yield test_client
+        proactive_scheduler.stop_proactive_scheduler()
         automation_scheduler.stop_scheduler()
 
 

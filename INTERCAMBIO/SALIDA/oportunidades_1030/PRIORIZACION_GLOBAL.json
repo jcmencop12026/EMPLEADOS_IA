@@ -1,0 +1,127 @@
+{
+  "metodologia": "Score explicable multi-factor",
+  "ranking": [
+    {
+      "opportunity_id": "16def578-74aa-4dd7-b851-29817d6acfd3",
+      "titulo": "Recuperaci\u00f3n financiera urgente",
+      "prioridad_score": 0.7506,
+      "componentes": {
+        "impacto": 0.25,
+        "urgencia": 0.2,
+        "confianza": 0.105,
+        "riesgo_inverso": 0.04,
+        "esfuerzo_inverso": 0.05,
+        "valor_esperado": 0.0576,
+        "probabilidad": 0.048
+      },
+      "ranking": 1
+    },
+    {
+      "opportunity_id": "66e2c936-9840-46fb-8834-4c3df7f78cc8",
+      "titulo": "Competencia por capacidad \u2014 recuperaci\u00f3n cartera",
+      "prioridad_score": 0.7234,
+      "componentes": {
+        "impacto": 0.25,
+        "urgencia": 0.16,
+        "confianza": 0.105,
+        "riesgo_inverso": 0.06,
+        "esfuerzo_inverso": 0.05,
+        "valor_esperado": 0.0504,
+        "probabilidad": 0.048
+      },
+      "ranking": 2
+    },
+    {
+      "opportunity_id": "fb394b84-a349-437e-9cb5-052279f26cb9",
+      "titulo": "Riesgo de cumplimiento regulatorio",
+      "prioridad_score": 0.705,
+      "componentes": {
+        "impacto": 0.25,
+        "urgencia": 0.16,
+        "confianza": 0.105,
+        "riesgo_inverso": 0.02,
+        "esfuerzo_inverso": 0.05,
+        "valor_esperado": 0.072,
+        "probabilidad": 0.048
+      },
+      "ranking": 3
+    },
+    {
+      "opportunity_id": "cba5b5de-ce7a-4b93-a61b-0b63adc3d3b1",
+      "titulo": "Recuperar conversi\u00f3n comercial",
+      "prioridad_score": 0.6626,
+      "componentes": {
+        "impacto": 0.2,
+        "urgencia": 0.16,
+        "confianza": 0.105,
+        "riesgo_inverso": 0.06,
+        "esfuerzo_inverso": 0.05,
+        "valor_esperado": 0.0396,
+        "probabilidad": 0.048
+      },
+      "ranking": 4
+    },
+    {
+      "opportunity_id": "e34663d6-7a6d-46c6-8efb-7d7c14bc6944",
+      "titulo": "Informaci\u00f3n contradictoria",
+      "prioridad_score": 0.4571,
+      "componentes": {
+        "impacto": 0.125,
+        "urgencia": 0.1,
+        "confianza": 0.0525,
+        "riesgo_inverso": 0.06,
+        "esfuerzo_inverso": 0.05,
+        "valor_esperado": 0.0216,
+        "probabilidad": 0.048
+      },
+      "ranking": 5
+    },
+    {
+      "opportunity_id": "21d4f640-0d56-4943-ba11-d2c5b7ce9cee",
+      "titulo": "Automatizar proceso administrativo repetitivo",
+      "prioridad_score": 0.4385,
+      "componentes": {
+        "impacto": 0.0625,
+        "urgencia": 0.1,
+        "confianza": 0.105,
+        "riesgo_inverso": 0.06,
+        "esfuerzo_inverso": 0.05,
+        "valor_esperado": 0.013,
+        "probabilidad": 0.048
+      },
+      "ranking": 6
+    },
+    {
+      "opportunity_id": "dbe76323-8628-472e-868e-e295c4973554",
+      "titulo": "Automatizar proceso administrativo repetitivo",
+      "prioridad_score": 0.4385,
+      "componentes": {
+        "impacto": 0.0625,
+        "urgencia": 0.1,
+        "confianza": 0.105,
+        "riesgo_inverso": 0.06,
+        "esfuerzo_inverso": 0.05,
+        "valor_esperado": 0.013,
+        "probabilidad": 0.048
+      },
+      "ranking": 7
+    },
+    {
+      "opportunity_id": "5df03d32-2414-4045-93ea-f39c9e6c1544",
+      "titulo": "Automatizaci\u00f3n alto volumen bajo valor unitario",
+      "prioridad_score": 0.3584,
+      "componentes": {
+        "impacto": 0.0125,
+        "urgencia": 0.04,
+        "confianza": 0.105,
+        "riesgo_inverso": 0.06,
+        "esfuerzo_inverso": 0.09,
+        "valor_esperado": 0.0029,
+        "probabilidad": 0.048
+      },
+      "ranking": 8
+    }
+  ],
+  "por_que_primero": "Priorizada por impacto (score=0.7506)",
+  "total": 8
+}

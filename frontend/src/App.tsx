@@ -13,6 +13,8 @@ import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { AuditPage } from "./pages/AuditPage";
 import { CapabilitiesPage } from "./pages/CapabilitiesPage";
 import { CostosValorPage } from "./pages/CostosValorPage";
+import { OportunidadesPage } from "./pages/OportunidadesPage";
+import { OportunidadDetailPage } from "./pages/OportunidadDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
@@ -62,6 +64,8 @@ export default function App() {
           <Route path="herramientas" element={<ToolsPage />} />
           <Route path="test-lab" element={<TestLabPage />} />
           <Route path="costos-valor" element={<CostosValorPage />} />
+          <Route path="oportunidades" element={<OportunidadesPage />} />
+          <Route path="oportunidades/:opportunityId" element={<OportunidadDetailPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
           <Route path="administracion/usuarios" element={<AdminUsersPage />} />
           <Route path="administracion/roles" element={<AdminRolesPage />} />

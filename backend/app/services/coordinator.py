@@ -65,27 +65,10 @@ def _utcnow() -> datetime:
 
 
 def _detect_route(request: str, context: dict[str, Any] | None) -> tuple[str, str]:
-    text = request.lower()
-    ctx = context or {}
-    if ctx.get("tool") in ("rips", "docint"):
-        return ctx["tool"], "salud"
-    if ctx.get("analysis_type") == "ips" or ctx.get("ips_analysis"):
-        return "ips-analitica", "salud"
-    ips_keywords = ("ips", "facturación", "facturacion", "radicación", "radicacion",
-                    "glosa", "cartera", "diagnóstico", "diagnostico", "financiera y operativa")
-    if any(kw in text for kw in ips_keywords):
-        return "ips-analitica", "salud"
-    if "rips" in text:
-        return "rips", "salud"
-    if any(k in text for k in ("documento", "docint", "documentos")):
-        return "docint", "salud"
-    if ctx.get("rips") or ctx.get("data", {}).get("usuarios"):
-        return "rips", "salud"
-    if ctx.get("documents") or ctx.get("documentos"):
-        return "docint", "salud"
-    if ctx.get("inline_datasets") or ctx.get("datasets"):
-        return "ips-analitica", "salud"
-    return "docint", "salud"
+    """Detecta ruta vía interfaz de dominio — G-01 (sin hardcode SALUD en coordinator)."""
+    from app.services.domain_analysis import resolve_capability_code
+
+    return resolve_capability_code(request, context)
 
 
 def _find_employee_for_capability(db: Session, org_id: str, capability_id: str) -> AIEmployee | None:

@@ -1,0 +1,54 @@
+{
+  "pipeline": {
+    "signal_id": "9389de6c-19df-4130-8ed2-2531592db397",
+    "opportunity_id": "cd0563c0-5fde-413a-aa39-5ca12d4a7bd4",
+    "codigo": "OPP-00009",
+    "estado": "PENDIENTE_APROBACION",
+    "pertinencia": "SOLICITAR_APROBACION",
+    "prioridad_score": 0.7506,
+    "siguiente_accion": {
+      "que": "Ejecutar acci\u00f3n de recuperaci\u00f3n financiera prioritaria",
+      "por_que": "Riesgo o costo requiere aprobaci\u00f3n",
+      "cuando": "AHORA",
+      "quien": "Equipo IA asignado",
+      "quien_id": "d3a401a1-deac-4f83-9385-ad9b8e608e05",
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Centro de operaciones",
+      "costo_estimado": 0.0,
+      "autorizacion": "REQUIERE_APROBACION",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 d\u00edas o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 d\u00edas",
+      "ejecutable": true
+    },
+    "capacidad": {
+      "empleados_disponibles": 9,
+      "herramientas_activas": 10,
+      "ejecutable": true,
+      "requiere_aprobacion": false,
+      "human_gate": "AUTOMATICA_BAJO_POLITICA",
+      "limitaciones": [],
+      "mensaje": "Capacidad disponible"
+    },
+    "deduplicated": false
+  },
+  "activacion": {
+    "work_plan_id": "788e0bdd-1cfa-4bad-9215-446a015cd703",
+    "opportunity_id": "cd0563c0-5fde-413a-aa39-5ca12d4a7bd4",
+    "auto_execute": false
+  },
+  "resultado": {
+    "valor_esperado": 8000000.0,
+    "valor_real": 6000000,
+    "diferencia": -2000000.0,
+    "evidencia": {
+      "kpi": "ok"
+    },
+    "estado": "EXITO",
+    "fecha": "2026-08-27T17:32:49.931461+00:00",
+    "confianza": 0.8
+  },
+  "estado": "MATERIALIZADA"
+}
