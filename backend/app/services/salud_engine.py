@@ -114,6 +114,7 @@ def run_ips_analysis(
     available = determine_available_analyses(datasets)
     specialists = select_specialists(
         db, organization_id, request_text, list(datasets.keys()),
+        data_profiles=data_profiles,
     )
 
     knowledge_ctx = collect_analysis_knowledge(
@@ -224,7 +225,13 @@ def run_ips_analysis(
 
     employee_ids = list({a["employee_id"] for a in specialists.get("asignaciones", [])})
     if specialists.get("consolidador"):
-        employee_ids.append(specialists["consolidador"]["employee_id"])
+        cid = specialists["consolidador"].get("employee_id")
+        if cid:
+            employee_ids.append(cid)
+    for role_member in specialists.get("equipo", []):
+        eid = role_member.get("employee_id")
+        if eid and eid not in employee_ids:
+            employee_ids.append(eid)
 
     analysis.status = "COMPLETADO"
     analysis.completed_at = _utcnow()

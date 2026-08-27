@@ -1,0 +1,535 @@
+{
+  "fase": "POST_CIEGA",
+  "ox_a_e": [
+    {
+      "caso": "OX_A",
+      "checks": {
+        "lider_keyword": true,
+        "no_lider_prohibido": true,
+        "dominio": true
+      },
+      "veredicto": "PASS",
+      "resumen": {
+        "caso": "OX_A",
+        "problema": "radicacion_tardia",
+        "lider": "Analista de Radicación IA",
+        "complementarios": [
+          "Analista de Cartera IA",
+          "Analista de Facturación IA"
+        ],
+        "validador": "Analista de Cartera IA",
+        "disidente": "Analista de Glosas IA",
+        "experiencia_utilizada": [
+          "37706e9a-caaa-487c-93af-4bd4132fa673",
+          "08223a1b-ee6f-4b3b-8774-7337ff9d2fcc",
+          "45e5ce95-e0c9-4cb4-a159-52a0ed0b6746",
+          "ff33ab9a-4042-4f21-b3ad-5d789ff89e4d"
+        ],
+        "peso": 0.8,
+        "costo": 0.18,
+        "riesgo": 0.7,
+        "razon": "Seleccionado Analista de Radicación IA como líder porque capacidades alineadas con radicacion; 4 experiencias exitosas en radicacion; especialidad Radicación IPS relevante; costo histórico $0.1800 en dominio principal 'radicacion' (tipo: radicacion_tardia)",
+        "organization_id": "c729d3a9-717c-4802-91d5-38e9e55c6cf4"
+      },
+      "lider": "Analista de Radicación IA"
+    },
+    {
+      "caso": "OX_B",
+      "checks": {
+        "lider_keyword": true,
+        "dominio": true,
+        "distinto_ox_a": true
+      },
+      "veredicto": "PASS",
+      "resumen": {
+        "caso": "OX_B",
+        "problema": "glosas_devoluciones",
+        "lider": "Analista de Glosas IA",
+        "complementarios": [
+          "Analista de Cartera IA",
+          "Analista de Facturación IA"
+        ],
+        "validador": "Analista de Cartera IA",
+        "disidente": "Analista de Radicación IA",
+        "experiencia_utilizada": [
+          "cd6017e1-de59-4e45-9658-5dc3312b096a",
+          "14931013-7616-423c-8650-1157dc41ec3a",
+          "9230f91c-fa37-4068-907b-bb1faac852dc",
+          "04f03974-0fb9-4ab3-84df-9ae1cae69521",
+          "369de40f-4057-4cd0-b0af-ce748c9957b3"
+        ],
+        "peso": 0.785,
+        "costo": null,
+        "riesgo": 0.7,
+        "razon": "Seleccionado Analista de Glosas IA como líder porque capacidades alineadas con glosas; 5 experiencias exitosas en glosas; especialidad Glosas IPS relevante en dominio principal 'glosas' (tipo: glosas_devoluciones)",
+        "organization_id": "94faeb76-2c5c-4ecd-8451-93f120479c16"
+      },
+      "lider": "Analista de Glosas IA"
+    },
+    {
+      "caso": "OX_C",
+      "checks": {
+        "dominio": true,
+        "contractual_compite": true,
+        "calidad_supera_volumen": true,
+        "competencia_cercana": true,
+        "volumen_no_domina_solo": true
+      },
+      "veredicto": "PASS",
+      "resumen": {
+        "caso": "OX_C",
+        "problema": "comportamiento_pagador",
+        "lider": "Analista de Cartera IA",
+        "complementarios": [
+          "Analista Contractual IA"
+        ],
+        "validador": "Analista Contractual IA",
+        "disidente": "Analista de Facturación IA",
+        "experiencia_utilizada": [
+          "22ab0e40-6e47-4d72-a956-ae11704bd173",
+          "c7023481-e26e-4a28-bedf-35262cf88817",
+          "90e80cf2-d0b5-4403-ab9a-9798349e218a",
+          "e2e26b25-c191-4882-8b33-4442e210d3eb",
+          "a2cd2127-aa63-408f-a821-cb1984de6ee0"
+        ],
+        "peso": 0.613,
+        "costo": 0.01,
+        "riesgo": 0.7,
+        "razon": "Seleccionado Analista de Cartera IA como líder porque capacidades alineadas con cartera; 20 experiencias parciales/indeterminadas; especialidad Cartera IPS relevante; costo histórico $0.0100 en dominio principal 'cartera' (tipo: comportamiento_pagador)",
+        "organization_id": "300f97d7-1c33-472e-afc2-04545cde5cd3"
+      },
+      "lider": "Analista de Cartera IA"
+    },
+    {
+      "caso": "OX_D",
+      "checks": {
+        "lider_keyword": true,
+        "dominio": true,
+        "validador": true,
+        "diversidad_especialidades": true,
+        "complementarios": true
+      },
+      "veredicto": "PASS",
+      "resumen": {
+        "caso": "OX_D",
+        "problema": "diagnostico_integral",
+        "lider": "Analista Estratégico IPS IA",
+        "complementarios": [
+          "Analista de Cartera IA",
+          "Analista Contractual IA",
+          "Analista de Facturación IA"
+        ],
+        "validador": "Analista de Facturación IA",
+        "disidente": "Analista de Radicación IA",
+        "experiencia_utilizada": [
+          "38af0fdf-2a11-47c5-8d46-c81977f9660c",
+          "14edf7f5-deba-47a1-acda-8a3698df4ab4",
+          "517b4b64-7de2-4ed7-802a-08aae5897a70",
+          "dd227cfa-5949-45b3-9f37-b3e953226f14",
+          "193b90fe-556c-481f-9f51-2f5937b5b192"
+        ],
+        "peso": 0.785,
+        "costo": null,
+        "riesgo": 0.7,
+        "razon": "Seleccionado Analista Estratégico IPS IA como líder porque capacidades alineadas con estrategico; 6 experiencias exitosas en estrategico; especialidad Analítica Estratégica IPS relevante en dominio principal 'estrategico' (tipo: diagnostico_integral)",
+        "organization_id": "200556f7-51f7-405f-aaff-3dd8bd8ef3fa"
+      },
+      "lider": "Analista Estratégico IPS IA"
+    },
+    {
+      "caso": "OX_E",
+      "checks": {
+        "no_lider_prohibido": true,
+        "dominio": true,
+        "tipo_problema": true,
+        "no_cartera_lider": true,
+        "datos_insuficientes": true,
+        "razon_menciona_insuficiencia": true
+      },
+      "veredicto": "PASS",
+      "resumen": {
+        "caso": "OX_E",
+        "problema": "datos_insuficientes",
+        "lider": "Analista Estratégico IPS IA",
+        "complementarios": [],
+        "validador": "Analista de Facturación IA",
+        "disidente": null,
+        "experiencia_utilizada": [],
+        "peso": 0.35,
+        "costo": null,
+        "riesgo": 0.7,
+        "razon": "Seleccionado Analista Estratégico IPS IA como líder porque capacidades alineadas con estrategico; especialidad Analítica Estratégica IPS relevante en dominio principal 'estrategico' (tipo: datos_insuficientes)",
+        "organization_id": "6a1ccbea-b942-42ad-a757-9dbe79532b9b"
+      },
+      "lider": "Analista Estratégico IPS IA"
+    }
+  ],
+  "anti_prefabricado": {
+    "veredicto": "PASS",
+    "lideres": [
+      "Analista de Radicación IA",
+      "Analista de Glosas IA",
+      "Analista de Cartera IA",
+      "Analista Estratégico IPS IA",
+      "Analista Estratégico IPS IA"
+    ],
+    "lideres_unicos": 4,
+    "cartera_como_lider": 1,
+    "razones_unicas": 5,
+    "por_que_cambia": {
+      "OX_A": {
+        "lider": "Analista de Radicación IA",
+        "dominio": "radicacion",
+        "razon": "Seleccionado Analista de Radicación IA como líder porque capacidades alineadas con radicacion; 4 experiencias exitosas en radicacion; especialidad Radicación IPS relevante; costo histórico $0.1800 en dominio principal 'radicacion' (tipo: radicacion_tardia)"
+      },
+      "OX_B": {
+        "lider": "Analista de Glosas IA",
+        "dominio": "glosas",
+        "razon": "Seleccionado Analista de Glosas IA como líder porque capacidades alineadas con glosas; 5 experiencias exitosas en glosas; especialidad Glosas IPS relevante en dominio principal 'glosas' (tipo: glosas_devoluciones)"
+      },
+      "OX_C": {
+        "lider": "Analista de Cartera IA",
+        "dominio": "cartera",
+        "razon": "Seleccionado Analista de Cartera IA como líder porque capacidades alineadas con cartera; 20 experiencias parciales/indeterminadas; especialidad Cartera IPS relevante; costo histórico $0.0100 en dominio principal 'cartera' (tipo: comportamiento_pagador)"
+      },
+      "OX_D": {
+        "lider": "Analista Estratégico IPS IA",
+        "dominio": "estrategico",
+        "razon": "Seleccionado Analista Estratégico IPS IA como líder porque capacidades alineadas con estrategico; 6 experiencias exitosas en estrategico; especialidad Analítica Estratégica IPS relevante en dominio principal 'estrategico' (tipo: diagnostico_integral)"
+      },
+      "OX_E": {
+        "lider": "Analista Estratégico IPS IA",
+        "dominio": "estrategico",
+        "razon": "Seleccionado Analista Estratégico IPS IA como líder porque capacidades alineadas con estrategico; especialidad Analítica Estratégica IPS relevante en dominio principal 'estrategico' (tipo: datos_insuficientes)"
+      }
+    }
+  },
+  "ox_f_aprendizaje": {
+    "veredicto": "PASS",
+    "ranking_antes": [
+      {
+        "employee_code": "ips-radicacion-analyst",
+        "employee_name": "Analista de Radicación IA",
+        "score": 0.867,
+        "factores": {
+          "capacidad": 1.05,
+          "experiencia": 0.785,
+          "desempeno": 0.785,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      },
+      {
+        "employee_code": "ips-cartera-analyst",
+        "employee_name": "Analista de Cartera IA",
+        "score": 0.715,
+        "factores": {
+          "capacidad": 1.05,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      },
+      {
+        "employee_code": "ips-facturacion-analyst",
+        "employee_name": "Analista de Facturación IA",
+        "score": 0.715,
+        "factores": {
+          "capacidad": 1.05,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      },
+      {
+        "employee_code": "ips-cartera-analyst",
+        "employee_name": "Analista de Cartera IA",
+        "score": 0.682,
+        "factores": {
+          "capacidad": 0.55,
+          "experiencia": 0.613,
+          "desempeno": 0.613,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      },
+      {
+        "employee_code": "ips-facturacion-analyst",
+        "employee_name": "Analista de Facturación IA",
+        "score": 0.59,
+        "factores": {
+          "capacidad": 0.55,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      },
+      {
+        "employee_code": "ips-glosas-analyst",
+        "employee_name": "Analista de Glosas IA",
+        "score": 0.59,
+        "factores": {
+          "capacidad": 0.55,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      },
+      {
+        "employee_code": "ips-contractual-analyst",
+        "employee_name": "Analista Contractual IA",
+        "score": 0.59,
+        "factores": {
+          "capacidad": 0.55,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      },
+      {
+        "employee_code": "ips-facturacion-analyst",
+        "employee_name": "Analista de Facturación IA",
+        "score": 0.59,
+        "factores": {
+          "capacidad": 0.55,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      }
+    ],
+    "ranking_despues": [
+      {
+        "employee_code": "ips-radicacion-analyst",
+        "employee_name": "Analista de Radicación IA",
+        "score": 0.731,
+        "factores": {
+          "capacidad": 1.05,
+          "experiencia": 0.396,
+          "desempeno": 0.396,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      },
+      {
+        "employee_code": "ips-cartera-analyst",
+        "employee_name": "Analista de Cartera IA",
+        "score": 0.715,
+        "factores": {
+          "capacidad": 1.05,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      },
+      {
+        "employee_code": "ips-facturacion-analyst",
+        "employee_name": "Analista de Facturación IA",
+        "score": 0.715,
+        "factores": {
+          "capacidad": 1.05,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      },
+      {
+        "employee_code": "ips-cartera-analyst",
+        "employee_name": "Analista de Cartera IA",
+        "score": 0.682,
+        "factores": {
+          "capacidad": 0.55,
+          "experiencia": 0.613,
+          "desempeno": 0.613,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      },
+      {
+        "employee_code": "ips-facturacion-analyst",
+        "employee_name": "Analista de Facturación IA",
+        "score": 0.59,
+        "factores": {
+          "capacidad": 0.55,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      },
+      {
+        "employee_code": "ips-glosas-analyst",
+        "employee_name": "Analista de Glosas IA",
+        "score": 0.59,
+        "factores": {
+          "capacidad": 0.55,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      },
+      {
+        "employee_code": "ips-contractual-analyst",
+        "employee_name": "Analista Contractual IA",
+        "score": 0.59,
+        "factores": {
+          "capacidad": 0.55,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      },
+      {
+        "employee_code": "ips-facturacion-analyst",
+        "employee_name": "Analista de Facturación IA",
+        "score": 0.59,
+        "factores": {
+          "capacidad": 0.55,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        }
+      }
+    ],
+    "peso_antes": 0.785,
+    "peso_despues": 0.396,
+    "explicacion_antes": "Seleccionado Analista de Radicación IA como líder porque capacidades alineadas con radicacion; 1 experiencias exitosas en radicacion; especialidad Radicación IPS relevante en dominio principal 'radicacion' (tipo: radicacion_tardia)",
+    "explicacion_despues": "Seleccionado Analista de Radicación IA como líder porque capacidades alineadas con radicacion; 1 fracasos previos en radicacion; especialidad Radicación IPS relevante en dominio principal 'radicacion' (tipo: radicacion_tardia)",
+    "score_radicacion_antes": 0.867,
+    "score_radicacion_despues": 0.731
+  },
+  "ox_g_feedback": {
+    "veredicto": "PASS",
+    "estado": "FRACASO",
+    "feedback": "CORRECTO",
+    "peso_calidad": 0.63,
+    "factores": {
+      "resultado_real": 0.25,
+      "estado_fracaso": -0.2,
+      "feedback_positivo": 0.08,
+      "evidencia_kpi": 0.1,
+      "reciente": 0.05
+    },
+    "resultado_real_prevalece": true
+  },
+  "ox_h_tenant": {
+    "veredicto": "PASS",
+    "tenant_a": "ce6bf9db-7e60-4ec6-987a-2d1166c39c8f",
+    "tenant_b": "193d864b-d2a3-4335-8e42-2f88b157aa45",
+    "experiencia_tenant_b_no_consultada": true,
+    "no_aparece_en_explicacion": true,
+    "exp_factor_radicacion_bajo": true,
+    "prueba_negativa": {
+      "experiencias_utilizadas": [],
+      "exp_factor_radicacion": 0.35
+    }
+  },
+  "costo": {
+    "veredicto": "PASS",
+    "lider": "Analista de Radicación IA",
+    "barato_no_gana_siempre": true,
+    "cartera_costo": 0.01,
+    "radicacion_costo": 0.85
+  },
+  "diversidad_validador": {
+    "veredicto": "PASS",
+    "lider_specialty": "Analítica Estratégica IPS",
+    "validador_specialty": "Facturación IPS",
+    "disidente": "Analista de Radicación IA",
+    "disidente_presente": true
+  },
+  "metamorfico": {
+    "veredicto": "PASS",
+    "cambio_por_experiencia": true,
+    "cambio_por_dominio": true,
+    "score_antes": 0.867,
+    "score_despues_experiencia": 0.763,
+    "dominio_glosas": "glosas",
+    "dominio_integral": "estrategico"
+  },
+  "trazabilidad": [
+    {
+      "caso": "OX_A",
+      "veredicto": "PASS",
+      "reconstruible_desde_bruto": true
+    },
+    {
+      "caso": "OX_B",
+      "veredicto": "PASS",
+      "reconstruible_desde_bruto": true
+    },
+    {
+      "caso": "OX_C",
+      "veredicto": "PASS",
+      "reconstruible_desde_bruto": true
+    },
+    {
+      "caso": "OX_D",
+      "veredicto": "PASS",
+      "reconstruible_desde_bruto": true
+    },
+    {
+      "caso": "OX_E",
+      "veredicto": "PASS",
+      "reconstruible_desde_bruto": true
+    },
+    {
+      "caso": "OX_F",
+      "veredicto": "PASS",
+      "reconstruible_desde_bruto": true
+    },
+    {
+      "caso": "OX_G",
+      "veredicto": "PASS",
+      "reconstruible_desde_bruto": true
+    },
+    {
+      "caso": "OX_H",
+      "veredicto": "PASS",
+      "reconstruible_desde_bruto": true
+    }
+  ]
+}

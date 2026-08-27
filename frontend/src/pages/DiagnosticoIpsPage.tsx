@@ -72,8 +72,15 @@ type Diagnostico = {
   planes_accion?: Array<{ id: string; work_plan_id?: string | null; titulo: string; tareas: Array<{ titulo: string; estado: string }> }>;
   especialistas: {
     dominios?: string[];
+    dominio_principal?: string;
+    tipo_problema?: string;
     asignaciones?: Especialista[];
+    equipo?: Array<Especialista & { rol?: string; razon_rol?: string; razon_seleccion?: string }>;
+    lider?: Especialista & { razon_seleccion?: string };
     consolidador?: Especialista;
+    validador?: Especialista & { razon_rol?: string };
+    disidente?: Especialista & { razon_rol?: string };
+    razon_seleccion_global?: string;
   };
   comparacion_historica: { disponible?: boolean; comparaciones?: Record<string, unknown> };
   conocimiento?: {
@@ -761,29 +768,57 @@ export function DiagnosticoIpsPage() {
           {seccion === "especialistas" && (
             <section className="panel" id="seccion-especialistas">
               <h2>Selección de especialistas</h2>
-              <p><strong>Solicitud:</strong> Analiza la situación financiera y operativa de esta IPS.</p>
+              {diag.especialistas.lider && (
+                <div className="salud-sub" style={{ marginBottom: "0.75rem" }}>
+                  <strong>Líder:</strong> {diag.especialistas.lider.employee_name}
+                  <span className="muted"> — {diag.especialistas.lider.specialty}</span>
+                  {diag.especialistas.razon_seleccion_global && (
+                    <p className="muted" style={{ margin: "0.25rem 0 0" }}>{diag.especialistas.razon_seleccion_global}</p>
+                  )}
+                </div>
+              )}
+              <p><strong>Dominio principal:</strong> {DOMINIO_ES[diag.especialistas.dominio_principal ?? ""] ?? diag.especialistas.dominio_principal ?? "—"}</p>
               <p><strong>Dominios detectados:</strong> {(diag.especialistas.dominios ?? []).map((d) => DOMINIO_ES[d] ?? d).join(", ")}</p>
-              <div className="table-wrap">
-                <table className="data-table">
-                  <thead>
-                    <tr><th>Especialista</th><th>Dominio</th><th>Puntaje</th><th>Capacidades</th><th>Herramientas</th><th>Experiencia</th></tr>
-                  </thead>
-                  <tbody>
-                    {(diag.especialistas.asignaciones ?? []).map((s) => (
-                      <tr key={`${s.employee_name}-${s.domain}`}>
-                        <td>{s.employee_name}<br /><span className="muted">{s.specialty}</span></td>
-                        <td>{DOMINIO_ES[s.domain] ?? s.domain}</td>
-                        <td>{s.score.toFixed(2)}</td>
-                        <td>{s.factors?.capacidades?.toFixed(2) ?? "—"}</td>
-                        <td>{s.factors?.herramientas?.toFixed(2) ?? "—"}</td>
-                        <td>{s.factors?.experiencia?.toFixed(2) ?? "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {diag.especialistas.consolidador && (
-                <p className="muted">Consolidador: {diag.especialistas.consolidador.employee_name} (puntaje {diag.especialistas.consolidador.score.toFixed(2)})</p>
+              {(diag.especialistas.equipo ?? []).length > 0 && (
+                <div className="table-wrap">
+                  <table className="data-table">
+                    <thead>
+                      <tr><th>Rol</th><th>Especialista</th><th>Dominio</th><th>Puntaje</th><th>Razón</th></tr>
+                    </thead>
+                    <tbody>
+                      {(diag.especialistas.equipo ?? []).map((s) => (
+                        <tr key={`${s.rol}-${s.employee_name}`}>
+                          <td>{s.rol ?? "—"}</td>
+                          <td>{s.employee_name}<br /><span className="muted">{s.specialty}</span></td>
+                          <td>{DOMINIO_ES[s.domain] ?? s.domain}</td>
+                          <td>{s.score?.toFixed(2) ?? "—"}</td>
+                          <td className="muted" style={{ maxWidth: 280 }}>{s.razon_rol ?? s.razon_seleccion ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {!(diag.especialistas.equipo ?? []).length && (
+                <div className="table-wrap">
+                  <table className="data-table">
+                    <thead>
+                      <tr><th>Especialista</th><th>Dominio</th><th>Puntaje</th></tr>
+                    </thead>
+                    <tbody>
+                      {(diag.especialistas.asignaciones ?? []).map((s) => (
+                        <tr key={`${s.employee_name}-${s.domain}`}>
+                          <td>{s.employee_name}</td>
+                          <td>{DOMINIO_ES[s.domain] ?? s.domain}</td>
+                          <td>{s.score.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {diag.especialistas.validador && (
+                <p className="muted">Validador: {diag.especialistas.validador.employee_name}</p>
               )}
             </section>
           )}

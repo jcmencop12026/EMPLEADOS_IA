@@ -1,0 +1,55 @@
+{
+  "paquete": "/workspace/INTERCAMBIO/SALIDA/reauditoria_orquestador_1010/paquete_embedded",
+  "fuente": "paquete_embedded_especificacion",
+  "fase": "CIEGA",
+  "casos": [
+    {
+      "caso": "OX_A",
+      "archivo": "/workspace/INTERCAMBIO/SALIDA/reauditoria_orquestador_1010/brutos/OX_A_ANTES_ORACULO.json",
+      "lider": "Analista de Radicación IA",
+      "dominio": "radicacion"
+    },
+    {
+      "caso": "OX_B",
+      "archivo": "/workspace/INTERCAMBIO/SALIDA/reauditoria_orquestador_1010/brutos/OX_B_ANTES_ORACULO.json",
+      "lider": "Analista de Glosas IA",
+      "dominio": "glosas"
+    },
+    {
+      "caso": "OX_C",
+      "archivo": "/workspace/INTERCAMBIO/SALIDA/reauditoria_orquestador_1010/brutos/OX_C_ANTES_ORACULO.json",
+      "lider": "Analista de Cartera IA",
+      "dominio": "cartera"
+    },
+    {
+      "caso": "OX_D",
+      "archivo": "/workspace/INTERCAMBIO/SALIDA/reauditoria_orquestador_1010/brutos/OX_D_ANTES_ORACULO.json",
+      "lider": "Analista Estratégico IPS IA",
+      "dominio": "estrategico"
+    },
+    {
+      "caso": "OX_E",
+      "archivo": "/workspace/INTERCAMBIO/SALIDA/reauditoria_orquestador_1010/brutos/OX_E_ANTES_ORACULO.json",
+      "lider": "Analista Estratégico IPS IA",
+      "dominio": "estrategico"
+    },
+    {
+      "caso": "OX_F",
+      "archivo": "/workspace/INTERCAMBIO/SALIDA/reauditoria_orquestador_1010/brutos/OX_F_ANTES_ORACULO.json",
+      "lider": "Analista de Radicación IA",
+      "dominio": "radicacion"
+    },
+    {
+      "caso": "OX_G",
+      "archivo": "/workspace/INTERCAMBIO/SALIDA/reauditoria_orquestador_1010/brutos/OX_G_ANTES_ORACULO.json",
+      "lider": "Analista de Cartera IA",
+      "dominio": "cartera"
+    },
+    {
+      "caso": "OX_H",
+      "archivo": "/workspace/INTERCAMBIO/SALIDA/reauditoria_orquestador_1010/brutos/OX_H_ANTES_ORACULO.json",
+      "lider": "Analista de Radicación IA",
+      "dominio": "radicacion"
+    }
+  ]
+}

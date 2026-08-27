@@ -64,8 +64,11 @@ def _extract_blind(case_dir: Path, case_id: str) -> dict:
     ranking = diag.get("priorizacion", {}).get("ranking", [])
     top = ranking[0] if ranking else {}
     hyp = diag.get("hipotesis_principal") or {}
-    specialists = diag.get("especialistas", {}).get("asignaciones", [])
-    leader = specialists[0] if specialists else {}
+    specialists = diag.get("especialistas", {})
+    leader = specialists.get("lider") or {}
+    if not leader.get("employee_name"):
+        asignaciones = specialists.get("asignaciones", [])
+        leader = asignaciones[0] if asignaciones else {}
 
     return {
         "caso": case_id,

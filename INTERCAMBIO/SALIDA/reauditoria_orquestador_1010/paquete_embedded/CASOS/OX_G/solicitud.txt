@@ -1,0 +1,1 @@
+Analiza concentración de facturación y mora en cartera por pagador.

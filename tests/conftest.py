@@ -20,6 +20,7 @@ from app import models  # noqa: F401, E402
 from app import notifications  # noqa: F401, E402
 from app import orchestration_models  # noqa: F401, E402
 from app import salud_models  # noqa: F401, E402
+from app import experience_models  # noqa: F401, E402
 from app.database import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.seed import bootstrap  # noqa: E402

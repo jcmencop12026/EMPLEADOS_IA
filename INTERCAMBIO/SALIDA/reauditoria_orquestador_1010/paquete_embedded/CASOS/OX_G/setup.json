@@ -1,0 +1,13 @@
+{
+  "available_data": ["facturacion", "cartera"],
+  "experiencia_feedback": {
+    "employee_code": "ips-facturacion-analyst",
+    "dominio": "facturacion",
+    "tipo_problema": "concentracion_facturacion",
+    "feedback": "CORRECTO",
+    "kpi_antes": {"mora": 30},
+    "resultado_real": "Mora subió tras intervención",
+    "estado_esperado": "FRACASO",
+    "kpi_despues": {"mora": 55}
+  }
+}
