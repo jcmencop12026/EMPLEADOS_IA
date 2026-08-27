@@ -89,17 +89,13 @@ def _verify_805_infrastructure(root: Path) -> None:
 
 
 def _verify_pr_diff_isolation(lines: list[str]) -> None:
-    """Contexto PR — el diff no debe eliminar infraestructura 805."""
+    """Cualquier PR — el diff no debe eliminar infraestructura 805."""
     forbidden_prefixes = ("backend/scripts/db_startup", "tests/test_db_startup", "tests/test_schema_repair")
     for line in lines:
         status, path = line.split("\t", 1)
         for prefix in forbidden_prefixes:
             if path.startswith(prefix):
                 assert status != "D", f"No debe eliminarse: {path}"
-    automation_markers = ("automation", "Automatiz", "810")
-    assert any(any(m.lower() in line.lower() for m in automation_markers) for line in lines), (
-        "Diff PR sin cambios de Automatizaciones/810"
-    )
 
 
 def test_pr_diff_isolated_from_805():

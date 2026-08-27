@@ -1,0 +1,694 @@
+{
+  "caso": "CASO_E",
+  "solicitud": "¿Por qué disminuyó nuestra caja y cuánto podríamos recuperar?",
+  "documentos_cargados": [],
+  "suficiencia": "INSUFICIENTE",
+  "informacion_faltante": [
+    {
+      "dimension": "cartera",
+      "que_falta": "Datos de cartera",
+      "por_que": "Necesario para evaluar hipótesis sobre cartera en la solicitud.",
+      "que_permitiria": "Calcular indicadores de cartera y contrastar causas."
+    }
+  ],
+  "especialista_lider": "Analista de Cartera IA",
+  "razon_seleccion": "Mayor puntaje en cartera por capacidades (1.0)",
+  "hallazgos": [],
+  "hipotesis": [
+    {
+      "id": "H0",
+      "titulo": "Información insuficiente para establecer causa",
+      "dominio": "general",
+      "tipo": "INSUFICIENTE",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [
+        {
+          "dimension": "cartera",
+          "que_falta": "Datos de cartera",
+          "por_que": "Necesario para evaluar hipótesis sobre cartera en la solicitud.",
+          "que_permitiria": "Calcular indicadores de cartera y contrastar causas."
+        }
+      ],
+      "impacto_potencial": "Información insuficiente",
+      "puntaje": 0.0,
+      "relacion_causal": "no_evaluable",
+      "mensaje": "Información insuficiente para establecer esta causa."
+    }
+  ],
+  "hipotesis_principal": {
+    "id": "H0",
+    "titulo": "Información insuficiente para establecer causa",
+    "dominio": "general",
+    "tipo": "INSUFICIENTE",
+    "estado": "NO DEMOSTRADA",
+    "confianza": "BAJA",
+    "evidencia_a_favor": [],
+    "evidencia_en_contra": [],
+    "informacion_faltante": [
+      {
+        "dimension": "cartera",
+        "que_falta": "Datos de cartera",
+        "por_que": "Necesario para evaluar hipótesis sobre cartera en la solicitud.",
+        "que_permitiria": "Calcular indicadores de cartera y contrastar causas."
+      }
+    ],
+    "impacto_potencial": "Información insuficiente",
+    "puntaje": 0.0,
+    "relacion_causal": "no_evaluable",
+    "mensaje": "Información insuficiente para establecer esta causa."
+  },
+  "contrastes": [
+    {
+      "hipotesis_id": "H0",
+      "hipotesis_titulo": "Información insuficiente para establecer causa",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "e14efa88-68e4-4bac-b2ee-0cca9d7da42d",
+      "dominio": "general",
+      "postura": "CUESTIONAR",
+      "argumento": "Información faltante impide confirmar — no convertir correlación en causalidad.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H0",
+      "hipotesis_titulo": "Información insuficiente para establecer causa",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "e14efa88-68e4-4bac-b2ee-0cca9d7da42d",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "Falta: Datos de cartera",
+      "evidencia_citada": [
+        {
+          "dimension": "cartera",
+          "que_falta": "Datos de cartera",
+          "por_que": "Necesario para evaluar hipótesis sobre cartera en la solicitud.",
+          "que_permitiria": "Calcular indicadores de cartera y contrastar causas."
+        }
+      ]
+    },
+    {
+      "hipotesis_id": "H0",
+      "hipotesis_titulo": "Información insuficiente para establecer causa",
+      "especialista": "Analista Estratégico IPS IA",
+      "employee_id": "74d3315e-0a9a-4dc4-b231-1a58a6949c2c",
+      "dominio": "consolidacion",
+      "postura": "COMPLEMENTAR",
+      "argumento": "Consolidador recibe 2 intervenciones de especialistas sobre 'Información insuficiente para establecer causa' — síntesis requerida antes de recomendar.",
+      "evidencia_citada": [],
+      "rol": "CONSOLIDADOR"
+    }
+  ],
+  "alternativas": [],
+  "priorizacion": {
+    "metodologia": "prioridad = impacto_económico(35%) + urgencia(25%) + confianza(15%) + esfuerzo_inverso(10%) + recuperabilidad(10%) + riesgo_inverso(5%)",
+    "ranking": [],
+    "explicacion": "El ranking no es una suma arbitraria: cada factor tiene peso documentado en 'metodologia'."
+  },
+  "accion_1": null,
+  "finops": [],
+  "escenarios": {
+    "tipo": "PROYECTADO",
+    "escenarios": {
+      "CONSERVADOR": {
+        "nombre": "Conservador",
+        "valor_recuperable_estimado": "Información insuficiente",
+        "tasa_recuperacion": 0.08,
+        "time_reduction_days": 2,
+        "supuestos": [
+          "Sin hipótesis dominante — escenarios genéricos.  Efecto mínimo (8% recuperación)."
+        ],
+        "certidumbre": "PROYECTADO"
+      },
+      "PROBABLE": {
+        "nombre": "Probable",
+        "valor_recuperable_estimado": "Información insuficiente",
+        "tasa_recuperacion": 0.18,
+        "time_reduction_days": 5,
+        "supuestos": [
+          "Sin hipótesis dominante — escenarios genéricos.  Efecto moderado (18% recuperación)."
+        ],
+        "certidumbre": "PROYECTADO"
+      },
+      "OPTIMISTA": {
+        "nombre": "Optimista",
+        "valor_recuperable_estimado": "Información insuficiente",
+        "tasa_recuperacion": 0.32,
+        "time_reduction_days": 10,
+        "supuestos": [
+          "Sin hipótesis dominante — escenarios genéricos.  Efecto alto si ejecución disciplinada (32% recuperación)."
+        ],
+        "certidumbre": "PROYECTADO"
+      }
+    },
+    "advertencia": "Simulación con supuestos — no presentar como resultado real."
+  },
+  "recomendacion_consolidada": {
+    "que_ocurre": "Información insuficiente",
+    "donde": "Información insuficiente",
+    "desde_cuando": "2026-07 → 2026-07",
+    "cuanto_representa": "Información insuficiente",
+    "por_que_podria": "Información insuficiente",
+    "que_demostrado": [
+      "Ninguna causa demostrada — solo asociaciones"
+    ],
+    "que_no_demostrado": [
+      "Información insuficiente para establecer causa"
+    ],
+    "oportunidades": [],
+    "alternativas_evaluadas": 0,
+    "recomendacion": "Información insuficiente",
+    "por_que_recomendamos": "",
+    "cuanto_podria_valer": "Información insuficiente",
+    "que_hacer": [],
+    "como_medir": [
+      "Información insuficiente"
+    ],
+    "calidad_datos": "INSUFICIENTE",
+    "especialistas_involucrados": 2,
+    "solicitud": "¿Por qué disminuyó nuestra caja y cuánto podríamos recuperar?"
+  },
+  "conocimiento": {
+    "utilizado": false,
+    "mensaje": "No se encontró conocimiento documental autorizado adicional.",
+    "fuentes": [],
+    "requiere_validacion": false
+  },
+  "diagnostico_completo": {
+    "id": "030d00db-e200-45c0-b2e4-e2bcce3e08a4",
+    "ips_name": "Cert CASO_E",
+    "estado": "COMPLETADO",
+    "resumen_ejecutivo": {
+      "principales_problemas": [],
+      "impacto_acumulado": "Información insuficiente",
+      "oportunidades_principales": [],
+      "indicadores_criticos": {
+        "valor_facturado": 85000000.0,
+        "radicacion": "Información insuficiente",
+        "glosas": "Información insuficiente",
+        "cartera": "Información insuficiente"
+      },
+      "acciones_prioritarias": []
+    },
+    "calidad_datos": {
+      "facturacion": {
+        "fuente": "facturacion",
+        "registros": 8,
+        "campos_disponibles": [
+          "contrato",
+          "fecha_factura",
+          "numero_factura",
+          "pagador",
+          "valor_facturado"
+        ],
+        "campos_faltantes": [],
+        "fechas": {
+          "minima": "2026-07-01",
+          "maxima": "2026-07-08"
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {},
+        "inconsistencias": [],
+        "completitud": 1.0,
+        "nivel_calidad": "ALTA"
+      }
+    },
+    "suficiencia_datos": {
+      "clasificacion": "INSUFICIENTE",
+      "puntaje": 1.0,
+      "dimensiones": {
+        "facturacion": {
+          "registros": 8,
+          "completitud": 1.0,
+          "nivel_calidad": "ALTA",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "2026-07-01 → 2026-07-08"
+        }
+      },
+      "informacion_faltante_critica": [
+        {
+          "dimension": "cartera",
+          "que_falta": "Datos de cartera",
+          "por_que": "Necesario para evaluar hipótesis sobre cartera en la solicitud.",
+          "que_permitiria": "Calcular indicadores de cartera y contrastar causas."
+        }
+      ],
+      "limitaciones": [
+        "No se debe inferir causalidad con la información disponible.",
+        "Faltan 1 dimensiones críticas para la solicitud."
+      ]
+    },
+    "analisis_disponibles": {
+      "puede_realizar": [
+        "facturacion",
+        "trazabilidad",
+        "comparacion_historica"
+      ],
+      "no_puede_realizar": [
+        {
+          "analisis": "radicacion",
+          "faltante": [
+            "radicacion"
+          ]
+        },
+        {
+          "analisis": "glosas",
+          "faltante": [
+            "glosas"
+          ]
+        },
+        {
+          "analisis": "cartera",
+          "faltante": [
+            "cartera"
+          ]
+        },
+        {
+          "analisis": "contratos",
+          "faltante": [
+            "contratos"
+          ]
+        }
+      ]
+    },
+    "indicadores": {
+      "disponibles": [
+        "facturacion"
+      ],
+      "no_disponibles": [
+        "radicacion",
+        "glosas",
+        "cartera"
+      ],
+      "facturacion": {
+        "disponible": true,
+        "valor_facturado": 85000000.0,
+        "cantidad_facturas": 8,
+        "facturacion_por_pagador": {
+          "EPS_DESCONOCIDA": 85000000.0
+        },
+        "facturacion_por_periodo": {
+          "2026-07": 85000000.0
+        },
+        "concentracion_principal_pagador_pct": 100.0,
+        "evidencia": {
+          "fuente": "facturacion",
+          "registros": 8
+        }
+      },
+      "radicacion": {
+        "disponible": false,
+        "mensaje": "Información insuficiente"
+      },
+      "glosas": {
+        "disponible": false,
+        "mensaje": "Información insuficiente"
+      },
+      "cartera": {
+        "disponible": false,
+        "mensaje": "Información insuficiente"
+      },
+      "contratos": {
+        "disponible": false,
+        "mensaje": "Información insuficiente"
+      },
+      "devoluciones": {
+        "disponible": false,
+        "mensaje": "Información insuficiente"
+      },
+      "trazabilidad": {
+        "facturado": 85000000.0,
+        "radicado": "Información insuficiente",
+        "glosado": "Información insuficiente",
+        "recuperado_conciliado": "Información insuficiente",
+        "cuenta_por_cobrar": "Información insuficiente",
+        "pagado": "Información insuficiente"
+      }
+    },
+    "trazabilidad": {
+      "facturado": 85000000.0,
+      "radicado": "Información insuficiente",
+      "glosado": "Información insuficiente",
+      "recuperado_conciliado": "Información insuficiente",
+      "cuenta_por_cobrar": "Información insuficiente",
+      "pagado": "Información insuficiente",
+      "conocimiento": {
+        "utilizado": false,
+        "mensaje": "No se encontró conocimiento documental autorizado adicional.",
+        "consultas": [
+          {
+            "dominio": "cartera",
+            "consulta": "política cartera, cobro cartera, acuerdos de pago",
+            "especialista_id": "e14efa88-68e4-4bac-b2ee-0cca9d7da42d",
+            "fragmentos": 0,
+            "fuentes": [],
+            "analisis": {
+              "plazos_detectados": [],
+              "conflicto": false,
+              "requiere_validacion": false,
+              "plazo_preferido_dias": null,
+              "limites_unicos": []
+            },
+            "experiencia_separada": true
+          },
+          {
+            "dominio": "facturacion",
+            "consulta": "manual facturación, procedimiento facturación",
+            "especialista_id": "ee8bcdc5-ee0e-4d9c-85c6-1d866c4b2c00",
+            "fragmentos": 0,
+            "fuentes": [],
+            "analisis": {
+              "plazos_detectados": [],
+              "conflicto": false,
+              "requiere_validacion": false,
+              "plazo_preferido_dias": null,
+              "limites_unicos": []
+            },
+            "experiencia_separada": true
+          }
+        ],
+        "fuentes_consultadas": [],
+        "conflictos": [],
+        "requiere_validacion": false,
+        "analisis_global": {}
+      },
+      "motor": {
+        "motor": "MOTOR-ANALITICO-1000",
+        "solicitud": "¿Por qué disminuyó nuestra caja y cuánto podríamos recuperar?",
+        "suficiencia": "INSUFICIENTE",
+        "hipotesis_principal": "H0",
+        "especialistas": [
+          {
+            "nombre": "Analista de Cartera IA",
+            "dominio": "cartera",
+            "score": 0.925,
+            "razon_seleccion": "Mayor puntaje en cartera por capacidades (1.0)",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          },
+          {
+            "nombre": "Analista de Facturación IA",
+            "dominio": "facturacion",
+            "score": 0.925,
+            "razon_seleccion": "Mayor puntaje en facturacion por capacidades (1.0)",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          },
+          {
+            "nombre": "Analista Estratégico IPS IA",
+            "dominio": "consolidador",
+            "score": 0.925,
+            "razon_seleccion": "Consolidador estratégico con mayor puntaje en dominio estratégico",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          }
+        ],
+        "contrastes_count": 3,
+        "alternativas_count": 0,
+        "conocimiento": {
+          "utilizado": false,
+          "mensaje": "No se encontró conocimiento documental autorizado adicional.",
+          "consultas": [
+            {
+              "dominio": "cartera",
+              "consulta": "política cartera, cobro cartera, acuerdos de pago",
+              "especialista_id": "e14efa88-68e4-4bac-b2ee-0cca9d7da42d",
+              "fragmentos": 0,
+              "fuentes": [],
+              "analisis": {
+                "plazos_detectados": [],
+                "conflicto": false,
+                "requiere_validacion": false,
+                "plazo_preferido_dias": null,
+                "limites_unicos": []
+              },
+              "experiencia_separada": true
+            },
+            {
+              "dominio": "facturacion",
+              "consulta": "manual facturación, procedimiento facturación",
+              "especialista_id": "ee8bcdc5-ee0e-4d9c-85c6-1d866c4b2c00",
+              "fragmentos": 0,
+              "fuentes": [],
+              "analisis": {
+                "plazos_detectados": [],
+                "conflicto": false,
+                "requiere_validacion": false,
+                "plazo_preferido_dias": null,
+                "limites_unicos": []
+              },
+              "experiencia_separada": true
+            }
+          ],
+          "fuentes_consultadas": [],
+          "conflictos": [],
+          "requiere_validacion": false,
+          "analisis_global": {}
+        }
+      }
+    },
+    "hallazgos": [],
+    "hipotesis": [
+      {
+        "id": "H0",
+        "titulo": "Información insuficiente para establecer causa",
+        "dominio": "general",
+        "tipo": "INSUFICIENTE",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [
+          {
+            "dimension": "cartera",
+            "que_falta": "Datos de cartera",
+            "por_que": "Necesario para evaluar hipótesis sobre cartera en la solicitud.",
+            "que_permitiria": "Calcular indicadores de cartera y contrastar causas."
+          }
+        ],
+        "impacto_potencial": "Información insuficiente",
+        "puntaje": 0.0,
+        "relacion_causal": "no_evaluable",
+        "mensaje": "Información insuficiente para establecer esta causa."
+      }
+    ],
+    "hipotesis_principal": {
+      "id": "H0",
+      "titulo": "Información insuficiente para establecer causa",
+      "dominio": "general",
+      "tipo": "INSUFICIENTE",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [
+        {
+          "dimension": "cartera",
+          "que_falta": "Datos de cartera",
+          "por_que": "Necesario para evaluar hipótesis sobre cartera en la solicitud.",
+          "que_permitiria": "Calcular indicadores de cartera y contrastar causas."
+        }
+      ],
+      "impacto_potencial": "Información insuficiente",
+      "puntaje": 0.0,
+      "relacion_causal": "no_evaluable",
+      "mensaje": "Información insuficiente para establecer esta causa."
+    },
+    "contrastes": [
+      {
+        "hipotesis_id": "H0",
+        "hipotesis_titulo": "Información insuficiente para establecer causa",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "e14efa88-68e4-4bac-b2ee-0cca9d7da42d",
+        "dominio": "general",
+        "postura": "CUESTIONAR",
+        "argumento": "Información faltante impide confirmar — no convertir correlación en causalidad.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H0",
+        "hipotesis_titulo": "Información insuficiente para establecer causa",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "e14efa88-68e4-4bac-b2ee-0cca9d7da42d",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "Falta: Datos de cartera",
+        "evidencia_citada": [
+          {
+            "dimension": "cartera",
+            "que_falta": "Datos de cartera",
+            "por_que": "Necesario para evaluar hipótesis sobre cartera en la solicitud.",
+            "que_permitiria": "Calcular indicadores de cartera y contrastar causas."
+          }
+        ]
+      },
+      {
+        "hipotesis_id": "H0",
+        "hipotesis_titulo": "Información insuficiente para establecer causa",
+        "especialista": "Analista Estratégico IPS IA",
+        "employee_id": "74d3315e-0a9a-4dc4-b231-1a58a6949c2c",
+        "dominio": "consolidacion",
+        "postura": "COMPLEMENTAR",
+        "argumento": "Consolidador recibe 2 intervenciones de especialistas sobre 'Información insuficiente para establecer causa' — síntesis requerida antes de recomendar.",
+        "evidencia_citada": [],
+        "rol": "CONSOLIDADOR"
+      }
+    ],
+    "alternativas": [],
+    "priorizacion": {
+      "metodologia": "prioridad = impacto_económico(35%) + urgencia(25%) + confianza(15%) + esfuerzo_inverso(10%) + recuperabilidad(10%) + riesgo_inverso(5%)",
+      "ranking": [],
+      "explicacion": "El ranking no es una suma arbitraria: cada factor tiene peso documentado en 'metodologia'."
+    },
+    "escenarios": {
+      "tipo": "PROYECTADO",
+      "escenarios": {
+        "CONSERVADOR": {
+          "nombre": "Conservador",
+          "valor_recuperable_estimado": "Información insuficiente",
+          "tasa_recuperacion": 0.08,
+          "time_reduction_days": 2,
+          "supuestos": [
+            "Sin hipótesis dominante — escenarios genéricos.  Efecto mínimo (8% recuperación)."
+          ],
+          "certidumbre": "PROYECTADO"
+        },
+        "PROBABLE": {
+          "nombre": "Probable",
+          "valor_recuperable_estimado": "Información insuficiente",
+          "tasa_recuperacion": 0.18,
+          "time_reduction_days": 5,
+          "supuestos": [
+            "Sin hipótesis dominante — escenarios genéricos.  Efecto moderado (18% recuperación)."
+          ],
+          "certidumbre": "PROYECTADO"
+        },
+        "OPTIMISTA": {
+          "nombre": "Optimista",
+          "valor_recuperable_estimado": "Información insuficiente",
+          "tasa_recuperacion": 0.32,
+          "time_reduction_days": 10,
+          "supuestos": [
+            "Sin hipótesis dominante — escenarios genéricos.  Efecto alto si ejecución disciplinada (32% recuperación)."
+          ],
+          "certidumbre": "PROYECTADO"
+        }
+      },
+      "advertencia": "Simulación con supuestos — no presentar como resultado real."
+    },
+    "finops": [],
+    "recomendacion_consolidada": {
+      "que_ocurre": "Información insuficiente",
+      "donde": "Información insuficiente",
+      "desde_cuando": "2026-07 → 2026-07",
+      "cuanto_representa": "Información insuficiente",
+      "por_que_podria": "Información insuficiente",
+      "que_demostrado": [
+        "Ninguna causa demostrada — solo asociaciones"
+      ],
+      "que_no_demostrado": [
+        "Información insuficiente para establecer causa"
+      ],
+      "oportunidades": [],
+      "alternativas_evaluadas": 0,
+      "recomendacion": "Información insuficiente",
+      "por_que_recomendamos": "",
+      "cuanto_podria_valer": "Información insuficiente",
+      "que_hacer": [],
+      "como_medir": [
+        "Información insuficiente"
+      ],
+      "calidad_datos": "INSUFICIENTE",
+      "especialistas_involucrados": 2,
+      "solicitud": "¿Por qué disminuyó nuestra caja y cuánto podríamos recuperar?"
+    },
+    "oportunidades": [],
+    "work_plan_id": null,
+    "planes_accion": [],
+    "plan_accion": [],
+    "especialistas": {
+      "dominios": [
+        "cartera",
+        "facturacion"
+      ],
+      "asignaciones": [
+        {
+          "employee_id": "e14efa88-68e4-4bac-b2ee-0cca9d7da42d",
+          "employee_code": "ips-cartera-analyst",
+          "employee_name": "Analista de Cartera IA",
+          "specialty": "Cartera IPS",
+          "domain": "cartera",
+          "score": 0.925,
+          "factors": {
+            "capacidades": 1.0,
+            "herramientas": 1.0,
+            "especialidad": 0.2,
+            "disponibilidad": 1.0,
+            "experiencia": 0.5
+          }
+        },
+        {
+          "employee_id": "ee8bcdc5-ee0e-4d9c-85c6-1d866c4b2c00",
+          "employee_code": "ips-facturacion-analyst",
+          "employee_name": "Analista de Facturación IA",
+          "specialty": "Facturación IPS",
+          "domain": "facturacion",
+          "score": 0.925,
+          "factors": {
+            "capacidades": 1.0,
+            "herramientas": 1.0,
+            "especialidad": 0.2,
+            "disponibilidad": 1.0,
+            "experiencia": 0.5
+          }
+        }
+      ],
+      "consolidador": {
+        "employee_id": "74d3315e-0a9a-4dc4-b231-1a58a6949c2c",
+        "employee_code": "ips-estrategico-analyst",
+        "employee_name": "Analista Estratégico IPS IA",
+        "specialty": "Analítica Estratégica IPS",
+        "domain": "estrategico",
+        "score": 0.925,
+        "factors": {
+          "capacidades": 1.0,
+          "herramientas": 1.0,
+          "especialidad": 0.2,
+          "disponibilidad": 1.0,
+          "experiencia": 0.5
+        }
+      }
+    },
+    "comparacion_historica": {
+      "disponible": false,
+      "mensaje": "Sin histórico previo para esta IPS"
+    },
+    "conocimiento": {
+      "utilizado": false,
+      "mensaje": "No se encontró conocimiento documental autorizado adicional.",
+      "fuentes": [],
+      "requiere_validacion": false
+    },
+    "experiencia": {
+      "casos_similares": []
+    },
+    "creado": "2026-08-27T00:58:34.136896"
+  }
+}

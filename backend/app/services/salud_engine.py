@@ -31,6 +31,8 @@ from app.services.salud_workplan_bridge import (
     find_idempotent_action_plan,
     normalize_propuesta_ids,
 )
+from app.services.motor_analitico.pipeline import run_motor_analitico
+from app.services.motor_analitico.finops_bridge import register_finops_values
 
 
 def _utcnow() -> datetime:
@@ -147,6 +149,18 @@ def run_ips_analysis(
     unique_hallazgos = apply_knowledge_to_hallazgos(unique_hallazgos, knowledge_ctx, indicators)
 
     propuestas = generate_propuestas(unique_hallazgos)
+
+    motor = run_motor_analitico(
+        datasets=datasets,
+        data_profiles=data_profiles,
+        indicators=indicators,
+        hallazgos=unique_hallazgos,
+        propuestas=propuestas,
+        specialists=specialists,
+        request_text=request_text or "",
+        knowledge_ctx=knowledge_ctx,
+    )
+
     summary = build_executive_summary(unique_hallazgos, propuestas, indicators)
 
     # Comparación histórica
@@ -221,6 +235,7 @@ def run_ips_analysis(
         {
             **indicators.get("trazabilidad", {}),
             "conocimiento": knowledge_ctx,
+            "motor": motor.get("trazabilidad_motor", {}),
         },
         ensure_ascii=False,
     )
@@ -236,7 +251,29 @@ def run_ips_analysis(
             "fuentes": knowledge_ctx.get("fuentes_consultadas", []),
             "requiere_validacion": knowledge_ctx.get("requiere_validacion"),
         },
+        "motor": {
+            "suficiencia_datos": motor.get("suficiencia_datos"),
+            "hipotesis": motor.get("hipotesis"),
+            "hipotesis_principal": motor.get("hipotesis_principal"),
+            "contrastes": motor.get("contrastes"),
+            "alternativas": motor.get("alternativas"),
+            "priorizacion": motor.get("priorizacion"),
+            "escenarios": motor.get("escenarios"),
+            "finops": motor.get("finops"),
+            "recomendacion_consolidada": motor.get("recomendacion_consolidada"),
+        },
     }, ensure_ascii=False)
+
+    try:
+        register_finops_values(
+            db,
+            organization_id=organization_id,
+            user_id=user_id,
+            analysis_id=analysis.id,
+            estimates=motor.get("finops", []),
+        )
+    except Exception:
+        pass  # FINOPS opcional — no bloquear análisis
 
     log_salud_knowledge_audit(
         db,
@@ -434,6 +471,7 @@ def get_diagnostico(db: Session, org_id: str, analysis_id: str) -> dict[str, Any
     )
 
     summary = json.loads(analysis.summary_json or "{}")
+    motor_summary = summary.get("motor", {})
     from app.services.salud_experience import buscar_casos_similares
     casos = buscar_casos_similares(db, org_id, tipo_problema="diagnostico", limit=3)
 
@@ -443,10 +481,19 @@ def get_diagnostico(db: Session, org_id: str, analysis_id: str) -> dict[str, Any
         "estado": analysis.status,
         "resumen_ejecutivo": summary.get("resumen_ejecutivo", {}),
         "calidad_datos": json.loads(analysis.data_profile_json or "{}"),
+        "suficiencia_datos": motor_summary.get("suficiencia_datos", {}),
         "analisis_disponibles": json.loads(analysis.available_analyses_json or "{}"),
         "indicadores": json.loads(analysis.indicators_json or "{}"),
         "trazabilidad": json.loads(analysis.traceability_json or "{}"),
         "hallazgos": [_hallazgo_to_dict(h) for h in hallazgos],
+        "hipotesis": motor_summary.get("hipotesis", []),
+        "hipotesis_principal": motor_summary.get("hipotesis_principal"),
+        "contrastes": motor_summary.get("contrastes", []),
+        "alternativas": motor_summary.get("alternativas", []),
+        "priorizacion": motor_summary.get("priorizacion", {}),
+        "escenarios": motor_summary.get("escenarios", {}),
+        "finops": motor_summary.get("finops", []),
+        "recomendacion_consolidada": motor_summary.get("recomendacion_consolidada", {}),
         "oportunidades": [_propuesta_to_dict(p) for p in propuestas],
         "work_plan_id": analysis.work_plan_id,
         "planes_accion": [

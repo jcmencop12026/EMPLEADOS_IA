@@ -98,6 +98,11 @@ def calc_radicacion(fact_records: list[dict], rad_records: list[dict]) -> dict[s
     dias_radicacion: list[float] = []
     dias_por_factura: list[dict[str, Any]] = []
     for inv, rr in rad_map.items():
+        precomputed = _to_float(rr.get("dias_factura_a_radicacion"))
+        if precomputed is not None:
+            dias_radicacion.append(precomputed)
+            dias_por_factura.append({"numero_factura": inv, "dias": precomputed})
+            continue
         ff = _parse_date(fact_map.get(inv, {}).get("fecha_factura"))
         fr = _parse_date(rr.get("fecha_radicacion"))
         if ff and fr:
@@ -194,6 +199,27 @@ def calc_cartera(cartera_records: list[dict], pago_records: list[dict] | None = 
         "por_entidad": dict(sorted(por_entidad.items(), key=lambda x: x[1], reverse=True)),
         "recaudo": total_recaudo if pago_records else INSUFICIENTE,
         "evidencia": {"registros": len(cartera)},
+    }
+
+
+def calc_devoluciones(devolucion_records: list[dict]) -> dict[str, Any]:
+    devol = normalize_dataset("devoluciones", devolucion_records)
+    valores = [_to_float(d.get("valor_devuelto")) for d in devol]
+    valores_ok = [v for v in valores if v is not None]
+    if not valores_ok:
+        return {"disponible": False, "mensaje": INSUFICIENTE}
+
+    por_pagador: dict[str, float] = defaultdict(float)
+    for d in devol:
+        v = _to_float(d.get("valor_devuelto")) or 0
+        por_pagador[str(d.get("pagador", "Sin pagador"))] += v
+
+    return {
+        "disponible": True,
+        "valor_devuelto_total": sum(valores_ok),
+        "cantidad": len(valores_ok),
+        "por_pagador": dict(por_pagador),
+        "evidencia": {"registros": len(devol)},
     }
 
 
@@ -315,6 +341,13 @@ def compute_all_indicators(datasets: dict[str, list[dict]]) -> dict[str, Any]:
             result["disponibles"].append("contratos")
     else:
         result["contratos"] = {"disponible": False, "mensaje": INSUFICIENTE}
+
+    if "devoluciones" in datasets:
+        result["devoluciones"] = calc_devoluciones(datasets["devoluciones"])
+        if result["devoluciones"].get("disponible"):
+            result["disponibles"].append("devoluciones")
+    else:
+        result["devoluciones"] = {"disponible": False, "mensaje": INSUFICIENTE}
 
     result["trazabilidad"] = calc_traceability(
         datasets.get("facturacion", []),

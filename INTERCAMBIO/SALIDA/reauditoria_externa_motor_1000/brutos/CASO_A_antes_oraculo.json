@@ -1,0 +1,3379 @@
+{
+  "caso": "CASO_A",
+  "solicitud": "Tenemos cartera alta. Quiero saber por qué y qué hacer primero.",
+  "documentos_cargados": [
+    "97f822e8-5782-4992-809f-e0f54978072c"
+  ],
+  "suficiencia": "PARCIAL",
+  "informacion_faltante": [
+    {
+      "dimension": "pagos",
+      "que_falta": "Datos de pagos",
+      "por_que": "Necesario para evaluar hipótesis sobre pagos en la solicitud.",
+      "que_permitiria": "Calcular indicadores de pagos y contrastar causas."
+    }
+  ],
+  "especialista_lider": "Analista de Cartera IA",
+  "razon_seleccion": "Mayor puntaje en cartera por capacidades (1.0)",
+  "hallazgos": [
+    {
+      "id": "195f1bde-0df2-49ab-8030-8f1e752b3a96",
+      "categoria": "cartera",
+      "titulo": "Cartera vencida 91+ días: $74,250,000",
+      "descripcion": "Existe saldo en mora superior a 91 días por $74,250,000.",
+      "tipo": "HECHO",
+      "indicador": "aging_91_mas",
+      "valor": "$74,250,000",
+      "severidad": "ALTA",
+      "prioridad": 68.49,
+      "confianza": "MEDIA",
+      "criterios_confianza": {
+        "completitud": "baja",
+        "consistencia": "si",
+        "casos": 30,
+        "fuerza_asociacion": 0.15,
+        "puntaje": 0.55
+      },
+      "causa_probable": null,
+      "impacto_economico": 74250000.0,
+      "evidencia": {
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 74250000.0,
+          "61-90": 0.0,
+          "91+": 74250000.0
+        }
+      },
+      "fuentes": [
+        {
+          "dataset": "cartera",
+          "calculo": "aging"
+        }
+      ],
+      "fuentes_consultadas": [],
+      "evidencia_documental": null
+    },
+    {
+      "id": "c3e068e1-8a03-4af6-b371-2e050afae698",
+      "categoria": "radicacion",
+      "titulo": "Demora promedio factura→radicación: 13.0 días",
+      "descripcion": "El tiempo promedio entre facturación y radicación es 13.0 días, superior al umbral de 7 días.",
+      "tipo": "HECHO",
+      "indicador": "tiempo_factura_radicacion",
+      "valor": "13.0",
+      "severidad": "MEDIA",
+      "prioridad": 32.5,
+      "confianza": "MEDIA",
+      "criterios_confianza": {
+        "completitud": "baja",
+        "consistencia": "si",
+        "casos": 30,
+        "fuerza_asociacion": 0.18,
+        "puntaje": 0.58
+      },
+      "causa_probable": "Posible demora entre validación RIPS y radicación ante pagador.",
+      "impacto_economico": null,
+      "evidencia": {
+        "tiempo_dias": 13.0,
+        "umbral": 7,
+        "fuentes_documentales": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ]
+      },
+      "fuentes": [
+        {
+          "dataset": "radicacion",
+          "calculo": "promedio_dias"
+        },
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+          "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+          "titulo": "Contrato EPS NORTE",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+          "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T00:58:32.160210+00:00",
+          "relevancia": 1.0,
+          "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+        }
+      ],
+      "fuentes_consultadas": [
+        "Contrato EPS NORTE"
+      ],
+      "evidencia_documental": [
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+          "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+          "titulo": "Contrato EPS NORTE",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+          "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T00:58:32.160210+00:00",
+          "relevancia": 1.0,
+          "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+        }
+      ]
+    },
+    {
+      "id": "038a45a7-39ed-486b-b124-b5ab30e68528",
+      "categoria": "radicacion",
+      "titulo": "Incumplimiento contractual de radicación (+10 días)",
+      "descripcion": "La factura A-F003 tardó 20 días en radicarse; el plazo contractual autorizado es 10 días.",
+      "tipo": "HECHO",
+      "indicador": "incumplimiento_plazo_radicacion",
+      "valor": "10",
+      "severidad": "ALTA",
+      "prioridad": null,
+      "confianza": "ALTA",
+      "criterios_confianza": {
+        "datos": "radicacion",
+        "documento": "contrato_autorizado",
+        "exceso_dias": 10,
+        "plazo_contractual": 10
+      },
+      "causa_probable": "Retraso operativo en radicación respecto al plazo pactado.",
+      "impacto_economico": null,
+      "evidencia": {
+        "datos": {
+          "numero_factura": "A-F003",
+          "dias": 20.0
+        },
+        "documental": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ],
+        "clasificacion": "HECHO",
+        "fuentes_documentales": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ]
+      },
+      "fuentes": [
+        {
+          "dataset": "facturacion+radicacion",
+          "regla": "dias_factura_radicacion"
+        },
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+          "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+          "titulo": "Contrato EPS NORTE"
+        },
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+          "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+          "titulo": "Contrato EPS NORTE",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+          "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T00:58:32.160210+00:00",
+          "relevancia": 1.0,
+          "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+        }
+      ],
+      "fuentes_consultadas": [
+        "Contrato EPS NORTE",
+        "Contrato EPS NORTE"
+      ],
+      "evidencia_documental": [
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+          "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+          "titulo": "Contrato EPS NORTE",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+          "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T00:58:32.160210+00:00",
+          "relevancia": 1.0,
+          "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+        }
+      ]
+    }
+  ],
+  "hipotesis": [
+    {
+      "id": "H2",
+      "titulo": "Radicación tardía",
+      "dominio": "radicacion",
+      "tipo": "HIPOTESIS",
+      "estado": "POSIBLE",
+      "confianza": "MEDIA",
+      "evidencia_a_favor": [
+        "Demora promedio factura→radicación: 13.0 días"
+      ],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 74250000.0,
+      "puntaje": 0.433,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H9",
+      "titulo": "Proceso interno ineficiente",
+      "dominio": "proceso",
+      "tipo": "HIPOTESIS",
+      "estado": "POSIBLE",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [
+        "Múltiples hallazgos en procesos internos"
+      ],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 74250000.0,
+      "puntaje": 0.3,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H10",
+      "titulo": "Combinación de factores",
+      "dominio": "combinado",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [
+        "Hallazgos simultáneos en 2 dominios: cartera, radicacion"
+      ],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 74250000.0,
+      "puntaje": 0.24,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H3",
+      "titulo": "Devoluciones del pagador",
+      "dominio": "devoluciones",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [
+        "Dataset de devoluciones o glosas con estado DEVUELTA"
+      ],
+      "impacto_potencial": 74250000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H5",
+      "titulo": "Soportes deficientes",
+      "dominio": "soportes",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 74250000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H6",
+      "titulo": "Condiciones contractuales",
+      "dominio": "contratos",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [
+        "Contratos para contrastar plazos pactados"
+      ],
+      "impacto_potencial": 74250000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H8",
+      "titulo": "Concentración en un pagador",
+      "dominio": "concentracion",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 74250000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H1",
+      "titulo": "Facturación tardía",
+      "dominio": "facturacion",
+      "tipo": "HIPOTESIS",
+      "estado": "REFUTADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [
+        "Radicación alta (100.0%) reduce relevancia de facturación tardía"
+      ],
+      "informacion_faltante": [],
+      "impacto_potencial": 74250000.0,
+      "puntaje": -0.2,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H7",
+      "titulo": "Comportamiento tardío del pagador",
+      "dominio": "pagador",
+      "tipo": "HIPOTESIS",
+      "estado": "REFUTADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [
+        "Demora interna de radicación explica parte de la mora"
+      ],
+      "informacion_faltante": [],
+      "impacto_potencial": 74250000.0,
+      "puntaje": -0.25,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H4",
+      "titulo": "Glosas elevadas",
+      "dominio": "glosas",
+      "tipo": "HIPOTESIS",
+      "estado": "REFUTADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [
+        "Glosa baja (0.0%)"
+      ],
+      "informacion_faltante": [],
+      "impacto_potencial": 74250000.0,
+      "puntaje": -0.3,
+      "relacion_causal": "asociacion"
+    }
+  ],
+  "hipotesis_principal": {
+    "id": "H2",
+    "titulo": "Radicación tardía",
+    "dominio": "radicacion",
+    "tipo": "HIPOTESIS",
+    "estado": "POSIBLE",
+    "confianza": "MEDIA",
+    "evidencia_a_favor": [
+      "Demora promedio factura→radicación: 13.0 días"
+    ],
+    "evidencia_en_contra": [],
+    "informacion_faltante": [],
+    "impacto_potencial": 74250000.0,
+    "puntaje": 0.433,
+    "relacion_causal": "asociacion"
+  },
+  "contrastes": [
+    {
+      "hipotesis_id": "H2",
+      "hipotesis_titulo": "Radicación tardía",
+      "especialista": "Analista de Radicación IA",
+      "employee_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+      "dominio": "radicacion",
+      "postura": "COMPLEMENTAR",
+      "argumento": "Hallazgo relacionado: Incumplimiento contractual de radicación (+10 días)",
+      "evidencia_citada": [
+        "Demora promedio factura→radicación: 13.0 días"
+      ]
+    },
+    {
+      "hipotesis_id": "H2",
+      "hipotesis_titulo": "Radicación tardía",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "La correlación observada no demuestra causalidad directa.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H9",
+      "hipotesis_titulo": "Proceso interno ineficiente",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+      "dominio": "proceso",
+      "postura": "CUESTIONAR",
+      "argumento": "Asociación débil — requiere más datos.",
+      "evidencia_citada": [
+        "Múltiples hallazgos en procesos internos"
+      ]
+    },
+    {
+      "hipotesis_id": "H9",
+      "hipotesis_titulo": "Proceso interno ineficiente",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "La correlación observada no demuestra causalidad directa.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H10",
+      "hipotesis_titulo": "Combinación de factores",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+      "dominio": "combinado",
+      "postura": "CUESTIONAR",
+      "argumento": "Asociación débil — requiere más datos.",
+      "evidencia_citada": [
+        "Hallazgos simultáneos en 2 dominios: cartera, radicacion"
+      ]
+    },
+    {
+      "hipotesis_id": "H10",
+      "hipotesis_titulo": "Combinación de factores",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "La correlación observada no demuestra causalidad directa.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H3",
+      "hipotesis_titulo": "Devoluciones del pagador",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+      "dominio": "devoluciones",
+      "postura": "CUESTIONAR",
+      "argumento": "Información faltante impide confirmar — no convertir correlación en causalidad.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H3",
+      "hipotesis_titulo": "Devoluciones del pagador",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "Falta: Dataset de devoluciones o glosas con estado DEVUELTA",
+      "evidencia_citada": [
+        "Dataset de devoluciones o glosas con estado DEVUELTA"
+      ]
+    },
+    {
+      "hipotesis_id": "H5",
+      "hipotesis_titulo": "Soportes deficientes",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+      "dominio": "soportes",
+      "postura": "CUESTIONAR",
+      "argumento": "Asociación débil — requiere más datos.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H5",
+      "hipotesis_titulo": "Soportes deficientes",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "La correlación observada no demuestra causalidad directa.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H2",
+      "hipotesis_titulo": "Radicación tardía",
+      "especialista": "Analista Estratégico IPS IA",
+      "employee_id": "0e602a71-4371-494c-8b08-fa0921cb1aef",
+      "dominio": "consolidacion",
+      "postura": "COMPLEMENTAR",
+      "argumento": "Consolidador recibe 10 intervenciones de especialistas sobre 'Radicación tardía' — síntesis requerida antes de recomendar.",
+      "evidencia_citada": [],
+      "rol": "CONSOLIDADOR"
+    }
+  ],
+  "alternativas": [
+    {
+      "hallazgo_ref": "Incumplimiento contractual de radicación (+10 días)",
+      "alternativa_id": "ALT-RAD-1",
+      "descripcion": "Control diario de pendientes de radicación con alertas automáticas",
+      "fundamento": "Reduce demora factura→radicación identificada en indicadores",
+      "impacto_esperado": null,
+      "costo_estimado": "BAJO",
+      "esfuerzo": "BAJO",
+      "plazo": "30 días",
+      "riesgo": "BAJO",
+      "dependencias": [
+        "Equipo de radicación"
+      ],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "datos": {
+          "numero_factura": "A-F003",
+          "dias": 20.0
+        },
+        "documental": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ],
+        "clasificacion": "HECHO",
+        "fuentes_documentales": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ]
+      },
+      "confianza": "ALTA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Incumplimiento contractual de radicación (+10 días)",
+      "alternativa_id": "ALT-RAD-2",
+      "descripcion": "Auditoría de cuellos de botella entre facturación y radicación",
+      "fundamento": "Identifica si la demora es de validación RIPS o envío al pagador",
+      "impacto_esperado": 0,
+      "costo_estimado": "MEDIO",
+      "esfuerzo": "MEDIO",
+      "plazo": "45 días",
+      "riesgo": "BAJO",
+      "dependencias": [
+        "TI",
+        "Facturación"
+      ],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "datos": {
+          "numero_factura": "A-F003",
+          "dias": 20.0
+        },
+        "documental": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ],
+        "clasificacion": "HECHO",
+        "fuentes_documentales": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ]
+      },
+      "confianza": "ALTA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Incumplimiento contractual de radicación (+10 días)",
+      "alternativa_id": "ALT-RAD-3",
+      "descripcion": "Outsourcing parcial de radicación para picos de volumen",
+      "fundamento": "Alternativa si capacidad interna es el limitante",
+      "impacto_esperado": 0,
+      "costo_estimado": "ALTO",
+      "esfuerzo": "ALTO",
+      "plazo": "90 días",
+      "riesgo": "MEDIO",
+      "dependencias": [],
+      "reversibilidad": "MEDIA",
+      "evidencia": {
+        "datos": {
+          "numero_factura": "A-F003",
+          "dias": 20.0
+        },
+        "documental": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ],
+        "clasificacion": "HECHO",
+        "fuentes_documentales": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ]
+      },
+      "confianza": "ALTA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Demora promedio factura→radicación: 13.0 días",
+      "alternativa_id": "ALT-RAD-1",
+      "descripcion": "Control diario de pendientes de radicación con alertas automáticas",
+      "fundamento": "Reduce demora factura→radicación identificada en indicadores",
+      "impacto_esperado": null,
+      "costo_estimado": "BAJO",
+      "esfuerzo": "BAJO",
+      "plazo": "30 días",
+      "riesgo": "BAJO",
+      "dependencias": [
+        "Equipo de radicación"
+      ],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "tiempo_dias": 13.0,
+        "umbral": 7,
+        "fuentes_documentales": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ]
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Demora promedio factura→radicación: 13.0 días",
+      "alternativa_id": "ALT-RAD-2",
+      "descripcion": "Auditoría de cuellos de botella entre facturación y radicación",
+      "fundamento": "Identifica si la demora es de validación RIPS o envío al pagador",
+      "impacto_esperado": 0,
+      "costo_estimado": "MEDIO",
+      "esfuerzo": "MEDIO",
+      "plazo": "45 días",
+      "riesgo": "BAJO",
+      "dependencias": [
+        "TI",
+        "Facturación"
+      ],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "tiempo_dias": 13.0,
+        "umbral": 7,
+        "fuentes_documentales": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ]
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Demora promedio factura→radicación: 13.0 días",
+      "alternativa_id": "ALT-RAD-3",
+      "descripcion": "Outsourcing parcial de radicación para picos de volumen",
+      "fundamento": "Alternativa si capacidad interna es el limitante",
+      "impacto_esperado": 0,
+      "costo_estimado": "ALTO",
+      "esfuerzo": "ALTO",
+      "plazo": "90 días",
+      "riesgo": "MEDIO",
+      "dependencias": [],
+      "reversibilidad": "MEDIA",
+      "evidencia": {
+        "tiempo_dias": 13.0,
+        "umbral": 7,
+        "fuentes_documentales": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ]
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Cartera vencida 91+ días: $74,250,000",
+      "alternativa_id": "ALT-CAR-1",
+      "descripcion": "Gestión prioritaria de cartera 91+ con negociación por pagador",
+      "fundamento": "Impacto directo en flujo de caja",
+      "impacto_esperado": 74250000.0,
+      "costo_estimado": "BAJO",
+      "esfuerzo": "MEDIO",
+      "plazo": "30 días",
+      "riesgo": "MEDIO",
+      "dependencias": [],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 74250000.0,
+          "61-90": 0.0,
+          "91+": 74250000.0
+        }
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Cartera vencida 91+ días: $74,250,000",
+      "alternativa_id": "ALT-CAR-2",
+      "descripcion": "Seguimiento contractual con pagadores de mayor mora",
+      "fundamento": "H7 — comportamiento del pagador cuando proceso interno es sólido",
+      "impacto_esperado": 74250000.0,
+      "costo_estimado": "MEDIO",
+      "esfuerzo": "MEDIO",
+      "plazo": "45 días",
+      "riesgo": "MEDIO",
+      "dependencias": [
+        "Jurídico",
+        "Cartera"
+      ],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 74250000.0,
+          "61-90": 0.0,
+          "91+": 74250000.0
+        }
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Cartera vencida 91+ días: $74,250,000",
+      "alternativa_id": "ALT-CAR-3",
+      "descripcion": "Factoring selectivo de cartera con pagadores de riesgo bajo",
+      "fundamento": "Liquidez inmediata con costo financiero",
+      "impacto_esperado": 74250000.0,
+      "costo_estimado": "ALTO",
+      "esfuerzo": "BAJO",
+      "plazo": "15 días",
+      "riesgo": "MEDIO",
+      "dependencias": [],
+      "reversibilidad": "BAJA",
+      "evidencia": {
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 74250000.0,
+          "61-90": 0.0,
+          "91+": 74250000.0
+        }
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    }
+  ],
+  "priorizacion": {
+    "metodologia": "prioridad = impacto_económico(35%) + urgencia(25%) + confianza(15%) + esfuerzo_inverso(10%) + recuperabilidad(10%) + riesgo_inverso(5%)",
+    "ranking": [
+      {
+        "tipo": "alternativa",
+        "id": "ALT-RAD-1",
+        "titulo": "Control diario de pendientes de radicación con alertas automáticas",
+        "accion": "Control diario de pendientes de radicación con alertas automáticas",
+        "prioridad": 68.0,
+        "desglose": {
+          "impacto_economico": 7.0,
+          "urgencia": 25.0,
+          "confianza": 15.0,
+          "esfuerzo_inverso": 10.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 5.0
+        },
+        "por_que_primero": "'Control diario de pendientes de radicación con alertas autom' prioriza por urgencia operativa (25.0 pts).",
+        "ranking": 1
+      },
+      {
+        "tipo": "alternativa",
+        "id": "ALT-RAD-1",
+        "titulo": "Control diario de pendientes de radicación con alertas automáticas",
+        "accion": "Control diario de pendientes de radicación con alertas automáticas",
+        "prioridad": 63.5,
+        "desglose": {
+          "impacto_economico": 7.0,
+          "urgencia": 25.0,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 10.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 5.0
+        },
+        "por_que_primero": "'Control diario de pendientes de radicación con alertas autom' prioriza por urgencia operativa (25.0 pts).",
+        "ranking": 2
+      },
+      {
+        "tipo": "alternativa",
+        "id": "ALT-RAD-2",
+        "titulo": "Auditoría de cuellos de botella entre facturación y radicación",
+        "accion": "Auditoría de cuellos de botella entre facturación y radicación",
+        "prioridad": 56.5,
+        "desglose": {
+          "impacto_economico": 7.0,
+          "urgencia": 17.5,
+          "confianza": 15.0,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 5.0
+        },
+        "por_que_primero": "'Auditoría de cuellos de botella entre facturación y radicaci' prioriza por urgencia operativa (17.5 pts).",
+        "ranking": 3
+      },
+      {
+        "tipo": "propuesta",
+        "id": "Incumplimiento contractual de radicación (+10 días)",
+        "titulo": "Incumplimiento contractual de radicación (+10 días)",
+        "accion": "Implementar control diario de facturas pendientes de radicación con alerta a los 5 días y escalamiento al día 10.",
+        "prioridad": 53.0,
+        "desglose": {
+          "impacto_economico": 0.0,
+          "urgencia": 25.0,
+          "confianza": 15.0,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 4.0,
+          "riesgo_inverso": 3.0
+        },
+        "finops": {
+          "referencia": "Incumplimiento contractual de radicación (+10 días)",
+          "costo_estimado": 2500000,
+          "beneficio_esperado": 26730000.0,
+          "valor_recuperable": 26730000.0,
+          "ahorro": 26730000.0,
+          "roi": 9.69,
+          "payback_dias": 60,
+          "certidumbre": "ESTIMADO",
+          "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+          "advertencia": "Estimación — no presentar como resultado real."
+        },
+        "por_que_primero": "'Incumplimiento contractual de radicación (+10 días)' prioriza por urgencia operativa (25.0 pts).",
+        "ranking": 4
+      },
+      {
+        "tipo": "alternativa",
+        "id": "ALT-RAD-2",
+        "titulo": "Auditoría de cuellos de botella entre facturación y radicación",
+        "accion": "Auditoría de cuellos de botella entre facturación y radicación",
+        "prioridad": 52.0,
+        "desglose": {
+          "impacto_economico": 7.0,
+          "urgencia": 17.5,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 5.0
+        },
+        "por_que_primero": "'Auditoría de cuellos de botella entre facturación y radicaci' prioriza por urgencia operativa (17.5 pts).",
+        "ranking": 5
+      },
+      {
+        "tipo": "propuesta",
+        "id": "Cartera vencida 91+ días: $74,250,000",
+        "titulo": "Cartera vencida 91+ días: $74,250,000",
+        "accion": "Activar gestión de cobro prioritaria para facturas con mora superior a 91 días y negociar acuerdos de pago.",
+        "prioridad": 48.5,
+        "desglose": {
+          "impacto_economico": 0.0,
+          "urgencia": 25.0,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 4.0,
+          "riesgo_inverso": 3.0
+        },
+        "finops": {
+          "referencia": "Cartera vencida 91+ días: $74,250,000",
+          "costo_estimado": 2500000,
+          "beneficio_esperado": 11.1,
+          "valor_recuperable": 11.1,
+          "ahorro": 11.1,
+          "roi": -1.0,
+          "payback_dias": 60,
+          "certidumbre": "ESTIMADO",
+          "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+          "advertencia": "Estimación — no presentar como resultado real."
+        },
+        "por_que_primero": "'Cartera vencida 91+ días: $74,250,000' prioriza por urgencia operativa (25.0 pts).",
+        "ranking": 6
+      },
+      {
+        "tipo": "alternativa",
+        "id": "ALT-RAD-3",
+        "titulo": "Outsourcing parcial de radicación para picos de volumen",
+        "accion": "Outsourcing parcial de radicación para picos de volumen",
+        "prioridad": 44.0,
+        "desglose": {
+          "impacto_economico": 7.0,
+          "urgencia": 10.0,
+          "confianza": 15.0,
+          "esfuerzo_inverso": 3.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 3.0
+        },
+        "por_que_primero": "'Outsourcing parcial de radicación para picos de volumen' prioriza por confianza en la evidencia (15.0 pts).",
+        "ranking": 7
+      },
+      {
+        "tipo": "propuesta",
+        "id": "Demora promedio factura→radicación: 13.0 días",
+        "titulo": "Demora promedio factura→radicación: 13.0 días",
+        "accion": "Implementar control diario de facturas pendientes de radicación con alerta a los 5 días y escalamiento al día 10.",
+        "prioridad": 41.0,
+        "desglose": {
+          "impacto_economico": 0.0,
+          "urgencia": 17.5,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 4.0,
+          "riesgo_inverso": 3.0
+        },
+        "finops": {
+          "referencia": "Demora promedio factura→radicación: 13.0 días",
+          "costo_estimado": 4500000.0,
+          "beneficio_esperado": 1.95,
+          "valor_recuperable": 1.95,
+          "ahorro": 1.95,
+          "roi": -1.0,
+          "payback_dias": 90,
+          "certidumbre": "ESTIMADO",
+          "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+          "advertencia": "Estimación — no presentar como resultado real."
+        },
+        "por_que_primero": "'Demora promedio factura→radicación: 13.0 días' prioriza por urgencia operativa (17.5 pts).",
+        "ranking": 8
+      },
+      {
+        "tipo": "alternativa",
+        "id": "ALT-RAD-3",
+        "titulo": "Outsourcing parcial de radicación para picos de volumen",
+        "accion": "Outsourcing parcial de radicación para picos de volumen",
+        "prioridad": 39.5,
+        "desglose": {
+          "impacto_economico": 7.0,
+          "urgencia": 10.0,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 3.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 3.0
+        },
+        "por_que_primero": "'Outsourcing parcial de radicación para picos de volumen' prioriza por confianza en la evidencia (10.5 pts).",
+        "ranking": 9
+      }
+    ],
+    "explicacion": "El ranking no es una suma arbitraria: cada factor tiene peso documentado en 'metodologia'."
+  },
+  "accion_1": "Control diario de pendientes de radicación con alertas automáticas",
+  "finops": [
+    {
+      "referencia": "Incumplimiento contractual de radicación (+10 días)",
+      "costo_estimado": 2500000,
+      "beneficio_esperado": 26730000.0,
+      "valor_recuperable": 26730000.0,
+      "ahorro": 26730000.0,
+      "roi": 9.69,
+      "payback_dias": 60,
+      "certidumbre": "ESTIMADO",
+      "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+      "advertencia": "Estimación — no presentar como resultado real."
+    },
+    {
+      "referencia": "Demora promedio factura→radicación: 13.0 días",
+      "costo_estimado": 4500000.0,
+      "beneficio_esperado": 1.95,
+      "valor_recuperable": 1.95,
+      "ahorro": 1.95,
+      "roi": -1.0,
+      "payback_dias": 90,
+      "certidumbre": "ESTIMADO",
+      "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+      "advertencia": "Estimación — no presentar como resultado real."
+    },
+    {
+      "referencia": "Cartera vencida 91+ días: $74,250,000",
+      "costo_estimado": 2500000,
+      "beneficio_esperado": 11.1,
+      "valor_recuperable": 11.1,
+      "ahorro": 11.1,
+      "roi": -1.0,
+      "payback_dias": 60,
+      "certidumbre": "ESTIMADO",
+      "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+      "advertencia": "Estimación — no presentar como resultado real."
+    }
+  ],
+  "escenarios": {
+    "tipo": "PROYECTADO",
+    "escenarios": {
+      "CONSERVADOR": {
+        "nombre": "Conservador",
+        "valor_recuperable_estimado": 11880000.0,
+        "tasa_recuperacion": 0.08,
+        "time_reduction_days": 2,
+        "supuestos": [
+          "Demora de radicación identificada.  Efecto mínimo (8% recuperación).",
+          "Reducción de 2 días en factura→radicación"
+        ],
+        "certidumbre": "PROYECTADO",
+        "efecto_tiempo_radicacion_dias": 2
+      },
+      "PROBABLE": {
+        "nombre": "Probable",
+        "valor_recuperable_estimado": 26730000.0,
+        "tasa_recuperacion": 0.18,
+        "time_reduction_days": 5,
+        "supuestos": [
+          "Demora de radicación identificada.  Efecto moderado (18% recuperación).",
+          "Reducción de 5 días en factura→radicación"
+        ],
+        "certidumbre": "PROYECTADO",
+        "efecto_tiempo_radicacion_dias": 5,
+        "accion_simulada": "Implementar control diario de facturas pendientes de radicación con alerta a los 5 días y escalamiento al día 10."
+      },
+      "OPTIMISTA": {
+        "nombre": "Optimista",
+        "valor_recuperable_estimado": 47520000.0,
+        "tasa_recuperacion": 0.32,
+        "time_reduction_days": 10,
+        "supuestos": [
+          "Demora de radicación identificada.  Efecto alto si ejecución disciplinada (32% recuperación).",
+          "Reducción de 10 días en factura→radicación"
+        ],
+        "certidumbre": "PROYECTADO",
+        "efecto_tiempo_radicacion_dias": 10
+      }
+    },
+    "advertencia": "Simulación con supuestos — no presentar como resultado real."
+  },
+  "recomendacion_consolidada": {
+    "que_ocurre": "Incumplimiento contractual de radicación (+10 días); Demora promedio factura→radicación: 13.0 días; Cartera vencida 91+ días: $74,250,000",
+    "donde": "Dominios: cartera, radicacion. Mayor exposición: Sin pagador.",
+    "desde_cuando": "2026-07 → 2026-07",
+    "cuanto_representa": 148500000.0,
+    "por_que_podria": "Información insuficiente",
+    "que_demostrado": [
+      "Ninguna causa demostrada — solo asociaciones"
+    ],
+    "que_no_demostrado": [
+      "Radicación tardía",
+      "Proceso interno ineficiente",
+      "Combinación de factores",
+      "Devoluciones del pagador",
+      "Soportes deficientes"
+    ],
+    "oportunidades": [
+      "Control diario de pendientes de radicación con alertas automáticas",
+      "Control diario de pendientes de radicación con alertas automáticas",
+      "Auditoría de cuellos de botella entre facturación y radicación",
+      "Incumplimiento contractual de radicación (+10 días)",
+      "Auditoría de cuellos de botella entre facturación y radicación"
+    ],
+    "alternativas_evaluadas": 9,
+    "recomendacion": "Control diario de pendientes de radicación con alertas automáticas",
+    "por_que_recomendamos": "'Control diario de pendientes de radicación con alertas autom' prioriza por urgencia operativa (25.0 pts).",
+    "cuanto_podria_valer": 26730000.0,
+    "que_hacer": [
+      "Control diario de pendientes de radicación con alertas automáticas",
+      "Control diario de pendientes de radicación con alertas automáticas",
+      "Auditoría de cuellos de botella entre facturación y radicación"
+    ],
+    "como_medir": [
+      "Días promedio factura→radicación (meta: <7)",
+      "Porcentaje de glosa (meta: reducir 5 p.p.)",
+      "Saldo cartera 91+ días",
+      "Seguimiento acción: Control diario de pendientes de radicación con alertas automáticas"
+    ],
+    "calidad_datos": "PARCIAL",
+    "especialistas_involucrados": 4,
+    "solicitud": "Tenemos cartera alta. Quiero saber por qué y qué hacer primero."
+  },
+  "conocimiento": {
+    "utilizado": true,
+    "mensaje": null,
+    "fuentes": [
+      {
+        "tipo": "CONOCIMIENTO",
+        "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+        "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+        "titulo": "Contrato EPS NORTE",
+        "categoria": null,
+        "consulta": "radicación",
+        "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+        "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+        "dominio": "radicacion",
+        "fecha": "2026-08-27T00:58:32.160210+00:00",
+        "relevancia": 1.0,
+        "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+      }
+    ],
+    "requiere_validacion": false
+  },
+  "diagnostico_completo": {
+    "id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+    "ips_name": "Cert CASO_A",
+    "estado": "COMPLETADO",
+    "resumen_ejecutivo": {
+      "principales_problemas": [
+        "Incumplimiento contractual de radicación (+10 días)",
+        "Demora promedio factura→radicación: 13.0 días",
+        "Cartera vencida 91+ días: $74,250,000"
+      ],
+      "impacto_acumulado": 74250000.0,
+      "oportunidades_principales": [
+        "Incumplimiento contractual de radicación (+10 días)",
+        "Cartera vencida 91+ días: $74,250,000",
+        "Demora promedio factura→radicación: 13.0 días"
+      ],
+      "indicadores_criticos": {
+        "valor_facturado": 330000000.0,
+        "porcentaje_radicado": 100.0,
+        "porcentaje_glosa": 0.0,
+        "saldo_total": 148500000.0
+      },
+      "acciones_prioritarias": [
+        "Implementar control diario de facturas pendientes de radicación con alerta a los",
+        "Activar gestión de cobro prioritaria para facturas con mora superior a 91 días y",
+        "Implementar control diario de facturas pendientes de radicación con alerta a los"
+      ]
+    },
+    "calidad_datos": {
+      "cartera": {
+        "fuente": "cartera",
+        "registros": 30,
+        "campos_disponibles": [
+          "dias_mora",
+          "saldo"
+        ],
+        "campos_faltantes": [
+          "numero_factura",
+          "fecha_vencimiento",
+          "pagador"
+        ],
+        "fechas": {
+          "minima": null,
+          "maxima": null
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {
+          "numero_factura": 30,
+          "fecha_vencimiento": 30,
+          "pagador": 30
+        },
+        "inconsistencias": [],
+        "completitud": 0.4,
+        "nivel_calidad": "BAJA"
+      },
+      "facturacion": {
+        "fuente": "facturacion",
+        "registros": 30,
+        "campos_disponibles": [
+          "contrato",
+          "fecha_factura",
+          "numero_factura",
+          "pagador",
+          "valor_facturado"
+        ],
+        "campos_faltantes": [],
+        "fechas": {
+          "minima": "2026-07-01",
+          "maxima": "2026-07-28"
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {},
+        "inconsistencias": [],
+        "completitud": 1.0,
+        "nivel_calidad": "ALTA"
+      },
+      "glosas": {
+        "fuente": "glosas",
+        "registros": 30,
+        "campos_disponibles": [
+          "valor_glosado"
+        ],
+        "campos_faltantes": [
+          "numero_factura",
+          "causal",
+          "pagador",
+          "servicio",
+          "estado",
+          "fecha_glosa"
+        ],
+        "fechas": {
+          "minima": null,
+          "maxima": null
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {
+          "numero_factura": 30,
+          "causal": 30,
+          "pagador": 30,
+          "servicio": 30,
+          "estado": 30,
+          "fecha_glosa": 30
+        },
+        "inconsistencias": [],
+        "completitud": 0.143,
+        "nivel_calidad": "INSUFICIENTE"
+      },
+      "pagos": {
+        "fuente": "pagos",
+        "registros": 30,
+        "campos_disponibles": [
+          "dias_desde_radicacion_a_pago",
+          "numero_factura",
+          "valor_pagado"
+        ],
+        "campos_faltantes": [
+          "fecha_pago",
+          "pagador"
+        ],
+        "fechas": {
+          "minima": null,
+          "maxima": null
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {
+          "fecha_pago": 30,
+          "pagador": 30
+        },
+        "inconsistencias": [],
+        "completitud": 0.6,
+        "nivel_calidad": "MEDIA"
+      },
+      "radicacion": {
+        "fuente": "radicacion",
+        "registros": 30,
+        "campos_disponibles": [
+          "dias_factura_a_radicacion",
+          "numero_factura",
+          "valor_radicado"
+        ],
+        "campos_faltantes": [
+          "fecha_factura",
+          "fecha_radicacion",
+          "pagador"
+        ],
+        "fechas": {
+          "minima": null,
+          "maxima": null
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {
+          "fecha_factura": 30,
+          "fecha_radicacion": 30,
+          "pagador": 30
+        },
+        "inconsistencias": [],
+        "completitud": 0.5,
+        "nivel_calidad": "BAJA"
+      }
+    },
+    "suficiencia_datos": {
+      "clasificacion": "PARCIAL",
+      "puntaje": 0.4,
+      "dimensiones": {
+        "cartera": {
+          "registros": 30,
+          "completitud": 0.4,
+          "nivel_calidad": "BAJA",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "Información insuficiente"
+        },
+        "facturacion": {
+          "registros": 30,
+          "completitud": 1.0,
+          "nivel_calidad": "ALTA",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "2026-07-01 → 2026-07-28"
+        },
+        "glosas": {
+          "registros": 30,
+          "completitud": 0.143,
+          "nivel_calidad": "INSUFICIENTE",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "Información insuficiente"
+        },
+        "pagos": {
+          "registros": 30,
+          "completitud": 0.6,
+          "nivel_calidad": "MEDIA",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "Información insuficiente"
+        },
+        "radicacion": {
+          "registros": 30,
+          "completitud": 0.5,
+          "nivel_calidad": "BAJA",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "Información insuficiente"
+        }
+      },
+      "informacion_faltante_critica": [
+        {
+          "dimension": "pagos",
+          "que_falta": "Datos de pagos",
+          "por_que": "Necesario para evaluar hipótesis sobre pagos en la solicitud.",
+          "que_permitiria": "Calcular indicadores de pagos y contrastar causas."
+        }
+      ],
+      "limitaciones": [
+        "Faltan 1 dimensiones críticas para la solicitud."
+      ]
+    },
+    "analisis_disponibles": {
+      "puede_realizar": [
+        "facturacion",
+        "radicacion",
+        "glosas",
+        "cartera",
+        "trazabilidad",
+        "comparacion_historica"
+      ],
+      "no_puede_realizar": [
+        {
+          "analisis": "contratos",
+          "faltante": [
+            "contratos"
+          ]
+        }
+      ]
+    },
+    "indicadores": {
+      "disponibles": [
+        "facturacion",
+        "radicacion",
+        "glosas",
+        "cartera"
+      ],
+      "no_disponibles": [],
+      "facturacion": {
+        "disponible": true,
+        "valor_facturado": 330000000.0,
+        "cantidad_facturas": 30,
+        "facturacion_por_pagador": {
+          "EPS_NORTE": 165000000.0,
+          "EPS_CENTRO": 165000000.0
+        },
+        "facturacion_por_periodo": {
+          "2026-07": 330000000.0
+        },
+        "concentracion_principal_pagador_pct": 50.0,
+        "evidencia": {
+          "fuente": "facturacion",
+          "registros": 30
+        }
+      },
+      "radicacion": {
+        "disponible": true,
+        "valor_facturado": 330000000.0,
+        "valor_radicado": 330000000.0,
+        "diferencia_facturado_radicado": 0.0,
+        "facturas_no_radicadas": 0,
+        "porcentaje_radicado": 100.0,
+        "tiempo_promedio_factura_radicacion_dias": 13.0,
+        "evidencia": {
+          "facturas": 30,
+          "radicadas": 30,
+          "dias_por_factura": [
+            {
+              "numero_factura": "A-F001",
+              "dias": 18.0
+            },
+            {
+              "numero_factura": "A-F002",
+              "dias": 7.0
+            },
+            {
+              "numero_factura": "A-F003",
+              "dias": 20.0
+            },
+            {
+              "numero_factura": "A-F004",
+              "dias": 7.0
+            },
+            {
+              "numero_factura": "A-F005",
+              "dias": 18.0
+            },
+            {
+              "numero_factura": "A-F006",
+              "dias": 7.0
+            },
+            {
+              "numero_factura": "A-F007",
+              "dias": 20.0
+            },
+            {
+              "numero_factura": "A-F008",
+              "dias": 7.0
+            },
+            {
+              "numero_factura": "A-F009",
+              "dias": 18.0
+            },
+            {
+              "numero_factura": "A-F010",
+              "dias": 7.0
+            },
+            {
+              "numero_factura": "A-F011",
+              "dias": 20.0
+            },
+            {
+              "numero_factura": "A-F012",
+              "dias": 7.0
+            },
+            {
+              "numero_factura": "A-F013",
+              "dias": 18.0
+            },
+            {
+              "numero_factura": "A-F014",
+              "dias": 7.0
+            },
+            {
+              "numero_factura": "A-F015",
+              "dias": 20.0
+            },
+            {
+              "numero_factura": "A-F016",
+              "dias": 7.0
+            },
+            {
+              "numero_factura": "A-F017",
+              "dias": 18.0
+            },
+            {
+              "numero_factura": "A-F018",
+              "dias": 7.0
+            },
+            {
+              "numero_factura": "A-F019",
+              "dias": 20.0
+            },
+            {
+              "numero_factura": "A-F020",
+              "dias": 7.0
+            },
+            {
+              "numero_factura": "A-F021",
+              "dias": 18.0
+            },
+            {
+              "numero_factura": "A-F022",
+              "dias": 7.0
+            },
+            {
+              "numero_factura": "A-F023",
+              "dias": 20.0
+            },
+            {
+              "numero_factura": "A-F024",
+              "dias": 7.0
+            },
+            {
+              "numero_factura": "A-F025",
+              "dias": 18.0
+            },
+            {
+              "numero_factura": "A-F026",
+              "dias": 7.0
+            },
+            {
+              "numero_factura": "A-F027",
+              "dias": 20.0
+            },
+            {
+              "numero_factura": "A-F028",
+              "dias": 7.0
+            },
+            {
+              "numero_factura": "A-F029",
+              "dias": 18.0
+            },
+            {
+              "numero_factura": "A-F030",
+              "dias": 7.0
+            }
+          ]
+        }
+      },
+      "glosas": {
+        "disponible": true,
+        "valor_glosado": 0.0,
+        "porcentaje_glosa": 0.0,
+        "por_causal": {
+          "": 0.0
+        },
+        "por_pagador": {
+          "Sin pagador": 0.0
+        },
+        "por_servicio": {
+          "Sin servicio": 0.0
+        },
+        "por_estado": {
+          "Sin estado": 30
+        },
+        "evidencia": {
+          "registros": 30
+        }
+      },
+      "cartera": {
+        "disponible": true,
+        "saldo_total": 148500000.0,
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 74250000.0,
+          "61-90": 0.0,
+          "91+": 74250000.0
+        },
+        "por_entidad": {
+          "Sin pagador": 148500000.0
+        },
+        "recaudo": 320100000.0,
+        "evidencia": {
+          "registros": 30
+        }
+      },
+      "contratos": {
+        "disponible": false,
+        "mensaje": "Información insuficiente"
+      },
+      "devoluciones": {
+        "disponible": false,
+        "mensaje": "Información insuficiente"
+      },
+      "trazabilidad": {
+        "facturado": 330000000.0,
+        "radicado": 330000000.0,
+        "diferencia_facturado_radicado": 0.0,
+        "glosado": 0.0,
+        "recuperado_conciliado": "Información insuficiente",
+        "cuenta_por_cobrar": 148500000.0,
+        "pagado": 320100000.0
+      }
+    },
+    "trazabilidad": {
+      "facturado": 330000000.0,
+      "radicado": 330000000.0,
+      "diferencia_facturado_radicado": 0.0,
+      "glosado": 0.0,
+      "recuperado_conciliado": "Información insuficiente",
+      "cuenta_por_cobrar": 148500000.0,
+      "pagado": 320100000.0,
+      "conocimiento": {
+        "utilizado": true,
+        "mensaje": null,
+        "consultas": [
+          {
+            "dominio": "cartera",
+            "consulta": "política cartera, cobro cartera, acuerdos de pago",
+            "especialista_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+            "fragmentos": 0,
+            "fuentes": [],
+            "analisis": {
+              "plazos_detectados": [],
+              "conflicto": false,
+              "requiere_validacion": false,
+              "plazo_preferido_dias": null,
+              "limites_unicos": []
+            },
+            "experiencia_separada": true
+          },
+          {
+            "dominio": "facturacion",
+            "consulta": "manual facturación, procedimiento facturación",
+            "especialista_id": "a276c99d-a33e-4579-bad4-df822b08db88",
+            "fragmentos": 0,
+            "fuentes": [],
+            "analisis": {
+              "plazos_detectados": [],
+              "conflicto": false,
+              "requiere_validacion": false,
+              "plazo_preferido_dias": null,
+              "limites_unicos": []
+            },
+            "experiencia_separada": true
+          },
+          {
+            "dominio": "glosas",
+            "consulta": "procedimiento glosas, respuesta glosas, causales glosa",
+            "especialista_id": "ce0d123c-04c0-4bc5-94e5-3a60384671b8",
+            "fragmentos": 0,
+            "fuentes": [],
+            "analisis": {
+              "plazos_detectados": [],
+              "conflicto": false,
+              "requiere_validacion": false,
+              "plazo_preferido_dias": null,
+              "limites_unicos": []
+            },
+            "experiencia_separada": true
+          },
+          {
+            "dominio": "radicacion",
+            "consulta": "radicación, plazo, plazo radicación, procedimiento radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "fragmentos": 1,
+            "fuentes": [
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+                "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+                "titulo": "Contrato EPS NORTE",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+                "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:32.160210+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+              }
+            ],
+            "analisis": {
+              "plazos_detectados": [
+                {
+                  "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+                  "document_name": "Contrato EPS NORTE",
+                  "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+                  "dias": [
+                    10
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                }
+              ],
+              "conflicto": false,
+              "requiere_validacion": false,
+              "plazo_preferido_dias": 10,
+              "limites_unicos": [
+                10
+              ]
+            },
+            "experiencia_separada": true
+          }
+        ],
+        "fuentes_consultadas": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ],
+        "conflictos": [],
+        "requiere_validacion": false,
+        "analisis_global": {
+          "plazos_detectados": [
+            {
+              "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+              "document_name": "Contrato EPS NORTE",
+              "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+              "dias": [
+                10
+              ],
+              "vigente_desde": null,
+              "vigente_hasta": null
+            }
+          ],
+          "conflicto": false,
+          "requiere_validacion": false,
+          "plazo_preferido_dias": 10,
+          "limites_unicos": [
+            10
+          ]
+        }
+      },
+      "motor": {
+        "motor": "MOTOR-ANALITICO-1000",
+        "solicitud": "Tenemos cartera alta. Quiero saber por qué y qué hacer primero.",
+        "suficiencia": "PARCIAL",
+        "hipotesis_principal": "H2",
+        "especialistas": [
+          {
+            "nombre": "Analista de Cartera IA",
+            "dominio": "cartera",
+            "score": 0.925,
+            "razon_seleccion": "Mayor puntaje en cartera por capacidades (1.0)",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          },
+          {
+            "nombre": "Analista de Facturación IA",
+            "dominio": "facturacion",
+            "score": 0.925,
+            "razon_seleccion": "Mayor puntaje en facturacion por capacidades (1.0)",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          },
+          {
+            "nombre": "Analista de Glosas IA",
+            "dominio": "glosas",
+            "score": 0.925,
+            "razon_seleccion": "Mayor puntaje en glosas por capacidades (1.0)",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          },
+          {
+            "nombre": "Analista de Radicación IA",
+            "dominio": "radicacion",
+            "score": 0.925,
+            "razon_seleccion": "Mayor puntaje en radicacion por capacidades (1.0)",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          },
+          {
+            "nombre": "Analista Estratégico IPS IA",
+            "dominio": "consolidador",
+            "score": 0.925,
+            "razon_seleccion": "Consolidador estratégico con mayor puntaje en dominio estratégico",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          }
+        ],
+        "contrastes_count": 11,
+        "alternativas_count": 9,
+        "conocimiento": {
+          "utilizado": true,
+          "mensaje": null,
+          "consultas": [
+            {
+              "dominio": "cartera",
+              "consulta": "política cartera, cobro cartera, acuerdos de pago",
+              "especialista_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+              "fragmentos": 0,
+              "fuentes": [],
+              "analisis": {
+                "plazos_detectados": [],
+                "conflicto": false,
+                "requiere_validacion": false,
+                "plazo_preferido_dias": null,
+                "limites_unicos": []
+              },
+              "experiencia_separada": true
+            },
+            {
+              "dominio": "facturacion",
+              "consulta": "manual facturación, procedimiento facturación",
+              "especialista_id": "a276c99d-a33e-4579-bad4-df822b08db88",
+              "fragmentos": 0,
+              "fuentes": [],
+              "analisis": {
+                "plazos_detectados": [],
+                "conflicto": false,
+                "requiere_validacion": false,
+                "plazo_preferido_dias": null,
+                "limites_unicos": []
+              },
+              "experiencia_separada": true
+            },
+            {
+              "dominio": "glosas",
+              "consulta": "procedimiento glosas, respuesta glosas, causales glosa",
+              "especialista_id": "ce0d123c-04c0-4bc5-94e5-3a60384671b8",
+              "fragmentos": 0,
+              "fuentes": [],
+              "analisis": {
+                "plazos_detectados": [],
+                "conflicto": false,
+                "requiere_validacion": false,
+                "plazo_preferido_dias": null,
+                "limites_unicos": []
+              },
+              "experiencia_separada": true
+            },
+            {
+              "dominio": "radicacion",
+              "consulta": "radicación, plazo, plazo radicación, procedimiento radicación",
+              "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+              "fragmentos": 1,
+              "fuentes": [
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+                  "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+                  "titulo": "Contrato EPS NORTE",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+                  "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:32.160210+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+                }
+              ],
+              "analisis": {
+                "plazos_detectados": [
+                  {
+                    "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+                    "document_name": "Contrato EPS NORTE",
+                    "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+                    "dias": [
+                      10
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  }
+                ],
+                "conflicto": false,
+                "requiere_validacion": false,
+                "plazo_preferido_dias": 10,
+                "limites_unicos": [
+                  10
+                ]
+              },
+              "experiencia_separada": true
+            }
+          ],
+          "fuentes_consultadas": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+              "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+              "titulo": "Contrato EPS NORTE",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+              "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:32.160210+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+            }
+          ],
+          "conflictos": [],
+          "requiere_validacion": false,
+          "analisis_global": {
+            "plazos_detectados": [
+              {
+                "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+                "document_name": "Contrato EPS NORTE",
+                "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+                "dias": [
+                  10
+                ],
+                "vigente_desde": null,
+                "vigente_hasta": null
+              }
+            ],
+            "conflicto": false,
+            "requiere_validacion": false,
+            "plazo_preferido_dias": 10,
+            "limites_unicos": [
+              10
+            ]
+          }
+        }
+      }
+    },
+    "hallazgos": [
+      {
+        "id": "195f1bde-0df2-49ab-8030-8f1e752b3a96",
+        "categoria": "cartera",
+        "titulo": "Cartera vencida 91+ días: $74,250,000",
+        "descripcion": "Existe saldo en mora superior a 91 días por $74,250,000.",
+        "tipo": "HECHO",
+        "indicador": "aging_91_mas",
+        "valor": "$74,250,000",
+        "severidad": "ALTA",
+        "prioridad": 68.49,
+        "confianza": "MEDIA",
+        "criterios_confianza": {
+          "completitud": "baja",
+          "consistencia": "si",
+          "casos": 30,
+          "fuerza_asociacion": 0.15,
+          "puntaje": 0.55
+        },
+        "causa_probable": null,
+        "impacto_economico": 74250000.0,
+        "evidencia": {
+          "aging": {
+            "0-30": 0.0,
+            "31-60": 74250000.0,
+            "61-90": 0.0,
+            "91+": 74250000.0
+          }
+        },
+        "fuentes": [
+          {
+            "dataset": "cartera",
+            "calculo": "aging"
+          }
+        ],
+        "fuentes_consultadas": [],
+        "evidencia_documental": null
+      },
+      {
+        "id": "c3e068e1-8a03-4af6-b371-2e050afae698",
+        "categoria": "radicacion",
+        "titulo": "Demora promedio factura→radicación: 13.0 días",
+        "descripcion": "El tiempo promedio entre facturación y radicación es 13.0 días, superior al umbral de 7 días.",
+        "tipo": "HECHO",
+        "indicador": "tiempo_factura_radicacion",
+        "valor": "13.0",
+        "severidad": "MEDIA",
+        "prioridad": 32.5,
+        "confianza": "MEDIA",
+        "criterios_confianza": {
+          "completitud": "baja",
+          "consistencia": "si",
+          "casos": 30,
+          "fuerza_asociacion": 0.18,
+          "puntaje": 0.58
+        },
+        "causa_probable": "Posible demora entre validación RIPS y radicación ante pagador.",
+        "impacto_economico": null,
+        "evidencia": {
+          "tiempo_dias": 13.0,
+          "umbral": 7,
+          "fuentes_documentales": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+              "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+              "titulo": "Contrato EPS NORTE",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+              "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:32.160210+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+            }
+          ]
+        },
+        "fuentes": [
+          {
+            "dataset": "radicacion",
+            "calculo": "promedio_dias"
+          },
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ],
+        "fuentes_consultadas": [
+          "Contrato EPS NORTE"
+        ],
+        "evidencia_documental": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ]
+      },
+      {
+        "id": "038a45a7-39ed-486b-b124-b5ab30e68528",
+        "categoria": "radicacion",
+        "titulo": "Incumplimiento contractual de radicación (+10 días)",
+        "descripcion": "La factura A-F003 tardó 20 días en radicarse; el plazo contractual autorizado es 10 días.",
+        "tipo": "HECHO",
+        "indicador": "incumplimiento_plazo_radicacion",
+        "valor": "10",
+        "severidad": "ALTA",
+        "prioridad": null,
+        "confianza": "ALTA",
+        "criterios_confianza": {
+          "datos": "radicacion",
+          "documento": "contrato_autorizado",
+          "exceso_dias": 10,
+          "plazo_contractual": 10
+        },
+        "causa_probable": "Retraso operativo en radicación respecto al plazo pactado.",
+        "impacto_economico": null,
+        "evidencia": {
+          "datos": {
+            "numero_factura": "A-F003",
+            "dias": 20.0
+          },
+          "documental": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+              "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+              "titulo": "Contrato EPS NORTE",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+              "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:32.160210+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+            }
+          ],
+          "clasificacion": "HECHO",
+          "fuentes_documentales": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+              "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+              "titulo": "Contrato EPS NORTE",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+              "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:32.160210+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+            }
+          ]
+        },
+        "fuentes": [
+          {
+            "dataset": "facturacion+radicacion",
+            "regla": "dias_factura_radicacion"
+          },
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE"
+          },
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ],
+        "fuentes_consultadas": [
+          "Contrato EPS NORTE",
+          "Contrato EPS NORTE"
+        ],
+        "evidencia_documental": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+            "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+            "titulo": "Contrato EPS NORTE",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+            "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:32.160210+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+          }
+        ]
+      }
+    ],
+    "hipotesis": [
+      {
+        "id": "H2",
+        "titulo": "Radicación tardía",
+        "dominio": "radicacion",
+        "tipo": "HIPOTESIS",
+        "estado": "POSIBLE",
+        "confianza": "MEDIA",
+        "evidencia_a_favor": [
+          "Demora promedio factura→radicación: 13.0 días"
+        ],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 74250000.0,
+        "puntaje": 0.433,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H9",
+        "titulo": "Proceso interno ineficiente",
+        "dominio": "proceso",
+        "tipo": "HIPOTESIS",
+        "estado": "POSIBLE",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [
+          "Múltiples hallazgos en procesos internos"
+        ],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 74250000.0,
+        "puntaje": 0.3,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H10",
+        "titulo": "Combinación de factores",
+        "dominio": "combinado",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [
+          "Hallazgos simultáneos en 2 dominios: cartera, radicacion"
+        ],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 74250000.0,
+        "puntaje": 0.24,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H3",
+        "titulo": "Devoluciones del pagador",
+        "dominio": "devoluciones",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [
+          "Dataset de devoluciones o glosas con estado DEVUELTA"
+        ],
+        "impacto_potencial": 74250000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H5",
+        "titulo": "Soportes deficientes",
+        "dominio": "soportes",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 74250000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H6",
+        "titulo": "Condiciones contractuales",
+        "dominio": "contratos",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [
+          "Contratos para contrastar plazos pactados"
+        ],
+        "impacto_potencial": 74250000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H8",
+        "titulo": "Concentración en un pagador",
+        "dominio": "concentracion",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 74250000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H1",
+        "titulo": "Facturación tardía",
+        "dominio": "facturacion",
+        "tipo": "HIPOTESIS",
+        "estado": "REFUTADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [
+          "Radicación alta (100.0%) reduce relevancia de facturación tardía"
+        ],
+        "informacion_faltante": [],
+        "impacto_potencial": 74250000.0,
+        "puntaje": -0.2,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H7",
+        "titulo": "Comportamiento tardío del pagador",
+        "dominio": "pagador",
+        "tipo": "HIPOTESIS",
+        "estado": "REFUTADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [
+          "Demora interna de radicación explica parte de la mora"
+        ],
+        "informacion_faltante": [],
+        "impacto_potencial": 74250000.0,
+        "puntaje": -0.25,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H4",
+        "titulo": "Glosas elevadas",
+        "dominio": "glosas",
+        "tipo": "HIPOTESIS",
+        "estado": "REFUTADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [
+          "Glosa baja (0.0%)"
+        ],
+        "informacion_faltante": [],
+        "impacto_potencial": 74250000.0,
+        "puntaje": -0.3,
+        "relacion_causal": "asociacion"
+      }
+    ],
+    "hipotesis_principal": {
+      "id": "H2",
+      "titulo": "Radicación tardía",
+      "dominio": "radicacion",
+      "tipo": "HIPOTESIS",
+      "estado": "POSIBLE",
+      "confianza": "MEDIA",
+      "evidencia_a_favor": [
+        "Demora promedio factura→radicación: 13.0 días"
+      ],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 74250000.0,
+      "puntaje": 0.433,
+      "relacion_causal": "asociacion"
+    },
+    "contrastes": [
+      {
+        "hipotesis_id": "H2",
+        "hipotesis_titulo": "Radicación tardía",
+        "especialista": "Analista de Radicación IA",
+        "employee_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+        "dominio": "radicacion",
+        "postura": "COMPLEMENTAR",
+        "argumento": "Hallazgo relacionado: Incumplimiento contractual de radicación (+10 días)",
+        "evidencia_citada": [
+          "Demora promedio factura→radicación: 13.0 días"
+        ]
+      },
+      {
+        "hipotesis_id": "H2",
+        "hipotesis_titulo": "Radicación tardía",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "La correlación observada no demuestra causalidad directa.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H9",
+        "hipotesis_titulo": "Proceso interno ineficiente",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+        "dominio": "proceso",
+        "postura": "CUESTIONAR",
+        "argumento": "Asociación débil — requiere más datos.",
+        "evidencia_citada": [
+          "Múltiples hallazgos en procesos internos"
+        ]
+      },
+      {
+        "hipotesis_id": "H9",
+        "hipotesis_titulo": "Proceso interno ineficiente",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "La correlación observada no demuestra causalidad directa.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H10",
+        "hipotesis_titulo": "Combinación de factores",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+        "dominio": "combinado",
+        "postura": "CUESTIONAR",
+        "argumento": "Asociación débil — requiere más datos.",
+        "evidencia_citada": [
+          "Hallazgos simultáneos en 2 dominios: cartera, radicacion"
+        ]
+      },
+      {
+        "hipotesis_id": "H10",
+        "hipotesis_titulo": "Combinación de factores",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "La correlación observada no demuestra causalidad directa.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H3",
+        "hipotesis_titulo": "Devoluciones del pagador",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+        "dominio": "devoluciones",
+        "postura": "CUESTIONAR",
+        "argumento": "Información faltante impide confirmar — no convertir correlación en causalidad.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H3",
+        "hipotesis_titulo": "Devoluciones del pagador",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "Falta: Dataset de devoluciones o glosas con estado DEVUELTA",
+        "evidencia_citada": [
+          "Dataset de devoluciones o glosas con estado DEVUELTA"
+        ]
+      },
+      {
+        "hipotesis_id": "H5",
+        "hipotesis_titulo": "Soportes deficientes",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+        "dominio": "soportes",
+        "postura": "CUESTIONAR",
+        "argumento": "Asociación débil — requiere más datos.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H5",
+        "hipotesis_titulo": "Soportes deficientes",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "La correlación observada no demuestra causalidad directa.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H2",
+        "hipotesis_titulo": "Radicación tardía",
+        "especialista": "Analista Estratégico IPS IA",
+        "employee_id": "0e602a71-4371-494c-8b08-fa0921cb1aef",
+        "dominio": "consolidacion",
+        "postura": "COMPLEMENTAR",
+        "argumento": "Consolidador recibe 10 intervenciones de especialistas sobre 'Radicación tardía' — síntesis requerida antes de recomendar.",
+        "evidencia_citada": [],
+        "rol": "CONSOLIDADOR"
+      }
+    ],
+    "alternativas": [
+      {
+        "hallazgo_ref": "Incumplimiento contractual de radicación (+10 días)",
+        "alternativa_id": "ALT-RAD-1",
+        "descripcion": "Control diario de pendientes de radicación con alertas automáticas",
+        "fundamento": "Reduce demora factura→radicación identificada en indicadores",
+        "impacto_esperado": null,
+        "costo_estimado": "BAJO",
+        "esfuerzo": "BAJO",
+        "plazo": "30 días",
+        "riesgo": "BAJO",
+        "dependencias": [
+          "Equipo de radicación"
+        ],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "datos": {
+            "numero_factura": "A-F003",
+            "dias": 20.0
+          },
+          "documental": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+              "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+              "titulo": "Contrato EPS NORTE",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+              "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:32.160210+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+            }
+          ],
+          "clasificacion": "HECHO",
+          "fuentes_documentales": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+              "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+              "titulo": "Contrato EPS NORTE",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+              "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:32.160210+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+            }
+          ]
+        },
+        "confianza": "ALTA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Incumplimiento contractual de radicación (+10 días)",
+        "alternativa_id": "ALT-RAD-2",
+        "descripcion": "Auditoría de cuellos de botella entre facturación y radicación",
+        "fundamento": "Identifica si la demora es de validación RIPS o envío al pagador",
+        "impacto_esperado": 0,
+        "costo_estimado": "MEDIO",
+        "esfuerzo": "MEDIO",
+        "plazo": "45 días",
+        "riesgo": "BAJO",
+        "dependencias": [
+          "TI",
+          "Facturación"
+        ],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "datos": {
+            "numero_factura": "A-F003",
+            "dias": 20.0
+          },
+          "documental": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+              "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+              "titulo": "Contrato EPS NORTE",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+              "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:32.160210+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+            }
+          ],
+          "clasificacion": "HECHO",
+          "fuentes_documentales": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+              "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+              "titulo": "Contrato EPS NORTE",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+              "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:32.160210+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+            }
+          ]
+        },
+        "confianza": "ALTA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Incumplimiento contractual de radicación (+10 días)",
+        "alternativa_id": "ALT-RAD-3",
+        "descripcion": "Outsourcing parcial de radicación para picos de volumen",
+        "fundamento": "Alternativa si capacidad interna es el limitante",
+        "impacto_esperado": 0,
+        "costo_estimado": "ALTO",
+        "esfuerzo": "ALTO",
+        "plazo": "90 días",
+        "riesgo": "MEDIO",
+        "dependencias": [],
+        "reversibilidad": "MEDIA",
+        "evidencia": {
+          "datos": {
+            "numero_factura": "A-F003",
+            "dias": 20.0
+          },
+          "documental": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+              "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+              "titulo": "Contrato EPS NORTE",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+              "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:32.160210+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+            }
+          ],
+          "clasificacion": "HECHO",
+          "fuentes_documentales": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+              "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+              "titulo": "Contrato EPS NORTE",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+              "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:32.160210+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+            }
+          ]
+        },
+        "confianza": "ALTA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Demora promedio factura→radicación: 13.0 días",
+        "alternativa_id": "ALT-RAD-1",
+        "descripcion": "Control diario de pendientes de radicación con alertas automáticas",
+        "fundamento": "Reduce demora factura→radicación identificada en indicadores",
+        "impacto_esperado": null,
+        "costo_estimado": "BAJO",
+        "esfuerzo": "BAJO",
+        "plazo": "30 días",
+        "riesgo": "BAJO",
+        "dependencias": [
+          "Equipo de radicación"
+        ],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "tiempo_dias": 13.0,
+          "umbral": 7,
+          "fuentes_documentales": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+              "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+              "titulo": "Contrato EPS NORTE",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+              "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:32.160210+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+            }
+          ]
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Demora promedio factura→radicación: 13.0 días",
+        "alternativa_id": "ALT-RAD-2",
+        "descripcion": "Auditoría de cuellos de botella entre facturación y radicación",
+        "fundamento": "Identifica si la demora es de validación RIPS o envío al pagador",
+        "impacto_esperado": 0,
+        "costo_estimado": "MEDIO",
+        "esfuerzo": "MEDIO",
+        "plazo": "45 días",
+        "riesgo": "BAJO",
+        "dependencias": [
+          "TI",
+          "Facturación"
+        ],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "tiempo_dias": 13.0,
+          "umbral": 7,
+          "fuentes_documentales": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+              "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+              "titulo": "Contrato EPS NORTE",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+              "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:32.160210+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+            }
+          ]
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Demora promedio factura→radicación: 13.0 días",
+        "alternativa_id": "ALT-RAD-3",
+        "descripcion": "Outsourcing parcial de radicación para picos de volumen",
+        "fundamento": "Alternativa si capacidad interna es el limitante",
+        "impacto_esperado": 0,
+        "costo_estimado": "ALTO",
+        "esfuerzo": "ALTO",
+        "plazo": "90 días",
+        "riesgo": "MEDIO",
+        "dependencias": [],
+        "reversibilidad": "MEDIA",
+        "evidencia": {
+          "tiempo_dias": 13.0,
+          "umbral": 7,
+          "fuentes_documentales": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+              "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+              "titulo": "Contrato EPS NORTE",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+              "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:32.160210+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+            }
+          ]
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Cartera vencida 91+ días: $74,250,000",
+        "alternativa_id": "ALT-CAR-1",
+        "descripcion": "Gestión prioritaria de cartera 91+ con negociación por pagador",
+        "fundamento": "Impacto directo en flujo de caja",
+        "impacto_esperado": 74250000.0,
+        "costo_estimado": "BAJO",
+        "esfuerzo": "MEDIO",
+        "plazo": "30 días",
+        "riesgo": "MEDIO",
+        "dependencias": [],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "aging": {
+            "0-30": 0.0,
+            "31-60": 74250000.0,
+            "61-90": 0.0,
+            "91+": 74250000.0
+          }
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Cartera vencida 91+ días: $74,250,000",
+        "alternativa_id": "ALT-CAR-2",
+        "descripcion": "Seguimiento contractual con pagadores de mayor mora",
+        "fundamento": "H7 — comportamiento del pagador cuando proceso interno es sólido",
+        "impacto_esperado": 74250000.0,
+        "costo_estimado": "MEDIO",
+        "esfuerzo": "MEDIO",
+        "plazo": "45 días",
+        "riesgo": "MEDIO",
+        "dependencias": [
+          "Jurídico",
+          "Cartera"
+        ],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "aging": {
+            "0-30": 0.0,
+            "31-60": 74250000.0,
+            "61-90": 0.0,
+            "91+": 74250000.0
+          }
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Cartera vencida 91+ días: $74,250,000",
+        "alternativa_id": "ALT-CAR-3",
+        "descripcion": "Factoring selectivo de cartera con pagadores de riesgo bajo",
+        "fundamento": "Liquidez inmediata con costo financiero",
+        "impacto_esperado": 74250000.0,
+        "costo_estimado": "ALTO",
+        "esfuerzo": "BAJO",
+        "plazo": "15 días",
+        "riesgo": "MEDIO",
+        "dependencias": [],
+        "reversibilidad": "BAJA",
+        "evidencia": {
+          "aging": {
+            "0-30": 0.0,
+            "31-60": 74250000.0,
+            "61-90": 0.0,
+            "91+": 74250000.0
+          }
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      }
+    ],
+    "priorizacion": {
+      "metodologia": "prioridad = impacto_económico(35%) + urgencia(25%) + confianza(15%) + esfuerzo_inverso(10%) + recuperabilidad(10%) + riesgo_inverso(5%)",
+      "ranking": [
+        {
+          "tipo": "alternativa",
+          "id": "ALT-RAD-1",
+          "titulo": "Control diario de pendientes de radicación con alertas automáticas",
+          "accion": "Control diario de pendientes de radicación con alertas automáticas",
+          "prioridad": 68.0,
+          "desglose": {
+            "impacto_economico": 7.0,
+            "urgencia": 25.0,
+            "confianza": 15.0,
+            "esfuerzo_inverso": 10.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 5.0
+          },
+          "por_que_primero": "'Control diario de pendientes de radicación con alertas autom' prioriza por urgencia operativa (25.0 pts).",
+          "ranking": 1
+        },
+        {
+          "tipo": "alternativa",
+          "id": "ALT-RAD-1",
+          "titulo": "Control diario de pendientes de radicación con alertas automáticas",
+          "accion": "Control diario de pendientes de radicación con alertas automáticas",
+          "prioridad": 63.5,
+          "desglose": {
+            "impacto_economico": 7.0,
+            "urgencia": 25.0,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 10.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 5.0
+          },
+          "por_que_primero": "'Control diario de pendientes de radicación con alertas autom' prioriza por urgencia operativa (25.0 pts).",
+          "ranking": 2
+        },
+        {
+          "tipo": "alternativa",
+          "id": "ALT-RAD-2",
+          "titulo": "Auditoría de cuellos de botella entre facturación y radicación",
+          "accion": "Auditoría de cuellos de botella entre facturación y radicación",
+          "prioridad": 56.5,
+          "desglose": {
+            "impacto_economico": 7.0,
+            "urgencia": 17.5,
+            "confianza": 15.0,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 5.0
+          },
+          "por_que_primero": "'Auditoría de cuellos de botella entre facturación y radicaci' prioriza por urgencia operativa (17.5 pts).",
+          "ranking": 3
+        },
+        {
+          "tipo": "propuesta",
+          "id": "Incumplimiento contractual de radicación (+10 días)",
+          "titulo": "Incumplimiento contractual de radicación (+10 días)",
+          "accion": "Implementar control diario de facturas pendientes de radicación con alerta a los 5 días y escalamiento al día 10.",
+          "prioridad": 53.0,
+          "desglose": {
+            "impacto_economico": 0.0,
+            "urgencia": 25.0,
+            "confianza": 15.0,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 4.0,
+            "riesgo_inverso": 3.0
+          },
+          "finops": {
+            "referencia": "Incumplimiento contractual de radicación (+10 días)",
+            "costo_estimado": 2500000,
+            "beneficio_esperado": 26730000.0,
+            "valor_recuperable": 26730000.0,
+            "ahorro": 26730000.0,
+            "roi": 9.69,
+            "payback_dias": 60,
+            "certidumbre": "ESTIMADO",
+            "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+            "advertencia": "Estimación — no presentar como resultado real."
+          },
+          "por_que_primero": "'Incumplimiento contractual de radicación (+10 días)' prioriza por urgencia operativa (25.0 pts).",
+          "ranking": 4
+        },
+        {
+          "tipo": "alternativa",
+          "id": "ALT-RAD-2",
+          "titulo": "Auditoría de cuellos de botella entre facturación y radicación",
+          "accion": "Auditoría de cuellos de botella entre facturación y radicación",
+          "prioridad": 52.0,
+          "desglose": {
+            "impacto_economico": 7.0,
+            "urgencia": 17.5,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 5.0
+          },
+          "por_que_primero": "'Auditoría de cuellos de botella entre facturación y radicaci' prioriza por urgencia operativa (17.5 pts).",
+          "ranking": 5
+        },
+        {
+          "tipo": "propuesta",
+          "id": "Cartera vencida 91+ días: $74,250,000",
+          "titulo": "Cartera vencida 91+ días: $74,250,000",
+          "accion": "Activar gestión de cobro prioritaria para facturas con mora superior a 91 días y negociar acuerdos de pago.",
+          "prioridad": 48.5,
+          "desglose": {
+            "impacto_economico": 0.0,
+            "urgencia": 25.0,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 4.0,
+            "riesgo_inverso": 3.0
+          },
+          "finops": {
+            "referencia": "Cartera vencida 91+ días: $74,250,000",
+            "costo_estimado": 2500000,
+            "beneficio_esperado": 11.1,
+            "valor_recuperable": 11.1,
+            "ahorro": 11.1,
+            "roi": -1.0,
+            "payback_dias": 60,
+            "certidumbre": "ESTIMADO",
+            "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+            "advertencia": "Estimación — no presentar como resultado real."
+          },
+          "por_que_primero": "'Cartera vencida 91+ días: $74,250,000' prioriza por urgencia operativa (25.0 pts).",
+          "ranking": 6
+        },
+        {
+          "tipo": "alternativa",
+          "id": "ALT-RAD-3",
+          "titulo": "Outsourcing parcial de radicación para picos de volumen",
+          "accion": "Outsourcing parcial de radicación para picos de volumen",
+          "prioridad": 44.0,
+          "desglose": {
+            "impacto_economico": 7.0,
+            "urgencia": 10.0,
+            "confianza": 15.0,
+            "esfuerzo_inverso": 3.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 3.0
+          },
+          "por_que_primero": "'Outsourcing parcial de radicación para picos de volumen' prioriza por confianza en la evidencia (15.0 pts).",
+          "ranking": 7
+        },
+        {
+          "tipo": "propuesta",
+          "id": "Demora promedio factura→radicación: 13.0 días",
+          "titulo": "Demora promedio factura→radicación: 13.0 días",
+          "accion": "Implementar control diario de facturas pendientes de radicación con alerta a los 5 días y escalamiento al día 10.",
+          "prioridad": 41.0,
+          "desglose": {
+            "impacto_economico": 0.0,
+            "urgencia": 17.5,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 4.0,
+            "riesgo_inverso": 3.0
+          },
+          "finops": {
+            "referencia": "Demora promedio factura→radicación: 13.0 días",
+            "costo_estimado": 4500000.0,
+            "beneficio_esperado": 1.95,
+            "valor_recuperable": 1.95,
+            "ahorro": 1.95,
+            "roi": -1.0,
+            "payback_dias": 90,
+            "certidumbre": "ESTIMADO",
+            "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+            "advertencia": "Estimación — no presentar como resultado real."
+          },
+          "por_que_primero": "'Demora promedio factura→radicación: 13.0 días' prioriza por urgencia operativa (17.5 pts).",
+          "ranking": 8
+        },
+        {
+          "tipo": "alternativa",
+          "id": "ALT-RAD-3",
+          "titulo": "Outsourcing parcial de radicación para picos de volumen",
+          "accion": "Outsourcing parcial de radicación para picos de volumen",
+          "prioridad": 39.5,
+          "desglose": {
+            "impacto_economico": 7.0,
+            "urgencia": 10.0,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 3.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 3.0
+          },
+          "por_que_primero": "'Outsourcing parcial de radicación para picos de volumen' prioriza por confianza en la evidencia (10.5 pts).",
+          "ranking": 9
+        }
+      ],
+      "explicacion": "El ranking no es una suma arbitraria: cada factor tiene peso documentado en 'metodologia'."
+    },
+    "escenarios": {
+      "tipo": "PROYECTADO",
+      "escenarios": {
+        "CONSERVADOR": {
+          "nombre": "Conservador",
+          "valor_recuperable_estimado": 11880000.0,
+          "tasa_recuperacion": 0.08,
+          "time_reduction_days": 2,
+          "supuestos": [
+            "Demora de radicación identificada.  Efecto mínimo (8% recuperación).",
+            "Reducción de 2 días en factura→radicación"
+          ],
+          "certidumbre": "PROYECTADO",
+          "efecto_tiempo_radicacion_dias": 2
+        },
+        "PROBABLE": {
+          "nombre": "Probable",
+          "valor_recuperable_estimado": 26730000.0,
+          "tasa_recuperacion": 0.18,
+          "time_reduction_days": 5,
+          "supuestos": [
+            "Demora de radicación identificada.  Efecto moderado (18% recuperación).",
+            "Reducción de 5 días en factura→radicación"
+          ],
+          "certidumbre": "PROYECTADO",
+          "efecto_tiempo_radicacion_dias": 5,
+          "accion_simulada": "Implementar control diario de facturas pendientes de radicación con alerta a los 5 días y escalamiento al día 10."
+        },
+        "OPTIMISTA": {
+          "nombre": "Optimista",
+          "valor_recuperable_estimado": 47520000.0,
+          "tasa_recuperacion": 0.32,
+          "time_reduction_days": 10,
+          "supuestos": [
+            "Demora de radicación identificada.  Efecto alto si ejecución disciplinada (32% recuperación).",
+            "Reducción de 10 días en factura→radicación"
+          ],
+          "certidumbre": "PROYECTADO",
+          "efecto_tiempo_radicacion_dias": 10
+        }
+      },
+      "advertencia": "Simulación con supuestos — no presentar como resultado real."
+    },
+    "finops": [
+      {
+        "referencia": "Incumplimiento contractual de radicación (+10 días)",
+        "costo_estimado": 2500000,
+        "beneficio_esperado": 26730000.0,
+        "valor_recuperable": 26730000.0,
+        "ahorro": 26730000.0,
+        "roi": 9.69,
+        "payback_dias": 60,
+        "certidumbre": "ESTIMADO",
+        "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+        "advertencia": "Estimación — no presentar como resultado real."
+      },
+      {
+        "referencia": "Demora promedio factura→radicación: 13.0 días",
+        "costo_estimado": 4500000.0,
+        "beneficio_esperado": 1.95,
+        "valor_recuperable": 1.95,
+        "ahorro": 1.95,
+        "roi": -1.0,
+        "payback_dias": 90,
+        "certidumbre": "ESTIMADO",
+        "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+        "advertencia": "Estimación — no presentar como resultado real."
+      },
+      {
+        "referencia": "Cartera vencida 91+ días: $74,250,000",
+        "costo_estimado": 2500000,
+        "beneficio_esperado": 11.1,
+        "valor_recuperable": 11.1,
+        "ahorro": 11.1,
+        "roi": -1.0,
+        "payback_dias": 60,
+        "certidumbre": "ESTIMADO",
+        "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+        "advertencia": "Estimación — no presentar como resultado real."
+      }
+    ],
+    "recomendacion_consolidada": {
+      "que_ocurre": "Incumplimiento contractual de radicación (+10 días); Demora promedio factura→radicación: 13.0 días; Cartera vencida 91+ días: $74,250,000",
+      "donde": "Dominios: cartera, radicacion. Mayor exposición: Sin pagador.",
+      "desde_cuando": "2026-07 → 2026-07",
+      "cuanto_representa": 148500000.0,
+      "por_que_podria": "Información insuficiente",
+      "que_demostrado": [
+        "Ninguna causa demostrada — solo asociaciones"
+      ],
+      "que_no_demostrado": [
+        "Radicación tardía",
+        "Proceso interno ineficiente",
+        "Combinación de factores",
+        "Devoluciones del pagador",
+        "Soportes deficientes"
+      ],
+      "oportunidades": [
+        "Control diario de pendientes de radicación con alertas automáticas",
+        "Control diario de pendientes de radicación con alertas automáticas",
+        "Auditoría de cuellos de botella entre facturación y radicación",
+        "Incumplimiento contractual de radicación (+10 días)",
+        "Auditoría de cuellos de botella entre facturación y radicación"
+      ],
+      "alternativas_evaluadas": 9,
+      "recomendacion": "Control diario de pendientes de radicación con alertas automáticas",
+      "por_que_recomendamos": "'Control diario de pendientes de radicación con alertas autom' prioriza por urgencia operativa (25.0 pts).",
+      "cuanto_podria_valer": 26730000.0,
+      "que_hacer": [
+        "Control diario de pendientes de radicación con alertas automáticas",
+        "Control diario de pendientes de radicación con alertas automáticas",
+        "Auditoría de cuellos de botella entre facturación y radicación"
+      ],
+      "como_medir": [
+        "Días promedio factura→radicación (meta: <7)",
+        "Porcentaje de glosa (meta: reducir 5 p.p.)",
+        "Saldo cartera 91+ días",
+        "Seguimiento acción: Control diario de pendientes de radicación con alertas automáticas"
+      ],
+      "calidad_datos": "PARCIAL",
+      "especialistas_involucrados": 4,
+      "solicitud": "Tenemos cartera alta. Quiero saber por qué y qué hacer primero."
+    },
+    "oportunidades": [
+      {
+        "id": "9208602d-252c-4f1b-852e-c6f5a10c0937",
+        "problema": "Incumplimiento contractual de radicación (+10 días)",
+        "evidencia": "La factura A-F003 tardó 20 días en radicarse; el plazo contractual autorizado es 10 días.",
+        "causa_probable": "Retraso operativo en radicación respecto al plazo pactado.",
+        "impacto": "La factura A-F003 tardó 20 días en radicarse; el plazo contractual autorizado es 10 días.",
+        "accion_propuesta": "Implementar control diario de facturas pendientes de radicación con alerta a los 5 días y escalamiento al día 10.",
+        "responsable_sugerido": "Coordinador de radicación",
+        "plazo": "30 días",
+        "indicador_seguimiento": "dias_factura_radicacion",
+        "meta": "Reducir tiempo factura→radicación a <7 días",
+        "impacto_esperado": "Mitigar Incumplimiento contractual de radicación (+10 días)",
+        "confianza": "ALTA",
+        "prioridad": 53.0
+      },
+      {
+        "id": "1849e20e-3fec-44e1-8a17-c9d3362d776c",
+        "problema": "Cartera vencida 91+ días: $74,250,000",
+        "evidencia": "Existe saldo en mora superior a 91 días por $74,250,000.",
+        "causa_probable": "Requiere validación con equipo operativo.",
+        "impacto": "Impacto estimado: $74,250,000",
+        "accion_propuesta": "Activar gestión de cobro prioritaria para facturas con mora superior a 91 días y negociar acuerdos de pago.",
+        "responsable_sugerido": "Analista de cartera",
+        "plazo": "30 días",
+        "indicador_seguimiento": "aging_91_mas",
+        "meta": "Reducir cartera 91+ en 20%",
+        "impacto_esperado": "Mitigar Cartera vencida 91+ días: $74,250,000",
+        "confianza": "MEDIA",
+        "prioridad": 48.5
+      },
+      {
+        "id": "b208f775-f2cb-4f5e-a51c-4949ac21e361",
+        "problema": "Demora promedio factura→radicación: 13.0 días",
+        "evidencia": "El tiempo promedio entre facturación y radicación es 13.0 días, superior al umbral de 7 días.",
+        "causa_probable": "Posible demora entre validación RIPS y radicación ante pagador.",
+        "impacto": "El tiempo promedio entre facturación y radicación es 13.0 días, superior al umbral de 7 días.",
+        "accion_propuesta": "Implementar control diario de facturas pendientes de radicación con alerta a los 5 días y escalamiento al día 10.",
+        "responsable_sugerido": "Coordinador de radicación",
+        "plazo": "60 días",
+        "indicador_seguimiento": "dias_factura_radicacion",
+        "meta": "Reducir tiempo factura→radicación a <7 días",
+        "impacto_esperado": "Mitigar Demora promedio factura→radicación: 13.0 días",
+        "confianza": "MEDIA",
+        "prioridad": 41.0
+      }
+    ],
+    "work_plan_id": null,
+    "planes_accion": [],
+    "plan_accion": [],
+    "especialistas": {
+      "dominios": [
+        "cartera",
+        "facturacion",
+        "glosas",
+        "radicacion"
+      ],
+      "asignaciones": [
+        {
+          "employee_id": "aa072528-8c68-43f7-964b-b04f3ba2a8ea",
+          "employee_code": "ips-cartera-analyst",
+          "employee_name": "Analista de Cartera IA",
+          "specialty": "Cartera IPS",
+          "domain": "cartera",
+          "score": 0.925,
+          "factors": {
+            "capacidades": 1.0,
+            "herramientas": 1.0,
+            "especialidad": 0.2,
+            "disponibilidad": 1.0,
+            "experiencia": 0.5
+          }
+        },
+        {
+          "employee_id": "a276c99d-a33e-4579-bad4-df822b08db88",
+          "employee_code": "ips-facturacion-analyst",
+          "employee_name": "Analista de Facturación IA",
+          "specialty": "Facturación IPS",
+          "domain": "facturacion",
+          "score": 0.925,
+          "factors": {
+            "capacidades": 1.0,
+            "herramientas": 1.0,
+            "especialidad": 0.2,
+            "disponibilidad": 1.0,
+            "experiencia": 0.5
+          }
+        },
+        {
+          "employee_id": "ce0d123c-04c0-4bc5-94e5-3a60384671b8",
+          "employee_code": "ips-glosas-analyst",
+          "employee_name": "Analista de Glosas IA",
+          "specialty": "Glosas IPS",
+          "domain": "glosas",
+          "score": 0.925,
+          "factors": {
+            "capacidades": 1.0,
+            "herramientas": 1.0,
+            "especialidad": 0.2,
+            "disponibilidad": 1.0,
+            "experiencia": 0.5
+          }
+        },
+        {
+          "employee_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+          "employee_code": "ips-radicacion-analyst",
+          "employee_name": "Analista de Radicación IA",
+          "specialty": "Radicación IPS",
+          "domain": "radicacion",
+          "score": 0.925,
+          "factors": {
+            "capacidades": 1.0,
+            "herramientas": 1.0,
+            "especialidad": 0.2,
+            "disponibilidad": 1.0,
+            "experiencia": 0.5
+          }
+        }
+      ],
+      "consolidador": {
+        "employee_id": "0e602a71-4371-494c-8b08-fa0921cb1aef",
+        "employee_code": "ips-estrategico-analyst",
+        "employee_name": "Analista Estratégico IPS IA",
+        "specialty": "Analítica Estratégica IPS",
+        "domain": "estrategico",
+        "score": 0.925,
+        "factors": {
+          "capacidades": 1.0,
+          "herramientas": 1.0,
+          "especialidad": 0.2,
+          "disponibilidad": 1.0,
+          "experiencia": 0.5
+        }
+      }
+    },
+    "comparacion_historica": {
+      "disponible": false,
+      "mensaje": "Sin histórico previo para esta IPS"
+    },
+    "conocimiento": {
+      "utilizado": true,
+      "mensaje": null,
+      "fuentes": [
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "97f822e8-5782-4992-809f-e0f54978072c",
+          "chunk_id": "5aca0022-92f4-488e-82f9-dac1c0e3def4",
+          "titulo": "Contrato EPS NORTE",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "52283e2a-2441-4889-ba5a-175a7c25e78e",
+          "analysis_id": "24faa182-40df-4ce9-b215-b01ac8dca08a",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T00:58:32.160210+00:00",
+          "relevancia": 1.0,
+          "extracto": "Radicación máximo diez (10) días. Pago a sesenta (60) días desde radicación válida."
+        }
+      ],
+      "requiere_validacion": false
+    },
+    "experiencia": {
+      "casos_similares": []
+    },
+    "creado": "2026-08-27T00:58:32.126688"
+  }
+}

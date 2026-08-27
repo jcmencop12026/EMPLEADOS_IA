@@ -223,3 +223,17 @@ def demo_datasets(db: Session = Depends(get_db), user: User = Depends(get_curren
     check_permission(user, "salud.consultar_diagnostico", db)
     from app.fixtures.salud_demo import get_demo_datasets
     return get_demo_datasets()
+
+
+@router.get("/motor/casos")
+def motor_casos(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    check_permission(user, "salud.consultar_diagnostico", db)
+    from app.fixtures.motor_analitico_datasets import list_motor_cases
+    return list_motor_cases()
+
+
+@router.get("/motor/demo/{case_id}")
+def motor_demo_dataset(case_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    check_permission(user, "salud.consultar_diagnostico", db)
+    from app.fixtures.motor_analitico_datasets import get_case_request, get_motor_dataset
+    return {"case_id": case_id.upper(), "request_text": get_case_request(case_id), "datasets": get_motor_dataset(case_id)}

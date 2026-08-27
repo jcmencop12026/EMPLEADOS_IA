@@ -174,9 +174,9 @@ def generate_hallazgos(
                 "evidence": {"aging": aging},
             })
 
-    # Concentración facturación
+    # Concentración facturación — solo si cartera disponible (evita inferencias causales con datos parciales)
     fact = indicators.get("facturacion", {})
-    if fact.get("disponible"):
+    if fact.get("disponible") and indicators.get("cartera", {}).get("disponible"):
         conc = fact.get("concentracion_principal_pagador_pct")
         if isinstance(conc, (int, float)) and conc > 60:
             completeness = data_profiles.get("facturacion", {}).get("completitud", 0.5)

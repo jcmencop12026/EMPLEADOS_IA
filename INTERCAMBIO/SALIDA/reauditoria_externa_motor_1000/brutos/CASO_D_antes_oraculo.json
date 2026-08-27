@@ -1,0 +1,4398 @@
+{
+  "caso": "CASO_D",
+  "solicitud": "Nuestro flujo de caja empeora. Necesito causas, impacto y plan priorizado.",
+  "documentos_cargados": [
+    "7aea8278-5554-41e2-ae15-133506d7fbff",
+    "12c7cf56-c9ae-40e5-9363-609ceaef61c8"
+  ],
+  "suficiencia": "PARCIAL",
+  "informacion_faltante": [],
+  "especialista_lider": "Analista de Cartera IA",
+  "razon_seleccion": "Mayor puntaje en cartera por capacidades (1.0)",
+  "hallazgos": [
+    {
+      "id": "b7e436d4-427e-428a-98dd-a69ecf301860",
+      "categoria": "cartera",
+      "titulo": "Cartera vencida 91+ días: $69,850,000",
+      "descripcion": "Existe saldo en mora superior a 91 días por $69,850,000.",
+      "tipo": "HECHO",
+      "indicador": "aging_91_mas",
+      "valor": "$69,850,000",
+      "severidad": "ALTA",
+      "prioridad": 66.95,
+      "confianza": "MEDIA",
+      "criterios_confianza": {
+        "completitud": "baja",
+        "consistencia": "si",
+        "casos": 36,
+        "fuerza_asociacion": 0.15,
+        "puntaje": 0.55
+      },
+      "causa_probable": null,
+      "impacto_economico": 69850000.0,
+      "evidencia": {
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 14880000.0,
+          "61-90": 68750000.0,
+          "91+": 69850000.0
+        }
+      },
+      "fuentes": [
+        {
+          "dataset": "cartera",
+          "calculo": "aging"
+        }
+      ],
+      "fuentes_consultadas": [],
+      "evidencia_documental": null
+    },
+    {
+      "id": "975b99b3-9347-4d41-9e83-08f8932cb717",
+      "categoria": "glosas",
+      "titulo": "Porcentaje de glosa elevado: 10.74%",
+      "descripcion": "El valor glosado representa el 10.74% de la facturación base ($40,380,000).",
+      "tipo": "HECHO",
+      "indicador": "porcentaje_glosa",
+      "valor": "10.74%",
+      "severidad": "MEDIA",
+      "prioridad": 46.63,
+      "confianza": "MEDIA",
+      "criterios_confianza": {
+        "completitud": "baja",
+        "consistencia": "si",
+        "casos": 36,
+        "fuerza_asociacion": 0.2,
+        "puntaje": 0.6
+      },
+      "causa_probable": "50.4% de glosas asociadas a causal Soporte incompleto.",
+      "impacto_economico": 40380000.0,
+      "evidencia": {
+        "por_causal": {
+          "Soporte incompleto": 20360000.0,
+          "Tarifa contractual": 20020000.0
+        }
+      },
+      "fuentes": [
+        {
+          "dataset": "glosas",
+          "calculo": "porcentaje_glosa"
+        }
+      ],
+      "fuentes_consultadas": [],
+      "evidencia_documental": null
+    },
+    {
+      "id": "e48704ef-0d85-403f-b51d-22f570a55cff",
+      "categoria": "radicacion",
+      "titulo": "Demora promedio factura→radicación: 9.0 días",
+      "descripcion": "El tiempo promedio entre facturación y radicación es 9.0 días, superior al umbral de 7 días.",
+      "tipo": "HECHO",
+      "indicador": "tiempo_factura_radicacion",
+      "valor": "9.0",
+      "severidad": "MEDIA",
+      "prioridad": 32.5,
+      "confianza": "MEDIA",
+      "criterios_confianza": {
+        "completitud": "baja",
+        "consistencia": "si",
+        "casos": 36,
+        "fuerza_asociacion": 0.18,
+        "puntaje": 0.58
+      },
+      "causa_probable": "Posible demora entre validación RIPS y radicación ante pagador.",
+      "impacto_economico": null,
+      "evidencia": {
+        "tiempo_dias": 9.0,
+        "umbral": 7,
+        "fuentes_documentales": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+            "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+            "titulo": "Anexo contractual v2",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.692427+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo quince (15) días."
+          },
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+            "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+            "titulo": "Anexo contractual v1",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.694825+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días."
+          }
+        ]
+      },
+      "fuentes": [
+        {
+          "dataset": "radicacion",
+          "calculo": "promedio_dias"
+        },
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+          "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+          "titulo": "Anexo contractual v2",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+          "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T00:58:33.692427+00:00",
+          "relevancia": 1.0,
+          "extracto": "Radicación máximo quince (15) días."
+        },
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+          "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+          "titulo": "Anexo contractual v1",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+          "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T00:58:33.694825+00:00",
+          "relevancia": 1.0,
+          "extracto": "Radicación máximo diez (10) días."
+        }
+      ],
+      "fuentes_consultadas": [
+        "Anexo contractual v2",
+        "Anexo contractual v1"
+      ],
+      "evidencia_documental": [
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+          "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+          "titulo": "Anexo contractual v2",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+          "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T00:58:33.692427+00:00",
+          "relevancia": 1.0,
+          "extracto": "Radicación máximo quince (15) días."
+        },
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+          "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+          "titulo": "Anexo contractual v1",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+          "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T00:58:33.694825+00:00",
+          "relevancia": 1.0,
+          "extracto": "Radicación máximo diez (10) días."
+        }
+      ]
+    },
+    {
+      "id": "862d6d17-1cfa-433e-b67b-dc2b69351079",
+      "categoria": "contratos",
+      "titulo": "Conflicto documental en plazos de radicación",
+      "descripcion": "Existen documentos autorizados con plazos distintos. Se requiere validación humana antes de concluir cumplimiento contractual.",
+      "tipo": "INSUFICIENTE",
+      "indicador": "conflicto_conocimiento",
+      "valor": null,
+      "severidad": "MEDIA",
+      "prioridad": null,
+      "confianza": "BAJA",
+      "criterios_confianza": {
+        "motivo": "documentos_contradictorios"
+      },
+      "causa_probable": null,
+      "impacto_economico": null,
+      "evidencia": {
+        "conflictos": [
+          {
+            "dominio": "radicacion",
+            "consulta": "radicación, plazo, plazo radicación, procedimiento radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "fragmentos": 2,
+            "fuentes": [
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                "titulo": "Anexo contractual v2",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.692427+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo quince (15) días."
+              },
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                "titulo": "Anexo contractual v1",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.694825+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo diez (10) días."
+              }
+            ],
+            "analisis": {
+              "plazos_detectados": [
+                {
+                  "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                  "document_name": "Anexo contractual v2",
+                  "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                  "dias": [
+                    15
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                },
+                {
+                  "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                  "document_name": "Anexo contractual v1",
+                  "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                  "dias": [
+                    10
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                }
+              ],
+              "conflicto": true,
+              "requiere_validacion": true,
+              "plazo_preferido_dias": null,
+              "limites_unicos": [
+                10,
+                15
+              ]
+            },
+            "experiencia_separada": true
+          },
+          {
+            "analisis": {
+              "plazos_detectados": [
+                {
+                  "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                  "document_name": "Anexo contractual v2",
+                  "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                  "dias": [
+                    15
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                },
+                {
+                  "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                  "document_name": "Anexo contractual v1",
+                  "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                  "dias": [
+                    10
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                }
+              ],
+              "conflicto": true,
+              "requiere_validacion": true,
+              "plazo_preferido_dias": null,
+              "limites_unicos": [
+                10,
+                15
+              ]
+            },
+            "dominio": "contratos",
+            "fuentes": [
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                "titulo": "Anexo contractual v2",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.692427+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo quince (15) días."
+              },
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                "titulo": "Anexo contractual v1",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.694825+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo diez (10) días."
+              }
+            ]
+          }
+        ]
+      },
+      "fuentes": [
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+          "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+          "titulo": "Anexo contractual v2",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+          "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T00:58:33.692427+00:00",
+          "relevancia": 1.0,
+          "extracto": "Radicación máximo quince (15) días."
+        },
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+          "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+          "titulo": "Anexo contractual v1",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+          "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T00:58:33.694825+00:00",
+          "relevancia": 1.0,
+          "extracto": "Radicación máximo diez (10) días."
+        }
+      ],
+      "fuentes_consultadas": [
+        "Anexo contractual v2",
+        "Anexo contractual v1"
+      ],
+      "evidencia_documental": null
+    }
+  ],
+  "hipotesis": [
+    {
+      "id": "H4",
+      "titulo": "Glosas elevadas",
+      "dominio": "glosas",
+      "tipo": "HIPOTESIS",
+      "estado": "POSIBLE",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [
+        "Porcentaje de glosa: 10.74%"
+      ],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 69850000.0,
+      "puntaje": 0.43,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H10",
+      "titulo": "Combinación de factores",
+      "dominio": "combinado",
+      "tipo": "HIPOTESIS",
+      "estado": "POSIBLE",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [
+        "Hallazgos simultáneos en 4 dominios: cartera, contratos, glosas, radicacion"
+      ],
+      "evidencia_en_contra": [
+        "Plazos documentales contradictorios: [10, 15, 10, 15]"
+      ],
+      "informacion_faltante": [
+        "Validar vigencia y jerarquía documental antes de confirmar causa"
+      ],
+      "impacto_potencial": 69850000.0,
+      "puntaje": 0.35,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H3",
+      "titulo": "Devoluciones del pagador",
+      "dominio": "devoluciones",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [
+        "Dataset de devoluciones o glosas con estado DEVUELTA"
+      ],
+      "impacto_potencial": 69850000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H5",
+      "titulo": "Soportes deficientes",
+      "dominio": "soportes",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 69850000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H7",
+      "titulo": "Comportamiento tardío del pagador",
+      "dominio": "pagador",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 69850000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H8",
+      "titulo": "Concentración en un pagador",
+      "dominio": "concentracion",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 69850000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H9",
+      "titulo": "Proceso interno ineficiente",
+      "dominio": "proceso",
+      "tipo": "HIPOTESIS",
+      "estado": "NO DEMOSTRADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [],
+      "informacion_faltante": [],
+      "impacto_potencial": 69850000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H2",
+      "titulo": "Radicación tardía",
+      "dominio": "radicacion",
+      "tipo": "HIPOTESIS",
+      "estado": "REFUTADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [
+        "Plazos documentales contradictorios: [10, 15, 10, 15]"
+      ],
+      "informacion_faltante": [
+        "Validar vigencia y jerarquía documental antes de confirmar causa"
+      ],
+      "impacto_potencial": 69850000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H6",
+      "titulo": "Condiciones contractuales",
+      "dominio": "contratos",
+      "tipo": "HIPOTESIS",
+      "estado": "REFUTADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [
+        "Plazos documentales contradictorios: [10, 15, 10, 15]"
+      ],
+      "informacion_faltante": [
+        "Contratos para contrastar plazos pactados",
+        "Validar vigencia y jerarquía documental antes de confirmar causa"
+      ],
+      "impacto_potencial": 69850000.0,
+      "puntaje": 0.0,
+      "relacion_causal": "asociacion"
+    },
+    {
+      "id": "H1",
+      "titulo": "Facturación tardía",
+      "dominio": "facturacion",
+      "tipo": "HIPOTESIS",
+      "estado": "REFUTADA",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [],
+      "evidencia_en_contra": [
+        "Radicación alta (100.0%) reduce relevancia de facturación tardía"
+      ],
+      "informacion_faltante": [],
+      "impacto_potencial": 69850000.0,
+      "puntaje": -0.2,
+      "relacion_causal": "asociacion"
+    }
+  ],
+  "hipotesis_principal": {
+    "id": "H10",
+    "titulo": "Combinación de factores",
+    "dominio": "combinado",
+    "tipo": "HIPOTESIS",
+    "estado": "POSIBLE",
+    "confianza": "BAJA",
+    "evidencia_a_favor": [
+      "Hallazgos simultáneos en 4 dominios: cartera, contratos, glosas, radicacion"
+    ],
+    "evidencia_en_contra": [
+      "Plazos documentales contradictorios: [10, 15, 10, 15]"
+    ],
+    "informacion_faltante": [
+      "Validar vigencia y jerarquía documental antes de confirmar causa"
+    ],
+    "impacto_potencial": 69850000.0,
+    "puntaje": 0.35,
+    "relacion_causal": "asociacion"
+  },
+  "contrastes": [
+    {
+      "hipotesis_id": "H4",
+      "hipotesis_titulo": "Glosas elevadas",
+      "especialista": "Analista de Glosas IA",
+      "employee_id": "e79a1277-b5c0-4b5f-b6e2-1138374dac29",
+      "dominio": "glosas",
+      "postura": "COMPLEMENTAR",
+      "argumento": "Hallazgo relacionado: Porcentaje de glosa elevado: 10.74%",
+      "evidencia_citada": [
+        "Porcentaje de glosa: 10.74%"
+      ]
+    },
+    {
+      "hipotesis_id": "H4",
+      "hipotesis_titulo": "Glosas elevadas",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "La correlación observada no demuestra causalidad directa.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H10",
+      "hipotesis_titulo": "Combinación de factores",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+      "dominio": "combinado",
+      "postura": "CUESTIONAR",
+      "argumento": "Información faltante impide confirmar — no convertir correlación en causalidad.",
+      "evidencia_citada": [
+        "Hallazgos simultáneos en 4 dominios: cartera, contratos, glosas, radicacion"
+      ]
+    },
+    {
+      "hipotesis_id": "H10",
+      "hipotesis_titulo": "Combinación de factores",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "Falta: Validar vigencia y jerarquía documental antes de confirmar causa",
+      "evidencia_citada": [
+        "Plazos documentales contradictorios: [10, 15, 10, 15]"
+      ]
+    },
+    {
+      "hipotesis_id": "H3",
+      "hipotesis_titulo": "Devoluciones del pagador",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+      "dominio": "devoluciones",
+      "postura": "CUESTIONAR",
+      "argumento": "Información faltante impide confirmar — no convertir correlación en causalidad.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H3",
+      "hipotesis_titulo": "Devoluciones del pagador",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "Falta: Dataset de devoluciones o glosas con estado DEVUELTA",
+      "evidencia_citada": [
+        "Dataset de devoluciones o glosas con estado DEVUELTA"
+      ]
+    },
+    {
+      "hipotesis_id": "H5",
+      "hipotesis_titulo": "Soportes deficientes",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+      "dominio": "soportes",
+      "postura": "CUESTIONAR",
+      "argumento": "Asociación débil — requiere más datos.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H5",
+      "hipotesis_titulo": "Soportes deficientes",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "La correlación observada no demuestra causalidad directa.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H7",
+      "hipotesis_titulo": "Comportamiento tardío del pagador",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+      "dominio": "pagador",
+      "postura": "CUESTIONAR",
+      "argumento": "Asociación débil — requiere más datos.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H7",
+      "hipotesis_titulo": "Comportamiento tardío del pagador",
+      "especialista": "Analista de Cartera IA",
+      "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+      "dominio": "cartera",
+      "postura": "CUESTIONAR",
+      "argumento": "La correlación observada no demuestra causalidad directa.",
+      "evidencia_citada": []
+    },
+    {
+      "hipotesis_id": "H4",
+      "hipotesis_titulo": "Glosas elevadas",
+      "especialista": "Analista Estratégico IPS IA",
+      "employee_id": "b9c938e7-9c48-4543-8d12-d4844ee042e0",
+      "dominio": "consolidacion",
+      "postura": "COMPLEMENTAR",
+      "argumento": "Consolidador recibe 10 intervenciones de especialistas sobre 'Glosas elevadas' — síntesis requerida antes de recomendar.",
+      "evidencia_citada": [],
+      "rol": "CONSOLIDADOR"
+    }
+  ],
+  "alternativas": [
+    {
+      "hallazgo_ref": "Demora promedio factura→radicación: 9.0 días",
+      "alternativa_id": "ALT-RAD-1",
+      "descripcion": "Control diario de pendientes de radicación con alertas automáticas",
+      "fundamento": "Reduce demora factura→radicación identificada en indicadores",
+      "impacto_esperado": null,
+      "costo_estimado": "BAJO",
+      "esfuerzo": "BAJO",
+      "plazo": "30 días",
+      "riesgo": "BAJO",
+      "dependencias": [
+        "Equipo de radicación"
+      ],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "tiempo_dias": 9.0,
+        "umbral": 7,
+        "fuentes_documentales": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+            "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+            "titulo": "Anexo contractual v2",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.692427+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo quince (15) días."
+          },
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+            "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+            "titulo": "Anexo contractual v1",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.694825+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días."
+          }
+        ]
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Demora promedio factura→radicación: 9.0 días",
+      "alternativa_id": "ALT-RAD-2",
+      "descripcion": "Auditoría de cuellos de botella entre facturación y radicación",
+      "fundamento": "Identifica si la demora es de validación RIPS o envío al pagador",
+      "impacto_esperado": 0,
+      "costo_estimado": "MEDIO",
+      "esfuerzo": "MEDIO",
+      "plazo": "45 días",
+      "riesgo": "BAJO",
+      "dependencias": [
+        "TI",
+        "Facturación"
+      ],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "tiempo_dias": 9.0,
+        "umbral": 7,
+        "fuentes_documentales": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+            "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+            "titulo": "Anexo contractual v2",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.692427+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo quince (15) días."
+          },
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+            "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+            "titulo": "Anexo contractual v1",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.694825+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días."
+          }
+        ]
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Demora promedio factura→radicación: 9.0 días",
+      "alternativa_id": "ALT-RAD-3",
+      "descripcion": "Outsourcing parcial de radicación para picos de volumen",
+      "fundamento": "Alternativa si capacidad interna es el limitante",
+      "impacto_esperado": 0,
+      "costo_estimado": "ALTO",
+      "esfuerzo": "ALTO",
+      "plazo": "90 días",
+      "riesgo": "MEDIO",
+      "dependencias": [],
+      "reversibilidad": "MEDIA",
+      "evidencia": {
+        "tiempo_dias": 9.0,
+        "umbral": 7,
+        "fuentes_documentales": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+            "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+            "titulo": "Anexo contractual v2",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.692427+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo quince (15) días."
+          },
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+            "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+            "titulo": "Anexo contractual v1",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.694825+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días."
+          }
+        ]
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Porcentaje de glosa elevado: 10.74%",
+      "alternativa_id": "ALT-GLO-1",
+      "descripcion": "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+      "fundamento": "Ataca concentración de glosas por causal",
+      "impacto_esperado": 40380000.0,
+      "costo_estimado": "BAJO",
+      "esfuerzo": "MEDIO",
+      "plazo": "30 días",
+      "riesgo": "MEDIO",
+      "dependencias": [],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "por_causal": {
+          "Soporte incompleto": 20360000.0,
+          "Tarifa contractual": 20020000.0
+        }
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Porcentaje de glosa elevado: 10.74%",
+      "alternativa_id": "ALT-GLO-2",
+      "descripcion": "Comité semanal glosas-devoluciones con trazabilidad por factura",
+      "fundamento": "Integra devoluciones y respuestas en un solo flujo",
+      "impacto_esperado": 40380000.0,
+      "costo_estimado": "MEDIO",
+      "esfuerzo": "MEDIO",
+      "plazo": "60 días",
+      "riesgo": "MEDIO",
+      "dependencias": [],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "por_causal": {
+          "Soporte incompleto": 20360000.0,
+          "Tarifa contractual": 20020000.0
+        }
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Porcentaje de glosa elevado: 10.74%",
+      "alternativa_id": "ALT-GLO-3",
+      "descripcion": "Capacitación en codificación y soportes para servicios más glosados",
+      "fundamento": "Reduce glosas por soporte deficiente (H5)",
+      "impacto_esperado": 40380000.0,
+      "costo_estimado": "MEDIO",
+      "esfuerzo": "ALTO",
+      "plazo": "90 días",
+      "riesgo": "BAJO",
+      "dependencias": [],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "por_causal": {
+          "Soporte incompleto": 20360000.0,
+          "Tarifa contractual": 20020000.0
+        }
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Cartera vencida 91+ días: $69,850,000",
+      "alternativa_id": "ALT-CAR-1",
+      "descripcion": "Gestión prioritaria de cartera 91+ con negociación por pagador",
+      "fundamento": "Impacto directo en flujo de caja",
+      "impacto_esperado": 69850000.0,
+      "costo_estimado": "BAJO",
+      "esfuerzo": "MEDIO",
+      "plazo": "30 días",
+      "riesgo": "MEDIO",
+      "dependencias": [],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 14880000.0,
+          "61-90": 68750000.0,
+          "91+": 69850000.0
+        }
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Cartera vencida 91+ días: $69,850,000",
+      "alternativa_id": "ALT-CAR-2",
+      "descripcion": "Seguimiento contractual con pagadores de mayor mora",
+      "fundamento": "H7 — comportamiento del pagador cuando proceso interno es sólido",
+      "impacto_esperado": 69850000.0,
+      "costo_estimado": "MEDIO",
+      "esfuerzo": "MEDIO",
+      "plazo": "45 días",
+      "riesgo": "MEDIO",
+      "dependencias": [
+        "Jurídico",
+        "Cartera"
+      ],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 14880000.0,
+          "61-90": 68750000.0,
+          "91+": 69850000.0
+        }
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Cartera vencida 91+ días: $69,850,000",
+      "alternativa_id": "ALT-CAR-3",
+      "descripcion": "Factoring selectivo de cartera con pagadores de riesgo bajo",
+      "fundamento": "Liquidez inmediata con costo financiero",
+      "impacto_esperado": 69850000.0,
+      "costo_estimado": "ALTO",
+      "esfuerzo": "BAJO",
+      "plazo": "15 días",
+      "riesgo": "MEDIO",
+      "dependencias": [],
+      "reversibilidad": "BAJA",
+      "evidencia": {
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 14880000.0,
+          "61-90": 68750000.0,
+          "91+": 69850000.0
+        }
+      },
+      "confianza": "MEDIA",
+      "tipo": "RECOMENDACION"
+    },
+    {
+      "hallazgo_ref": "Conflicto documental en plazos de radicación",
+      "alternativa_id": "ALT-CON-1",
+      "descripcion": "Plan de acción para: Conflicto documental en plazos de radicación",
+      "fundamento": "Existen documentos autorizados con plazos distintos. Se requiere validación humana antes de concluir cumplimiento contractual.",
+      "impacto_esperado": 0,
+      "costo_estimado": "MEDIO",
+      "esfuerzo": "MEDIO",
+      "plazo": "60 días",
+      "riesgo": "MEDIO",
+      "dependencias": [],
+      "reversibilidad": "ALTA",
+      "evidencia": {
+        "conflictos": [
+          {
+            "dominio": "radicacion",
+            "consulta": "radicación, plazo, plazo radicación, procedimiento radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "fragmentos": 2,
+            "fuentes": [
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                "titulo": "Anexo contractual v2",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.692427+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo quince (15) días."
+              },
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                "titulo": "Anexo contractual v1",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.694825+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo diez (10) días."
+              }
+            ],
+            "analisis": {
+              "plazos_detectados": [
+                {
+                  "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                  "document_name": "Anexo contractual v2",
+                  "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                  "dias": [
+                    15
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                },
+                {
+                  "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                  "document_name": "Anexo contractual v1",
+                  "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                  "dias": [
+                    10
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                }
+              ],
+              "conflicto": true,
+              "requiere_validacion": true,
+              "plazo_preferido_dias": null,
+              "limites_unicos": [
+                10,
+                15
+              ]
+            },
+            "experiencia_separada": true
+          },
+          {
+            "analisis": {
+              "plazos_detectados": [
+                {
+                  "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                  "document_name": "Anexo contractual v2",
+                  "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                  "dias": [
+                    15
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                },
+                {
+                  "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                  "document_name": "Anexo contractual v1",
+                  "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                  "dias": [
+                    10
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                }
+              ],
+              "conflicto": true,
+              "requiere_validacion": true,
+              "plazo_preferido_dias": null,
+              "limites_unicos": [
+                10,
+                15
+              ]
+            },
+            "dominio": "contratos",
+            "fuentes": [
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                "titulo": "Anexo contractual v2",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.692427+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo quince (15) días."
+              },
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                "titulo": "Anexo contractual v1",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.694825+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo diez (10) días."
+              }
+            ]
+          }
+        ]
+      },
+      "confianza": "BAJA",
+      "tipo": "RECOMENDACION"
+    }
+  ],
+  "priorizacion": {
+    "metodologia": "prioridad = impacto_económico(35%) + urgencia(25%) + confianza(15%) + esfuerzo_inverso(10%) + recuperabilidad(10%) + riesgo_inverso(5%)",
+    "ranking": [
+      {
+        "tipo": "alternativa",
+        "id": "ALT-GLO-1",
+        "titulo": "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+        "accion": "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+        "prioridad": 78.77,
+        "desglose": {
+          "impacto_economico": 28.27,
+          "urgencia": 25.0,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 3.0
+        },
+        "por_que_primero": "'Plantillas de respuesta para las 3 causales con mayor valor ' prioriza por alto impacto económico (28.27 pts).",
+        "ranking": 1
+      },
+      {
+        "tipo": "alternativa",
+        "id": "ALT-GLO-2",
+        "titulo": "Comité semanal glosas-devoluciones con trazabilidad por factura",
+        "accion": "Comité semanal glosas-devoluciones con trazabilidad por factura",
+        "prioridad": 71.27,
+        "desglose": {
+          "impacto_economico": 28.27,
+          "urgencia": 17.5,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 3.0
+        },
+        "por_que_primero": "'Comité semanal glosas-devoluciones con trazabilidad por fact' prioriza por alto impacto económico (28.27 pts).",
+        "ranking": 2
+      },
+      {
+        "tipo": "alternativa",
+        "id": "ALT-RAD-1",
+        "titulo": "Control diario de pendientes de radicación con alertas automáticas",
+        "accion": "Control diario de pendientes de radicación con alertas automáticas",
+        "prioridad": 63.5,
+        "desglose": {
+          "impacto_economico": 7.0,
+          "urgencia": 25.0,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 10.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 5.0
+        },
+        "por_que_primero": "'Control diario de pendientes de radicación con alertas autom' prioriza por urgencia operativa (25.0 pts).",
+        "ranking": 3
+      },
+      {
+        "tipo": "alternativa",
+        "id": "ALT-GLO-3",
+        "titulo": "Capacitación en codificación y soportes para servicios más glosados",
+        "accion": "Capacitación en codificación y soportes para servicios más glosados",
+        "prioridad": 62.77,
+        "desglose": {
+          "impacto_economico": 28.27,
+          "urgencia": 10.0,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 3.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 5.0
+        },
+        "por_que_primero": "'Capacitación en codificación y soportes para servicios más g' prioriza por alto impacto económico (28.27 pts).",
+        "ranking": 4
+      },
+      {
+        "tipo": "alternativa",
+        "id": "ALT-RAD-2",
+        "titulo": "Auditoría de cuellos de botella entre facturación y radicación",
+        "accion": "Auditoría de cuellos de botella entre facturación y radicación",
+        "prioridad": 52.0,
+        "desglose": {
+          "impacto_economico": 7.0,
+          "urgencia": 17.5,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 5.0
+        },
+        "por_que_primero": "'Auditoría de cuellos de botella entre facturación y radicaci' prioriza por urgencia operativa (17.5 pts).",
+        "ranking": 5
+      },
+      {
+        "tipo": "propuesta",
+        "id": "Cartera vencida 91+ días: $69,850,000",
+        "titulo": "Cartera vencida 91+ días: $69,850,000",
+        "accion": "Activar gestión de cobro prioritaria para facturas con mora superior a 91 días y negociar acuerdos de pago.",
+        "prioridad": 48.5,
+        "desglose": {
+          "impacto_economico": 0.0,
+          "urgencia": 25.0,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 4.0,
+          "riesgo_inverso": 3.0
+        },
+        "finops": {
+          "referencia": "Cartera vencida 91+ días: $69,850,000",
+          "costo_estimado": 2500000,
+          "beneficio_esperado": 10.35,
+          "valor_recuperable": 10.35,
+          "ahorro": 10.35,
+          "roi": -1.0,
+          "payback_dias": 60,
+          "certidumbre": "ESTIMADO",
+          "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+          "advertencia": "Estimación — no presentar como resultado real."
+        },
+        "por_que_primero": "'Cartera vencida 91+ días: $69,850,000' prioriza por urgencia operativa (25.0 pts).",
+        "ranking": 6
+      },
+      {
+        "tipo": "propuesta",
+        "id": "Conflicto documental en plazos de radicación",
+        "titulo": "Conflicto documental en plazos de radicación",
+        "accion": "Atender hallazgo: Conflicto documental en plazos de radicación con plan detallado y responsable asignado.",
+        "prioridad": 43.5,
+        "desglose": {
+          "impacto_economico": 7.0,
+          "urgencia": 17.5,
+          "confianza": 6.0,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 4.0,
+          "riesgo_inverso": 3.0
+        },
+        "finops": {
+          "referencia": "Conflicto documental en plazos de radicación",
+          "costo_estimado": 4500000.0,
+          "beneficio_esperado": null,
+          "valor_recuperable": null,
+          "ahorro": null,
+          "roi": null,
+          "payback_dias": 90,
+          "certidumbre": "NO CUANTIFICABLE",
+          "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+          "advertencia": "Estimación — no presentar como resultado real."
+        },
+        "por_que_primero": "'Conflicto documental en plazos de radicación' prioriza por urgencia operativa (17.5 pts).",
+        "ranking": 7
+      },
+      {
+        "tipo": "propuesta",
+        "id": "Demora promedio factura→radicación: 9.0 días",
+        "titulo": "Demora promedio factura→radicación: 9.0 días",
+        "accion": "Implementar control diario de facturas pendientes de radicación con alerta a los 5 días y escalamiento al día 10.",
+        "prioridad": 41.0,
+        "desglose": {
+          "impacto_economico": 0.0,
+          "urgencia": 17.5,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 4.0,
+          "riesgo_inverso": 3.0
+        },
+        "finops": {
+          "referencia": "Demora promedio factura→radicación: 9.0 días",
+          "costo_estimado": 4500000.0,
+          "beneficio_esperado": 27626400.0,
+          "valor_recuperable": 27626400.0,
+          "ahorro": 27626400.0,
+          "roi": 5.14,
+          "payback_dias": 90,
+          "certidumbre": "ESTIMADO",
+          "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+          "advertencia": "Estimación — no presentar como resultado real."
+        },
+        "por_que_primero": "'Demora promedio factura→radicación: 9.0 días' prioriza por urgencia operativa (17.5 pts).",
+        "ranking": 8
+      },
+      {
+        "tipo": "propuesta",
+        "id": "Porcentaje de glosa elevado: 10.74%",
+        "titulo": "Porcentaje de glosa elevado: 10.74%",
+        "accion": "Revisar causales principales de glosa y ajustar plantillas de respuesta para las 3 causales con mayor valor.",
+        "prioridad": 41.0,
+        "desglose": {
+          "impacto_economico": 0.0,
+          "urgencia": 17.5,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 6.0,
+          "recuperabilidad": 4.0,
+          "riesgo_inverso": 3.0
+        },
+        "finops": {
+          "referencia": "Porcentaje de glosa elevado: 10.74%",
+          "costo_estimado": 4500000.0,
+          "beneficio_esperado": 6.0,
+          "valor_recuperable": 6.0,
+          "ahorro": 6.0,
+          "roi": -1.0,
+          "payback_dias": 90,
+          "certidumbre": "ESTIMADO",
+          "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+          "advertencia": "Estimación — no presentar como resultado real."
+        },
+        "por_que_primero": "'Porcentaje de glosa elevado: 10.74%' prioriza por urgencia operativa (17.5 pts).",
+        "ranking": 9
+      },
+      {
+        "tipo": "alternativa",
+        "id": "ALT-RAD-3",
+        "titulo": "Outsourcing parcial de radicación para picos de volumen",
+        "accion": "Outsourcing parcial de radicación para picos de volumen",
+        "prioridad": 39.5,
+        "desglose": {
+          "impacto_economico": 7.0,
+          "urgencia": 10.0,
+          "confianza": 10.5,
+          "esfuerzo_inverso": 3.0,
+          "recuperabilidad": 6.0,
+          "riesgo_inverso": 3.0
+        },
+        "por_que_primero": "'Outsourcing parcial de radicación para picos de volumen' prioriza por confianza en la evidencia (10.5 pts).",
+        "ranking": 10
+      }
+    ],
+    "explicacion": "El ranking no es una suma arbitraria: cada factor tiene peso documentado en 'metodologia'."
+  },
+  "accion_1": "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+  "finops": [
+    {
+      "referencia": "Demora promedio factura→radicación: 9.0 días",
+      "costo_estimado": 4500000.0,
+      "beneficio_esperado": 27626400.0,
+      "valor_recuperable": 27626400.0,
+      "ahorro": 27626400.0,
+      "roi": 5.14,
+      "payback_dias": 90,
+      "certidumbre": "ESTIMADO",
+      "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+      "advertencia": "Estimación — no presentar como resultado real."
+    },
+    {
+      "referencia": "Porcentaje de glosa elevado: 10.74%",
+      "costo_estimado": 4500000.0,
+      "beneficio_esperado": 6.0,
+      "valor_recuperable": 6.0,
+      "ahorro": 6.0,
+      "roi": -1.0,
+      "payback_dias": 90,
+      "certidumbre": "ESTIMADO",
+      "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+      "advertencia": "Estimación — no presentar como resultado real."
+    },
+    {
+      "referencia": "Cartera vencida 91+ días: $69,850,000",
+      "costo_estimado": 2500000,
+      "beneficio_esperado": 10.35,
+      "valor_recuperable": 10.35,
+      "ahorro": 10.35,
+      "roi": -1.0,
+      "payback_dias": 60,
+      "certidumbre": "ESTIMADO",
+      "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+      "advertencia": "Estimación — no presentar como resultado real."
+    },
+    {
+      "referencia": "Conflicto documental en plazos de radicación",
+      "costo_estimado": 4500000.0,
+      "beneficio_esperado": null,
+      "valor_recuperable": null,
+      "ahorro": null,
+      "roi": null,
+      "payback_dias": 90,
+      "certidumbre": "NO CUANTIFICABLE",
+      "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+      "advertencia": "Estimación — no presentar como resultado real."
+    }
+  ],
+  "escenarios": {
+    "tipo": "PROYECTADO",
+    "escenarios": {
+      "CONSERVADOR": {
+        "nombre": "Conservador",
+        "valor_recuperable_estimado": 12278400.0,
+        "tasa_recuperacion": 0.08,
+        "time_reduction_days": 2,
+        "supuestos": [
+          "Glosas elevadas identificadas.  Efecto mínimo (8% recuperación).",
+          "Reducción de 2 días en factura→radicación"
+        ],
+        "certidumbre": "PROYECTADO",
+        "efecto_tiempo_radicacion_dias": 2
+      },
+      "PROBABLE": {
+        "nombre": "Probable",
+        "valor_recuperable_estimado": 27626400.0,
+        "tasa_recuperacion": 0.18,
+        "time_reduction_days": 5,
+        "supuestos": [
+          "Glosas elevadas identificadas.  Efecto moderado (18% recuperación).",
+          "Reducción de 5 días en factura→radicación"
+        ],
+        "certidumbre": "PROYECTADO",
+        "efecto_tiempo_radicacion_dias": 5,
+        "accion_simulada": "Implementar control diario de facturas pendientes de radicación con alerta a los 5 días y escalamiento al día 10."
+      },
+      "OPTIMISTA": {
+        "nombre": "Optimista",
+        "valor_recuperable_estimado": 49113600.0,
+        "tasa_recuperacion": 0.32,
+        "time_reduction_days": 10,
+        "supuestos": [
+          "Glosas elevadas identificadas.  Efecto alto si ejecución disciplinada (32% recuperación).",
+          "Reducción de 10 días en factura→radicación"
+        ],
+        "certidumbre": "PROYECTADO",
+        "efecto_tiempo_radicacion_dias": 10
+      }
+    },
+    "advertencia": "Simulación con supuestos — no presentar como resultado real."
+  },
+  "recomendacion_consolidada": {
+    "que_ocurre": "Demora promedio factura→radicación: 9.0 días; Porcentaje de glosa elevado: 10.74%; Cartera vencida 91+ días: $69,850,000",
+    "donde": "Dominios: cartera, contratos, glosas, radicacion. Mayor exposición: Sin pagador.",
+    "desde_cuando": "2026-07 → 2026-07",
+    "cuanto_representa": 153480000.0,
+    "por_que_podria": "Información insuficiente",
+    "que_demostrado": [
+      "Ninguna causa demostrada — solo asociaciones"
+    ],
+    "que_no_demostrado": [
+      "Glosas elevadas",
+      "Combinación de factores",
+      "Devoluciones del pagador",
+      "Soportes deficientes",
+      "Comportamiento tardío del pagador"
+    ],
+    "oportunidades": [
+      "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+      "Comité semanal glosas-devoluciones con trazabilidad por factura",
+      "Control diario de pendientes de radicación con alertas automáticas",
+      "Capacitación en codificación y soportes para servicios más glosados",
+      "Auditoría de cuellos de botella entre facturación y radicación"
+    ],
+    "alternativas_evaluadas": 10,
+    "recomendacion": "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+    "por_que_recomendamos": "'Plantillas de respuesta para las 3 causales con mayor valor ' prioriza por alto impacto económico (28.27 pts).",
+    "cuanto_podria_valer": 27626400.0,
+    "que_hacer": [
+      "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+      "Comité semanal glosas-devoluciones con trazabilidad por factura",
+      "Control diario de pendientes de radicación con alertas automáticas"
+    ],
+    "como_medir": [
+      "Días promedio factura→radicación (meta: <7)",
+      "Porcentaje de glosa (meta: reducir 5 p.p.)",
+      "Saldo cartera 91+ días",
+      "Seguimiento acción: Plantillas de respuesta para las 3 causales con mayor valor glosado"
+    ],
+    "calidad_datos": "PARCIAL",
+    "especialistas_involucrados": 4,
+    "solicitud": "Nuestro flujo de caja empeora. Necesito causas, impacto y plan priorizado."
+  },
+  "conocimiento": {
+    "utilizado": true,
+    "mensaje": null,
+    "fuentes": [
+      {
+        "tipo": "CONOCIMIENTO",
+        "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+        "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+        "titulo": "Anexo contractual v2",
+        "categoria": null,
+        "consulta": "radicación",
+        "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+        "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+        "dominio": "radicacion",
+        "fecha": "2026-08-27T00:58:33.692427+00:00",
+        "relevancia": 1.0,
+        "extracto": "Radicación máximo quince (15) días."
+      },
+      {
+        "tipo": "CONOCIMIENTO",
+        "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+        "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+        "titulo": "Anexo contractual v1",
+        "categoria": null,
+        "consulta": "radicación",
+        "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+        "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+        "dominio": "radicacion",
+        "fecha": "2026-08-27T00:58:33.694825+00:00",
+        "relevancia": 1.0,
+        "extracto": "Radicación máximo diez (10) días."
+      }
+    ],
+    "requiere_validacion": true
+  },
+  "diagnostico_completo": {
+    "id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+    "ips_name": "Cert CASO_D",
+    "estado": "COMPLETADO",
+    "resumen_ejecutivo": {
+      "principales_problemas": [
+        "Demora promedio factura→radicación: 9.0 días",
+        "Porcentaje de glosa elevado: 10.74%",
+        "Cartera vencida 91+ días: $69,850,000"
+      ],
+      "impacto_acumulado": 110230000.0,
+      "oportunidades_principales": [
+        "Cartera vencida 91+ días: $69,850,000",
+        "Conflicto documental en plazos de radicación",
+        "Demora promedio factura→radicación: 9.0 días"
+      ],
+      "indicadores_criticos": {
+        "valor_facturado": 376000000.0,
+        "porcentaje_radicado": 100.0,
+        "porcentaje_glosa": 10.74,
+        "saldo_total": 153480000.0
+      },
+      "acciones_prioritarias": [
+        "Activar gestión de cobro prioritaria para facturas con mora superior a 91 días y",
+        "Atender hallazgo: Conflicto documental en plazos de radicación con plan detallad",
+        "Implementar control diario de facturas pendientes de radicación con alerta a los"
+      ]
+    },
+    "calidad_datos": {
+      "cartera": {
+        "fuente": "cartera",
+        "registros": 36,
+        "campos_disponibles": [
+          "dias_mora",
+          "saldo"
+        ],
+        "campos_faltantes": [
+          "numero_factura",
+          "fecha_vencimiento",
+          "pagador"
+        ],
+        "fechas": {
+          "minima": null,
+          "maxima": null
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {
+          "numero_factura": 36,
+          "fecha_vencimiento": 36,
+          "pagador": 36
+        },
+        "inconsistencias": [],
+        "completitud": 0.4,
+        "nivel_calidad": "BAJA"
+      },
+      "facturacion": {
+        "fuente": "facturacion",
+        "registros": 36,
+        "campos_disponibles": [
+          "contrato",
+          "fecha_factura",
+          "numero_factura",
+          "pagador",
+          "valor_facturado"
+        ],
+        "campos_faltantes": [],
+        "fechas": {
+          "minima": "2026-07-01",
+          "maxima": "2026-07-28"
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {},
+        "inconsistencias": [],
+        "completitud": 1.0,
+        "nivel_calidad": "ALTA"
+      },
+      "glosas": {
+        "fuente": "glosas",
+        "registros": 36,
+        "campos_disponibles": [
+          "causal",
+          "valor_glosado"
+        ],
+        "campos_faltantes": [
+          "numero_factura",
+          "pagador",
+          "servicio",
+          "estado",
+          "fecha_glosa"
+        ],
+        "fechas": {
+          "minima": null,
+          "maxima": null
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {
+          "numero_factura": 36,
+          "pagador": 36,
+          "servicio": 36,
+          "estado": 36,
+          "fecha_glosa": 36
+        },
+        "inconsistencias": [],
+        "completitud": 0.286,
+        "nivel_calidad": "INSUFICIENTE"
+      },
+      "pagos": {
+        "fuente": "pagos",
+        "registros": 36,
+        "campos_disponibles": [
+          "dias_desde_radicacion_a_pago",
+          "numero_factura",
+          "valor_pagado"
+        ],
+        "campos_faltantes": [
+          "fecha_pago",
+          "pagador"
+        ],
+        "fechas": {
+          "minima": null,
+          "maxima": null
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {
+          "fecha_pago": 36,
+          "pagador": 36
+        },
+        "inconsistencias": [],
+        "completitud": 0.6,
+        "nivel_calidad": "MEDIA"
+      },
+      "radicacion": {
+        "fuente": "radicacion",
+        "registros": 36,
+        "campos_disponibles": [
+          "dias_factura_a_radicacion",
+          "numero_factura",
+          "valor_radicado"
+        ],
+        "campos_faltantes": [
+          "fecha_factura",
+          "fecha_radicacion",
+          "pagador"
+        ],
+        "fechas": {
+          "minima": null,
+          "maxima": null
+        },
+        "duplicados": 0,
+        "nulos_por_campo": {
+          "fecha_factura": 36,
+          "fecha_radicacion": 36,
+          "pagador": 36
+        },
+        "inconsistencias": [],
+        "completitud": 0.5,
+        "nivel_calidad": "BAJA"
+      }
+    },
+    "suficiencia_datos": {
+      "clasificacion": "PARCIAL",
+      "puntaje": 0.4,
+      "dimensiones": {
+        "cartera": {
+          "registros": 36,
+          "completitud": 0.4,
+          "nivel_calidad": "BAJA",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "Información insuficiente"
+        },
+        "facturacion": {
+          "registros": 36,
+          "completitud": 1.0,
+          "nivel_calidad": "ALTA",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "2026-07-01 → 2026-07-28"
+        },
+        "glosas": {
+          "registros": 36,
+          "completitud": 0.286,
+          "nivel_calidad": "INSUFICIENTE",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "Información insuficiente"
+        },
+        "pagos": {
+          "registros": 36,
+          "completitud": 0.6,
+          "nivel_calidad": "MEDIA",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "Información insuficiente"
+        },
+        "radicacion": {
+          "registros": 36,
+          "completitud": 0.5,
+          "nivel_calidad": "BAJA",
+          "duplicados": 0,
+          "inconsistencias": [],
+          "cobertura_temporal": "Información insuficiente"
+        }
+      },
+      "informacion_faltante_critica": [],
+      "limitaciones": []
+    },
+    "analisis_disponibles": {
+      "puede_realizar": [
+        "facturacion",
+        "radicacion",
+        "glosas",
+        "cartera",
+        "trazabilidad",
+        "comparacion_historica"
+      ],
+      "no_puede_realizar": [
+        {
+          "analisis": "contratos",
+          "faltante": [
+            "contratos"
+          ]
+        }
+      ]
+    },
+    "indicadores": {
+      "disponibles": [
+        "facturacion",
+        "radicacion",
+        "glosas",
+        "cartera"
+      ],
+      "no_disponibles": [],
+      "facturacion": {
+        "disponible": true,
+        "valor_facturado": 376000000.0,
+        "cantidad_facturas": 36,
+        "facturacion_por_pagador": {
+          "EPS_RIESGO": 127000000.0,
+          "EPS_MIXTA": 125000000.0,
+          "EPS_SEGURA": 124000000.0
+        },
+        "facturacion_por_periodo": {
+          "2026-07": 376000000.0
+        },
+        "concentracion_principal_pagador_pct": 33.78,
+        "evidencia": {
+          "fuente": "facturacion",
+          "registros": 36
+        }
+      },
+      "radicacion": {
+        "disponible": true,
+        "valor_facturado": 376000000.0,
+        "valor_radicado": 376000000.0,
+        "diferencia_facturado_radicado": 0.0,
+        "facturas_no_radicadas": 0,
+        "porcentaje_radicado": 100.0,
+        "tiempo_promedio_factura_radicacion_dias": 9.0,
+        "evidencia": {
+          "facturas": 36,
+          "radicadas": 36,
+          "dias_por_factura": [
+            {
+              "numero_factura": "D-F001",
+              "dias": 15.0
+            },
+            {
+              "numero_factura": "D-F002",
+              "dias": 8.0
+            },
+            {
+              "numero_factura": "D-F003",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "D-F004",
+              "dias": 15.0
+            },
+            {
+              "numero_factura": "D-F005",
+              "dias": 8.0
+            },
+            {
+              "numero_factura": "D-F006",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "D-F007",
+              "dias": 15.0
+            },
+            {
+              "numero_factura": "D-F008",
+              "dias": 8.0
+            },
+            {
+              "numero_factura": "D-F009",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "D-F010",
+              "dias": 15.0
+            },
+            {
+              "numero_factura": "D-F011",
+              "dias": 8.0
+            },
+            {
+              "numero_factura": "D-F012",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "D-F013",
+              "dias": 15.0
+            },
+            {
+              "numero_factura": "D-F014",
+              "dias": 8.0
+            },
+            {
+              "numero_factura": "D-F015",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "D-F016",
+              "dias": 15.0
+            },
+            {
+              "numero_factura": "D-F017",
+              "dias": 8.0
+            },
+            {
+              "numero_factura": "D-F018",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "D-F019",
+              "dias": 15.0
+            },
+            {
+              "numero_factura": "D-F020",
+              "dias": 8.0
+            },
+            {
+              "numero_factura": "D-F021",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "D-F022",
+              "dias": 15.0
+            },
+            {
+              "numero_factura": "D-F023",
+              "dias": 8.0
+            },
+            {
+              "numero_factura": "D-F024",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "D-F025",
+              "dias": 15.0
+            },
+            {
+              "numero_factura": "D-F026",
+              "dias": 8.0
+            },
+            {
+              "numero_factura": "D-F027",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "D-F028",
+              "dias": 15.0
+            },
+            {
+              "numero_factura": "D-F029",
+              "dias": 8.0
+            },
+            {
+              "numero_factura": "D-F030",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "D-F031",
+              "dias": 15.0
+            },
+            {
+              "numero_factura": "D-F032",
+              "dias": 8.0
+            },
+            {
+              "numero_factura": "D-F033",
+              "dias": 4.0
+            },
+            {
+              "numero_factura": "D-F034",
+              "dias": 15.0
+            },
+            {
+              "numero_factura": "D-F035",
+              "dias": 8.0
+            },
+            {
+              "numero_factura": "D-F036",
+              "dias": 4.0
+            }
+          ]
+        }
+      },
+      "glosas": {
+        "disponible": true,
+        "valor_glosado": 40380000.0,
+        "porcentaje_glosa": 10.74,
+        "por_causal": {
+          "Soporte incompleto": 20360000.0,
+          "Tarifa contractual": 20020000.0
+        },
+        "por_pagador": {
+          "Sin pagador": 40380000.0
+        },
+        "por_servicio": {
+          "Sin servicio": 40380000.0
+        },
+        "por_estado": {
+          "Sin estado": 36
+        },
+        "evidencia": {
+          "registros": 36
+        }
+      },
+      "cartera": {
+        "disponible": true,
+        "saldo_total": 153480000.0,
+        "aging": {
+          "0-30": 0.0,
+          "31-60": 14880000.0,
+          "61-90": 68750000.0,
+          "91+": 69850000.0
+        },
+        "por_entidad": {
+          "Sin pagador": 153480000.0
+        },
+        "recaudo": 293280000.0,
+        "evidencia": {
+          "registros": 36
+        }
+      },
+      "contratos": {
+        "disponible": false,
+        "mensaje": "Información insuficiente"
+      },
+      "devoluciones": {
+        "disponible": false,
+        "mensaje": "Información insuficiente"
+      },
+      "trazabilidad": {
+        "facturado": 376000000.0,
+        "radicado": 376000000.0,
+        "diferencia_facturado_radicado": 0.0,
+        "glosado": 40380000.0,
+        "recuperado_conciliado": "Información insuficiente",
+        "cuenta_por_cobrar": 153480000.0,
+        "pagado": 293280000.0
+      }
+    },
+    "trazabilidad": {
+      "facturado": 376000000.0,
+      "radicado": 376000000.0,
+      "diferencia_facturado_radicado": 0.0,
+      "glosado": 40380000.0,
+      "recuperado_conciliado": "Información insuficiente",
+      "cuenta_por_cobrar": 153480000.0,
+      "pagado": 293280000.0,
+      "conocimiento": {
+        "utilizado": true,
+        "mensaje": null,
+        "consultas": [
+          {
+            "dominio": "cartera",
+            "consulta": "política cartera, cobro cartera, acuerdos de pago",
+            "especialista_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+            "fragmentos": 0,
+            "fuentes": [],
+            "analisis": {
+              "plazos_detectados": [],
+              "conflicto": false,
+              "requiere_validacion": false,
+              "plazo_preferido_dias": null,
+              "limites_unicos": []
+            },
+            "experiencia_separada": true
+          },
+          {
+            "dominio": "facturacion",
+            "consulta": "manual facturación, procedimiento facturación",
+            "especialista_id": "cea9be62-b39c-4443-898c-83f9be590413",
+            "fragmentos": 0,
+            "fuentes": [],
+            "analisis": {
+              "plazos_detectados": [],
+              "conflicto": false,
+              "requiere_validacion": false,
+              "plazo_preferido_dias": null,
+              "limites_unicos": []
+            },
+            "experiencia_separada": true
+          },
+          {
+            "dominio": "glosas",
+            "consulta": "procedimiento glosas, respuesta glosas, causales glosa",
+            "especialista_id": "e79a1277-b5c0-4b5f-b6e2-1138374dac29",
+            "fragmentos": 0,
+            "fuentes": [],
+            "analisis": {
+              "plazos_detectados": [],
+              "conflicto": false,
+              "requiere_validacion": false,
+              "plazo_preferido_dias": null,
+              "limites_unicos": []
+            },
+            "experiencia_separada": true
+          },
+          {
+            "dominio": "radicacion",
+            "consulta": "radicación, plazo, plazo radicación, procedimiento radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "fragmentos": 2,
+            "fuentes": [
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                "titulo": "Anexo contractual v2",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.692427+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo quince (15) días."
+              },
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                "titulo": "Anexo contractual v1",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.694825+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo diez (10) días."
+              }
+            ],
+            "analisis": {
+              "plazos_detectados": [
+                {
+                  "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                  "document_name": "Anexo contractual v2",
+                  "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                  "dias": [
+                    15
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                },
+                {
+                  "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                  "document_name": "Anexo contractual v1",
+                  "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                  "dias": [
+                    10
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                }
+              ],
+              "conflicto": true,
+              "requiere_validacion": true,
+              "plazo_preferido_dias": null,
+              "limites_unicos": [
+                10,
+                15
+              ]
+            },
+            "experiencia_separada": true
+          }
+        ],
+        "fuentes_consultadas": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+            "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+            "titulo": "Anexo contractual v2",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.692427+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo quince (15) días."
+          },
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+            "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+            "titulo": "Anexo contractual v1",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.694825+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días."
+          }
+        ],
+        "conflictos": [
+          {
+            "dominio": "radicacion",
+            "consulta": "radicación, plazo, plazo radicación, procedimiento radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "fragmentos": 2,
+            "fuentes": [
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                "titulo": "Anexo contractual v2",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.692427+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo quince (15) días."
+              },
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                "titulo": "Anexo contractual v1",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.694825+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo diez (10) días."
+              }
+            ],
+            "analisis": {
+              "plazos_detectados": [
+                {
+                  "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                  "document_name": "Anexo contractual v2",
+                  "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                  "dias": [
+                    15
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                },
+                {
+                  "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                  "document_name": "Anexo contractual v1",
+                  "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                  "dias": [
+                    10
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                }
+              ],
+              "conflicto": true,
+              "requiere_validacion": true,
+              "plazo_preferido_dias": null,
+              "limites_unicos": [
+                10,
+                15
+              ]
+            },
+            "experiencia_separada": true
+          },
+          {
+            "analisis": {
+              "plazos_detectados": [
+                {
+                  "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                  "document_name": "Anexo contractual v2",
+                  "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                  "dias": [
+                    15
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                },
+                {
+                  "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                  "document_name": "Anexo contractual v1",
+                  "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                  "dias": [
+                    10
+                  ],
+                  "vigente_desde": null,
+                  "vigente_hasta": null
+                }
+              ],
+              "conflicto": true,
+              "requiere_validacion": true,
+              "plazo_preferido_dias": null,
+              "limites_unicos": [
+                10,
+                15
+              ]
+            },
+            "dominio": "contratos",
+            "fuentes": [
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                "titulo": "Anexo contractual v2",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.692427+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo quince (15) días."
+              },
+              {
+                "tipo": "CONOCIMIENTO",
+                "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                "titulo": "Anexo contractual v1",
+                "categoria": null,
+                "consulta": "radicación",
+                "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                "dominio": "radicacion",
+                "fecha": "2026-08-27T00:58:33.694825+00:00",
+                "relevancia": 1.0,
+                "extracto": "Radicación máximo diez (10) días."
+              }
+            ]
+          }
+        ],
+        "requiere_validacion": true,
+        "analisis_global": {
+          "plazos_detectados": [
+            {
+              "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+              "document_name": "Anexo contractual v2",
+              "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+              "dias": [
+                15
+              ],
+              "vigente_desde": null,
+              "vigente_hasta": null
+            },
+            {
+              "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+              "document_name": "Anexo contractual v1",
+              "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+              "dias": [
+                10
+              ],
+              "vigente_desde": null,
+              "vigente_hasta": null
+            }
+          ],
+          "conflicto": true,
+          "requiere_validacion": true,
+          "plazo_preferido_dias": null,
+          "limites_unicos": [
+            10,
+            15
+          ]
+        }
+      },
+      "motor": {
+        "motor": "MOTOR-ANALITICO-1000",
+        "solicitud": "Nuestro flujo de caja empeora. Necesito causas, impacto y plan priorizado.",
+        "suficiencia": "PARCIAL",
+        "hipotesis_principal": "H10",
+        "especialistas": [
+          {
+            "nombre": "Analista de Cartera IA",
+            "dominio": "cartera",
+            "score": 0.925,
+            "razon_seleccion": "Mayor puntaje en cartera por capacidades (1.0)",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          },
+          {
+            "nombre": "Analista de Facturación IA",
+            "dominio": "facturacion",
+            "score": 0.925,
+            "razon_seleccion": "Mayor puntaje en facturacion por capacidades (1.0)",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          },
+          {
+            "nombre": "Analista de Glosas IA",
+            "dominio": "glosas",
+            "score": 0.925,
+            "razon_seleccion": "Mayor puntaje en glosas por capacidades (1.0)",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          },
+          {
+            "nombre": "Analista de Radicación IA",
+            "dominio": "radicacion",
+            "score": 0.925,
+            "razon_seleccion": "Mayor puntaje en radicacion por capacidades (1.0)",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          },
+          {
+            "nombre": "Analista Estratégico IPS IA",
+            "dominio": "consolidador",
+            "score": 0.925,
+            "razon_seleccion": "Consolidador estratégico con mayor puntaje en dominio estratégico",
+            "factores": {
+              "capacidades": 1.0,
+              "herramientas": 1.0,
+              "especialidad": 0.2,
+              "disponibilidad": 1.0,
+              "experiencia": 0.5
+            }
+          }
+        ],
+        "contrastes_count": 11,
+        "alternativas_count": 10,
+        "conocimiento": {
+          "utilizado": true,
+          "mensaje": null,
+          "consultas": [
+            {
+              "dominio": "cartera",
+              "consulta": "política cartera, cobro cartera, acuerdos de pago",
+              "especialista_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+              "fragmentos": 0,
+              "fuentes": [],
+              "analisis": {
+                "plazos_detectados": [],
+                "conflicto": false,
+                "requiere_validacion": false,
+                "plazo_preferido_dias": null,
+                "limites_unicos": []
+              },
+              "experiencia_separada": true
+            },
+            {
+              "dominio": "facturacion",
+              "consulta": "manual facturación, procedimiento facturación",
+              "especialista_id": "cea9be62-b39c-4443-898c-83f9be590413",
+              "fragmentos": 0,
+              "fuentes": [],
+              "analisis": {
+                "plazos_detectados": [],
+                "conflicto": false,
+                "requiere_validacion": false,
+                "plazo_preferido_dias": null,
+                "limites_unicos": []
+              },
+              "experiencia_separada": true
+            },
+            {
+              "dominio": "glosas",
+              "consulta": "procedimiento glosas, respuesta glosas, causales glosa",
+              "especialista_id": "e79a1277-b5c0-4b5f-b6e2-1138374dac29",
+              "fragmentos": 0,
+              "fuentes": [],
+              "analisis": {
+                "plazos_detectados": [],
+                "conflicto": false,
+                "requiere_validacion": false,
+                "plazo_preferido_dias": null,
+                "limites_unicos": []
+              },
+              "experiencia_separada": true
+            },
+            {
+              "dominio": "radicacion",
+              "consulta": "radicación, plazo, plazo radicación, procedimiento radicación",
+              "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+              "fragmentos": 2,
+              "fuentes": [
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                  "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                  "titulo": "Anexo contractual v2",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                  "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.692427+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo quince (15) días."
+                },
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                  "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                  "titulo": "Anexo contractual v1",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                  "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.694825+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo diez (10) días."
+                }
+              ],
+              "analisis": {
+                "plazos_detectados": [
+                  {
+                    "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                    "document_name": "Anexo contractual v2",
+                    "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                    "dias": [
+                      15
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  },
+                  {
+                    "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                    "document_name": "Anexo contractual v1",
+                    "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                    "dias": [
+                      10
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  }
+                ],
+                "conflicto": true,
+                "requiere_validacion": true,
+                "plazo_preferido_dias": null,
+                "limites_unicos": [
+                  10,
+                  15
+                ]
+              },
+              "experiencia_separada": true
+            }
+          ],
+          "fuentes_consultadas": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+              "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+              "titulo": "Anexo contractual v2",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+              "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:33.692427+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo quince (15) días."
+            },
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+              "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+              "titulo": "Anexo contractual v1",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+              "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:33.694825+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días."
+            }
+          ],
+          "conflictos": [
+            {
+              "dominio": "radicacion",
+              "consulta": "radicación, plazo, plazo radicación, procedimiento radicación",
+              "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+              "fragmentos": 2,
+              "fuentes": [
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                  "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                  "titulo": "Anexo contractual v2",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                  "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.692427+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo quince (15) días."
+                },
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                  "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                  "titulo": "Anexo contractual v1",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                  "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.694825+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo diez (10) días."
+                }
+              ],
+              "analisis": {
+                "plazos_detectados": [
+                  {
+                    "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                    "document_name": "Anexo contractual v2",
+                    "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                    "dias": [
+                      15
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  },
+                  {
+                    "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                    "document_name": "Anexo contractual v1",
+                    "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                    "dias": [
+                      10
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  }
+                ],
+                "conflicto": true,
+                "requiere_validacion": true,
+                "plazo_preferido_dias": null,
+                "limites_unicos": [
+                  10,
+                  15
+                ]
+              },
+              "experiencia_separada": true
+            },
+            {
+              "analisis": {
+                "plazos_detectados": [
+                  {
+                    "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                    "document_name": "Anexo contractual v2",
+                    "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                    "dias": [
+                      15
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  },
+                  {
+                    "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                    "document_name": "Anexo contractual v1",
+                    "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                    "dias": [
+                      10
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  }
+                ],
+                "conflicto": true,
+                "requiere_validacion": true,
+                "plazo_preferido_dias": null,
+                "limites_unicos": [
+                  10,
+                  15
+                ]
+              },
+              "dominio": "contratos",
+              "fuentes": [
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                  "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                  "titulo": "Anexo contractual v2",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                  "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.692427+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo quince (15) días."
+                },
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                  "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                  "titulo": "Anexo contractual v1",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                  "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.694825+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo diez (10) días."
+                }
+              ]
+            }
+          ],
+          "requiere_validacion": true,
+          "analisis_global": {
+            "plazos_detectados": [
+              {
+                "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                "document_name": "Anexo contractual v2",
+                "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                "dias": [
+                  15
+                ],
+                "vigente_desde": null,
+                "vigente_hasta": null
+              },
+              {
+                "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                "document_name": "Anexo contractual v1",
+                "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                "dias": [
+                  10
+                ],
+                "vigente_desde": null,
+                "vigente_hasta": null
+              }
+            ],
+            "conflicto": true,
+            "requiere_validacion": true,
+            "plazo_preferido_dias": null,
+            "limites_unicos": [
+              10,
+              15
+            ]
+          }
+        }
+      }
+    },
+    "hallazgos": [
+      {
+        "id": "b7e436d4-427e-428a-98dd-a69ecf301860",
+        "categoria": "cartera",
+        "titulo": "Cartera vencida 91+ días: $69,850,000",
+        "descripcion": "Existe saldo en mora superior a 91 días por $69,850,000.",
+        "tipo": "HECHO",
+        "indicador": "aging_91_mas",
+        "valor": "$69,850,000",
+        "severidad": "ALTA",
+        "prioridad": 66.95,
+        "confianza": "MEDIA",
+        "criterios_confianza": {
+          "completitud": "baja",
+          "consistencia": "si",
+          "casos": 36,
+          "fuerza_asociacion": 0.15,
+          "puntaje": 0.55
+        },
+        "causa_probable": null,
+        "impacto_economico": 69850000.0,
+        "evidencia": {
+          "aging": {
+            "0-30": 0.0,
+            "31-60": 14880000.0,
+            "61-90": 68750000.0,
+            "91+": 69850000.0
+          }
+        },
+        "fuentes": [
+          {
+            "dataset": "cartera",
+            "calculo": "aging"
+          }
+        ],
+        "fuentes_consultadas": [],
+        "evidencia_documental": null
+      },
+      {
+        "id": "975b99b3-9347-4d41-9e83-08f8932cb717",
+        "categoria": "glosas",
+        "titulo": "Porcentaje de glosa elevado: 10.74%",
+        "descripcion": "El valor glosado representa el 10.74% de la facturación base ($40,380,000).",
+        "tipo": "HECHO",
+        "indicador": "porcentaje_glosa",
+        "valor": "10.74%",
+        "severidad": "MEDIA",
+        "prioridad": 46.63,
+        "confianza": "MEDIA",
+        "criterios_confianza": {
+          "completitud": "baja",
+          "consistencia": "si",
+          "casos": 36,
+          "fuerza_asociacion": 0.2,
+          "puntaje": 0.6
+        },
+        "causa_probable": "50.4% de glosas asociadas a causal Soporte incompleto.",
+        "impacto_economico": 40380000.0,
+        "evidencia": {
+          "por_causal": {
+            "Soporte incompleto": 20360000.0,
+            "Tarifa contractual": 20020000.0
+          }
+        },
+        "fuentes": [
+          {
+            "dataset": "glosas",
+            "calculo": "porcentaje_glosa"
+          }
+        ],
+        "fuentes_consultadas": [],
+        "evidencia_documental": null
+      },
+      {
+        "id": "e48704ef-0d85-403f-b51d-22f570a55cff",
+        "categoria": "radicacion",
+        "titulo": "Demora promedio factura→radicación: 9.0 días",
+        "descripcion": "El tiempo promedio entre facturación y radicación es 9.0 días, superior al umbral de 7 días.",
+        "tipo": "HECHO",
+        "indicador": "tiempo_factura_radicacion",
+        "valor": "9.0",
+        "severidad": "MEDIA",
+        "prioridad": 32.5,
+        "confianza": "MEDIA",
+        "criterios_confianza": {
+          "completitud": "baja",
+          "consistencia": "si",
+          "casos": 36,
+          "fuerza_asociacion": 0.18,
+          "puntaje": 0.58
+        },
+        "causa_probable": "Posible demora entre validación RIPS y radicación ante pagador.",
+        "impacto_economico": null,
+        "evidencia": {
+          "tiempo_dias": 9.0,
+          "umbral": 7,
+          "fuentes_documentales": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+              "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+              "titulo": "Anexo contractual v2",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+              "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:33.692427+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo quince (15) días."
+            },
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+              "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+              "titulo": "Anexo contractual v1",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+              "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:33.694825+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días."
+            }
+          ]
+        },
+        "fuentes": [
+          {
+            "dataset": "radicacion",
+            "calculo": "promedio_dias"
+          },
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+            "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+            "titulo": "Anexo contractual v2",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.692427+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo quince (15) días."
+          },
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+            "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+            "titulo": "Anexo contractual v1",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.694825+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días."
+          }
+        ],
+        "fuentes_consultadas": [
+          "Anexo contractual v2",
+          "Anexo contractual v1"
+        ],
+        "evidencia_documental": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+            "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+            "titulo": "Anexo contractual v2",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.692427+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo quince (15) días."
+          },
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+            "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+            "titulo": "Anexo contractual v1",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.694825+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días."
+          }
+        ]
+      },
+      {
+        "id": "862d6d17-1cfa-433e-b67b-dc2b69351079",
+        "categoria": "contratos",
+        "titulo": "Conflicto documental en plazos de radicación",
+        "descripcion": "Existen documentos autorizados con plazos distintos. Se requiere validación humana antes de concluir cumplimiento contractual.",
+        "tipo": "INSUFICIENTE",
+        "indicador": "conflicto_conocimiento",
+        "valor": null,
+        "severidad": "MEDIA",
+        "prioridad": null,
+        "confianza": "BAJA",
+        "criterios_confianza": {
+          "motivo": "documentos_contradictorios"
+        },
+        "causa_probable": null,
+        "impacto_economico": null,
+        "evidencia": {
+          "conflictos": [
+            {
+              "dominio": "radicacion",
+              "consulta": "radicación, plazo, plazo radicación, procedimiento radicación",
+              "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+              "fragmentos": 2,
+              "fuentes": [
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                  "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                  "titulo": "Anexo contractual v2",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                  "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.692427+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo quince (15) días."
+                },
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                  "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                  "titulo": "Anexo contractual v1",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                  "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.694825+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo diez (10) días."
+                }
+              ],
+              "analisis": {
+                "plazos_detectados": [
+                  {
+                    "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                    "document_name": "Anexo contractual v2",
+                    "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                    "dias": [
+                      15
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  },
+                  {
+                    "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                    "document_name": "Anexo contractual v1",
+                    "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                    "dias": [
+                      10
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  }
+                ],
+                "conflicto": true,
+                "requiere_validacion": true,
+                "plazo_preferido_dias": null,
+                "limites_unicos": [
+                  10,
+                  15
+                ]
+              },
+              "experiencia_separada": true
+            },
+            {
+              "analisis": {
+                "plazos_detectados": [
+                  {
+                    "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                    "document_name": "Anexo contractual v2",
+                    "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                    "dias": [
+                      15
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  },
+                  {
+                    "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                    "document_name": "Anexo contractual v1",
+                    "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                    "dias": [
+                      10
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  }
+                ],
+                "conflicto": true,
+                "requiere_validacion": true,
+                "plazo_preferido_dias": null,
+                "limites_unicos": [
+                  10,
+                  15
+                ]
+              },
+              "dominio": "contratos",
+              "fuentes": [
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                  "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                  "titulo": "Anexo contractual v2",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                  "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.692427+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo quince (15) días."
+                },
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                  "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                  "titulo": "Anexo contractual v1",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                  "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.694825+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo diez (10) días."
+                }
+              ]
+            }
+          ]
+        },
+        "fuentes": [
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+            "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+            "titulo": "Anexo contractual v2",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.692427+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo quince (15) días."
+          },
+          {
+            "tipo": "CONOCIMIENTO",
+            "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+            "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+            "titulo": "Anexo contractual v1",
+            "categoria": null,
+            "consulta": "radicación",
+            "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+            "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+            "dominio": "radicacion",
+            "fecha": "2026-08-27T00:58:33.694825+00:00",
+            "relevancia": 1.0,
+            "extracto": "Radicación máximo diez (10) días."
+          }
+        ],
+        "fuentes_consultadas": [
+          "Anexo contractual v2",
+          "Anexo contractual v1"
+        ],
+        "evidencia_documental": null
+      }
+    ],
+    "hipotesis": [
+      {
+        "id": "H4",
+        "titulo": "Glosas elevadas",
+        "dominio": "glosas",
+        "tipo": "HIPOTESIS",
+        "estado": "POSIBLE",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [
+          "Porcentaje de glosa: 10.74%"
+        ],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 69850000.0,
+        "puntaje": 0.43,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H10",
+        "titulo": "Combinación de factores",
+        "dominio": "combinado",
+        "tipo": "HIPOTESIS",
+        "estado": "POSIBLE",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [
+          "Hallazgos simultáneos en 4 dominios: cartera, contratos, glosas, radicacion"
+        ],
+        "evidencia_en_contra": [
+          "Plazos documentales contradictorios: [10, 15, 10, 15]"
+        ],
+        "informacion_faltante": [
+          "Validar vigencia y jerarquía documental antes de confirmar causa"
+        ],
+        "impacto_potencial": 69850000.0,
+        "puntaje": 0.35,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H3",
+        "titulo": "Devoluciones del pagador",
+        "dominio": "devoluciones",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [
+          "Dataset de devoluciones o glosas con estado DEVUELTA"
+        ],
+        "impacto_potencial": 69850000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H5",
+        "titulo": "Soportes deficientes",
+        "dominio": "soportes",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 69850000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H7",
+        "titulo": "Comportamiento tardío del pagador",
+        "dominio": "pagador",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 69850000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H8",
+        "titulo": "Concentración en un pagador",
+        "dominio": "concentracion",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 69850000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H9",
+        "titulo": "Proceso interno ineficiente",
+        "dominio": "proceso",
+        "tipo": "HIPOTESIS",
+        "estado": "NO DEMOSTRADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [],
+        "informacion_faltante": [],
+        "impacto_potencial": 69850000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H2",
+        "titulo": "Radicación tardía",
+        "dominio": "radicacion",
+        "tipo": "HIPOTESIS",
+        "estado": "REFUTADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [
+          "Plazos documentales contradictorios: [10, 15, 10, 15]"
+        ],
+        "informacion_faltante": [
+          "Validar vigencia y jerarquía documental antes de confirmar causa"
+        ],
+        "impacto_potencial": 69850000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H6",
+        "titulo": "Condiciones contractuales",
+        "dominio": "contratos",
+        "tipo": "HIPOTESIS",
+        "estado": "REFUTADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [
+          "Plazos documentales contradictorios: [10, 15, 10, 15]"
+        ],
+        "informacion_faltante": [
+          "Contratos para contrastar plazos pactados",
+          "Validar vigencia y jerarquía documental antes de confirmar causa"
+        ],
+        "impacto_potencial": 69850000.0,
+        "puntaje": 0.0,
+        "relacion_causal": "asociacion"
+      },
+      {
+        "id": "H1",
+        "titulo": "Facturación tardía",
+        "dominio": "facturacion",
+        "tipo": "HIPOTESIS",
+        "estado": "REFUTADA",
+        "confianza": "BAJA",
+        "evidencia_a_favor": [],
+        "evidencia_en_contra": [
+          "Radicación alta (100.0%) reduce relevancia de facturación tardía"
+        ],
+        "informacion_faltante": [],
+        "impacto_potencial": 69850000.0,
+        "puntaje": -0.2,
+        "relacion_causal": "asociacion"
+      }
+    ],
+    "hipotesis_principal": {
+      "id": "H10",
+      "titulo": "Combinación de factores",
+      "dominio": "combinado",
+      "tipo": "HIPOTESIS",
+      "estado": "POSIBLE",
+      "confianza": "BAJA",
+      "evidencia_a_favor": [
+        "Hallazgos simultáneos en 4 dominios: cartera, contratos, glosas, radicacion"
+      ],
+      "evidencia_en_contra": [
+        "Plazos documentales contradictorios: [10, 15, 10, 15]"
+      ],
+      "informacion_faltante": [
+        "Validar vigencia y jerarquía documental antes de confirmar causa"
+      ],
+      "impacto_potencial": 69850000.0,
+      "puntaje": 0.35,
+      "relacion_causal": "asociacion"
+    },
+    "contrastes": [
+      {
+        "hipotesis_id": "H4",
+        "hipotesis_titulo": "Glosas elevadas",
+        "especialista": "Analista de Glosas IA",
+        "employee_id": "e79a1277-b5c0-4b5f-b6e2-1138374dac29",
+        "dominio": "glosas",
+        "postura": "COMPLEMENTAR",
+        "argumento": "Hallazgo relacionado: Porcentaje de glosa elevado: 10.74%",
+        "evidencia_citada": [
+          "Porcentaje de glosa: 10.74%"
+        ]
+      },
+      {
+        "hipotesis_id": "H4",
+        "hipotesis_titulo": "Glosas elevadas",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "La correlación observada no demuestra causalidad directa.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H10",
+        "hipotesis_titulo": "Combinación de factores",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+        "dominio": "combinado",
+        "postura": "CUESTIONAR",
+        "argumento": "Información faltante impide confirmar — no convertir correlación en causalidad.",
+        "evidencia_citada": [
+          "Hallazgos simultáneos en 4 dominios: cartera, contratos, glosas, radicacion"
+        ]
+      },
+      {
+        "hipotesis_id": "H10",
+        "hipotesis_titulo": "Combinación de factores",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "Falta: Validar vigencia y jerarquía documental antes de confirmar causa",
+        "evidencia_citada": [
+          "Plazos documentales contradictorios: [10, 15, 10, 15]"
+        ]
+      },
+      {
+        "hipotesis_id": "H3",
+        "hipotesis_titulo": "Devoluciones del pagador",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+        "dominio": "devoluciones",
+        "postura": "CUESTIONAR",
+        "argumento": "Información faltante impide confirmar — no convertir correlación en causalidad.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H3",
+        "hipotesis_titulo": "Devoluciones del pagador",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "Falta: Dataset de devoluciones o glosas con estado DEVUELTA",
+        "evidencia_citada": [
+          "Dataset de devoluciones o glosas con estado DEVUELTA"
+        ]
+      },
+      {
+        "hipotesis_id": "H5",
+        "hipotesis_titulo": "Soportes deficientes",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+        "dominio": "soportes",
+        "postura": "CUESTIONAR",
+        "argumento": "Asociación débil — requiere más datos.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H5",
+        "hipotesis_titulo": "Soportes deficientes",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "La correlación observada no demuestra causalidad directa.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H7",
+        "hipotesis_titulo": "Comportamiento tardío del pagador",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+        "dominio": "pagador",
+        "postura": "CUESTIONAR",
+        "argumento": "Asociación débil — requiere más datos.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H7",
+        "hipotesis_titulo": "Comportamiento tardío del pagador",
+        "especialista": "Analista de Cartera IA",
+        "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+        "dominio": "cartera",
+        "postura": "CUESTIONAR",
+        "argumento": "La correlación observada no demuestra causalidad directa.",
+        "evidencia_citada": []
+      },
+      {
+        "hipotesis_id": "H4",
+        "hipotesis_titulo": "Glosas elevadas",
+        "especialista": "Analista Estratégico IPS IA",
+        "employee_id": "b9c938e7-9c48-4543-8d12-d4844ee042e0",
+        "dominio": "consolidacion",
+        "postura": "COMPLEMENTAR",
+        "argumento": "Consolidador recibe 10 intervenciones de especialistas sobre 'Glosas elevadas' — síntesis requerida antes de recomendar.",
+        "evidencia_citada": [],
+        "rol": "CONSOLIDADOR"
+      }
+    ],
+    "alternativas": [
+      {
+        "hallazgo_ref": "Demora promedio factura→radicación: 9.0 días",
+        "alternativa_id": "ALT-RAD-1",
+        "descripcion": "Control diario de pendientes de radicación con alertas automáticas",
+        "fundamento": "Reduce demora factura→radicación identificada en indicadores",
+        "impacto_esperado": null,
+        "costo_estimado": "BAJO",
+        "esfuerzo": "BAJO",
+        "plazo": "30 días",
+        "riesgo": "BAJO",
+        "dependencias": [
+          "Equipo de radicación"
+        ],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "tiempo_dias": 9.0,
+          "umbral": 7,
+          "fuentes_documentales": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+              "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+              "titulo": "Anexo contractual v2",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+              "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:33.692427+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo quince (15) días."
+            },
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+              "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+              "titulo": "Anexo contractual v1",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+              "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:33.694825+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días."
+            }
+          ]
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Demora promedio factura→radicación: 9.0 días",
+        "alternativa_id": "ALT-RAD-2",
+        "descripcion": "Auditoría de cuellos de botella entre facturación y radicación",
+        "fundamento": "Identifica si la demora es de validación RIPS o envío al pagador",
+        "impacto_esperado": 0,
+        "costo_estimado": "MEDIO",
+        "esfuerzo": "MEDIO",
+        "plazo": "45 días",
+        "riesgo": "BAJO",
+        "dependencias": [
+          "TI",
+          "Facturación"
+        ],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "tiempo_dias": 9.0,
+          "umbral": 7,
+          "fuentes_documentales": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+              "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+              "titulo": "Anexo contractual v2",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+              "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:33.692427+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo quince (15) días."
+            },
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+              "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+              "titulo": "Anexo contractual v1",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+              "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:33.694825+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días."
+            }
+          ]
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Demora promedio factura→radicación: 9.0 días",
+        "alternativa_id": "ALT-RAD-3",
+        "descripcion": "Outsourcing parcial de radicación para picos de volumen",
+        "fundamento": "Alternativa si capacidad interna es el limitante",
+        "impacto_esperado": 0,
+        "costo_estimado": "ALTO",
+        "esfuerzo": "ALTO",
+        "plazo": "90 días",
+        "riesgo": "MEDIO",
+        "dependencias": [],
+        "reversibilidad": "MEDIA",
+        "evidencia": {
+          "tiempo_dias": 9.0,
+          "umbral": 7,
+          "fuentes_documentales": [
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+              "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+              "titulo": "Anexo contractual v2",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+              "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:33.692427+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo quince (15) días."
+            },
+            {
+              "tipo": "CONOCIMIENTO",
+              "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+              "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+              "titulo": "Anexo contractual v1",
+              "categoria": null,
+              "consulta": "radicación",
+              "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+              "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+              "dominio": "radicacion",
+              "fecha": "2026-08-27T00:58:33.694825+00:00",
+              "relevancia": 1.0,
+              "extracto": "Radicación máximo diez (10) días."
+            }
+          ]
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Porcentaje de glosa elevado: 10.74%",
+        "alternativa_id": "ALT-GLO-1",
+        "descripcion": "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+        "fundamento": "Ataca concentración de glosas por causal",
+        "impacto_esperado": 40380000.0,
+        "costo_estimado": "BAJO",
+        "esfuerzo": "MEDIO",
+        "plazo": "30 días",
+        "riesgo": "MEDIO",
+        "dependencias": [],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "por_causal": {
+            "Soporte incompleto": 20360000.0,
+            "Tarifa contractual": 20020000.0
+          }
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Porcentaje de glosa elevado: 10.74%",
+        "alternativa_id": "ALT-GLO-2",
+        "descripcion": "Comité semanal glosas-devoluciones con trazabilidad por factura",
+        "fundamento": "Integra devoluciones y respuestas en un solo flujo",
+        "impacto_esperado": 40380000.0,
+        "costo_estimado": "MEDIO",
+        "esfuerzo": "MEDIO",
+        "plazo": "60 días",
+        "riesgo": "MEDIO",
+        "dependencias": [],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "por_causal": {
+            "Soporte incompleto": 20360000.0,
+            "Tarifa contractual": 20020000.0
+          }
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Porcentaje de glosa elevado: 10.74%",
+        "alternativa_id": "ALT-GLO-3",
+        "descripcion": "Capacitación en codificación y soportes para servicios más glosados",
+        "fundamento": "Reduce glosas por soporte deficiente (H5)",
+        "impacto_esperado": 40380000.0,
+        "costo_estimado": "MEDIO",
+        "esfuerzo": "ALTO",
+        "plazo": "90 días",
+        "riesgo": "BAJO",
+        "dependencias": [],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "por_causal": {
+            "Soporte incompleto": 20360000.0,
+            "Tarifa contractual": 20020000.0
+          }
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Cartera vencida 91+ días: $69,850,000",
+        "alternativa_id": "ALT-CAR-1",
+        "descripcion": "Gestión prioritaria de cartera 91+ con negociación por pagador",
+        "fundamento": "Impacto directo en flujo de caja",
+        "impacto_esperado": 69850000.0,
+        "costo_estimado": "BAJO",
+        "esfuerzo": "MEDIO",
+        "plazo": "30 días",
+        "riesgo": "MEDIO",
+        "dependencias": [],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "aging": {
+            "0-30": 0.0,
+            "31-60": 14880000.0,
+            "61-90": 68750000.0,
+            "91+": 69850000.0
+          }
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Cartera vencida 91+ días: $69,850,000",
+        "alternativa_id": "ALT-CAR-2",
+        "descripcion": "Seguimiento contractual con pagadores de mayor mora",
+        "fundamento": "H7 — comportamiento del pagador cuando proceso interno es sólido",
+        "impacto_esperado": 69850000.0,
+        "costo_estimado": "MEDIO",
+        "esfuerzo": "MEDIO",
+        "plazo": "45 días",
+        "riesgo": "MEDIO",
+        "dependencias": [
+          "Jurídico",
+          "Cartera"
+        ],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "aging": {
+            "0-30": 0.0,
+            "31-60": 14880000.0,
+            "61-90": 68750000.0,
+            "91+": 69850000.0
+          }
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Cartera vencida 91+ días: $69,850,000",
+        "alternativa_id": "ALT-CAR-3",
+        "descripcion": "Factoring selectivo de cartera con pagadores de riesgo bajo",
+        "fundamento": "Liquidez inmediata con costo financiero",
+        "impacto_esperado": 69850000.0,
+        "costo_estimado": "ALTO",
+        "esfuerzo": "BAJO",
+        "plazo": "15 días",
+        "riesgo": "MEDIO",
+        "dependencias": [],
+        "reversibilidad": "BAJA",
+        "evidencia": {
+          "aging": {
+            "0-30": 0.0,
+            "31-60": 14880000.0,
+            "61-90": 68750000.0,
+            "91+": 69850000.0
+          }
+        },
+        "confianza": "MEDIA",
+        "tipo": "RECOMENDACION"
+      },
+      {
+        "hallazgo_ref": "Conflicto documental en plazos de radicación",
+        "alternativa_id": "ALT-CON-1",
+        "descripcion": "Plan de acción para: Conflicto documental en plazos de radicación",
+        "fundamento": "Existen documentos autorizados con plazos distintos. Se requiere validación humana antes de concluir cumplimiento contractual.",
+        "impacto_esperado": 0,
+        "costo_estimado": "MEDIO",
+        "esfuerzo": "MEDIO",
+        "plazo": "60 días",
+        "riesgo": "MEDIO",
+        "dependencias": [],
+        "reversibilidad": "ALTA",
+        "evidencia": {
+          "conflictos": [
+            {
+              "dominio": "radicacion",
+              "consulta": "radicación, plazo, plazo radicación, procedimiento radicación",
+              "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+              "fragmentos": 2,
+              "fuentes": [
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                  "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                  "titulo": "Anexo contractual v2",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                  "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.692427+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo quince (15) días."
+                },
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                  "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                  "titulo": "Anexo contractual v1",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                  "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.694825+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo diez (10) días."
+                }
+              ],
+              "analisis": {
+                "plazos_detectados": [
+                  {
+                    "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                    "document_name": "Anexo contractual v2",
+                    "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                    "dias": [
+                      15
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  },
+                  {
+                    "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                    "document_name": "Anexo contractual v1",
+                    "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                    "dias": [
+                      10
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  }
+                ],
+                "conflicto": true,
+                "requiere_validacion": true,
+                "plazo_preferido_dias": null,
+                "limites_unicos": [
+                  10,
+                  15
+                ]
+              },
+              "experiencia_separada": true
+            },
+            {
+              "analisis": {
+                "plazos_detectados": [
+                  {
+                    "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                    "document_name": "Anexo contractual v2",
+                    "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                    "dias": [
+                      15
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  },
+                  {
+                    "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                    "document_name": "Anexo contractual v1",
+                    "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                    "dias": [
+                      10
+                    ],
+                    "vigente_desde": null,
+                    "vigente_hasta": null
+                  }
+                ],
+                "conflicto": true,
+                "requiere_validacion": true,
+                "plazo_preferido_dias": null,
+                "limites_unicos": [
+                  10,
+                  15
+                ]
+              },
+              "dominio": "contratos",
+              "fuentes": [
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+                  "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+                  "titulo": "Anexo contractual v2",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                  "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.692427+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo quince (15) días."
+                },
+                {
+                  "tipo": "CONOCIMIENTO",
+                  "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+                  "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+                  "titulo": "Anexo contractual v1",
+                  "categoria": null,
+                  "consulta": "radicación",
+                  "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+                  "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+                  "dominio": "radicacion",
+                  "fecha": "2026-08-27T00:58:33.694825+00:00",
+                  "relevancia": 1.0,
+                  "extracto": "Radicación máximo diez (10) días."
+                }
+              ]
+            }
+          ]
+        },
+        "confianza": "BAJA",
+        "tipo": "RECOMENDACION"
+      }
+    ],
+    "priorizacion": {
+      "metodologia": "prioridad = impacto_económico(35%) + urgencia(25%) + confianza(15%) + esfuerzo_inverso(10%) + recuperabilidad(10%) + riesgo_inverso(5%)",
+      "ranking": [
+        {
+          "tipo": "alternativa",
+          "id": "ALT-GLO-1",
+          "titulo": "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+          "accion": "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+          "prioridad": 78.77,
+          "desglose": {
+            "impacto_economico": 28.27,
+            "urgencia": 25.0,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 3.0
+          },
+          "por_que_primero": "'Plantillas de respuesta para las 3 causales con mayor valor ' prioriza por alto impacto económico (28.27 pts).",
+          "ranking": 1
+        },
+        {
+          "tipo": "alternativa",
+          "id": "ALT-GLO-2",
+          "titulo": "Comité semanal glosas-devoluciones con trazabilidad por factura",
+          "accion": "Comité semanal glosas-devoluciones con trazabilidad por factura",
+          "prioridad": 71.27,
+          "desglose": {
+            "impacto_economico": 28.27,
+            "urgencia": 17.5,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 3.0
+          },
+          "por_que_primero": "'Comité semanal glosas-devoluciones con trazabilidad por fact' prioriza por alto impacto económico (28.27 pts).",
+          "ranking": 2
+        },
+        {
+          "tipo": "alternativa",
+          "id": "ALT-RAD-1",
+          "titulo": "Control diario de pendientes de radicación con alertas automáticas",
+          "accion": "Control diario de pendientes de radicación con alertas automáticas",
+          "prioridad": 63.5,
+          "desglose": {
+            "impacto_economico": 7.0,
+            "urgencia": 25.0,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 10.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 5.0
+          },
+          "por_que_primero": "'Control diario de pendientes de radicación con alertas autom' prioriza por urgencia operativa (25.0 pts).",
+          "ranking": 3
+        },
+        {
+          "tipo": "alternativa",
+          "id": "ALT-GLO-3",
+          "titulo": "Capacitación en codificación y soportes para servicios más glosados",
+          "accion": "Capacitación en codificación y soportes para servicios más glosados",
+          "prioridad": 62.77,
+          "desglose": {
+            "impacto_economico": 28.27,
+            "urgencia": 10.0,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 3.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 5.0
+          },
+          "por_que_primero": "'Capacitación en codificación y soportes para servicios más g' prioriza por alto impacto económico (28.27 pts).",
+          "ranking": 4
+        },
+        {
+          "tipo": "alternativa",
+          "id": "ALT-RAD-2",
+          "titulo": "Auditoría de cuellos de botella entre facturación y radicación",
+          "accion": "Auditoría de cuellos de botella entre facturación y radicación",
+          "prioridad": 52.0,
+          "desglose": {
+            "impacto_economico": 7.0,
+            "urgencia": 17.5,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 5.0
+          },
+          "por_que_primero": "'Auditoría de cuellos de botella entre facturación y radicaci' prioriza por urgencia operativa (17.5 pts).",
+          "ranking": 5
+        },
+        {
+          "tipo": "propuesta",
+          "id": "Cartera vencida 91+ días: $69,850,000",
+          "titulo": "Cartera vencida 91+ días: $69,850,000",
+          "accion": "Activar gestión de cobro prioritaria para facturas con mora superior a 91 días y negociar acuerdos de pago.",
+          "prioridad": 48.5,
+          "desglose": {
+            "impacto_economico": 0.0,
+            "urgencia": 25.0,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 4.0,
+            "riesgo_inverso": 3.0
+          },
+          "finops": {
+            "referencia": "Cartera vencida 91+ días: $69,850,000",
+            "costo_estimado": 2500000,
+            "beneficio_esperado": 10.35,
+            "valor_recuperable": 10.35,
+            "ahorro": 10.35,
+            "roi": -1.0,
+            "payback_dias": 60,
+            "certidumbre": "ESTIMADO",
+            "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+            "advertencia": "Estimación — no presentar como resultado real."
+          },
+          "por_que_primero": "'Cartera vencida 91+ días: $69,850,000' prioriza por urgencia operativa (25.0 pts).",
+          "ranking": 6
+        },
+        {
+          "tipo": "propuesta",
+          "id": "Conflicto documental en plazos de radicación",
+          "titulo": "Conflicto documental en plazos de radicación",
+          "accion": "Atender hallazgo: Conflicto documental en plazos de radicación con plan detallado y responsable asignado.",
+          "prioridad": 43.5,
+          "desglose": {
+            "impacto_economico": 7.0,
+            "urgencia": 17.5,
+            "confianza": 6.0,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 4.0,
+            "riesgo_inverso": 3.0
+          },
+          "finops": {
+            "referencia": "Conflicto documental en plazos de radicación",
+            "costo_estimado": 4500000.0,
+            "beneficio_esperado": null,
+            "valor_recuperable": null,
+            "ahorro": null,
+            "roi": null,
+            "payback_dias": 90,
+            "certidumbre": "NO CUANTIFICABLE",
+            "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+            "advertencia": "Estimación — no presentar como resultado real."
+          },
+          "por_que_primero": "'Conflicto documental en plazos de radicación' prioriza por urgencia operativa (17.5 pts).",
+          "ranking": 7
+        },
+        {
+          "tipo": "propuesta",
+          "id": "Demora promedio factura→radicación: 9.0 días",
+          "titulo": "Demora promedio factura→radicación: 9.0 días",
+          "accion": "Implementar control diario de facturas pendientes de radicación con alerta a los 5 días y escalamiento al día 10.",
+          "prioridad": 41.0,
+          "desglose": {
+            "impacto_economico": 0.0,
+            "urgencia": 17.5,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 4.0,
+            "riesgo_inverso": 3.0
+          },
+          "finops": {
+            "referencia": "Demora promedio factura→radicación: 9.0 días",
+            "costo_estimado": 4500000.0,
+            "beneficio_esperado": 27626400.0,
+            "valor_recuperable": 27626400.0,
+            "ahorro": 27626400.0,
+            "roi": 5.14,
+            "payback_dias": 90,
+            "certidumbre": "ESTIMADO",
+            "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+            "advertencia": "Estimación — no presentar como resultado real."
+          },
+          "por_que_primero": "'Demora promedio factura→radicación: 9.0 días' prioriza por urgencia operativa (17.5 pts).",
+          "ranking": 8
+        },
+        {
+          "tipo": "propuesta",
+          "id": "Porcentaje de glosa elevado: 10.74%",
+          "titulo": "Porcentaje de glosa elevado: 10.74%",
+          "accion": "Revisar causales principales de glosa y ajustar plantillas de respuesta para las 3 causales con mayor valor.",
+          "prioridad": 41.0,
+          "desglose": {
+            "impacto_economico": 0.0,
+            "urgencia": 17.5,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 6.0,
+            "recuperabilidad": 4.0,
+            "riesgo_inverso": 3.0
+          },
+          "finops": {
+            "referencia": "Porcentaje de glosa elevado: 10.74%",
+            "costo_estimado": 4500000.0,
+            "beneficio_esperado": 6.0,
+            "valor_recuperable": 6.0,
+            "ahorro": 6.0,
+            "roi": -1.0,
+            "payback_dias": 90,
+            "certidumbre": "ESTIMADO",
+            "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+            "advertencia": "Estimación — no presentar como resultado real."
+          },
+          "por_que_primero": "'Porcentaje de glosa elevado: 10.74%' prioriza por urgencia operativa (17.5 pts).",
+          "ranking": 9
+        },
+        {
+          "tipo": "alternativa",
+          "id": "ALT-RAD-3",
+          "titulo": "Outsourcing parcial de radicación para picos de volumen",
+          "accion": "Outsourcing parcial de radicación para picos de volumen",
+          "prioridad": 39.5,
+          "desglose": {
+            "impacto_economico": 7.0,
+            "urgencia": 10.0,
+            "confianza": 10.5,
+            "esfuerzo_inverso": 3.0,
+            "recuperabilidad": 6.0,
+            "riesgo_inverso": 3.0
+          },
+          "por_que_primero": "'Outsourcing parcial de radicación para picos de volumen' prioriza por confianza en la evidencia (10.5 pts).",
+          "ranking": 10
+        }
+      ],
+      "explicacion": "El ranking no es una suma arbitraria: cada factor tiene peso documentado en 'metodologia'."
+    },
+    "escenarios": {
+      "tipo": "PROYECTADO",
+      "escenarios": {
+        "CONSERVADOR": {
+          "nombre": "Conservador",
+          "valor_recuperable_estimado": 12278400.0,
+          "tasa_recuperacion": 0.08,
+          "time_reduction_days": 2,
+          "supuestos": [
+            "Glosas elevadas identificadas.  Efecto mínimo (8% recuperación).",
+            "Reducción de 2 días en factura→radicación"
+          ],
+          "certidumbre": "PROYECTADO",
+          "efecto_tiempo_radicacion_dias": 2
+        },
+        "PROBABLE": {
+          "nombre": "Probable",
+          "valor_recuperable_estimado": 27626400.0,
+          "tasa_recuperacion": 0.18,
+          "time_reduction_days": 5,
+          "supuestos": [
+            "Glosas elevadas identificadas.  Efecto moderado (18% recuperación).",
+            "Reducción de 5 días en factura→radicación"
+          ],
+          "certidumbre": "PROYECTADO",
+          "efecto_tiempo_radicacion_dias": 5,
+          "accion_simulada": "Implementar control diario de facturas pendientes de radicación con alerta a los 5 días y escalamiento al día 10."
+        },
+        "OPTIMISTA": {
+          "nombre": "Optimista",
+          "valor_recuperable_estimado": 49113600.0,
+          "tasa_recuperacion": 0.32,
+          "time_reduction_days": 10,
+          "supuestos": [
+            "Glosas elevadas identificadas.  Efecto alto si ejecución disciplinada (32% recuperación).",
+            "Reducción de 10 días en factura→radicación"
+          ],
+          "certidumbre": "PROYECTADO",
+          "efecto_tiempo_radicacion_dias": 10
+        }
+      },
+      "advertencia": "Simulación con supuestos — no presentar como resultado real."
+    },
+    "finops": [
+      {
+        "referencia": "Demora promedio factura→radicación: 9.0 días",
+        "costo_estimado": 4500000.0,
+        "beneficio_esperado": 27626400.0,
+        "valor_recuperable": 27626400.0,
+        "ahorro": 27626400.0,
+        "roi": 5.14,
+        "payback_dias": 90,
+        "certidumbre": "ESTIMADO",
+        "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+        "advertencia": "Estimación — no presentar como resultado real."
+      },
+      {
+        "referencia": "Porcentaje de glosa elevado: 10.74%",
+        "costo_estimado": 4500000.0,
+        "beneficio_esperado": 6.0,
+        "valor_recuperable": 6.0,
+        "ahorro": 6.0,
+        "roi": -1.0,
+        "payback_dias": 90,
+        "certidumbre": "ESTIMADO",
+        "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+        "advertencia": "Estimación — no presentar como resultado real."
+      },
+      {
+        "referencia": "Cartera vencida 91+ días: $69,850,000",
+        "costo_estimado": 2500000,
+        "beneficio_esperado": 10.35,
+        "valor_recuperable": 10.35,
+        "ahorro": 10.35,
+        "roi": -1.0,
+        "payback_dias": 60,
+        "certidumbre": "ESTIMADO",
+        "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+        "advertencia": "Estimación — no presentar como resultado real."
+      },
+      {
+        "referencia": "Conflicto documental en plazos de radicación",
+        "costo_estimado": 4500000.0,
+        "beneficio_esperado": null,
+        "valor_recuperable": null,
+        "ahorro": null,
+        "roi": null,
+        "payback_dias": 90,
+        "certidumbre": "NO CUANTIFICABLE",
+        "metodologia": "Beneficio = impacto económico del hallazgo × tasa de escenario probable",
+        "advertencia": "Estimación — no presentar como resultado real."
+      }
+    ],
+    "recomendacion_consolidada": {
+      "que_ocurre": "Demora promedio factura→radicación: 9.0 días; Porcentaje de glosa elevado: 10.74%; Cartera vencida 91+ días: $69,850,000",
+      "donde": "Dominios: cartera, contratos, glosas, radicacion. Mayor exposición: Sin pagador.",
+      "desde_cuando": "2026-07 → 2026-07",
+      "cuanto_representa": 153480000.0,
+      "por_que_podria": "Información insuficiente",
+      "que_demostrado": [
+        "Ninguna causa demostrada — solo asociaciones"
+      ],
+      "que_no_demostrado": [
+        "Glosas elevadas",
+        "Combinación de factores",
+        "Devoluciones del pagador",
+        "Soportes deficientes",
+        "Comportamiento tardío del pagador"
+      ],
+      "oportunidades": [
+        "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+        "Comité semanal glosas-devoluciones con trazabilidad por factura",
+        "Control diario de pendientes de radicación con alertas automáticas",
+        "Capacitación en codificación y soportes para servicios más glosados",
+        "Auditoría de cuellos de botella entre facturación y radicación"
+      ],
+      "alternativas_evaluadas": 10,
+      "recomendacion": "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+      "por_que_recomendamos": "'Plantillas de respuesta para las 3 causales con mayor valor ' prioriza por alto impacto económico (28.27 pts).",
+      "cuanto_podria_valer": 27626400.0,
+      "que_hacer": [
+        "Plantillas de respuesta para las 3 causales con mayor valor glosado",
+        "Comité semanal glosas-devoluciones con trazabilidad por factura",
+        "Control diario de pendientes de radicación con alertas automáticas"
+      ],
+      "como_medir": [
+        "Días promedio factura→radicación (meta: <7)",
+        "Porcentaje de glosa (meta: reducir 5 p.p.)",
+        "Saldo cartera 91+ días",
+        "Seguimiento acción: Plantillas de respuesta para las 3 causales con mayor valor glosado"
+      ],
+      "calidad_datos": "PARCIAL",
+      "especialistas_involucrados": 4,
+      "solicitud": "Nuestro flujo de caja empeora. Necesito causas, impacto y plan priorizado."
+    },
+    "oportunidades": [
+      {
+        "id": "91ccbc89-6d28-440d-981d-8e8c6605b6b2",
+        "problema": "Cartera vencida 91+ días: $69,850,000",
+        "evidencia": "Existe saldo en mora superior a 91 días por $69,850,000.",
+        "causa_probable": "Requiere validación con equipo operativo.",
+        "impacto": "Impacto estimado: $69,850,000",
+        "accion_propuesta": "Activar gestión de cobro prioritaria para facturas con mora superior a 91 días y negociar acuerdos de pago.",
+        "responsable_sugerido": "Analista de cartera",
+        "plazo": "30 días",
+        "indicador_seguimiento": "aging_91_mas",
+        "meta": "Reducir cartera 91+ en 20%",
+        "impacto_esperado": "Mitigar Cartera vencida 91+ días: $69,850,000",
+        "confianza": "MEDIA",
+        "prioridad": 48.5
+      },
+      {
+        "id": "3e6ef551-204c-48c4-a2ee-0a7089fccca2",
+        "problema": "Conflicto documental en plazos de radicación",
+        "evidencia": "Existen documentos autorizados con plazos distintos. Se requiere validación humana antes de concluir cumplimiento contractual.",
+        "causa_probable": "Requiere validación con equipo operativo.",
+        "impacto": "Existen documentos autorizados con plazos distintos. Se requiere validación humana antes de concluir cumplimiento contractual.",
+        "accion_propuesta": "Atender hallazgo: Conflicto documental en plazos de radicación con plan detallado y responsable asignado.",
+        "responsable_sugerido": "Coordinador IPS",
+        "plazo": "60 días",
+        "indicador_seguimiento": "indicador_general",
+        "meta": "Atender hallazgo identificado",
+        "impacto_esperado": "Mitigar Conflicto documental en plazos de radicación",
+        "confianza": "BAJA",
+        "prioridad": 43.5
+      },
+      {
+        "id": "13fe4ce7-8649-4b31-9fb8-9d42a516552b",
+        "problema": "Demora promedio factura→radicación: 9.0 días",
+        "evidencia": "El tiempo promedio entre facturación y radicación es 9.0 días, superior al umbral de 7 días.",
+        "causa_probable": "Posible demora entre validación RIPS y radicación ante pagador.",
+        "impacto": "El tiempo promedio entre facturación y radicación es 9.0 días, superior al umbral de 7 días.",
+        "accion_propuesta": "Implementar control diario de facturas pendientes de radicación con alerta a los 5 días y escalamiento al día 10.",
+        "responsable_sugerido": "Coordinador de radicación",
+        "plazo": "60 días",
+        "indicador_seguimiento": "dias_factura_radicacion",
+        "meta": "Reducir tiempo factura→radicación a <7 días",
+        "impacto_esperado": "Mitigar Demora promedio factura→radicación: 9.0 días",
+        "confianza": "MEDIA",
+        "prioridad": 41.0
+      },
+      {
+        "id": "cfd0dc3a-6210-48f6-a32f-f3c081a921a2",
+        "problema": "Porcentaje de glosa elevado: 10.74%",
+        "evidencia": "El valor glosado representa el 10.74% de la facturación base ($40,380,000).",
+        "causa_probable": "50.4% de glosas asociadas a causal Soporte incompleto.",
+        "impacto": "Impacto estimado: $40,380,000",
+        "accion_propuesta": "Revisar causales principales de glosa y ajustar plantillas de respuesta para las 3 causales con mayor valor.",
+        "responsable_sugerido": "Analista de glosas",
+        "plazo": "60 días",
+        "indicador_seguimiento": "porcentaje_glosa",
+        "meta": "Reducir porcentaje de glosa en 5 puntos",
+        "impacto_esperado": "Mitigar Porcentaje de glosa elevado: 10.74%",
+        "confianza": "MEDIA",
+        "prioridad": 41.0
+      }
+    ],
+    "work_plan_id": null,
+    "planes_accion": [],
+    "plan_accion": [],
+    "especialistas": {
+      "dominios": [
+        "cartera",
+        "facturacion",
+        "glosas",
+        "radicacion"
+      ],
+      "asignaciones": [
+        {
+          "employee_id": "10c1270a-2f85-4e6e-815b-6f1eb8724bc2",
+          "employee_code": "ips-cartera-analyst",
+          "employee_name": "Analista de Cartera IA",
+          "specialty": "Cartera IPS",
+          "domain": "cartera",
+          "score": 0.925,
+          "factors": {
+            "capacidades": 1.0,
+            "herramientas": 1.0,
+            "especialidad": 0.2,
+            "disponibilidad": 1.0,
+            "experiencia": 0.5
+          }
+        },
+        {
+          "employee_id": "cea9be62-b39c-4443-898c-83f9be590413",
+          "employee_code": "ips-facturacion-analyst",
+          "employee_name": "Analista de Facturación IA",
+          "specialty": "Facturación IPS",
+          "domain": "facturacion",
+          "score": 0.925,
+          "factors": {
+            "capacidades": 1.0,
+            "herramientas": 1.0,
+            "especialidad": 0.2,
+            "disponibilidad": 1.0,
+            "experiencia": 0.5
+          }
+        },
+        {
+          "employee_id": "e79a1277-b5c0-4b5f-b6e2-1138374dac29",
+          "employee_code": "ips-glosas-analyst",
+          "employee_name": "Analista de Glosas IA",
+          "specialty": "Glosas IPS",
+          "domain": "glosas",
+          "score": 0.925,
+          "factors": {
+            "capacidades": 1.0,
+            "herramientas": 1.0,
+            "especialidad": 0.2,
+            "disponibilidad": 1.0,
+            "experiencia": 0.5
+          }
+        },
+        {
+          "employee_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+          "employee_code": "ips-radicacion-analyst",
+          "employee_name": "Analista de Radicación IA",
+          "specialty": "Radicación IPS",
+          "domain": "radicacion",
+          "score": 0.925,
+          "factors": {
+            "capacidades": 1.0,
+            "herramientas": 1.0,
+            "especialidad": 0.2,
+            "disponibilidad": 1.0,
+            "experiencia": 0.5
+          }
+        }
+      ],
+      "consolidador": {
+        "employee_id": "b9c938e7-9c48-4543-8d12-d4844ee042e0",
+        "employee_code": "ips-estrategico-analyst",
+        "employee_name": "Analista Estratégico IPS IA",
+        "specialty": "Analítica Estratégica IPS",
+        "domain": "estrategico",
+        "score": 0.925,
+        "factors": {
+          "capacidades": 1.0,
+          "herramientas": 1.0,
+          "especialidad": 0.2,
+          "disponibilidad": 1.0,
+          "experiencia": 0.5
+        }
+      }
+    },
+    "comparacion_historica": {
+      "disponible": false,
+      "mensaje": "Sin histórico previo para esta IPS"
+    },
+    "conocimiento": {
+      "utilizado": true,
+      "mensaje": null,
+      "fuentes": [
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "12c7cf56-c9ae-40e5-9363-609ceaef61c8",
+          "chunk_id": "9c0f5342-f96e-46b6-8759-0711f49456cf",
+          "titulo": "Anexo contractual v2",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+          "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T00:58:33.692427+00:00",
+          "relevancia": 1.0,
+          "extracto": "Radicación máximo quince (15) días."
+        },
+        {
+          "tipo": "CONOCIMIENTO",
+          "document_id": "7aea8278-5554-41e2-ae15-133506d7fbff",
+          "chunk_id": "020cb5f0-2dac-48c6-a814-97f15f15bf82",
+          "titulo": "Anexo contractual v1",
+          "categoria": null,
+          "consulta": "radicación",
+          "especialista_id": "f0e6da97-a59e-4357-a2e6-540e675762c8",
+          "analysis_id": "36c3d411-b866-40bd-9d59-804a5c16bb6b",
+          "dominio": "radicacion",
+          "fecha": "2026-08-27T00:58:33.694825+00:00",
+          "relevancia": 1.0,
+          "extracto": "Radicación máximo diez (10) días."
+        }
+      ],
+      "requiere_validacion": true
+    },
+    "experiencia": {
+      "casos_similares": []
+    },
+    "creado": "2026-08-27T00:58:33.659609"
+  }
+}

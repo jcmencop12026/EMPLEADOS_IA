@@ -1,0 +1,31 @@
+{
+  "paquete": "/tmp/motor_cert_3iah2jy8/MOTOR_ANALITICO_1000_DATASET_CERTIFICACION",
+  "fase": "CIEGA",
+  "casos": [
+    {
+      "caso": "CASO_A",
+      "archivo": "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_motor_1000/brutos/CASO_A_antes_oraculo.json",
+      "suficiencia": "PARCIAL"
+    },
+    {
+      "caso": "CASO_B",
+      "archivo": "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_motor_1000/brutos/CASO_B_antes_oraculo.json",
+      "suficiencia": "PARCIAL"
+    },
+    {
+      "caso": "CASO_C",
+      "archivo": "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_motor_1000/brutos/CASO_C_antes_oraculo.json",
+      "suficiencia": "PARCIAL"
+    },
+    {
+      "caso": "CASO_D",
+      "archivo": "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_motor_1000/brutos/CASO_D_antes_oraculo.json",
+      "suficiencia": "PARCIAL"
+    },
+    {
+      "caso": "CASO_E",
+      "archivo": "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_motor_1000/brutos/CASO_E_antes_oraculo.json",
+      "suficiencia": "INSUFICIENTE"
+    }
+  ]
+}

@@ -106,11 +106,20 @@ def _domain_relevance(domain: str, fragment: dict[str, Any]) -> bool:
 
 
 def extract_deadline_days(text: str) -> list[int]:
+    """Extrae plazos de radicación evitando confundir plazos de pago en el mismo documento."""
     found: list[int] = []
-    for match in re.finditer(r"(\d+)\s*d[ií]as?", text.lower()):
-        found.append(int(match.group(1)))
-    for match in re.finditer(r"plazo\s*(?:m[aá]ximo)?\s*(?:de)?\s*(\d+)", text.lower()):
-        found.append(int(match.group(1)))
+    lower = text.lower()
+    for segment in re.split(r"[.;]", lower):
+        if "pago" in segment:
+            continue
+        if "radic" not in segment and "plazo" not in segment:
+            continue
+        for match in re.finditer(r"(\d+)\s*d[ií]as?", segment):
+            found.append(int(match.group(1)))
+        for match in re.finditer(r"\((\d+)\)\s*d[ií]as?", segment):
+            found.append(int(match.group(1)))
+        for match in re.finditer(r"plazo\s*(?:m[aá]ximo)?\s*(?:de)?\s*(\d+)", segment):
+            found.append(int(match.group(1)))
     return found
 
 
@@ -267,7 +276,22 @@ def collect_analysis_knowledge(
         )
 
     all_sources = [src for bundle in bundles for src in bundle.get("fuentes", [])]
+    merged_fragments: list[dict[str, Any]] = []
+    for bundle in bundles:
+        for src in bundle.get("fuentes", []):
+            merged_fragments.append(
+                {
+                    "document_id": src.get("document_id"),
+                    "document_name": src.get("titulo"),
+                    "chunk_id": src.get("chunk_id"),
+                    "content": src.get("extracto", ""),
+                    "metadata": {},
+                }
+            )
+    merged_analysis = analyze_fragments(merged_fragments) if merged_fragments else {}
     conflicts = [b for b in bundles if b.get("analisis", {}).get("conflicto")]
+    if merged_analysis.get("conflicto"):
+        conflicts.append({"analisis": merged_analysis, "dominio": "contratos", "fuentes": all_sources})
     return {
         "utilizado": bool(all_sources),
         "mensaje": (
@@ -278,7 +302,9 @@ def collect_analysis_knowledge(
         "consultas": bundles,
         "fuentes_consultadas": all_sources,
         "conflictos": conflicts,
-        "requiere_validacion": any(b.get("analisis", {}).get("requiere_validacion") for b in bundles),
+        "requiere_validacion": merged_analysis.get("requiere_validacion")
+        or any(b.get("analisis", {}).get("requiere_validacion") for b in bundles),
+        "analisis_global": merged_analysis,
     }
 
 
