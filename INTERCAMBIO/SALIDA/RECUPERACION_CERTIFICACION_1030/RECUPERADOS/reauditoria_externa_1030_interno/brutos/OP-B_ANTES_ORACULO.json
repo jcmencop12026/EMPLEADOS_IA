@@ -1,0 +1,110 @@
+{
+  "caso": "OP-B",
+  "timestamp": "2026-08-27T20:54:05.453321+00:00",
+  "pipeline": {
+    "signal_id": "938aa1b2-e98c-4b75-a6f9-a2bc58761829",
+    "opportunity_id": "d251bd5c-e1ce-4921-931f-b28a4c4f9bfc",
+    "codigo": "OPP-00002",
+    "estado": "PRIORIZADA",
+    "pertinencia": "POSPONER",
+    "prioridad_score": 0.3584,
+    "siguiente_accion": {
+      "que": "Diseñar e implementar automatización del proceso repetitivo",
+      "por_que": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN",
+      "cuando": "OBSERVAR",
+      "quien": "Equipo IA asignado",
+      "quien_id": null,
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Automatización",
+      "costo_estimado": 0.0,
+      "autorizacion": "PROHIBIDA",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": false
+    },
+    "capacidad": {
+      "empleados_disponibles": 0,
+      "herramientas_activas": 0,
+      "ejecutable": false,
+      "requiere_aprobacion": false,
+      "human_gate": "PROHIBIDA",
+      "limitaciones": [
+        "Sin empleados IA activos"
+      ],
+      "mensaje": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN"
+    },
+    "deduplicated": false
+  },
+  "oportunidad": {
+    "id": "d251bd5c-e1ce-4921-931f-b28a4c4f9bfc",
+    "codigo": "OPP-00002",
+    "estado": "PRIORIZADA",
+    "dominio": "administrativo",
+    "tipo": "AUTOMATIZACION",
+    "pertinencia": "POSPONER",
+    "momento": "OBSERVAR",
+    "prioridad_score": 0.3584,
+    "prioridad_componentes": {
+      "impacto": 0.0125,
+      "urgencia": 0.04,
+      "confianza": 0.105,
+      "riesgo_inverso": 0.06,
+      "esfuerzo_inverso": 0.09,
+      "valor_esperado": 0.0029,
+      "probabilidad": 0.048
+    },
+    "siguiente_accion": {
+      "que": "Diseñar e implementar automatización del proceso repetitivo",
+      "por_que": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN",
+      "cuando": "OBSERVAR",
+      "quien": "Equipo IA asignado",
+      "quien_id": null,
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Automatización",
+      "costo_estimado": 0.0,
+      "autorizacion": "PROHIBIDA",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": false
+    },
+    "valor_potencial": 400000.0,
+    "valor_materializado": 0.0,
+    "contexto": {
+      "componentes": {
+        "organization_id": "02b54396-24b6-4542-b6cf-f797be426c99",
+        "dominio": "administrativo",
+        "indicadores": {
+          "volumen": 5000,
+          "valor_unitario": 500
+        },
+        "historico": {},
+        "eventos": [],
+        "conocimiento_autorizado": null,
+        "workplans_abiertos": 0,
+        "oportunidades_similares": 0,
+        "payload": {
+          "titulo": "Automatización alto volumen bajo valor unitario",
+          "tipo_oportunidad": "AUTOMATIZACION",
+          "indicadores": {
+            "volumen": 5000,
+            "valor_unitario": 500
+          },
+          "impacto_estimado": 500000,
+          "valor_potencial": 400000,
+          "urgencia": "BAJA",
+          "esfuerzo": "BAJO",
+          "source_reference": "op-b-1e70fe"
+        }
+      },
+      "suficiencia": "SUFICIENTE",
+      "faltantes": [],
+      "conflicto": false
+    }
+  }
+}

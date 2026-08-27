@@ -1,0 +1,8 @@
+{
+  "problema": "multicausal",
+  "dominio_principal": "estrategico",
+  "lider_keyword": "Estratégico",
+  "requiere_validador": true,
+  "requiere_diversidad_especialidades": true,
+  "min_complementarios": 2
+}

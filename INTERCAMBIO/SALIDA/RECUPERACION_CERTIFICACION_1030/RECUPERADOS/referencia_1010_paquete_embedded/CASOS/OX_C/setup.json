@@ -1,0 +1,36 @@
+{
+  "available_data": ["cartera", "contratos", "pagos"],
+  "experiencias": [
+    {
+      "employee_code": "ips-cartera-analyst",
+      "count": 30,
+      "dominio": "cartera",
+      "tipo_problema": "comportamiento_pagador",
+      "estado": "PARCIAL",
+      "resultado_real": "Mejora marginal en mora",
+      "kpi_despues": {"dias_mora": 42}
+    },
+    {
+      "employee_code": "ips-contractual-analyst",
+      "count": 4,
+      "dominio": "cartera",
+      "tipo_problema": "comportamiento_pagador",
+      "estado": "EXITO",
+      "resultado_real": "Renegociación contractual redujo mora 18 días",
+      "kpi_despues": {"dias_mora": 12},
+      "condiciones_exito": ["cláusulas de plazo renegociadas"]
+    },
+    {
+      "employee_code": "ips-contractual-analyst",
+      "count": 3,
+      "dominio": "contratos",
+      "tipo_problema": "contractual_tarifas",
+      "estado": "EXITO",
+      "resultado_real": "Ajuste tarifario y plazos pagador"
+    }
+  ],
+  "finops": [
+    {"employee_code": "ips-cartera-analyst", "cost": 0.01},
+    {"employee_code": "ips-contractual-analyst", "cost": 0.14}
+  ]
+}

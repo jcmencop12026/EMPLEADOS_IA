@@ -1,0 +1,7 @@
+{
+  "problema": "datos_insuficientes",
+  "dominio_principal": "estrategico",
+  "tipo_problema": "datos_insuficientes",
+  "lider_prohibido": "Cartera",
+  "no_inventar_experiencia_cartera": true
+}

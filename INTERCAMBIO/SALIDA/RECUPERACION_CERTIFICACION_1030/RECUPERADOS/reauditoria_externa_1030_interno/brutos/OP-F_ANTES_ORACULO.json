@@ -1,0 +1,117 @@
+{
+  "caso": "OP-F",
+  "timestamp": "2026-08-27T20:54:05.475853+00:00",
+  "pipeline": {
+    "signal_id": "a053cc3c-4f6b-44fc-8326-11b1f9966850",
+    "opportunity_id": "00b9d82f-fa3e-4e7a-94c6-20d69930d3e1",
+    "codigo": "OPP-00005",
+    "estado": "PRIORIZADA",
+    "pertinencia": "SOLICITAR_APROBACION",
+    "prioridad_score": 0.4571,
+    "siguiente_accion": {
+      "que": "Activar campaña de conversión con capacidad disponible",
+      "por_que": "Información contradictoria — requiere validación humana",
+      "cuando": "OBSERVAR",
+      "quien": "Equipo IA asignado",
+      "quien_id": null,
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Automatización",
+      "costo_estimado": 0.0,
+      "autorizacion": "PROHIBIDA",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": false
+    },
+    "capacidad": {
+      "empleados_disponibles": 0,
+      "herramientas_activas": 0,
+      "ejecutable": false,
+      "requiere_aprobacion": false,
+      "human_gate": "PROHIBIDA",
+      "limitaciones": [
+        "Sin empleados IA activos"
+      ],
+      "mensaje": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN"
+    },
+    "deduplicated": false
+  },
+  "oportunidad": {
+    "id": "00b9d82f-fa3e-4e7a-94c6-20d69930d3e1",
+    "codigo": "OPP-00005",
+    "estado": "PRIORIZADA",
+    "dominio": "comercial",
+    "tipo": "COMERCIAL",
+    "pertinencia": "SOLICITAR_APROBACION",
+    "momento": "OBSERVAR",
+    "prioridad_score": 0.4571,
+    "prioridad_componentes": {
+      "impacto": 0.125,
+      "urgencia": 0.1,
+      "confianza": 0.0525,
+      "riesgo_inverso": 0.06,
+      "esfuerzo_inverso": 0.05,
+      "valor_esperado": 0.0216,
+      "probabilidad": 0.048
+    },
+    "siguiente_accion": {
+      "que": "Activar campaña de conversión con capacidad disponible",
+      "por_que": "Información contradictoria — requiere validación humana",
+      "cuando": "OBSERVAR",
+      "quien": "Equipo IA asignado",
+      "quien_id": null,
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Automatización",
+      "costo_estimado": 0.0,
+      "autorizacion": "PROHIBIDA",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": false
+    },
+    "valor_potencial": 3000000.0,
+    "valor_materializado": 0.0,
+    "contexto": {
+      "componentes": {
+        "organization_id": "02b54396-24b6-4542-b6cf-f797be426c99",
+        "dominio": "comercial",
+        "indicadores": {
+          "tasa_conversion": 0.35,
+          "valor_principal": 0.35
+        },
+        "historico": {},
+        "eventos": [],
+        "conocimiento_autorizado": {
+          "valor": 0.08,
+          "fuente": "manual_comercial"
+        },
+        "workplans_abiertos": 0,
+        "oportunidades_similares": 0,
+        "payload": {
+          "titulo": "Información contradictoria",
+          "tipo_oportunidad": "COMERCIAL",
+          "indicadores": {
+            "tasa_conversion": 0.35,
+            "valor_principal": 0.35
+          },
+          "conocimiento_autorizado": {
+            "valor": 0.08,
+            "fuente": "manual_comercial"
+          },
+          "impacto_estimado": 5000000,
+          "valor_potencial": 3000000,
+          "source_reference": "op-f-2b9e4d"
+        },
+        "conflicto": true,
+        "conflicto_detalle": "Indicadores y conocimiento autorizado divergen"
+      },
+      "suficiencia": "PARCIAL",
+      "faltantes": [],
+      "conflicto": true
+    }
+  }
+}

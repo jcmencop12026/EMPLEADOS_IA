@@ -1,0 +1,28 @@
+{
+  "available_data": ["radicacion", "facturacion", "cartera"],
+  "experiencias": [
+    {
+      "employee_code": "ips-cartera-analyst",
+      "count": 18,
+      "dominio": "radicacion",
+      "tipo_problema": "radicacion_tardia",
+      "estado": "FRACASO",
+      "resultado_real": "Sin mejora en días de radicación",
+      "kpi_despues": {"dias_radicacion": 19}
+    },
+    {
+      "employee_code": "ips-radicacion-analyst",
+      "count": 4,
+      "dominio": "radicacion",
+      "tipo_problema": "radicacion_tardia",
+      "estado": "EXITO",
+      "resultado_real": "Redujo días de radicación de 18 a 6",
+      "kpi_despues": {"dias_radicacion": 6},
+      "condiciones_exito": ["equipo dedicado radicación"]
+    }
+  ],
+  "finops": [
+    {"employee_code": "ips-cartera-analyst", "cost": 0.02},
+    {"employee_code": "ips-radicacion-analyst", "cost": 0.18}
+  ]
+}

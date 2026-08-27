@@ -1,0 +1,26 @@
+{
+  "available_data": ["radicacion", "facturacion", "cartera"],
+  "experiencia_aprendizaje": {
+    "employee_code": "ips-radicacion-analyst",
+    "dominio": "radicacion",
+    "tipo_problema": "radicacion_tardia",
+    "estado_inicial": "EXITO",
+    "resultado_real_inicial": "Redujo días de 15 a 7",
+    "kpi_inicial": {"dias_radicacion": 7},
+    "resultado_real_negativo": {
+      "estado": "FRACASO",
+      "resultado_real": "Radicación empeoró tras implementación",
+      "kpi_despues": {"dias_radicacion": 22}
+    }
+  },
+  "experiencias": [
+    {
+      "employee_code": "ips-cartera-analyst",
+      "count": 5,
+      "dominio": "radicacion",
+      "tipo_problema": "radicacion_tardia",
+      "estado": "PARCIAL",
+      "resultado_real": "Mejora leve"
+    }
+  ]
+}

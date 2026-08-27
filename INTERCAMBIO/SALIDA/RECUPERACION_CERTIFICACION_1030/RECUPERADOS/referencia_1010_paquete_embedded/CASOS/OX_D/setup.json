@@ -1,0 +1,34 @@
+{
+  "available_data": ["cartera", "radicacion", "glosas", "facturacion", "contratos"],
+  "experiencias": [
+    {
+      "employee_code": "ips-estrategico-analyst",
+      "count": 6,
+      "dominio": "estrategico",
+      "tipo_problema": "diagnostico_integral",
+      "estado": "EXITO",
+      "resultado_real": "Plan integral ejecutado con éxito"
+    },
+    {
+      "employee_code": "ips-radicacion-analyst",
+      "count": 2,
+      "dominio": "radicacion",
+      "tipo_problema": "radicacion_tardia",
+      "estado": "EXITO"
+    },
+    {
+      "employee_code": "ips-glosas-analyst",
+      "count": 2,
+      "dominio": "glosas",
+      "tipo_problema": "glosas_devoluciones",
+      "estado": "EXITO"
+    },
+    {
+      "employee_code": "ips-cartera-analyst",
+      "count": 2,
+      "dominio": "cartera",
+      "tipo_problema": "comportamiento_pagador",
+      "estado": "PARCIAL"
+    }
+  ]
+}

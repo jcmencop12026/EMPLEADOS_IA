@@ -1,0 +1,7 @@
+{
+  "problema": "pagador_lento",
+  "dominio_principal": "cartera",
+  "competencia": ["Cartera", "Contractual"],
+  "volumen_no_debe_ganar_solo": true,
+  "contractual_experiencia_score_min_vs_cartera": 0.0
+}

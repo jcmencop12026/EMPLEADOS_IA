@@ -1,0 +1,10 @@
+{
+  "caso": "PX-4",
+  "timestamp": "2026-08-27T20:54:05.795837+00:00",
+  "tenant_a_id": "02b54396-24b6-4542-b6cf-f797be426c99",
+  "tenant_b_id": "6bbbe991-ef95-4b61-8b60-f272032b7fa7",
+  "oportunidad_b_id": "9a3d54e8-aa19-4166-b918-91072d948ff3",
+  "contaminacion_tenant_a": false,
+  "trace_desde_tenant_a": {},
+  "fail_closed": true
+}

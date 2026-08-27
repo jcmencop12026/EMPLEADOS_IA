@@ -1,0 +1,6 @@
+{
+  "problema": "feedback_enganoso",
+  "feedback_positivo": "CORRECTO",
+  "estado_debe_ser": "FRACASO",
+  "resultado_real_prevalece": true
+}

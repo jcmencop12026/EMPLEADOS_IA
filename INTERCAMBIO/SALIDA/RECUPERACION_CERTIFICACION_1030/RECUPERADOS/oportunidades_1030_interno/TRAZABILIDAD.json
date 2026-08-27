@@ -1,0 +1,152 @@
+{
+  "opportunity_id": "cd0563c0-5fde-413a-aa39-5ca12d4a7bd4",
+  "correlation_id": "642a1801-621d-42fd-804b-88c6e66eac68",
+  "estado": "MATERIALIZADA",
+  "trazas": [
+    {
+      "etapa": "SENAL_CREADA",
+      "detalle": {
+        "evento": "evidencia_OP-A",
+        "tipo": "financiera"
+      },
+      "fecha": "2026-08-27T17:32:49.897252"
+    },
+    {
+      "etapa": "TRANSICION_EN_EVALUACION",
+      "detalle": {
+        "anterior": "DETECTADA",
+        "nuevo": "EN_EVALUACION",
+        "motivo": "Se\u00f1al procesada"
+      },
+      "fecha": "2026-08-27T17:32:49.912589"
+    },
+    {
+      "etapa": "TRANSICION_PRIORIZADA",
+      "detalle": {
+        "anterior": "EN_EVALUACION",
+        "nuevo": "PRIORIZADA",
+        "motivo": "Evaluaci\u00f3n completada"
+      },
+      "fecha": "2026-08-27T17:32:49.912593"
+    },
+    {
+      "etapa": "OPORTUNIDAD_CREADA",
+      "detalle": {
+        "codigo": "OPP-00009",
+        "tipo": "FINANCIERA",
+        "estado": "PRIORIZADA"
+      },
+      "fecha": "2026-08-27T17:32:49.914059"
+    },
+    {
+      "etapa": "TRANSICION_PENDIENTE_APROBACION",
+      "detalle": {
+        "anterior": "PRIORIZADA",
+        "nuevo": "PENDIENTE_APROBACION",
+        "motivo": "Requiere aprobaci\u00f3n humana"
+      },
+      "fecha": "2026-08-27T17:32:49.914064"
+    },
+    {
+      "etapa": "TRANSICION_APROBADA",
+      "detalle": {
+        "anterior": "PENDIENTE_APROBACION",
+        "nuevo": "APROBADA",
+        "motivo": "Aprobada"
+      },
+      "fecha": "2026-08-27T17:32:49.919266"
+    },
+    {
+      "etapa": "TRANSICION_EN_EJECUCION",
+      "detalle": {
+        "anterior": "APROBADA",
+        "nuevo": "EN_EJECUCION",
+        "motivo": "WorkPlan creado"
+      },
+      "fecha": "2026-08-27T17:32:49.922685"
+    },
+    {
+      "etapa": "TRANSICION_EN_SEGUIMIENTO",
+      "detalle": {
+        "anterior": "EN_EJECUCION",
+        "nuevo": "EN_SEGUIMIENTO",
+        "motivo": "Seguimiento activo iniciado"
+      },
+      "fecha": "2026-08-27T17:32:49.932863"
+    },
+    {
+      "etapa": "ACTIVACION",
+      "detalle": {
+        "work_plan_id": "788e0bdd-1cfa-4bad-9215-446a015cd703"
+      },
+      "fecha": "2026-08-27T17:32:49.932868"
+    },
+    {
+      "etapa": "TRANSICION_MATERIALIZADA",
+      "detalle": {
+        "anterior": "EN_SEGUIMIENTO",
+        "nuevo": "MATERIALIZADA",
+        "motivo": "Resultado registrado"
+      },
+      "fecha": "2026-08-27T17:32:49.940179"
+    },
+    {
+      "etapa": "RESULTADO",
+      "detalle": {
+        "valor_esperado": 8000000.0,
+        "valor_real": 6000000,
+        "diferencia": -2000000.0,
+        "evidencia": {
+          "kpi": "ok"
+        },
+        "estado": "EXITO",
+        "fecha": "2026-08-27T17:32:49.931461+00:00",
+        "confianza": 0.8
+      },
+      "fecha": "2026-08-27T17:32:49.941862"
+    }
+  ],
+  "transiciones": [
+    {
+      "de": "DETECTADA",
+      "a": "EN_EVALUACION",
+      "motivo": "Se\u00f1al procesada"
+    },
+    {
+      "de": "EN_EVALUACION",
+      "a": "PRIORIZADA",
+      "motivo": "Evaluaci\u00f3n completada"
+    },
+    {
+      "de": "PRIORIZADA",
+      "a": "PENDIENTE_APROBACION",
+      "motivo": "Requiere aprobaci\u00f3n humana"
+    },
+    {
+      "de": "PENDIENTE_APROBACION",
+      "a": "APROBADA",
+      "motivo": "Aprobada"
+    },
+    {
+      "de": "APROBADA",
+      "a": "EN_EJECUCION",
+      "motivo": "WorkPlan creado"
+    },
+    {
+      "de": "EN_EJECUCION",
+      "a": "EN_SEGUIMIENTO",
+      "motivo": "Seguimiento activo iniciado"
+    },
+    {
+      "de": "EN_SEGUIMIENTO",
+      "a": "MATERIALIZADA",
+      "motivo": "Resultado registrado"
+    }
+  ],
+  "seguimiento": [
+    {
+      "accion": "Ejecutar acci\u00f3n de recuperaci\u00f3n financiera prioritaria",
+      "resultado": null
+    }
+  ]
+}
