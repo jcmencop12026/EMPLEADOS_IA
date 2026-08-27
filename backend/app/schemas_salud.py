@@ -35,6 +35,9 @@ class ActionResultRequest(BaseModel):
     meta: str | None = None
     resultado: str | None = None
     outcome: str = "NO_EVALUADO"
+    kpi_antes: dict | None = None
+    kpi_despues: dict | None = None
+    feedback_humano: str | None = None
 
 
 class QuestionRequest(BaseModel):

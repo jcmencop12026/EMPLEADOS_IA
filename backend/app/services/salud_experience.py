@@ -189,6 +189,109 @@ def save_experience_case(
     return case
 
 
+def sync_action_result_to_core_experience(
+    db: Session,
+    org_id: str,
+    *,
+    propuesta_id: str,
+    outcome: str,
+    resultado: str | None = None,
+    meta: str | None = None,
+    kpi_antes: dict | None = None,
+    kpi_despues: dict | None = None,
+    feedback_humano: str | None = None,
+):
+    """Propaga resultado real de SALUD a EmployeeExperienceRecord (orquestador 1010)."""
+    from app.salud_models import IpsAnalysis, IpsPropuesta
+    from app.services.experience_core import (
+        actualizar_resultado_experiencia,
+        crear_experiencia,
+        registrar_feedback_experiencia,
+    )
+
+    propuesta = (
+        db.query(IpsPropuesta)
+        .filter(IpsPropuesta.id == propuesta_id, IpsPropuesta.organization_id == org_id)
+        .first()
+    )
+    if not propuesta:
+        return None
+
+    analysis = (
+        db.query(IpsAnalysis)
+        .filter(IpsAnalysis.id == propuesta.analysis_id, IpsAnalysis.organization_id == org_id)
+        .first()
+    )
+    if not analysis:
+        return None
+
+    try:
+        specialists = json.loads(analysis.specialists_json or "{}")
+    except json.JSONDecodeError:
+        specialists = {}
+
+    lider = specialists.get("lider") or {}
+    employee_id = lider.get("employee_id")
+    if not employee_id:
+        asignaciones = specialists.get("asignaciones") or []
+        employee_id = asignaciones[0].get("employee_id") if asignaciones else None
+    if not employee_id:
+        return None
+
+    dominio = specialists.get("dominio_principal") or "estrategico"
+    tipo_problema = specialists.get("tipo_problema") or "diagnostico_integral"
+    estado_map = {
+        "EXITO": "EXITO",
+        "FRACASO": "FRACASO",
+        "PARCIAL": "PARCIAL",
+        "MEJORO": "EXITO",
+        "EMPEORO": "FRACASO",
+        "NO_EVALUADO": "INDETERMINADO",
+    }
+    estado = estado_map.get((outcome or "").upper(), "INDETERMINADO")
+
+    record = crear_experiencia(
+        db,
+        org_id,
+        employee_id=employee_id,
+        dominio=dominio,
+        tipo_problema=tipo_problema,
+        accion=propuesta.accion_propuesta,
+        resultado_esperado=meta or propuesta.meta,
+        work_plan_id=analysis.work_plan_id,
+        caso_origen_id=analysis.id,
+        trazabilidad={"propuesta_id": propuesta.id, "origen": "SALUD resultado real"},
+    )
+    if kpi_antes:
+        record.kpi_antes_json = json.dumps(kpi_antes, ensure_ascii=False)
+    actualizar_resultado_experiencia(
+        db,
+        org_id,
+        record.id,
+        resultado_real=resultado or outcome,
+        estado=estado,
+        kpi_despues=kpi_despues,
+    )
+    if feedback_humano:
+        registrar_feedback_experiencia(db, org_id, record.id, feedback_humano)
+
+    case = (
+        db.query(IpsExperienceCase)
+        .filter(
+            IpsExperienceCase.organization_id == org_id,
+            IpsExperienceCase.analysis_id == analysis.id,
+        )
+        .order_by(IpsExperienceCase.created_at.desc())
+        .first()
+    )
+    if case:
+        case.later_result = resultado or outcome
+        case.evaluation = outcome
+        case.action_applied = propuesta.accion_propuesta
+
+    return record
+
+
 def get_employee_performance(db: Session, org_id: str, employee_id: str | None = None) -> list[dict[str, Any]]:
     query = db.query(IpsEmployeePerformance).filter(IpsEmployeePerformance.organization_id == org_id)
     if employee_id:
