@@ -1,7 +1,7 @@
 # OPORTUNIDADES-PROACTIVAS-1030 — Mapa de capacidades
 
-**HEAD base:** `cc77d83` (main — PR #22 integrado)  
-**Rama:** `cursor/oportunidades-proactivas-1030`  
+**HEAD base:** `cc77d83` (main — PR #22 integrado)
+**Rama:** `cursor/preintegracion-1020-1030`
 **Fecha:** 2026-08-27
 
 ## Matriz EXISTE / PARCIAL / NO EXISTE
