@@ -106,14 +106,17 @@ Detectado desde solicitud (no solo datos disponibles):
 
 ## 6. Demos
 
-### Demo 1 — Especialista B gana por experiencia
-Empleado glosas con 5 éxitos vs cartera con 5 fracasos → líder: Analista de Glosas IA.
+### Demo 1 — Especialista B gana por experiencia específica
+`test_demo_b_gana_por_experiencia`: glosas con 5 éxitos vs cartera con 5 fracasos → líder Analista de Glosas IA.
 
-### Demo 2 — Contexto determina líder
-Caso A: solicitud enfatiza radicación → líder Radicación (sin experiencia seed extra).
+### Demo 2 — A gana por experiencia/contexto integral
+`test_demo_a_gana_por_experiencia_integral`: estratégico con 8 éxitos integrales vs radicación con 2 parciales → líder Analista Estratégico IPS IA en caso D.
 
-### Demo 3 — Validador por diversidad
-Caso D integral → validador con especialidad distinta al líder estratégico.
+### Demo 3 — C entra como validador por diversidad
+`test_demo_c_validador_por_diversidad`: diagnóstico integral → validador con especialidad distinta al líder, rol VALIDADOR documentado.
+
+### Sección 9 — Experiencia vs capacidad
+`test_experiencia_vs_capacidad_no_siempre_volumen`: cartera con 10 fracasos en glosas NO gana frente a glosas con 3 éxitos.
 
 ---
 
@@ -134,7 +137,7 @@ Caso D integral → validador con especialidad distinta al líder estratégico.
 
 ## 9. Pruebas
 
-**Archivo:** `tests/test_orquestador_experiencia_1010.py` — 23 tests:
+**Archivo:** `tests/test_orquestador_experiencia_1010.py` — 26 tests:
 
 1. experiencia exitosa
 2. fracaso
@@ -154,7 +157,10 @@ Caso D integral → validador con especialidad distinta al líder estratégico.
 16. fail-closed
 17. detect insuficiente
 18. demo B experiencia
-19. API selección equipo
+19. demo A experiencia integral
+20. demo C validador diversidad
+21. experiencia vs capacidad (no siempre volumen)
+22. API selección equipo
 
 ---
 
@@ -162,11 +168,12 @@ Caso D integral → validador con especialidad distinta al líder estratégico.
 
 | Control | Resultado |
 |---------|-----------|
-| pytest total | 459+ passed (1 flaky notifications preexistente) |
+| pytest total | 462+ passed |
 | motor_analitico_1000 | PASS |
 | salud_960 | PASS |
 | npm build | PASS |
 | alembic heads | `1010a1b2c3d4e` |
+| CI GitHub 4/4 | PASS — https://github.com/jcmencop12026/EMPLEADOS_IA/actions/runs/33033956620 (`6efcac0`) |
 
 ---
 

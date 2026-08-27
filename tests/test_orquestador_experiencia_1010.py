@@ -329,6 +329,68 @@ def test_demo_b_gana_por_experiencia(exp_db):
     assert plan.get("razon_seleccion_global")
 
 
+def test_demo_a_gana_por_experiencia_integral(exp_db):
+    """Demo 2: empleado A (alto volumen/experiencia integral) lidera diagnóstico estratégico."""
+    org_id, _ = _org_admin(exp_db)
+    emp_estrategico = _employee_by_code(exp_db, org_id, "ips-estrategico-analyst")
+    emp_radicacion = _employee_by_code(exp_db, org_id, "ips-radicacion-analyst")
+    for _ in range(8):
+        r = crear_experiencia(
+            exp_db, org_id, employee_id=emp_estrategico.id,
+            dominio="estrategico", tipo_problema="diagnostico_integral",
+        )
+        actualizar_resultado_experiencia(exp_db, org_id, r.id, resultado_real="Plan integral ejecutado", estado="EXITO")
+    for _ in range(2):
+        r = crear_experiencia(
+            exp_db, org_id, employee_id=emp_radicacion.id,
+            dominio="estrategico", tipo_problema="diagnostico_integral",
+        )
+        actualizar_resultado_experiencia(exp_db, org_id, r.id, resultado_real="Parcial", estado="PARCIAL")
+    exp_db.commit()
+    plan = select_team(
+        exp_db, org_id,
+        "Diagnóstico integral: cartera, radicación, glosas y concentración de pagadores",
+        available_data=["cartera", "radicacion", "glosas", "facturacion"],
+    )
+    assert "Estratégico" in plan["lider"]["employee_name"]
+    assert "experiencia" in plan["lider"].get("razon_seleccion", "").lower() or plan.get("razon_seleccion_global")
+
+
+def test_demo_c_validador_por_diversidad(exp_db):
+    """Demo 3: especialista C entra como validador por diversidad de criterio."""
+    org_id, _ = _org_admin(exp_db)
+    plan = select_team(
+        exp_db, org_id,
+        "Diagnóstico integral: cartera, radicación, glosas y concentración",
+        available_data=["cartera", "radicacion", "glosas", "facturacion", "contratos"],
+    )
+    validador = plan.get("validador")
+    assert validador is not None
+    assert validador["employee_id"] != plan["lider"]["employee_id"]
+    assert validador.get("razon_rol") or validador.get("razon_seleccion")
+    assert any(
+        m.get("rol") == "VALIDADOR"
+        for m in plan.get("equipo", [])
+    )
+
+
+def test_experiencia_vs_capacidad_no_siempre_volumen(exp_db):
+    """Sección 9: A mucha experiencia mediocre no debe ganar siempre frente a B excelente en dominio."""
+    org_id, _ = _org_admin(exp_db)
+    emp_a = _employee_by_code(exp_db, org_id, "ips-cartera-analyst")
+    emp_b = _employee_by_code(exp_db, org_id, "ips-glosas-analyst")
+    for _ in range(10):
+        r = crear_experiencia(exp_db, org_id, employee_id=emp_a.id, dominio="glosas", tipo_problema="glosas_devoluciones")
+        actualizar_resultado_experiencia(exp_db, org_id, r.id, resultado_real="Sin impacto", estado="FRACASO")
+    for _ in range(3):
+        r = crear_experiencia(exp_db, org_id, employee_id=emp_b.id, dominio="glosas", tipo_problema="glosas_devoluciones")
+        actualizar_resultado_experiencia(exp_db, org_id, r.id, resultado_real="Recuperó 90%", estado="EXITO")
+    exp_db.commit()
+    plan = select_team(exp_db, org_id, "Analiza glosas y devoluciones del pagador", available_data=["glosas"])
+    assert "Glosas" in plan["lider"]["employee_name"]
+    assert plan["lider"]["employee_id"] == emp_b.id
+
+
 def test_api_seleccion_equipo(client, auth_headers):
     res = client.post("/api/experiencia/seleccion-equipo", headers=auth_headers, json={
         "solicitud": "Analiza radicación tardía en facturación IPS",
