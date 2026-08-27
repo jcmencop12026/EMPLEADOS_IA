@@ -21,9 +21,9 @@
 | Campo | Valor |
 |-------|-------|
 | Rama | `cursor/motor-analitico-1000` |
-| HEAD final | `3a8d748` |
+| HEAD final | `dfa0ecc` |
 | Base mínima | `f0b9929` — paquete `MOTOR_ANALITICO_1000_DATASET_CERTIFICACION.zip` |
-| Commits relevantes | `4bcbf2d` (D-02/D-04), `de308da` (harness ciego), `f0b9929` (paquete), `68f60c9` (cierre certificación), `3a8d748` (informe) |
+| Commits relevantes | `4bcbf2d` (D-02/D-04), `de308da` (harness ciego), `f0b9929` (paquete), `68f60c9` (cierre certificación), `dfa0ecc` (informe) |
 
 ---
 
