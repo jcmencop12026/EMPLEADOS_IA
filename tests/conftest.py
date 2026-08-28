@@ -140,17 +140,26 @@ def _postgresql_session_cleanup():
         engine.dispose()
 
 
-_CLIENT_SCOPE = "function" if _is_postgresql_url(_db_url) else "session"
-
-
-@pytest.fixture(scope=_CLIENT_SCOPE)
-def client(_postgresql_test_isolation) -> TestClient:
+def _client_context():
     with TestClient(app) as test_client:
         automation_scheduler.stop_scheduler()
         proactive_scheduler.stop_proactive_scheduler()
         yield test_client
         proactive_scheduler.stop_proactive_scheduler()
         automation_scheduler.stop_scheduler()
+
+
+if _is_postgresql_url(_db_url):
+
+    @pytest.fixture(scope="function")
+    def client(_postgresql_test_isolation) -> TestClient:
+        yield from _client_context()
+
+else:
+
+    @pytest.fixture(scope="session")
+    def client() -> TestClient:
+        yield from _client_context()
 
 
 @pytest.fixture

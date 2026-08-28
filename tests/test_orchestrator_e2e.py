@@ -22,8 +22,10 @@ SAMPLE_RIPS = {
 
 def test_health(client):
     res = client.get("/health")
-    assert res.status_code == 200
-    assert res.json()["status"] == "ok"
+    assert res.status_code in (200, 503)
+    body = res.json()
+    assert body["status"] in ("up", "degraded", "down")
+    assert body["components"]["database"]["status"] == "up"
 
 
 def test_coordinator_route_rips(client, token):
