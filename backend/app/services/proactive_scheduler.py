@@ -118,6 +118,10 @@ def stop_proactive_scheduler() -> None:
     logger.info("Proactive scheduler stopped")
 
 
+def is_scheduler_running() -> bool:
+    return _thread is not None and _thread.is_alive()
+
+
 def run_proactive_tick_once(db=None) -> list[dict]:
     """Ejecuta un tick manual — útil para tests."""
     from app.models import Organization
