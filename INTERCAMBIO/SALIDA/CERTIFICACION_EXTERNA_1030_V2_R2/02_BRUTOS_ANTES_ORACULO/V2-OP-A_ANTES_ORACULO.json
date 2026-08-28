@@ -1,0 +1,570 @@
+{
+  "caso": "V2-OP-A",
+  "timestamp": "2026-08-28T01:20:35.296651+00:00",
+  "entrada": {
+    "id": "V2-OP-A",
+    "tipo": "OP",
+    "titulo": "Oportunidad real urgente con capacidad disponible",
+    "tenant": "EMPRESA_NORTE_V2",
+    "dominio": "OPERACIONES",
+    "senal": {
+      "fuente": "telemetria_operativa",
+      "evento": "incremento_sostenido_demanda",
+      "metricas": {
+        "demanda_variacion_pct": 34,
+        "capacidad_ociosa_pct": 21,
+        "margen_estimado_pct": 18
+      },
+      "timestamp": "2026-08-28T08:10:00-05:00"
+    },
+    "contexto": {
+      "contrato_activo": true,
+      "capacidad_disponible": true,
+      "datos_financieros_suficientes": true,
+      "restriccion": "ventana comercial vence en 36 horas"
+    }
+  },
+  "tenant_id": "c59944ba-6dbb-4635-a2a3-79c07de065c7",
+  "pipeline": {
+    "signal_id": "706bba06-19c9-41d1-87d2-e69af101231e",
+    "opportunity_id": "5484047e-e487-4139-bb7d-49483775f4b5",
+    "codigo": "OPP-00001",
+    "estado": "PENDIENTE_APROBACION",
+    "pertinencia": "SOLICITAR_APROBACION",
+    "prioridad_score": 0.6032,
+    "siguiente_accion": {
+      "que": "Atender oportunidad: Oportunidad real urgente con capacidad disponible",
+      "por_que": "Riesgo o costo requiere aprobación",
+      "cuando": "AHORA",
+      "quien": "Equipo IA asignado",
+      "quien_id": "24203d9f-2f7b-4bd0-bd83-ef72b6e4e03b",
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Centro de operaciones",
+      "costo_estimado": 0.0,
+      "autorizacion": "REQUIERE_APROBACION",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": true
+    },
+    "capacidad": {
+      "empleados_disponibles": 2,
+      "herramientas_activas": 12,
+      "ejecutable": true,
+      "requiere_aprobacion": true,
+      "human_gate": "REQUIERE_APROBACION",
+      "limitaciones": [],
+      "mensaje": "Capacidad disponible"
+    },
+    "deduplicated": false
+  },
+  "oportunidad": {
+    "id": "5484047e-e487-4139-bb7d-49483775f4b5",
+    "codigo": "OPP-00001",
+    "estado": "EN_SEGUIMIENTO",
+    "tipo": "OPERATIVA",
+    "dominio": "operativo",
+    "signal_id": "706bba06-19c9-41d1-87d2-e69af101231e",
+    "pertinencia": "SOLICITAR_APROBACION",
+    "momento": "AHORA",
+    "confianza": 0.7,
+    "prioridad_score": 0.6032,
+    "prioridad_componentes": {
+      "impacto": 0.15,
+      "urgencia": 0.16,
+      "confianza": 0.105,
+      "riesgo_inverso": 0.06,
+      "esfuerzo_inverso": 0.05,
+      "valor_esperado": 0.0302,
+      "probabilidad": 0.048
+    },
+    "siguiente_accion": {
+      "que": "Atender oportunidad: Oportunidad real urgente con capacidad disponible",
+      "por_que": "Riesgo o costo requiere aprobación",
+      "cuando": "AHORA",
+      "quien": "Equipo IA asignado",
+      "quien_id": "24203d9f-2f7b-4bd0-bd83-ef72b6e4e03b",
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Centro de operaciones",
+      "costo_estimado": 0.0,
+      "autorizacion": "REQUIERE_APROBACION",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": true
+    },
+    "equipo": {
+      "dominios": [
+        "estrategico"
+      ],
+      "dominio_principal": "estrategico",
+      "tipo_problema": "diagnostico_integral",
+      "asignaciones": [
+        {
+          "employee_id": "24203d9f-2f7b-4bd0-bd83-ef72b6e4e03b",
+          "employee_code": "docint-analyst",
+          "employee_name": "Analista Documental IA",
+          "specialty": "DOCINT",
+          "domain": "estrategico",
+          "score": 0.467,
+          "factores": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.7,
+            "diversidad": 1.0
+          },
+          "factors": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.7,
+            "diversidad": 1.0
+          },
+          "pesos": {
+            "capacidad": 0.25,
+            "experiencia": 0.2,
+            "desempeno": 0.15,
+            "costo": 0.1,
+            "disponibilidad": 0.1,
+            "riesgo": 0.1,
+            "diversidad": 0.1
+          },
+          "razon_seleccion": "mejor puntaje disponible para estrategico",
+          "experiencia_consultada": [],
+          "finops": {
+            "score": 0.6,
+            "costo_promedio": null,
+            "explicacion": "Sin historial FINOPS — neutro"
+          }
+        }
+      ],
+      "equipo": [
+        {
+          "employee_id": "24203d9f-2f7b-4bd0-bd83-ef72b6e4e03b",
+          "employee_code": "docint-analyst",
+          "employee_name": "Analista Documental IA",
+          "specialty": "DOCINT",
+          "domain": "estrategico",
+          "score": 0.467,
+          "factores": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.7,
+            "diversidad": 1.0
+          },
+          "factors": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.7,
+            "diversidad": 1.0
+          },
+          "pesos": {
+            "capacidad": 0.25,
+            "experiencia": 0.2,
+            "desempeno": 0.15,
+            "costo": 0.1,
+            "disponibilidad": 0.1,
+            "riesgo": 0.1,
+            "diversidad": 0.1
+          },
+          "razon_seleccion": "mejor puntaje disponible para estrategico",
+          "experiencia_consultada": [],
+          "finops": {
+            "score": 0.6,
+            "costo_promedio": null,
+            "explicacion": "Sin historial FINOPS — neutro"
+          },
+          "rol": "LIDER",
+          "razon_rol": "Líder por dominio principal 'estrategico': mejor puntaje disponible para estrategico"
+        },
+        {
+          "employee_id": "2228124a-8a9c-4991-8959-26bcbc5c48dd",
+          "employee_code": "rips-auditor",
+          "employee_name": "Auditor RIPS IA",
+          "specialty": "RIPS Salud IPS",
+          "domain": "estrategico",
+          "score": 0.438,
+          "factores": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.4,
+            "diversidad": 1.0
+          },
+          "factors": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.4,
+            "diversidad": 1.0
+          },
+          "pesos": {
+            "capacidad": 0.25,
+            "experiencia": 0.2,
+            "desempeno": 0.15,
+            "costo": 0.1,
+            "disponibilidad": 0.1,
+            "riesgo": 0.1,
+            "diversidad": 0.1
+          },
+          "razon_seleccion": "mejor puntaje disponible para estrategico",
+          "experiencia_consultada": [],
+          "finops": {
+            "score": 0.6,
+            "costo_promedio": null,
+            "explicacion": "Sin historial FINOPS — neutro"
+          },
+          "razon_rol": "Validador con especialidad diferente (RIPS Salud IPS) para diversidad ante impacto en estrategico",
+          "rol": "VALIDADOR"
+        }
+      ],
+      "lider": {
+        "employee_id": "24203d9f-2f7b-4bd0-bd83-ef72b6e4e03b",
+        "employee_code": "docint-analyst",
+        "employee_name": "Analista Documental IA",
+        "specialty": "DOCINT",
+        "domain": "estrategico",
+        "score": 0.467,
+        "factores": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        },
+        "factors": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        },
+        "pesos": {
+          "capacidad": 0.25,
+          "experiencia": 0.2,
+          "desempeno": 0.15,
+          "costo": 0.1,
+          "disponibilidad": 0.1,
+          "riesgo": 0.1,
+          "diversidad": 0.1
+        },
+        "razon_seleccion": "mejor puntaje disponible para estrategico",
+        "experiencia_consultada": [],
+        "finops": {
+          "score": 0.6,
+          "costo_promedio": null,
+          "explicacion": "Sin historial FINOPS — neutro"
+        }
+      },
+      "consolidador": {
+        "employee_id": "24203d9f-2f7b-4bd0-bd83-ef72b6e4e03b",
+        "employee_code": "docint-analyst",
+        "employee_name": "Analista Documental IA",
+        "specialty": "DOCINT",
+        "domain": "estrategico",
+        "score": 0.467,
+        "factores": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        },
+        "factors": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        },
+        "pesos": {
+          "capacidad": 0.25,
+          "experiencia": 0.2,
+          "desempeno": 0.15,
+          "costo": 0.1,
+          "disponibilidad": 0.1,
+          "riesgo": 0.1,
+          "diversidad": 0.1
+        },
+        "razon_seleccion": "mejor puntaje disponible para estrategico",
+        "experiencia_consultada": [],
+        "finops": {
+          "score": 0.6,
+          "costo_promedio": null,
+          "explicacion": "Sin historial FINOPS — neutro"
+        }
+      },
+      "validador": {
+        "employee_id": "2228124a-8a9c-4991-8959-26bcbc5c48dd",
+        "employee_code": "rips-auditor",
+        "employee_name": "Auditor RIPS IA",
+        "specialty": "RIPS Salud IPS",
+        "domain": "estrategico",
+        "score": 0.438,
+        "factores": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.4,
+          "diversidad": 1.0
+        },
+        "factors": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.4,
+          "diversidad": 1.0
+        },
+        "pesos": {
+          "capacidad": 0.25,
+          "experiencia": 0.2,
+          "desempeno": 0.15,
+          "costo": 0.1,
+          "disponibilidad": 0.1,
+          "riesgo": 0.1,
+          "diversidad": 0.1
+        },
+        "razon_seleccion": "mejor puntaje disponible para estrategico",
+        "experiencia_consultada": [],
+        "finops": {
+          "score": 0.6,
+          "costo_promedio": null,
+          "explicacion": "Sin historial FINOPS — neutro"
+        },
+        "razon_rol": "Validador con especialidad diferente (RIPS Salud IPS) para diversidad ante impacto en estrategico"
+      },
+      "disidente": null,
+      "razon_seleccion_global": "Seleccionado Analista Documental IA como líder porque mejor puntaje disponible para estrategico en dominio principal 'estrategico' (tipo: diagnostico_integral)",
+      "candidatos_evaluados": 2,
+      "factores_pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "selection_log_id": "f9fbfc2b-0a28-4970-b111-c2f26bd0d6e3"
+    },
+    "work_plan_id": "0d8c7243-3211-4fea-8227-4cdf2beafb22",
+    "finops_reference": "finops:opp:5484047e-e487-4139-bb7d-49483775f4b5",
+    "valor_potencial": 4200000.0,
+    "valor_materializado": 0.0,
+    "valor_potencial_certidumbre": "ESTIMADO",
+    "atribucion_nivel": null,
+    "contexto": {
+      "componentes": {
+        "organization_id": "c59944ba-6dbb-4635-a2a3-79c07de065c7",
+        "dominio": "operativo",
+        "indicadores": {
+          "demanda_variacion_pct": 34,
+          "capacidad_ociosa_pct": 21,
+          "margen_estimado_pct": 18
+        },
+        "historico": {
+          "registrado": true
+        },
+        "eventos": [],
+        "conocimiento_autorizado": null,
+        "workplans_abiertos": 0,
+        "oportunidades_similares": 0,
+        "payload": {
+          "titulo": "Oportunidad real urgente con capacidad disponible",
+          "indicadores": {
+            "demanda_variacion_pct": 34,
+            "capacidad_ociosa_pct": 21,
+            "margen_estimado_pct": 18
+          },
+          "historico": {
+            "registrado": true
+          },
+          "source_reference": "cert-v2-V2-OP-A",
+          "tipo_oportunidad": "OPERATIVA",
+          "impacto_estimado": 6000000,
+          "valor_potencial": 4200000,
+          "urgencia": "ALTA",
+          "riesgo": "MEDIO",
+          "esfuerzo": "MEDIO",
+          "sla_horas": 36
+        },
+        "senal_inmadura": false,
+        "evidencia_insuficiente": false
+      },
+      "suficiencia": "SUFICIENTE",
+      "faltantes": [],
+      "conflicto": false,
+      "senal_inmadura": false,
+      "evidencia_insuficiente": false
+    },
+    "trazas": {
+      "opportunity_id": "5484047e-e487-4139-bb7d-49483775f4b5",
+      "correlation_id": "9052961a-36a7-42d9-900c-8d7a410aeae2",
+      "estado": "EN_SEGUIMIENTO",
+      "trazas": [
+        {
+          "etapa": "SENAL_CREADA",
+          "detalle": {
+            "evento": "incremento_sostenido_demanda",
+            "tipo": "operativa"
+          },
+          "fecha": "2026-08-28T01:20:35.299440"
+        },
+        {
+          "etapa": "TRANSICION_EN_EVALUACION",
+          "detalle": {
+            "anterior": "DETECTADA",
+            "nuevo": "EN_EVALUACION",
+            "motivo": "Señal procesada"
+          },
+          "fecha": "2026-08-28T01:20:35.306113"
+        },
+        {
+          "etapa": "TRANSICION_PRIORIZADA",
+          "detalle": {
+            "anterior": "EN_EVALUACION",
+            "nuevo": "PRIORIZADA",
+            "motivo": "Evaluación completada"
+          },
+          "fecha": "2026-08-28T01:20:35.306118"
+        },
+        {
+          "etapa": "OPORTUNIDAD_CREADA",
+          "detalle": {
+            "codigo": "OPP-00001",
+            "tipo": "OPERATIVA",
+            "estado": "PRIORIZADA"
+          },
+          "fecha": "2026-08-28T01:20:35.318803"
+        },
+        {
+          "etapa": "TRANSICION_PENDIENTE_APROBACION",
+          "detalle": {
+            "anterior": "PRIORIZADA",
+            "nuevo": "PENDIENTE_APROBACION",
+            "motivo": "Requiere validación humana"
+          },
+          "fecha": "2026-08-28T01:20:35.320264"
+        },
+        {
+          "etapa": "TRANSICION_APROBADA",
+          "detalle": {
+            "anterior": "PENDIENTE_APROBACION",
+            "nuevo": "APROBADA",
+            "motivo": "Aprobada"
+          },
+          "fecha": "2026-08-28T01:20:35.329916"
+        },
+        {
+          "etapa": "TRANSICION_EN_EJECUCION",
+          "detalle": {
+            "anterior": "APROBADA",
+            "nuevo": "EN_EJECUCION",
+            "motivo": "WorkPlan creado"
+          },
+          "fecha": "2026-08-28T01:20:35.333938"
+        },
+        {
+          "etapa": "TRANSICION_EN_SEGUIMIENTO",
+          "detalle": {
+            "anterior": "EN_EJECUCION",
+            "nuevo": "EN_SEGUIMIENTO",
+            "motivo": "Seguimiento activo iniciado"
+          },
+          "fecha": "2026-08-28T01:20:35.343790"
+        },
+        {
+          "etapa": "ACTIVACION",
+          "detalle": {
+            "work_plan_id": "0d8c7243-3211-4fea-8227-4cdf2beafb22"
+          },
+          "fecha": "2026-08-28T01:20:35.345437"
+        }
+      ],
+      "transiciones": [
+        {
+          "de": "DETECTADA",
+          "a": "EN_EVALUACION",
+          "motivo": "Señal procesada"
+        },
+        {
+          "de": "EN_EVALUACION",
+          "a": "PRIORIZADA",
+          "motivo": "Evaluación completada"
+        },
+        {
+          "de": "PRIORIZADA",
+          "a": "PENDIENTE_APROBACION",
+          "motivo": "Requiere validación humana"
+        },
+        {
+          "de": "PENDIENTE_APROBACION",
+          "a": "APROBADA",
+          "motivo": "Aprobada"
+        },
+        {
+          "de": "APROBADA",
+          "a": "EN_EJECUCION",
+          "motivo": "WorkPlan creado"
+        },
+        {
+          "de": "EN_EJECUCION",
+          "a": "EN_SEGUIMIENTO",
+          "motivo": "Seguimiento activo iniciado"
+        }
+      ],
+      "seguimiento": [
+        {
+          "accion": "Atender oportunidad: Oportunidad real urgente con capacidad disponible",
+          "resultado": null
+        }
+      ]
+    }
+  },
+  "aprobacion": true,
+  "activacion": {
+    "work_plan_id": "0d8c7243-3211-4fea-8227-4cdf2beafb22",
+    "opportunity_id": "5484047e-e487-4139-bb7d-49483775f4b5",
+    "auto_execute": false
+  },
+  "finops": [
+    {
+      "id": "61106bfc-c32c-42b2-8557-3d2ad1dd9dcd",
+      "work_plan_id": "0d8c7243-3211-4fea-8227-4cdf2beafb22",
+      "opportunity_id": "5484047e-e487-4139-bb7d-49483775f4b5"
+    }
+  ],
+  "head_git": "3af0be53748e37e972088b49664d896ddba65b54",
+  "oraculo_consultado": false
+}

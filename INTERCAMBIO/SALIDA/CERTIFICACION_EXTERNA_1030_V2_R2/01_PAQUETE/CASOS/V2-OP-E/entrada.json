@@ -1,0 +1,20 @@
+{
+  "id": "V2-OP-E",
+  "tipo": "OP",
+  "titulo": "Caso FINOPS sin base económica suficiente",
+  "tenant": "EMPRESA_CENTRO_V2",
+  "dominio": "FINANZAS",
+  "senal": {
+    "fuente": "alerta_costos",
+    "evento": "posible_ahorro",
+    "metricas": {
+      "variacion_consumo_pct": 9
+    },
+    "timestamp": "2026-08-28T12:00:00-05:00"
+  },
+  "contexto": {
+    "costo_unitario": null,
+    "volumen_base": null,
+    "datos_financieros_suficientes": false
+  }
+}

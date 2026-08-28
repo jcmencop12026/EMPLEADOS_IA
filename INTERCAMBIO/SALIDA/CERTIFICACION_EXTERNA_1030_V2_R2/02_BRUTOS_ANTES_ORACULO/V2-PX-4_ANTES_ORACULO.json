@@ -1,0 +1,192 @@
+{
+  "caso": "V2-PX-4",
+  "timestamp": "2026-08-28T01:20:36.595368+00:00",
+  "entrada": {
+    "id": "V2-PX-4",
+    "tipo": "PX",
+    "titulo": "Trazabilidad y aprendizaje posterior",
+    "tenant": "EMPRESA_MANUFACTURA_V2",
+    "dominio": "CONTROL",
+    "senal": {
+      "ref_caso": "V2-NS-2"
+    },
+    "contexto": {
+      "resultado_simulado": {
+        "estado": "NO_CONCLUYENTE",
+        "evidencia": "muestra insuficiente"
+      }
+    }
+  },
+  "tenant_id": "340d3068-fc62-4249-9587-da5e00bfb20d",
+  "pipeline": {
+    "signal_id": "17705ffd-edb6-47ca-97e9-9056ad4cba4d",
+    "opportunity_id": "52d23730-b3c6-40ee-841c-47a31000ae43",
+    "deduplicated": true
+  },
+  "resultado": {
+    "valor_esperado": 1200000.0,
+    "valor_real": 500000,
+    "diferencia": -700000.0,
+    "evidencia": {
+      "estado": "NO_CONCLUYENTE",
+      "evidencia": "muestra insuficiente"
+    },
+    "estado": "EXITO",
+    "fecha": "2026-08-28T01:20:36.604914+00:00",
+    "confianza": 0.8
+  },
+  "experiencias_registradas": 1,
+  "trazabilidad": {
+    "opportunity_id": "52d23730-b3c6-40ee-841c-47a31000ae43",
+    "correlation_id": "bad6864f-acd5-4d45-8003-dbb38bce1277",
+    "estado": "MATERIALIZADA",
+    "trazas": [
+      {
+        "etapa": "SENAL_CREADA",
+        "detalle": {
+          "evento": "microparadas_linea",
+          "tipo": "productividad"
+        },
+        "fecha": "2026-08-28T01:20:36.336672"
+      },
+      {
+        "etapa": "TRANSICION_EN_EVALUACION",
+        "detalle": {
+          "anterior": "DETECTADA",
+          "nuevo": "EN_EVALUACION",
+          "motivo": "Señal procesada"
+        },
+        "fecha": "2026-08-28T01:20:36.338239"
+      },
+      {
+        "etapa": "TRANSICION_PRIORIZADA",
+        "detalle": {
+          "anterior": "EN_EVALUACION",
+          "nuevo": "PRIORIZADA",
+          "motivo": "Evaluación completada"
+        },
+        "fecha": "2026-08-28T01:20:36.338243"
+      },
+      {
+        "etapa": "OPORTUNIDAD_CREADA",
+        "detalle": {
+          "codigo": "OPP-00001",
+          "tipo": "PRODUCTIVIDAD",
+          "estado": "PRIORIZADA"
+        },
+        "fecha": "2026-08-28T01:20:36.341938"
+      },
+      {
+        "etapa": "TRANSICION_APROBADA",
+        "detalle": {
+          "anterior": "PRIORIZADA",
+          "nuevo": "APROBADA",
+          "motivo": "Aprobada"
+        },
+        "fecha": "2026-08-28T01:20:36.597533"
+      },
+      {
+        "etapa": "TRANSICION_EN_EJECUCION",
+        "detalle": {
+          "anterior": "APROBADA",
+          "nuevo": "EN_EJECUCION",
+          "motivo": "WorkPlan creado"
+        },
+        "fecha": "2026-08-28T01:20:36.598255"
+      },
+      {
+        "etapa": "TRANSICION_EN_SEGUIMIENTO",
+        "detalle": {
+          "anterior": "EN_EJECUCION",
+          "nuevo": "EN_SEGUIMIENTO",
+          "motivo": "Seguimiento activo iniciado"
+        },
+        "fecha": "2026-08-28T01:20:36.604386"
+      },
+      {
+        "etapa": "ACTIVACION",
+        "detalle": {
+          "work_plan_id": "25915894-f48f-46c8-8bba-9e0ae10eec45"
+        },
+        "fecha": "2026-08-28T01:20:36.605492"
+      },
+      {
+        "etapa": "TRANSICION_MATERIALIZADA",
+        "detalle": {
+          "anterior": "EN_SEGUIMIENTO",
+          "nuevo": "MATERIALIZADA",
+          "motivo": "Resultado registrado"
+        },
+        "fecha": "2026-08-28T01:20:36.610914"
+      },
+      {
+        "etapa": "RESULTADO",
+        "detalle": {
+          "valor_esperado": 1200000.0,
+          "valor_real": 500000,
+          "diferencia": -700000.0,
+          "evidencia": {
+            "estado": "NO_CONCLUYENTE",
+            "evidencia": "muestra insuficiente"
+          },
+          "estado": "EXITO",
+          "fecha": "2026-08-28T01:20:36.604914+00:00",
+          "confianza": 0.8
+        },
+        "fecha": "2026-08-28T01:20:36.612643"
+      }
+    ],
+    "transiciones": [
+      {
+        "de": "DETECTADA",
+        "a": "EN_EVALUACION",
+        "motivo": "Señal procesada"
+      },
+      {
+        "de": "EN_EVALUACION",
+        "a": "PRIORIZADA",
+        "motivo": "Evaluación completada"
+      },
+      {
+        "de": "PRIORIZADA",
+        "a": "APROBADA",
+        "motivo": "Aprobada"
+      },
+      {
+        "de": "APROBADA",
+        "a": "EN_EJECUCION",
+        "motivo": "WorkPlan creado"
+      },
+      {
+        "de": "EN_EJECUCION",
+        "a": "EN_SEGUIMIENTO",
+        "motivo": "Seguimiento activo iniciado"
+      },
+      {
+        "de": "EN_SEGUIMIENTO",
+        "a": "MATERIALIZADA",
+        "motivo": "Resultado registrado"
+      }
+    ],
+    "seguimiento": [
+      {
+        "accion": "Atender oportunidad: Transversalidad manufactura no SALUD",
+        "resultado": null
+      }
+    ]
+  },
+  "etapas": [
+    "SENAL_CREADA",
+    "TRANSICION_EN_EVALUACION",
+    "TRANSICION_PRIORIZADA",
+    "OPORTUNIDAD_CREADA",
+    "TRANSICION_APROBADA",
+    "TRANSICION_EN_EJECUCION",
+    "TRANSICION_EN_SEGUIMIENTO",
+    "ACTIVACION",
+    "TRANSICION_MATERIALIZADA",
+    "RESULTADO"
+  ],
+  "head_git": "3af0be53748e37e972088b49664d896ddba65b54",
+  "oraculo_consultado": false
+}

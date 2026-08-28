@@ -1,0 +1,14 @@
+{
+  "id": "V2-OP-D",
+  "esperado": {
+    "es_oportunidad": true,
+    "momento": "AHORA",
+    "debe_priorizar_globalmente": true,
+    "preferencia": "D1",
+    "valor_materializado": false,
+    "reglas": [
+      "la prioridad debe considerar impacto, urgencia y esfuerzo",
+      "debe explicar la selección y el tratamiento de la alternativa no elegida"
+    ]
+  }
+}

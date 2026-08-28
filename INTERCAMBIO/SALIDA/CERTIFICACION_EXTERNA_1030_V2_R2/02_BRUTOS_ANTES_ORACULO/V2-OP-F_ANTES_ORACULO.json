@@ -1,0 +1,510 @@
+{
+  "caso": "V2-OP-F",
+  "timestamp": "2026-08-28T01:20:35.858401+00:00",
+  "entrada": {
+    "id": "V2-OP-F",
+    "tipo": "OP",
+    "titulo": "Evidencia contradictoria",
+    "tenant": "EMPRESA_CENTRO_V2",
+    "dominio": "RIESGO",
+    "senal": {
+      "fuente": "fuentes_multiples",
+      "evento": "contradiccion",
+      "evidencias": [
+        {
+          "fuente": "A",
+          "afirma": "demanda_alta",
+          "confianza": 0.86
+        },
+        {
+          "fuente": "B",
+          "afirma": "demanda_baja",
+          "confianza": 0.83
+        }
+      ],
+      "timestamp": "2026-08-28T13:00:00-05:00"
+    },
+    "contexto": {
+      "resolucion_automatica_no_autorizada": true
+    }
+  },
+  "tenant_id": "ff95402e-e876-4722-ba33-c1b29db14d85",
+  "pipeline": {
+    "signal_id": "001fb3ed-6488-461a-bfad-af9752da3901",
+    "opportunity_id": "4f5ddbe9-ffae-404c-b358-888966b1d7f4",
+    "codigo": "OPP-00002",
+    "estado": "PENDIENTE_APROBACION",
+    "pertinencia": "SOLICITAR_APROBACION",
+    "prioridad_score": 0.3999,
+    "siguiente_accion": {
+      "que": "Implementar controles de mitigación de riesgo",
+      "por_que": "Información contradictoria — requiere validación humana",
+      "cuando": "OBSERVAR",
+      "quien": "Equipo IA asignado",
+      "quien_id": "ef4b6f9b-fe45-4501-9433-d1d35f3fff15",
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Automatización",
+      "costo_estimado": 0.0,
+      "autorizacion": "AUTOMATICA_BAJO_POLITICA",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": true
+    },
+    "capacidad": {
+      "empleados_disponibles": 2,
+      "herramientas_activas": 16,
+      "ejecutable": true,
+      "requiere_aprobacion": false,
+      "human_gate": "AUTOMATICA_BAJO_POLITICA",
+      "limitaciones": [],
+      "mensaje": "Capacidad disponible"
+    },
+    "deduplicated": false
+  },
+  "oportunidad": {
+    "id": "4f5ddbe9-ffae-404c-b358-888966b1d7f4",
+    "codigo": "OPP-00002",
+    "estado": "PENDIENTE_APROBACION",
+    "tipo": "RIESGO",
+    "dominio": "comercial",
+    "signal_id": "001fb3ed-6488-461a-bfad-af9752da3901",
+    "pertinencia": "SOLICITAR_APROBACION",
+    "momento": "OBSERVAR",
+    "confianza": 0.35,
+    "prioridad_score": 0.3999,
+    "prioridad_componentes": {
+      "impacto": 0.075,
+      "urgencia": 0.1,
+      "confianza": 0.0525,
+      "riesgo_inverso": 0.06,
+      "esfuerzo_inverso": 0.05,
+      "valor_esperado": 0.0144,
+      "probabilidad": 0.048
+    },
+    "siguiente_accion": {
+      "que": "Implementar controles de mitigación de riesgo",
+      "por_que": "Información contradictoria — requiere validación humana",
+      "cuando": "OBSERVAR",
+      "quien": "Equipo IA asignado",
+      "quien_id": "ef4b6f9b-fe45-4501-9433-d1d35f3fff15",
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Automatización",
+      "costo_estimado": 0.0,
+      "autorizacion": "AUTOMATICA_BAJO_POLITICA",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": true
+    },
+    "equipo": {
+      "dominios": [
+        "estrategico"
+      ],
+      "dominio_principal": "estrategico",
+      "tipo_problema": "diagnostico_integral",
+      "asignaciones": [
+        {
+          "employee_id": "ef4b6f9b-fe45-4501-9433-d1d35f3fff15",
+          "employee_code": "docint-analyst",
+          "employee_name": "Analista Documental IA",
+          "specialty": "DOCINT",
+          "domain": "estrategico",
+          "score": 0.467,
+          "factores": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.7,
+            "diversidad": 1.0
+          },
+          "factors": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.7,
+            "diversidad": 1.0
+          },
+          "pesos": {
+            "capacidad": 0.25,
+            "experiencia": 0.2,
+            "desempeno": 0.15,
+            "costo": 0.1,
+            "disponibilidad": 0.1,
+            "riesgo": 0.1,
+            "diversidad": 0.1
+          },
+          "razon_seleccion": "mejor puntaje disponible para estrategico",
+          "experiencia_consultada": [],
+          "finops": {
+            "score": 0.6,
+            "costo_promedio": null,
+            "explicacion": "Sin historial FINOPS — neutro"
+          }
+        }
+      ],
+      "equipo": [
+        {
+          "employee_id": "ef4b6f9b-fe45-4501-9433-d1d35f3fff15",
+          "employee_code": "docint-analyst",
+          "employee_name": "Analista Documental IA",
+          "specialty": "DOCINT",
+          "domain": "estrategico",
+          "score": 0.467,
+          "factores": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.7,
+            "diversidad": 1.0
+          },
+          "factors": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.7,
+            "diversidad": 1.0
+          },
+          "pesos": {
+            "capacidad": 0.25,
+            "experiencia": 0.2,
+            "desempeno": 0.15,
+            "costo": 0.1,
+            "disponibilidad": 0.1,
+            "riesgo": 0.1,
+            "diversidad": 0.1
+          },
+          "razon_seleccion": "mejor puntaje disponible para estrategico",
+          "experiencia_consultada": [],
+          "finops": {
+            "score": 0.6,
+            "costo_promedio": null,
+            "explicacion": "Sin historial FINOPS — neutro"
+          },
+          "rol": "LIDER",
+          "razon_rol": "Líder por dominio principal 'estrategico': mejor puntaje disponible para estrategico"
+        },
+        {
+          "employee_id": "c89cf62d-8720-4904-9f0a-49f7c5fbdebd",
+          "employee_code": "rips-auditor",
+          "employee_name": "Auditor RIPS IA",
+          "specialty": "RIPS Salud IPS",
+          "domain": "estrategico",
+          "score": 0.438,
+          "factores": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.4,
+            "diversidad": 1.0
+          },
+          "factors": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.4,
+            "diversidad": 1.0
+          },
+          "pesos": {
+            "capacidad": 0.25,
+            "experiencia": 0.2,
+            "desempeno": 0.15,
+            "costo": 0.1,
+            "disponibilidad": 0.1,
+            "riesgo": 0.1,
+            "diversidad": 0.1
+          },
+          "razon_seleccion": "mejor puntaje disponible para estrategico",
+          "experiencia_consultada": [],
+          "finops": {
+            "score": 0.6,
+            "costo_promedio": null,
+            "explicacion": "Sin historial FINOPS — neutro"
+          },
+          "razon_rol": "Validador con especialidad diferente (RIPS Salud IPS) para diversidad ante impacto en estrategico",
+          "rol": "VALIDADOR"
+        }
+      ],
+      "lider": {
+        "employee_id": "ef4b6f9b-fe45-4501-9433-d1d35f3fff15",
+        "employee_code": "docint-analyst",
+        "employee_name": "Analista Documental IA",
+        "specialty": "DOCINT",
+        "domain": "estrategico",
+        "score": 0.467,
+        "factores": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        },
+        "factors": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        },
+        "pesos": {
+          "capacidad": 0.25,
+          "experiencia": 0.2,
+          "desempeno": 0.15,
+          "costo": 0.1,
+          "disponibilidad": 0.1,
+          "riesgo": 0.1,
+          "diversidad": 0.1
+        },
+        "razon_seleccion": "mejor puntaje disponible para estrategico",
+        "experiencia_consultada": [],
+        "finops": {
+          "score": 0.6,
+          "costo_promedio": null,
+          "explicacion": "Sin historial FINOPS — neutro"
+        }
+      },
+      "consolidador": {
+        "employee_id": "ef4b6f9b-fe45-4501-9433-d1d35f3fff15",
+        "employee_code": "docint-analyst",
+        "employee_name": "Analista Documental IA",
+        "specialty": "DOCINT",
+        "domain": "estrategico",
+        "score": 0.467,
+        "factores": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        },
+        "factors": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        },
+        "pesos": {
+          "capacidad": 0.25,
+          "experiencia": 0.2,
+          "desempeno": 0.15,
+          "costo": 0.1,
+          "disponibilidad": 0.1,
+          "riesgo": 0.1,
+          "diversidad": 0.1
+        },
+        "razon_seleccion": "mejor puntaje disponible para estrategico",
+        "experiencia_consultada": [],
+        "finops": {
+          "score": 0.6,
+          "costo_promedio": null,
+          "explicacion": "Sin historial FINOPS — neutro"
+        }
+      },
+      "validador": {
+        "employee_id": "c89cf62d-8720-4904-9f0a-49f7c5fbdebd",
+        "employee_code": "rips-auditor",
+        "employee_name": "Auditor RIPS IA",
+        "specialty": "RIPS Salud IPS",
+        "domain": "estrategico",
+        "score": 0.438,
+        "factores": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.4,
+          "diversidad": 1.0
+        },
+        "factors": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.4,
+          "diversidad": 1.0
+        },
+        "pesos": {
+          "capacidad": 0.25,
+          "experiencia": 0.2,
+          "desempeno": 0.15,
+          "costo": 0.1,
+          "disponibilidad": 0.1,
+          "riesgo": 0.1,
+          "diversidad": 0.1
+        },
+        "razon_seleccion": "mejor puntaje disponible para estrategico",
+        "experiencia_consultada": [],
+        "finops": {
+          "score": 0.6,
+          "costo_promedio": null,
+          "explicacion": "Sin historial FINOPS — neutro"
+        },
+        "razon_rol": "Validador con especialidad diferente (RIPS Salud IPS) para diversidad ante impacto en estrategico"
+      },
+      "disidente": null,
+      "razon_seleccion_global": "Seleccionado Analista Documental IA como líder porque mejor puntaje disponible para estrategico en dominio principal 'estrategico' (tipo: diagnostico_integral)",
+      "candidatos_evaluados": 2,
+      "factores_pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "selection_log_id": "5a50759e-c12f-40fb-8c6a-72e03d39ef8f"
+    },
+    "work_plan_id": null,
+    "finops_reference": null,
+    "valor_potencial": 2000000.0,
+    "valor_materializado": 0.0,
+    "valor_potencial_certidumbre": "ESTIMADO",
+    "atribucion_nivel": null,
+    "contexto": {
+      "componentes": {
+        "organization_id": "ff95402e-e876-4722-ba33-c1b29db14d85",
+        "dominio": "comercial",
+        "indicadores": {
+          "valor_principal": 0.86,
+          "tasa_conversion": 0.86
+        },
+        "historico": {
+          "registrado": true
+        },
+        "eventos": [],
+        "conocimiento_autorizado": {
+          "valor": 0.12,
+          "fuente": "B"
+        },
+        "workplans_abiertos": 0,
+        "oportunidades_similares": 0,
+        "payload": {
+          "titulo": "Evidencia contradictoria",
+          "indicadores": {
+            "valor_principal": 0.86,
+            "tasa_conversion": 0.86
+          },
+          "historico": {
+            "registrado": true
+          },
+          "source_reference": "cert-v2-V2-OP-F",
+          "tipo_oportunidad": "RIESGO",
+          "impacto_estimado": 3000000,
+          "valor_potencial": 2000000,
+          "conocimiento_autorizado": {
+            "valor": 0.12,
+            "fuente": "B"
+          }
+        },
+        "senal_inmadura": false,
+        "evidencia_insuficiente": false,
+        "conflicto": true,
+        "conflicto_detalle": "Indicadores y conocimiento autorizado divergen"
+      },
+      "suficiencia": "PARCIAL",
+      "faltantes": [],
+      "conflicto": true,
+      "senal_inmadura": false,
+      "evidencia_insuficiente": false
+    },
+    "trazas": {
+      "opportunity_id": "4f5ddbe9-ffae-404c-b358-888966b1d7f4",
+      "correlation_id": "539d03af-e476-4250-9aec-2551df6fa165",
+      "estado": "PENDIENTE_APROBACION",
+      "trazas": [
+        {
+          "etapa": "SENAL_CREADA",
+          "detalle": {
+            "evento": "contradiccion",
+            "tipo": "riesgo"
+          },
+          "fecha": "2026-08-28T01:20:35.859258"
+        },
+        {
+          "etapa": "TRANSICION_EN_EVALUACION",
+          "detalle": {
+            "anterior": "DETECTADA",
+            "nuevo": "EN_EVALUACION",
+            "motivo": "Señal procesada"
+          },
+          "fecha": "2026-08-28T01:20:35.861083"
+        },
+        {
+          "etapa": "TRANSICION_PRIORIZADA",
+          "detalle": {
+            "anterior": "EN_EVALUACION",
+            "nuevo": "PRIORIZADA",
+            "motivo": "Evaluación completada"
+          },
+          "fecha": "2026-08-28T01:20:35.861088"
+        },
+        {
+          "etapa": "OPORTUNIDAD_CREADA",
+          "detalle": {
+            "codigo": "OPP-00002",
+            "tipo": "RIESGO",
+            "estado": "PRIORIZADA"
+          },
+          "fecha": "2026-08-28T01:20:35.865555"
+        },
+        {
+          "etapa": "TRANSICION_PENDIENTE_APROBACION",
+          "detalle": {
+            "anterior": "PRIORIZADA",
+            "nuevo": "PENDIENTE_APROBACION",
+            "motivo": "Requiere validación humana"
+          },
+          "fecha": "2026-08-28T01:20:35.866471"
+        }
+      ],
+      "transiciones": [
+        {
+          "de": "DETECTADA",
+          "a": "EN_EVALUACION",
+          "motivo": "Señal procesada"
+        },
+        {
+          "de": "EN_EVALUACION",
+          "a": "PRIORIZADA",
+          "motivo": "Evaluación completada"
+        },
+        {
+          "de": "PRIORIZADA",
+          "a": "PENDIENTE_APROBACION",
+          "motivo": "Requiere validación humana"
+        }
+      ],
+      "seguimiento": []
+    }
+  },
+  "head_git": "3af0be53748e37e972088b49664d896ddba65b54",
+  "oraculo_consultado": false
+}

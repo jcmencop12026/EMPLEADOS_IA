@@ -1,0 +1,15 @@
+{
+  "id": "V2-PX-3",
+  "tipo": "PX",
+  "titulo": "Valor potencial no equivale a materializado",
+  "tenant": "EMPRESA_SUR_V2",
+  "dominio": "CONTROL",
+  "senal": {
+    "ref_caso": "V2-OP-C",
+    "valor_potencial_estimable": true
+  },
+  "contexto": {
+    "plan_no_ejecutado": true,
+    "resultado_no_confirmado": true
+  }
+}

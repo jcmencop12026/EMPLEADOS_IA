@@ -1,0 +1,13 @@
+control,casos,esperado,observado,resultado,observacion
+R01,V2-PX-1,proactividad/idempotencia,"{'idempotente': True, 'signals': 1}",PASS,
+R02,V2-OP-B,señal≠oportunidad,"{'oportunidad_creada': False, 'pertinencia': None, 'momento': None}",PASS,
+R03,V2-OP-D,priorización global D1,"{'primero': 'Competencia D1', 'por_que': 'Priorizada por impacto (score=0.6552)'}",PASS,
+R04,"V2-OP-C,V2-OP-F",momento PROGRAMAR/OBSERVAR,C=PASS F=PASS,PASS,
+R05,"V2-OP-E,V2-NS-2",no inventar valor,E=PASS NS2=PASS,PASS,
+R06,V2-OP-F,contradicción,"{'pertinencia': 'SOLICITAR_APROBACION', 'momento': 'OBSERVAR', 'conflicto': True}",PASS,
+R07,"V2-NS-1,V2-NS-2",transversalidad,NS1=PASS NS2=PASS,PASS,
+R08,V2-PX-1,idempotencia,"{'idempotente': True, 'signals': 1}",PASS,
+R09,V2-PX-3,potencial≠materializado,"{'potencial': 1800000.0, 'materializado': 0.0, 'separados': True}",PASS,
+R10,V2-PX-2,cross-tenant,"{'fail_closed': True, 'contaminacion': False}",PASS,
+R11,V2-OP-A,NBA+plan,"{'momento': 'AHORA', 'estado': 'EN_SEGUIMIENTO', 'work_plan_id': '0d8c7243-3211-4fea-8227-4cdf2beafb22', 'pertinencia': 'SOLICITAR_APROBACION', 'autorizacion': 'REQUIERE_APROBACION'}",PASS,
+R12,V2-PX-4,trazabilidad,"{'etapas': ['ACTIVACION', 'TRANSICION_EN_SEGUIMIENTO', 'TRANSICION_MATERIALIZADA', 'RESULTADO', 'SENAL_CREADA', 'TRANSICION_EN_EVALUACION', 'TRANSICION_PRIORIZADA', 'OPORTUNIDAD_CREADA', 'TRANSICION_EN_EJECUCION', 'TRANSICION_APROBADA'], 'experiencias': 1}",PASS,

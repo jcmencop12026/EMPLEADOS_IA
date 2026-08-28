@@ -1,0 +1,14 @@
+{
+  "id": "V2-OP-F",
+  "esperado": {
+    "es_oportunidad": "INDETERMINADA",
+    "momento": "OBSERVAR",
+    "debe_conservar_contradiccion": true,
+    "debe_crear_plan": false,
+    "valor_materializado": false,
+    "reglas": [
+      "no ocultar ni resolver arbitrariamente el conflicto",
+      "debe proponer verificación/siguiente acción"
+    ]
+  }
+}

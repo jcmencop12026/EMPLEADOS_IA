@@ -1,0 +1,13 @@
+﻿criterio,bloqueante,validacion
+R01 Proactividad real,SI,Debe existir detección/acción derivada de señal sin depender de prompt humano en los casos aplicables.
+R02 Señal != oportunidad,SI,Una señal insuficiente no puede convertirse automáticamente en oportunidad.
+R03 Priorización global,SI,Debe comparar oportunidades competidoras y justificar selección.
+R04 Momento,SI,"Distinguir AHORA, PROGRAMAR y OBSERVAR."
+R05 Datos insuficientes,SI,"No inventar ROI, ahorro, valor o FINOPS sin datos."
+R06 Contradicción,SI,Conservar conflicto y gestionar verificación.
+R07 Transversalidad,SI,NS-1/NS-2 deben funcionar fuera de SALUD.
+R08 Idempotencia,SI,Repetición exacta no crea duplicados.
+R09 Valor materializado,SI,No confundir potencial con materializado.
+R10 Cross-tenant,SI,Aislamiento estricto entre tenants.
+R11 Siguiente mejor acción,SI,"Acción concreta, responsable/equipo, condiciones y aprobación cuando aplique."
+R12 Trazabilidad,SI,"Cadena completa hasta resultado, atribución y aprendizaje."
