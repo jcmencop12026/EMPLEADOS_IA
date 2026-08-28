@@ -86,3 +86,7 @@ def stop_scheduler() -> None:
     _stop.set()
     if _thread:
         _thread.join(timeout=2)
+
+
+def is_scheduler_running() -> bool:
+    return _thread is not None and _thread.is_alive()
