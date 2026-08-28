@@ -33,6 +33,7 @@ from app.routers import (
     tools,
 )
 from app.seed import bootstrap
+from app.security_config import validate_security_settings
 from app.services.automation_events import register_automation_event_handlers
 from app.services.automation_scheduler import start_scheduler, stop_scheduler
 from app.services.proactive_scheduler import start_proactive_scheduler, stop_proactive_scheduler
@@ -47,6 +48,12 @@ async def lifespan(_app: FastAPI):
         run_database_preflight(settings.database_url)
     except MigrationControlError as exc:
         raise RuntimeError(str(exc)) from exc
+
+    validate_security_settings(
+        database_url=settings.database_url,
+        jwt_secret=settings.jwt_secret,
+        bootstrap_admin_password=settings.bootstrap_admin_password,
+    )
 
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
@@ -71,7 +78,10 @@ app = FastAPI(
 
 @app.exception_handler(AuthorizationError)
 async def authorization_error_handler(_request, exc: AuthorizationError):
-    return JSONResponse(status_code=400, content={"detail": str(exc)})
+    return JSONResponse(
+        status_code=403,
+        content={"detail": str(exc) or "No tiene permisos para realizar esta acción."},
+    )
 
 
 origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
