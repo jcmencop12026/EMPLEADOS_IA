@@ -12,7 +12,7 @@
 |-------|-------|
 | **Rama** | `cursor/v1-multitenant` |
 | **Base V1** | `dc51d5ce4852d37e5eef8b5112d1260a002ee3bf` |
-| **HEAD final** | Ver commit actual en rama |
+| **HEAD final** | `50819226596f34137b07c68ab2598af8ed20b13` |
 | **PR** | [#29](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/29) (draft, sin merge) |
 
 ---
@@ -23,7 +23,7 @@
 git fetch origin --prune          → OK
 git rev-parse --show-toplevel     → /workspace (D:\EMPLEADOS_IA en entorno Windows)
 git branch --show-current         → cursor/v1-multitenant ✓
-git rev-parse HEAD                → f424ca0984b70fd97c181a1bdfc9b5cf8a344c0a
+git rev-parse HEAD                → 22aee3b26596f34137b07c68ab2598af8ed20b13
 git rev-parse origin/main         → dc51d5ce4852d37e5eef8b5112d1260a002ee3bf (base V1) ✓
 git status --short                → limpio (sin archivos no versionados tocados)
 ```
