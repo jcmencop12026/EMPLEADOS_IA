@@ -48,10 +48,11 @@ def test_registrar_consumo_con_tarifa(client: TestClient, token: str):
         from app.models import User
 
         user = db.query(User).filter(User.username == "admin").one()
+        model_service = f"gpt-4-{uuid.uuid4().hex[:8]}"
         rate = FinOpsRate(
             organization_id=user.organization_id,
             provider="openai",
-            model_service="gpt-4",
+            model_service=model_service,
             category="Modelo IA",
             price_input=Decimal("0.00001"),
             price_output=Decimal("0.00002"),
@@ -66,7 +67,7 @@ def test_registrar_consumo_con_tarifa(client: TestClient, token: str):
             db,
             organization_id=user.organization_id,
             provider="openai",
-            model_name="gpt-4",
+            model_name=model_service,
             category="Modelo IA",
             tokens_in=1000,
             tokens_out=500,
