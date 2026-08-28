@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./AppShell";
 import { RequireAuth } from "./RequireAuth";
+import { RequirePermission } from "./RequirePermission";
 import { ApprovalsPage } from "./pages/ApprovalsPage";
 import { AutomationRunsPage } from "./pages/AutomationRunsPage";
 import { AutomationWizardPage } from "./pages/AutomationWizardPage";
@@ -67,12 +68,24 @@ export default function App() {
           <Route path="oportunidades" element={<OportunidadesPage />} />
           <Route path="oportunidades/:opportunityId" element={<OportunidadDetailPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
-          <Route path="administracion/usuarios" element={<AdminUsersPage />} />
-          <Route path="administracion/roles" element={<AdminRolesPage />} />
-          <Route path="administracion/organizacion" element={<AdminOrganizationPage />} />
-          <Route path="administracion/configuracion" element={<AdminConfigPage />} />
-          <Route path="administracion/seguridad" element={<AdminSecurityPage />} />
-          <Route path="auditoria" element={<AuditPage />} />
+          <Route element={<RequirePermission anyOf={["admin.user.view"]} />}>
+            <Route path="administracion/usuarios" element={<AdminUsersPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["admin.role.view"]} />}>
+            <Route path="administracion/roles" element={<AdminRolesPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["admin.organization.view"]} />}>
+            <Route path="administracion/organizacion" element={<AdminOrganizationPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["admin.config.view"]} />}>
+            <Route path="administracion/configuracion" element={<AdminConfigPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["admin.security.view"]} />}>
+            <Route path="administracion/seguridad" element={<AdminSecurityPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["audit.view"]} />}>
+            <Route path="auditoria" element={<AuditPage />} />
+          </Route>
           <Route path="notificaciones" element={<NotificationsPage />} />
         </Route>
       </Route>
