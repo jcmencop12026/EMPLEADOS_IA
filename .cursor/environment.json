@@ -1,0 +1,19 @@
+{
+  "name": "EMPLEADOS_IA",
+  "user": "ubuntu",
+  "install": "bash .cursor/install.sh",
+  "terminals": [
+    {
+      "name": "backend",
+      "command": "cd backend && PYTHONPATH=. ../.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload"
+    },
+    {
+      "name": "frontend",
+      "command": "cd frontend && npm run dev"
+    }
+  ],
+  "ports": [
+    { "name": "API", "port": 8000 },
+    { "name": "Web", "port": 5180 }
+  ]
+}
