@@ -1,4 +1,4 @@
-﻿criterio,bloqueante,validacion
+criterio,bloqueante,validacion
 R01 Proactividad real,SI,Debe existir detección/acción derivada de señal sin depender de prompt humano en los casos aplicables.
 R02 Señal != oportunidad,SI,Una señal insuficiente no puede convertirse automáticamente en oportunidad.
 R03 Priorización global,SI,Debe comparar oportunidades competidoras y justificar selección.
