@@ -213,6 +213,20 @@ def build_context_360(
             .scalar() or 0
         )
 
+    evidencia_insuficiente = (
+        payload.get("evidencia_insuficiente") is True
+        or payload.get("senal_inmadura") is True
+    )
+    finanzas_insuficientes = payload.get("datos_financieros_suficientes") is False
+    senal_inmadura = evidencia_insuficiente or (
+        bool(indicadores)
+        and not historico
+        and not payload.get("valor_potencial")
+        and dominio in ("comercial", "financiero")
+        and "leads_variacion_pct" in indicadores
+        and float(indicadores.get("leads_variacion_pct") or 0) < 20
+    )
+
     componentes = {
         "organization_id": organization_id,
         "dominio": dominio,
@@ -223,6 +237,8 @@ def build_context_360(
         "workplans_abiertos": workplans_abiertos,
         "oportunidades_similares": oportunidades_similares,
         "payload": payload,
+        "senal_inmadura": senal_inmadura,
+        "evidencia_insuficiente": evidencia_insuficiente,
     }
 
     tiene_indicadores = bool(indicadores)
@@ -232,6 +248,10 @@ def build_context_360(
         faltantes.append("indicadores")
     if not tiene_historico and dominio not in ("administrativo", "comercial"):
         faltantes.append("histórico")
+    if evidencia_insuficiente:
+        faltantes.append("evidencia_adicional")
+    if finanzas_insuficientes:
+        faltantes.append("datos_financieros")
 
     # Contradicción: indicadores vs conocimiento
     conflicto = False
@@ -247,7 +267,11 @@ def build_context_360(
             except (TypeError, ValueError):
                 pass
 
-    if conflicto:
+    if senal_inmadura:
+        suficiencia = "INSUFICIENTE"
+        if "madurez" not in faltantes:
+            faltantes.append("madurez")
+    elif conflicto:
         suficiencia = "PARCIAL"
         componentes["conflicto"] = True
         componentes["conflicto_detalle"] = "Indicadores y conocimiento autorizado divergen"
@@ -263,6 +287,8 @@ def build_context_360(
         "suficiencia": suficiencia,
         "faltantes": faltantes,
         "conflicto": conflicto,
+        "senal_inmadura": senal_inmadura,
+        "evidencia_insuficiente": evidencia_insuficiente,
     }
 
 
@@ -275,6 +301,8 @@ def assess_capability_360(
     dominio: str,
     riesgo: str = "MEDIO",
     costo_estimado: float | None = None,
+    urgencia: str = "MEDIA",
+    sla_horas: int | None = None,
 ) -> dict[str, Any]:
     """Evalúa capacidad real disponible."""
     from app.enums import EmployeeLifecycleStatus
@@ -298,6 +326,8 @@ def assess_capability_360(
 
     ejecutable = empleados_disponibles > 0
     requiere_aprobacion = riesgo in ("ALTO", "CRITICO") or (costo_estimado or 0) > 5_000_000
+    if urgencia in ("ALTA", "CRITICA") and sla_horas is not None and sla_horas <= 48:
+        requiere_aprobacion = True
 
     gate = "AUTOMATICA_PERMITIDA"
     if not ejecutable:
@@ -329,9 +359,16 @@ def evaluate_pertinence(
 ) -> dict[str, Any]:
     suficiencia = contexto.get("suficiencia", "INSUFICIENTE")
     conflicto = contexto.get("conflicto", False)
+    senal_inmadura = contexto.get("senal_inmadura", False)
     componentes = contexto.get("componentes", {})
     oportunidades_similares = componentes.get("oportunidades_similares", 0)
 
+    if senal_inmadura:
+        return {
+            "resultado": "OBSERVAR",
+            "razon": "Señal relevante pero inmadura — esperar evidencia adicional",
+            "no_promover": True,
+        }
     if suficiencia == "INSUFICIENTE":
         return {
             "resultado": "SOLICITAR_DATOS",
@@ -343,6 +380,12 @@ def evaluate_pertinence(
             "resultado": "SOLICITAR_APROBACION",
             "razon": "Información contradictoria — requiere validación humana",
             "confianza_reducida": True,
+        }
+    payload_ref = componentes.get("payload") or {}
+    if impacto is None and not payload_ref.get("valor_potencial"):
+        return {
+            "resultado": "OBSERVAR",
+            "razon": "Sin base económica suficiente — observar antes de actuar",
         }
     if duplicada or oportunidades_similares > 2:
         return {"resultado": "OBSERVAR", "razon": "Oportunidad similar ya en curso"}
@@ -363,7 +406,19 @@ def evaluate_momento(
     sla_horas: int | None = None,
     tendencia: str | None = None,
     capacidad: dict | None = None,
+    conflicto: bool = False,
+    pertinencia: str | None = None,
 ) -> dict[str, Any]:
+    if conflicto:
+        return {
+            "resultado": "OBSERVAR",
+            "razon": "Contradicción no resuelta — verificar antes de actuar",
+        }
+    if pertinencia in ("OBSERVAR", "SOLICITAR_DATOS"):
+        return {
+            "resultado": "OBSERVAR",
+            "razon": "Evidencia insuficiente — observar antes de actuar",
+        }
     if not capacidad or not capacidad.get("ejecutable"):
         return {"resultado": "OBSERVAR", "razon": "Esperar capacidad disponible"}
     if urgencia in ("CRITICA", "ALTA") or (sla_horas is not None and sla_horas <= 48):
@@ -632,6 +687,22 @@ def process_signal(
         payload=payload,
     )
 
+    if contexto.get("senal_inmadura"):
+        signal.procesada = True
+        signal.processed_at = _utcnow()
+        add_trace(
+            db,
+            organization_id=signal.organization_id,
+            correlation_id=signal.correlation_id or _new_correlation(),
+            etapa="SENAL_OBSERVADA",
+            signal_id=signal.id,
+            detalle={
+                "razon": "Señal inmadura — no promover a oportunidad accionable",
+                "faltantes": contexto.get("faltantes", []),
+            },
+        )
+        return None
+
     tipo = signal_to_opportunity_type(signal, payload)
     impacto = payload.get("impacto_estimado")
     valor_potencial = payload.get("valor_potencial")
@@ -665,10 +736,26 @@ def process_signal(
     capacidad = assess_capability_360(
         db, organization_id=signal.organization_id, dominio=signal.dominio,
         riesgo=opp.riesgo, costo_estimado=float(opp.costo_estimado or 0),
+        urgencia=opp.urgencia, sla_horas=payload.get("sla_horas"),
     )
     pert = evaluate_pertinence(contexto, impacto=float(impacto or 0), capacidad=capacidad)
     opp.pertinencia = pert["resultado"]
     opp.pertinencia_razon = pert["razon"]
+
+    if pert.get("no_promover"):
+        db.delete(opp)
+        db.flush()
+        signal.procesada = True
+        signal.processed_at = _utcnow()
+        add_trace(
+            db,
+            organization_id=signal.organization_id,
+            correlation_id=signal.correlation_id or _new_correlation(),
+            etapa="SENAL_OBSERVADA",
+            signal_id=signal.id,
+            detalle={"razon": pert["razon"]},
+        )
+        return None
 
     if pert["resultado"] == "SOLICITAR_DATOS":
         transition_state(db, opp, "DATOS_INSUFICIENTES", motivo=pert["razon"])
@@ -681,6 +768,8 @@ def process_signal(
             sla_horas=payload.get("sla_horas"),
             tendencia=payload.get("tendencia"),
             capacidad=capacidad,
+            conflicto=contexto.get("conflicto", False),
+            pertinencia=pert["resultado"],
         )
         opp.momento = momento["resultado"]
         if contexto.get("conflicto"):
@@ -1009,13 +1098,22 @@ def run_proactive_pipeline(
     if not opp:
         return {"signal_id": signal.id, "opportunity_id": None}
 
-    capacidad = assess_capability_360(db, organization_id=organization_id, dominio=dominio)
+    capacidad = assess_capability_360(
+        db, organization_id=organization_id, dominio=dominio,
+        riesgo=opp.riesgo, costo_estimado=float(opp.costo_estimado or 0),
+        urgencia=opp.urgencia, sla_horas=(payload or {}).get("sla_horas"),
+    )
     accion = _parse_json(opp.siguiente_accion_json) or {}
-    gate = accion.get("autorizacion", "REQUIERE_APROBACION")
+    gate = accion.get("autorizacion", capacidad.get("human_gate", "REQUIERE_APROBACION"))
 
     if gate == "AUTOMATICA_PERMITIDA" and opp.estado == "PRIORIZADA":
         transition_state(db, opp, "APROBADA", motivo="Política automática")
         activate_opportunity(db, opp, user_id=user_id or "", auto_execute=False)
+    elif opp.pertinencia == "SOLICITAR_APROBACION" and opp.estado == "PRIORIZADA":
+        transition_state(db, opp, "PENDIENTE_APROBACION", motivo="Requiere validación humana")
+    elif gate in ("REQUIERE_APROBACION", "AUTOMATICA_BAJO_POLITICA") and capacidad.get("requiere_aprobacion"):
+        if opp.estado == "PRIORIZADA":
+            transition_state(db, opp, "PENDIENTE_APROBACION", motivo="Requiere aprobación humana")
     elif gate == "REQUIERE_APROBACION" and opp.estado == "PRIORIZADA":
         transition_state(db, opp, "PENDIENTE_APROBACION", motivo="Requiere aprobación humana")
 
