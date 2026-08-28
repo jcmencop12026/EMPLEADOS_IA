@@ -14,7 +14,7 @@
 
 ## 2. HEAD final
 
-*(completar tras commit/push)*
+`5d04d4333ac59dffcc4edd15ec787fda9cd05086`
 
 ---
 
