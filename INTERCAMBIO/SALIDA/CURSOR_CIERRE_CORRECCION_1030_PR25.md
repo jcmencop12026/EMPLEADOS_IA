@@ -116,7 +116,15 @@ HEAD: `3af0be5` — ver `CERTIFICACION_EXTERNA_1030_V2_R2/02_BRUTOS_ANTES_ORACUL
 
 ## 8. CI GitHub PR #25
 
-Pendiente registro post-push en `06_CI/`.
+| Campo | Valor |
+|-------|-------|
+| SHA evaluado | `d9e79a8` |
+| Run | [33133610701](https://github.com/jcmencop12026/EMPLEADOS_IA/actions/runs/33133610701) |
+| Validación Git | PASS |
+| Backend y PostgreSQL | PASS |
+| Frontend | PASS |
+| Pruebas Windows | PASS |
+| **Global** | **4/4 PASS** |
 
 ---
 
