@@ -88,7 +88,9 @@ def test_secret_masking_and_sanitize():
 def test_is_llm_provider():
     assert is_llm_provider("openai")
     assert is_llm_provider("ollama")
-    assert is_llm_provider("azure-openai")
+    assert not is_llm_provider("azure-openai")
+    assert not is_llm_provider("anthropic")
+    assert not is_llm_provider("gemini")
     assert not is_llm_provider("rule-engine")
     assert not is_llm_provider("docint")
     assert not is_llm_provider("custom")
@@ -233,20 +235,25 @@ def test_disabled_provider_not_used(db, org_user):
     openai_cfg = db.query(LlmProviderConfig).filter(
         LlmProviderConfig.organization_id == org_id,
         LlmProviderConfig.provider_type == "openai",
-    ).one()
+    ).first()
+    assert openai_cfg is not None
+    previous = openai_cfg.is_enabled
     openai_cfg.is_enabled = False
     db.commit()
-
-    res = complete(
-        db,
-        organization_id=org_id,
-        messages=[LlmMessage(role="user", content="x")],
-        preferred_provider="openai",
-    )
-    assert not res.success or res.provider != "openai"
-
-    openai_cfg.is_enabled = True
-    db.commit()
+    try:
+        res = complete(
+            db,
+            organization_id=org_id,
+            messages=[LlmMessage(role="user", content="x")],
+            preferred_provider="openai",
+            require_explicit_preferred=True,
+        )
+        assert not res.success
+        assert res.error is not None
+        assert res.error.category == LlmErrorCategory.CONFIGURATION_ERROR
+    finally:
+        openai_cfg.is_enabled = previous
+        db.commit()
 
 
 def test_finops_on_llm_execution(db, org_user):
@@ -422,19 +429,22 @@ def test_should_use_llm_executor():
     assert not should_use_llm(emp, ExecutorType.PYTHON)
 
 
-def test_provider_create_service(db, org_user):
+def test_provider_create_service(db, org_user, monkeypatch):
     org_id, user_id = org_user
+    env_var = "LLM_PROVIDER_CREATE_TEST_KEY"
+    monkeypatch.delenv(env_var, raising=False)
     row = create_provider(
         db,
         org_id,
         LlmProviderCreate(
-            name="Test Azure",
-            provider_type="azure-openai",
-            model_default="gpt-4",
-            secret_env_var="AZURE_OPENAI_KEY",
+            name="Test Ollama",
+            provider_type="ollama",
+            model_default="llama3.2",
+            endpoint="http://127.0.0.1:11434",
+            secret_env_var=env_var,
         ),
         user_id=user_id,
     )
-    assert row["provider_type"] == "azure-openai"
-    assert row["secret_ref"] == build_env_secret_ref("AZURE_OPENAI_KEY")
-    assert not resolve_secret(row["secret_ref"])  # env not set in test
+    assert row["provider_type"] == "ollama"
+    assert row["secret_ref"] == build_env_secret_ref(env_var)
+    assert not resolve_secret(row["secret_ref"])

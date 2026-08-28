@@ -26,35 +26,12 @@ from app.services.finops_service import registrar_consumo
 from app.services.knowledge_retrieval import retrieve_knowledge
 
 
-LLM_PROVIDERS = frozenset({"openai", "ollama", "azure-openai", "anthropic", "gemini"})
-NON_LLM_PROVIDER_MARKERS = frozenset(
-    {
-        "python",
-        "rule",
-        "tool",
-        "rule-engine",
-        "rules",
-        "deterministic",
-        "none",
-        "sql",
-        "automation",
-        "human",
-        "hybrid",
-        "docint",
-        "rips",
-        "custom",
-    }
-)
+from app.gateway.providers import is_executable_llm_provider
 
 
 def is_llm_provider(provider: str | None) -> bool:
-    """Allowlist estricta — solo proveedores LLM explícitos del gateway V1."""
-    if not provider:
-        return False
-    normalized = provider.lower().strip()
-    if normalized in NON_LLM_PROVIDER_MARKERS:
-        return False
-    return normalized in LLM_PROVIDERS
+    """Allowlist estricta — solo proveedores LLM ejecutables en V1."""
+    return is_executable_llm_provider(provider)
 
 
 def should_use_llm(
@@ -106,6 +83,7 @@ def run_llm_for_task(
         policy.preferred_provider if policy and policy.preferred_provider
         else (employee.model_provider if employee else None)
     )
+    explicit_preferred = bool(preferred_provider and str(preferred_provider).strip())
     preferred_model = (
         policy.preferred_model if policy and policy.preferred_model
         else (employee.model_name if employee else None)
@@ -159,9 +137,11 @@ def run_llm_for_task(
         work_plan_id=work_plan_id,
         task_id=task_id,
         transport=transport,
+        require_explicit_preferred=explicit_preferred,
     )
 
     finops_record = None
+    finops_registration_failed = False
     if response.success:
         try:
             finops_record = registrar_consumo(
@@ -178,8 +158,26 @@ def run_llm_for_task(
                 tokens_out=response.tokens_out,
                 duration_ms=response.latency_ms,
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            finops_registration_failed = True
+            write_audit(
+                db,
+                action="finops.registration.failed",
+                organization_id=organization_id,
+                user_id=user_id,
+                detail=json.dumps(
+                    {
+                        "trace_id": response.trace_id,
+                        "provider": response.provider,
+                        "model": response.model,
+                        "organization_id": organization_id,
+                        "execution_ref": response.trace_id,
+                        "error_type": type(exc).__name__,
+                        "error_message": str(exc)[:500],
+                    },
+                    ensure_ascii=False,
+                ),
+            )
 
         write_audit(
             db,
@@ -216,6 +214,7 @@ def run_llm_for_task(
             "initial_provider": response.initial_provider,
             "fallback_provider": response.fallback_provider,
             "cost": finops_record.cost if finops_record else None,
+            "finops_registration_failed": finops_registration_failed,
             "evidence": {
                 "knowledge_chunks": len(knowledge_chunks),
                 "trace_components": trace_meta,
@@ -223,6 +222,10 @@ def run_llm_for_task(
         }
 
     error = response.error
+    public_error = error.to_public_dict() if error else None
+    public_initial_error = (
+        response.initial_error.to_public_dict() if response.initial_error else None
+    )
     write_audit(
         db,
         action="llm.inference.error",
@@ -241,9 +244,9 @@ def run_llm_for_task(
     return {
         "summary": error.message if error else "Error de inferencia IA",
         "confidence": 0.0,
-        "error": error.to_dict() if error else None,
+        "error": public_error,
         "source": "llm",
         "trace_id": response.trace_id,
         "fallback_used": response.fallback_used,
-        "initial_error": response.initial_error.to_dict() if response.initial_error else None,
+        "initial_error": public_initial_error,
     }

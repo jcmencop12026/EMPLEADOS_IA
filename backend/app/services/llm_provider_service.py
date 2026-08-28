@@ -5,9 +5,11 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.audit import write_audit
+from app.gateway.providers import is_executable_llm_provider
 from app.gateway.secrets import build_env_secret_ref, mask_secret, resolve_secret, secret_configured
 from app.llm_models import LlmInferenceLog, LlmProviderConfig
 from app.schemas_llm import LlmProviderCreate, LlmProviderUpdate
@@ -42,7 +44,7 @@ def list_providers(db: Session, organization_id: str) -> list[dict[str, Any]]:
         .order_by(LlmProviderConfig.priority.asc(), LlmProviderConfig.name.asc())
         .all()
     )
-    return [_serialize_provider(r) for r in rows]
+    return [_serialize_provider(r) for r in rows if is_executable_llm_provider(r.provider_type)]
 
 
 def get_provider(db: Session, organization_id: str, provider_id: str) -> dict[str, Any] | None:
@@ -61,11 +63,17 @@ def create_provider(
     *,
     user_id: str | None = None,
 ) -> dict[str, Any]:
+    provider_type = data.provider_type.lower().strip()
+    if not is_executable_llm_provider(provider_type):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Proveedor no ejecutable en V1. Solo openai u ollama están disponibles.",
+        )
     secret_ref = build_env_secret_ref(data.secret_env_var) if data.secret_env_var else None
     row = LlmProviderConfig(
         organization_id=organization_id,
         name=data.name,
-        provider_type=data.provider_type.lower(),
+        provider_type=provider_type,
         model_default=data.model_default,
         endpoint=data.endpoint,
         timeout_seconds=data.timeout_seconds,

@@ -68,6 +68,15 @@ class LlmGatewayError:
             "technical_detail": self.technical_detail,
         }
 
+    def to_public_dict(self) -> dict[str, Any]:
+        """Respuesta segura para clientes — sin technical_detail."""
+        return {
+            "category": self.category,
+            "message": self.message,
+            "provider": self.provider,
+            "model": self.model,
+        }
+
 
 FALLBACK_ELIGIBLE: set[LlmErrorCategory] = {
     LlmErrorCategory.PROVIDER_UNAVAILABLE,

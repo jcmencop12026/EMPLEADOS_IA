@@ -1,7 +1,9 @@
 import os
 import tempfile
+import threading
 import time
 import uuid
+from pathlib import Path
 from urllib.parse import urlparse
 
 import pytest
@@ -34,6 +36,7 @@ from app.services import proactive_scheduler  # noqa: E402
 
 _db_url = os.environ["DATABASE_URL"]
 _connect_args = {"check_same_thread": False} if _db_url.startswith("sqlite") else {}
+_pg_reset_lock = threading.Lock()
 
 
 def _is_postgresql_url(url: str) -> bool:
@@ -61,6 +64,23 @@ def _is_safe_test_database(url: str) -> bool:
     return db_name.endswith("_test") or db_name.endswith("test") or "_test" in db_name
 
 
+def _ensure_postgresql_schema() -> None:
+    from alembic import command
+    from alembic.config import Config
+
+    from scripts.migration_control import assert_single_head
+
+    cfg = Config(str(Path(__file__).resolve().parents[1] / "backend" / "alembic.ini"))
+    command.upgrade(cfg, "head")
+    head = assert_single_head()
+    with engine.connect() as conn:
+        version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
+    if version != head:
+        raise RuntimeError(
+            f"PostgreSQL test DB desincronizada: alembic_version={version!r}, head esperado={head!r}"
+        )
+
+
 def _reset_postgresql_test_database() -> None:
     if not _is_safe_test_database(_db_url):
         raise RuntimeError(
@@ -68,46 +88,51 @@ def _reset_postgresql_test_database() -> None:
             f"BD detectada: {_postgresql_database_name(_db_url)!r}"
         )
     last_error: Exception | None = None
-    for attempt in range(5):
-        try:
-            automation_scheduler.stop_scheduler()
-            proactive_scheduler.stop_proactive_scheduler()
-            engine.dispose()
-            with engine.begin() as conn:
-                conn.execute(text("SELECT pg_advisory_lock(8421030)"))
-                try:
-                    tables = conn.execute(
-                        text(
-                            "SELECT tablename FROM pg_tables "
-                            "WHERE schemaname = 'public' AND tablename NOT LIKE 'alembic_%'"
-                        )
-                    ).scalars().all()
-                    if tables:
-                        quoted = ", ".join(f'"{table}"' for table in tables)
-                        conn.execute(text(f"TRUNCATE {quoted} RESTART IDENTITY CASCADE"))
-                finally:
-                    conn.execute(text("SELECT pg_advisory_unlock(8421030)"))
-            db = TestingSessionLocal()
+    with _pg_reset_lock:
+        for attempt in range(5):
             try:
-                bootstrap(db)
-            finally:
-                db.close()
-            return
-        except OperationalError as exc:
-            last_error = exc
-            if "deadlock" not in str(exc).lower():
-                raise
-            time.sleep(0.05 * (attempt + 1))
+                automation_scheduler.stop_scheduler()
+                proactive_scheduler.stop_proactive_scheduler()
+                engine.dispose()
+                with engine.begin() as conn:
+                    conn.execute(text("SELECT pg_advisory_lock(8421030)"))
+                    try:
+                        tables = conn.execute(
+                            text(
+                                "SELECT tablename FROM pg_tables "
+                                "WHERE schemaname = 'public' AND tablename NOT LIKE 'alembic_%'"
+                            )
+                        ).scalars().all()
+                        if tables:
+                            quoted = ", ".join(f'"{table}"' for table in tables)
+                            conn.execute(text(f"TRUNCATE {quoted} RESTART IDENTITY CASCADE"))
+                    finally:
+                        conn.execute(text("SELECT pg_advisory_unlock(8421030)"))
+                db = TestingSessionLocal()
+                try:
+                    bootstrap(db)
+                finally:
+                    db.close()
+                return
+            except OperationalError as exc:
+                last_error = exc
+                if "deadlock" not in str(exc).lower():
+                    raise
+                time.sleep(0.05 * (attempt + 1))
     if last_error is not None:
         raise last_error
 
 
 engine = create_engine(_db_url, connect_args=_connect_args)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base.metadata.create_all(bind=engine)
-_bootstrap_db = TestingSessionLocal()
-bootstrap(_bootstrap_db)
-_bootstrap_db.close()
+
+if _is_postgresql_url(_db_url):
+    _ensure_postgresql_schema()
+else:
+    Base.metadata.create_all(bind=engine)
+    _bootstrap_db = TestingSessionLocal()
+    bootstrap(_bootstrap_db)
+    _bootstrap_db.close()
 
 
 def _override_get_db():
