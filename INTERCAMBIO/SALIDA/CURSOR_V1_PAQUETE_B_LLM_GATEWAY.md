@@ -10,7 +10,7 @@
 
 ## 3. HEAD final
 
-(Pendiente de commit — ver sección Git tras push)
+`026ee00` (`026ee00...` — feat(llm): agregar gateway de inferencia V1)
 
 ## 4. PR
 
