@@ -53,6 +53,7 @@ const MENU: NavSection[] = [
     id: "admin",
     label: "Administración",
     items: [
+      ...(canViewCompanies ? [{ to: "/administracion/empresas", label: "Empresas" }] : []),
       { to: "/administracion/usuarios", label: "Usuarios" },
       { to: "/administracion/roles", label: "Roles y permisos" },
       { to: "/administracion/organizacion", label: "Organización" },
@@ -78,6 +79,7 @@ export function AppShell() {
   const [sections, setSections] = useState<Record<string, boolean>>(loadSections);
   const [unread, setUnread] = useState(0);
   const user = getCachedUser();
+  const canViewCompanies = user?.permissions?.includes("platform.organization.view");
 
   useEffect(() => {
     localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0");

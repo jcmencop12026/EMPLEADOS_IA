@@ -82,6 +82,7 @@ class RolePermissionsUpdate(BaseModel):
 class OrganizationAdminOut(BaseModel):
     id: str
     name: str
+    slug: str
     status: str
     timezone: str
     created_at: datetime

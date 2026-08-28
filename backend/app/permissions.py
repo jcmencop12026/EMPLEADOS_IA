@@ -127,6 +127,12 @@ OPORTUNIDADES_PERMISSIONS = {
     "oportunidades.activate",
 }
 
+PLATFORM_PERMISSIONS = {
+    "platform.organization.view",
+    "platform.organization.create",
+    "platform.organization.manage",
+}
+
 ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "employee.view": ("Empleados IA", "Ver directorio de empleados"),
     "employee.create": ("Empleados IA", "Crear empleados"),
@@ -196,9 +202,12 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "oportunidades.evaluate": ("Oportunidades", "Evaluar y priorizar oportunidades"),
     "oportunidades.approve": ("Oportunidades", "Aprobar oportunidades"),
     "oportunidades.activate": ("Oportunidades", "Activar oportunidades"),
+    "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
+    "platform.organization.create": ("Plataforma", "Crear empresas"),
+    "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
 }
 
-SYSTEM_ROLE_CODES = {"admin", "operator", "viewer"}
+SYSTEM_ROLE_CODES = {"admin", "operator", "viewer", "superadmin"}
 
 PROTECTED_ASSIGNMENT_ROLE_CODES = {"superadmin", "platform_admin", "SUPERADMIN"}
 
@@ -218,6 +227,22 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | FINOPS_PERMISSIONS
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
+    ),
+    "superadmin": (
+        EMPLOYEE_PERMISSIONS
+        | NOTIFICATION_PERMISSIONS
+        | ADMIN_PERMISSIONS
+        | OPERATIONS_PERMISSIONS
+        | AUTOMATION_PERMISSIONS
+        | AUDIT_PERMISSIONS
+        | CAPABILITY_PERMISSIONS
+        | TOOL_PERMISSIONS
+        | KNOWLEDGE_PERMISSIONS
+        | TEST_LAB_PERMISSIONS
+        | FINOPS_PERMISSIONS
+        | SALUD_PERMISSIONS
+        | OPORTUNIDADES_PERMISSIONS
+        | PLATFORM_PERMISSIONS
     ),
     "operator": {
         "employee.view",
