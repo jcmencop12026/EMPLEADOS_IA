@@ -998,3 +998,46 @@ export async function fetchOpportunityTrace(id: string): Promise<Record<string, 
 export async function prioritizeOpportunities(): Promise<Record<string, unknown>> {
   return api("/api/oportunidades/priorizar", { method: "POST", body: JSON.stringify({}) });
 }
+
+export type LlmProvider = {
+  id: string;
+  organization_id: string;
+  name: string;
+  provider_type: string;
+  model_default: string | null;
+  endpoint: string | null;
+  timeout_seconds: number;
+  priority: number;
+  is_enabled: boolean;
+  is_fallback: boolean;
+  secret_ref: string | null;
+  secret_configured: boolean;
+  secret_masked: string | null;
+  config_json: Record<string, unknown> | null;
+};
+
+export type LlmTestResult = {
+  success: boolean;
+  status: string;
+  message: string;
+  provider?: string;
+  model?: string;
+  latency_ms?: number;
+  error_category?: string;
+};
+
+export async function fetchLlmProviders(): Promise<LlmProvider[]> {
+  return api("/api/llm/providers");
+}
+
+export async function createLlmProvider(data: Record<string, unknown>): Promise<LlmProvider> {
+  return api("/api/llm/providers", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateLlmProvider(id: string, data: Record<string, unknown>): Promise<LlmProvider> {
+  return api(`/api/llm/providers/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function testLlmProvider(id: string): Promise<LlmTestResult> {
+  return api(`/api/llm/providers/${id}/test`, { method: "POST", body: JSON.stringify({}) });
+}

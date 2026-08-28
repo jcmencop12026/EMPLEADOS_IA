@@ -7,6 +7,7 @@ from app.security import hash_password
 from app.seed_orchestration import bootstrap_orchestration
 from app.seed_permissions import bootstrap_permissions
 from app.seed_salud import bootstrap_salud
+from app.seed_llm import bootstrap_llm
 
 
 def bootstrap(db: Session) -> None:
@@ -39,3 +40,4 @@ def bootstrap(db: Session) -> None:
     bootstrap_orchestration(db, org.id)
     bootstrap_permissions(db)
     bootstrap_salud(db, org.id)
+    bootstrap_llm(db, org.id)

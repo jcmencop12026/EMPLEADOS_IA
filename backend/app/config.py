@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     bootstrap_admin_username: str = "admin"
     bootstrap_admin_password: str = "Admin2026*"
     bootstrap_org_name: str = "Empresa demo"
+    openai_api_key: str | None = None
+    ollama_base_url: str = "http://127.0.0.1:11434"
+    llm_default_timeout_seconds: int = 60
 
 
 settings = Settings()
