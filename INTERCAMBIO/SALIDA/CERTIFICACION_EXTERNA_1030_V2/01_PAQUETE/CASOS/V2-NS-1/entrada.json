@@ -1,0 +1,21 @@
+{
+  "id": "V2-NS-1",
+  "tipo": "NS",
+  "titulo": "Transversalidad logística no SALUD",
+  "tenant": "EMPRESA_LOGISTICA_V2",
+  "dominio": "LOGISTICA",
+  "senal": {
+    "fuente": "gps_flota",
+    "evento": "rutas_repetidamente_ineficientes",
+    "metricas": {
+      "km_extra_pct": 17,
+      "entregas_mes": 420
+    },
+    "timestamp": "2026-08-28T14:00:00-05:00"
+  },
+  "contexto": {
+    "sector": "LOGISTICA",
+    "salud": false,
+    "datos_financieros_suficientes": true
+  }
+}

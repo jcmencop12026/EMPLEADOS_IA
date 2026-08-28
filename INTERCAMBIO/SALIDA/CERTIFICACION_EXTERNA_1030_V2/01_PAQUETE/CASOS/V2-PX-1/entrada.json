@@ -1,0 +1,14 @@
+{
+  "id": "V2-PX-1",
+  "tipo": "PX",
+  "titulo": "Idempotencia exacta",
+  "tenant": "EMPRESA_NORTE_V2",
+  "dominio": "CONTROL",
+  "senal": {
+    "ref_caso": "V2-OP-A",
+    "repeticiones": 2
+  },
+  "contexto": {
+    "misma_clave_idempotencia": "V2-IDEMP-A"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "V2-OP-D",
+  "tipo": "OP",
+  "titulo": "Dos oportunidades compiten por recursos",
+  "tenant": "EMPRESA_SUR_V2",
+  "dominio": "OPERACIONES",
+  "senal": {
+    "fuente": "motor_analitico",
+    "evento": "oportunidades_competidoras",
+    "opciones": [
+      {
+        "codigo": "D1",
+        "impacto": 82,
+        "urgencia": 70,
+        "esfuerzo": 25
+      },
+      {
+        "codigo": "D2",
+        "impacto": 60,
+        "urgencia": 95,
+        "esfuerzo": 70
+      }
+    ],
+    "timestamp": "2026-08-28T11:00:00-05:00"
+  },
+  "contexto": {
+    "recurso_compartido": true,
+    "solo_una_puede_iniciarse": true
+  }
+}

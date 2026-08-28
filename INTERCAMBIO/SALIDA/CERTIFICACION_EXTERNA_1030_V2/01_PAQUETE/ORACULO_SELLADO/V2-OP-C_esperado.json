@@ -1,0 +1,15 @@
+{
+  "id": "V2-OP-C",
+  "esperado": {
+    "es_oportunidad": true,
+    "momento": "PROGRAMAR",
+    "prioridad": "MEDIA",
+    "debe_crear_plan": true,
+    "finops_permitido": true,
+    "valor_materializado": false,
+    "reglas": [
+      "no ejecutar AHORA una oportunidad futura",
+      "debe preservar fecha/condición de activación"
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "V2-OP-F",
+  "tipo": "OP",
+  "titulo": "Evidencia contradictoria",
+  "tenant": "EMPRESA_CENTRO_V2",
+  "dominio": "RIESGO",
+  "senal": {
+    "fuente": "fuentes_multiples",
+    "evento": "contradiccion",
+    "evidencias": [
+      {
+        "fuente": "A",
+        "afirma": "demanda_alta",
+        "confianza": 0.86
+      },
+      {
+        "fuente": "B",
+        "afirma": "demanda_baja",
+        "confianza": 0.83
+      }
+    ],
+    "timestamp": "2026-08-28T13:00:00-05:00"
+  },
+  "contexto": {
+    "resolucion_automatica_no_autorizada": true
+  }
+}

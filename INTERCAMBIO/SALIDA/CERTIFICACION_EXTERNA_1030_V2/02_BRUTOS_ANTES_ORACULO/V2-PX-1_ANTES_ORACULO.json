@@ -1,0 +1,71 @@
+{
+  "caso": "V2-PX-1",
+  "timestamp": "2026-08-28T00:56:55.578088+00:00",
+  "entrada": {
+    "id": "V2-PX-1",
+    "tipo": "PX",
+    "titulo": "Idempotencia exacta",
+    "tenant": "EMPRESA_NORTE_V2",
+    "dominio": "CONTROL",
+    "senal": {
+      "ref_caso": "V2-OP-A",
+      "repeticiones": 2
+    },
+    "contexto": {
+      "misma_clave_idempotencia": "V2-IDEMP-A"
+    }
+  },
+  "tenant_id": "16b21c74-ed5e-4102-a8ef-e9781a1e8f88",
+  "ejecuciones": [
+    {
+      "signal_id": "a49a772a-796d-4e03-a69d-ba4439d93a33",
+      "opportunity_id": "8a4fb156-4a78-4e47-ad89-fbdd6715a257",
+      "codigo": "OPP-00003",
+      "estado": "PRIORIZADA",
+      "pertinencia": "ACTUAR",
+      "prioridad_score": 0.6032,
+      "siguiente_accion": {
+        "que": "Atender oportunidad: Oportunidad real urgente con capacidad disponible",
+        "por_que": "Evidencia, impacto y capacidad suficientes",
+        "cuando": "AHORA",
+        "quien": "Equipo IA asignado",
+        "quien_id": "b5950ba7-2c9e-45e6-83d6-f452981091d2",
+        "herramienta": "Orquestador + capacidades asignadas",
+        "canal": "Automatización",
+        "costo_estimado": 0.0,
+        "autorizacion": "AUTOMATICA_BAJO_POLITICA",
+        "resultado_esperado": "Materializar valor potencial estimado",
+        "kpi_objetivo": "mejora_indicador_principal",
+        "reevaluar_en_horas": 72,
+        "escalar_si": "Sin avance en 7 días o KPI empeora",
+        "abandonar_si": "Capacidad no disponible tras 30 días",
+        "ejecutable": true
+      },
+      "capacidad": {
+        "empleados_disponibles": 2,
+        "herramientas_activas": 20,
+        "ejecutable": true,
+        "requiere_aprobacion": false,
+        "human_gate": "AUTOMATICA_BAJO_POLITICA",
+        "limitaciones": [],
+        "mensaje": "Capacidad disponible"
+      },
+      "deduplicated": false
+    },
+    {
+      "signal_id": "a49a772a-796d-4e03-a69d-ba4439d93a33",
+      "opportunity_id": "8a4fb156-4a78-4e47-ad89-fbdd6715a257",
+      "deduplicated": true
+    },
+    {
+      "signal_id": "a49a772a-796d-4e03-a69d-ba4439d93a33",
+      "opportunity_id": "8a4fb156-4a78-4e47-ad89-fbdd6715a257",
+      "deduplicated": true
+    }
+  ],
+  "signal_ids_unicos": 1,
+  "opportunity_ids_unicos": 1,
+  "idempotente": true,
+  "head_git": "c8a67b35847fbebb21b0c749f6e82c0c641e8fcc",
+  "oraculo_consultado": false
+}

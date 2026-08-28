@@ -1,0 +1,28 @@
+{
+  "caso": "V2-PX-2",
+  "timestamp": "2026-08-28T00:56:55.814945+00:00",
+  "entrada": {
+    "id": "V2-PX-2",
+    "tipo": "PX",
+    "titulo": "Aislamiento cross-tenant",
+    "tenant": "CONTROL_MULTITENANT",
+    "dominio": "CONTROL",
+    "senal": {
+      "tenant_origen": "EMPRESA_NORTE_V2",
+      "tenant_intruso": "EMPRESA_SUR_V2",
+      "ref_caso": "V2-OP-A"
+    },
+    "contexto": {
+      "intento_lectura_cruzada": true
+    }
+  },
+  "tenant_id": "c09794aa-8097-4822-860d-73a1be017a73",
+  "tenant_a_id": "16b21c74-ed5e-4102-a8ef-e9781a1e8f88",
+  "tenant_b_id": "d063a3bf-127f-443d-9a3a-c22f6b4d4311",
+  "oportunidad_a_id": "b144a763-4bed-46f2-b6d0-47eea5a9804b",
+  "contaminacion_tenant_b": false,
+  "trace_desde_tenant_b": {},
+  "fail_closed": true,
+  "head_git": "c8a67b35847fbebb21b0c749f6e82c0c641e8fcc",
+  "oraculo_consultado": false
+}

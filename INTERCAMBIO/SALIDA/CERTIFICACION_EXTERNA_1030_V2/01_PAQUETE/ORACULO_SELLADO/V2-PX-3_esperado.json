@@ -1,0 +1,9 @@
+{
+  "id": "V2-PX-3",
+  "esperado": {
+    "valor_materializado": false,
+    "reglas": [
+      "puede existir valor potencial, nunca materializado sin resultado verificable"
+    ]
+  }
+}

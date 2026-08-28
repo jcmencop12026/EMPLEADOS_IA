@@ -1,0 +1,17 @@
+{
+  "id": "V2-OP-A",
+  "esperado": {
+    "es_oportunidad": true,
+    "momento": "AHORA",
+    "prioridad": "ALTA",
+    "debe_crear_plan": true,
+    "finops_permitido": true,
+    "valor_materializado": false,
+    "requiere_aprobacion": true,
+    "reglas": [
+      "debe distinguir señal de oportunidad",
+      "debe proponer siguiente mejor acción concreta",
+      "no debe declarar valor materializado antes de ejecución"
+    ]
+  }
+}

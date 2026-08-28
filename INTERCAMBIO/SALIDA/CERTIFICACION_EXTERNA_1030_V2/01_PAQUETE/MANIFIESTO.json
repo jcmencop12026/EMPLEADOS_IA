@@ -1,0 +1,22 @@
+{
+  "paquete": "OPORTUNIDADES_PROACTIVAS_1030_CERTIFICACION_V2",
+  "version": "2.0",
+  "objetivo": "Certificación externa sustitutiva adversarial e independiente para PR #25 / Oportunidades Proactivas 1030.",
+  "protocolo": "FASE_CIEGA_PRIMERO",
+  "casos": [
+    "V2-OP-A",
+    "V2-OP-B",
+    "V2-OP-C",
+    "V2-OP-D",
+    "V2-OP-E",
+    "V2-OP-F",
+    "V2-NS-1",
+    "V2-NS-2",
+    "V2-PX-1",
+    "V2-PX-2",
+    "V2-PX-3",
+    "V2-PX-4"
+  ],
+  "regla_oraculo": "No abrir ORACULO_SELLADO antes de congelar resultados brutos de todos los casos.",
+  "nota": "Los payloads y el oráculo fueron creados fuera de Cursor a partir de los criterios de certificación recuperados, no de los resultados internos de PR #25."
+}

@@ -1,0 +1,16 @@
+{
+  "id": "V2-OP-B",
+  "esperado": {
+    "es_oportunidad": false,
+    "momento": "OBSERVAR",
+    "prioridad": "MEDIA_O_MENOR",
+    "debe_crear_plan": false,
+    "finops_permitido": false,
+    "valor_materializado": false,
+    "reglas": [
+      "no debe convertir toda señal en oportunidad",
+      "debe solicitar/esperar evidencia adicional",
+      "no inventar impacto económico"
+    ]
+  }
+}
