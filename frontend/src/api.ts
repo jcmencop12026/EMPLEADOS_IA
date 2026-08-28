@@ -114,10 +114,29 @@ export type UserMe = {
 export type Organization = {
   id: string;
   name: string;
+  slug?: string;
   status?: string;
   timezone?: string;
   created_at: string;
   updated_at?: string | null;
+};
+
+export type PlatformOrganization = {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  timezone: string;
+  created_at: string;
+  updated_at?: string | null;
+  users_count: number;
+};
+
+export type PlatformOrganizationCreateResponse = {
+  organization: PlatformOrganization;
+  admin_user_id: string;
+  admin_username: string;
+  temporary_password?: string | null;
 };
 
 export type AdminUser = {
@@ -560,6 +579,32 @@ export async function updateOrgConfig(data: Partial<OrgConfig>): Promise<OrgConf
 
 export async function fetchSecuritySummary(): Promise<SecuritySummary> {
   return api<SecuritySummary>("/api/admin/security");
+}
+
+export async function fetchPlatformOrganizations(): Promise<PlatformOrganization[]> {
+  return api<PlatformOrganization[]>("/api/platform/organizations");
+}
+
+export async function createPlatformOrganization(data: {
+  name: string;
+  slug: string;
+  timezone?: string;
+  admin_username: string;
+  admin_password?: string;
+  admin_email?: string;
+  admin_full_name?: string;
+}): Promise<PlatformOrganizationCreateResponse> {
+  return api<PlatformOrganizationCreateResponse>("/api/platform/organizations", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function setPlatformOrganizationStatus(orgId: string, status: "ACTIVE" | "INACTIVE"): Promise<PlatformOrganization> {
+  return api<PlatformOrganization>(`/api/platform/organizations/${orgId}/status`, {
+    method: "POST",
+    body: JSON.stringify({ status }),
+  });
 }
 
 export async function fetchMe(): Promise<UserMe> {
