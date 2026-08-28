@@ -5,6 +5,7 @@ import { ApprovalsPage } from "./pages/ApprovalsPage";
 import { AutomationRunsPage } from "./pages/AutomationRunsPage";
 import { AutomationWizardPage } from "./pages/AutomationWizardPage";
 import { AutomationsPage } from "./pages/AutomationsPage";
+import { AdminLlmProvidersPage } from "./pages/admin/AdminLlmProvidersPage";
 import { AdminConfigPage } from "./pages/admin/AdminConfigPage";
 import { AdminOrganizationPage } from "./pages/admin/AdminOrganizationPage";
 import { AdminRolesPage } from "./pages/admin/AdminRolesPage";
@@ -71,6 +72,7 @@ export default function App() {
           <Route path="administracion/roles" element={<AdminRolesPage />} />
           <Route path="administracion/organizacion" element={<AdminOrganizationPage />} />
           <Route path="administracion/configuracion" element={<AdminConfigPage />} />
+          <Route path="administracion/proveedores-ia" element={<AdminLlmProvidersPage />} />
           <Route path="administracion/seguridad" element={<AdminSecurityPage />} />
           <Route path="auditoria" element={<AuditPage />} />
           <Route path="notificaciones" element={<NotificationsPage />} />
