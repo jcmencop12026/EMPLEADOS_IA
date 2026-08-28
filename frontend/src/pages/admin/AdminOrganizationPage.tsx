@@ -56,7 +56,7 @@ export function AdminOrganizationPage() {
       <form className="panel" onSubmit={save}>
         <table className="data-table">
           <tbody>
-            <tr><th>Identificador</th><td className="mono">{org.id}</td></tr>
+            <tr><th>Identificador</th><td className="mono">{org.slug || org.id}</td></tr>
             <tr><th>Estado</th><td>{org.status === "ACTIVE" ? "Activa" : org.status}</td></tr>
             <tr><th>Creada</th><td>{new Date(org.created_at).toLocaleString()}</td></tr>
           </tbody>

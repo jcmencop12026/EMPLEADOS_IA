@@ -26,6 +26,7 @@ from app.routers import (
     notifications as notification_routes,
     operations,
     organization,
+    platform,
     salud,
     experience,
     oportunidades,
@@ -95,6 +96,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(organization.router)
+app.include_router(platform.router)
 app.include_router(admin.router)
 app.include_router(audit.router)
 app.include_router(assistant.router)

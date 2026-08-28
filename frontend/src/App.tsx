@@ -6,6 +6,7 @@ import { ApprovalsPage } from "./pages/ApprovalsPage";
 import { AutomationRunsPage } from "./pages/AutomationRunsPage";
 import { AutomationWizardPage } from "./pages/AutomationWizardPage";
 import { AutomationsPage } from "./pages/AutomationsPage";
+import { AdminCompaniesPage } from "./pages/admin/AdminCompaniesPage";
 import { AdminConfigPage } from "./pages/admin/AdminConfigPage";
 import { AdminOrganizationPage } from "./pages/admin/AdminOrganizationPage";
 import { AdminRolesPage } from "./pages/admin/AdminRolesPage";
@@ -68,6 +69,9 @@ export default function App() {
           <Route path="oportunidades" element={<OportunidadesPage />} />
           <Route path="oportunidades/:opportunityId" element={<OportunidadDetailPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
+          <Route element={<RequirePermission anyOf={["platform.organization.view"]} />}>
+            <Route path="administracion/empresas" element={<AdminCompaniesPage />} />
+          </Route>
           <Route element={<RequirePermission anyOf={["admin.user.view"]} />}>
             <Route path="administracion/usuarios" element={<AdminUsersPage />} />
           </Route>
