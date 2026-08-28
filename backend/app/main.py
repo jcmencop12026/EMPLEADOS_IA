@@ -13,6 +13,7 @@ from app import orchestration_models, notifications  # noqa: F401 — registra t
 from app import salud_models  # noqa: F401 — registra tablas IPS
 from app import experience_models  # noqa: F401 — experiencia transversal core
 from app import opportunity_models  # noqa: F401 — oportunidades proactivas 1030
+from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
     agent_factory,
@@ -62,10 +63,15 @@ async def lifespan(_app: FastAPI):
     stop_scheduler()
 
 
+_docs_kwargs: dict[str, str | None] = {}
+if not settings.api_docs_enabled:
+    _docs_kwargs = {"docs_url": None, "redoc_url": None, "openapi_url": None}
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     lifespan=lifespan,
+    **_docs_kwargs,
 )
 
 
@@ -74,10 +80,9 @@ async def authorization_error_handler(_request, exc: AuthorizationError):
     return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
-origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -106,19 +111,43 @@ app.include_router(oportunidades.router)
 
 @app.get("/health")
 def health():
+    report = build_health_report(include_schedulers=True)
+    return JSONResponse(status_code=health_http_status(report), content=report)
+
+
+@app.get("/health/live")
+def health_live():
     return {
-        "status": "ok",
+        "status": "up",
         "app": settings.app_name,
         "version": settings.app_version,
-        "phase": "B2-agent-factory",
+        "environment": settings.app_env,
+        "message": "Proceso API en ejecución",
     }
+
+
+@app.get("/health/ready")
+def health_ready():
+    report = build_health_report(include_schedulers=True)
+    ready = report["components"]["database"]["status"] == "up"
+    content = {
+        "status": "up" if ready else "down",
+        "environment": settings.app_env,
+        "components": {
+            "database": report["components"]["database"],
+            "schedulers": report["components"].get("schedulers"),
+        },
+    }
+    return JSONResponse(status_code=200 if ready else 503, content=content)
 
 
 @app.get("/")
 def root():
-    return {
+    payload = {
         "message": "EMPLEADOS_IA API",
-        "docs": "/docs",
         "health": "/health",
         "frontend": "http://127.0.0.1:5180",
     }
+    if settings.api_docs_enabled:
+        payload["docs"] = "/docs"
+    return payload

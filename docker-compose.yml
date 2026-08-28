@@ -1,0 +1,75 @@
+# EMPLEADOS_IA — Docker Compose V1
+# Uso: cp .env.example .env && docker compose up --build -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-empleados}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: ${POSTGRES_DB:-empleados_ia}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-empleados} -d ${POSTGRES_DB:-empleados_ia}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-prod}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-empleados}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-empleados_ia}
+      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET en .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5180,http://127.0.0.1:5180}
+      ENABLE_API_DOCS: ${ENABLE_API_DOCS:-false}
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-admin}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-Admin2026*}
+      BOOTSTRAP_ORG_NAME: ${BOOTSTRAP_ORG_NAME:-Empresa demo}
+      BACKUP_DIR: /app/data/backups
+    volumes:
+      - backend_data:/app/data
+    ports:
+      - "${BACKEND_PORT:-8010}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 45s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-5180}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  postgres_data:
+  backend_data:
