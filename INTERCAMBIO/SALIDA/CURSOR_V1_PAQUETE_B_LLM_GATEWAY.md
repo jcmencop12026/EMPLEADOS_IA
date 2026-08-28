@@ -10,11 +10,11 @@
 
 ## 3. HEAD final
 
-`026ee00` (`026ee00...` — feat(llm): agregar gateway de inferencia V1)
+`5798eec` (`5798eec713f956a16c33f5998657d1214316620e`)
 
 ## 4. PR
 
-(Pendiente de creación contra `main`)
+https://github.com/jcmencop12026/EMPLEADOS_IA/pull/31 (draft, contra `main`, NO mergeado)
 
 ## 5. Precheck
 
