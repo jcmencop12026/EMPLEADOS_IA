@@ -25,10 +25,15 @@ SAMPLE_RIPS = {
 }
 
 
-def _pause_docint_active(client, token):
+def _pause_docint_active(client, token, *, keep_ids: set[str] | None = None):
+    keep_ids = keep_ids or set()
     paused = []
     for e in client.get("/api/agent-factory/employees", headers=auth_header(token)).json():
-        if e.get("lifecycle_status") == "ACTIVE" and "DOCINT" in e.get("specialty", ""):
+        if (
+            e.get("lifecycle_status") == "ACTIVE"
+            and "DOCINT" in e.get("specialty", "")
+            and e["id"] not in keep_ids
+        ):
             client.post(f"/api/agent-factory/employees/{e['id']}/pause", headers=auth_header(token))
             paused.append(e["id"])
     return paused
@@ -292,6 +297,7 @@ def test_finops_limit_reached_is_published_from_real_execution(client, token):
         })
         for step in ("test", "certify", "publish", "activate"):
             client.post(f"/api/agent-factory/employees/{emp['id']}/{step}", headers=auth_header(token))
+        _pause_docint_active(client, token, keep_ids={emp["id"]})
         result = client.post("/api/assistant/ask", headers=auth_header(token), json={
             "message": "FinOps limit", "context": {"tool": "docint", "documents": []},
         }).json()
