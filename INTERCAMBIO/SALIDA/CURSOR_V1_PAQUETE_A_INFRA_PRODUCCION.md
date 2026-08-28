@@ -13,7 +13,7 @@
 |-------|-------|
 | Rama de trabajo | `cursor/v1-infra-produccion` |
 | Base V1 | `dc51d5c` |
-| HEAD final | `fee50b2` (`fee50b28...`) |
+| HEAD final | `5b0c27d` |
 | PR | *(ver sección 4)* |
 
 ---
