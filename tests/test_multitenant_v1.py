@@ -310,6 +310,99 @@ def test_viewer_cannot_manage_companies(client: TestClient):
     assert res.status_code == 403
 
 
+def test_cross_tenant_opportunities_denied(client: TestClient):
+    db = TestingSessionLocal()
+    try:
+        org_a, user_a, _ = _create_tenant_user(db, org_name="Tenant A Opp")
+        org_b, user_b, password_b = _create_tenant_user(db, org_name="Tenant B Opp")
+        from app.opportunity_models import Opportunity
+
+        opp = Opportunity(
+            organization_id=org_a.id,
+            codigo=f"OPP-{uuid.uuid4().hex[:6]}",
+            tipo="EFICIENCIA",
+            dominio="operaciones",
+            titulo="Oportunidad A",
+            estado="DETECTADA",
+        )
+        db.add(opp)
+        db.commit()
+        opp_id = opp.id
+        username_b = user_b.username
+    finally:
+        db.close()
+
+    headers_b = auth_header(_token(client, username_b, password_b))
+    res = client.get(f"/api/oportunidades/{opp_id}", headers=headers_b)
+    assert res.status_code == 404
+
+    listed = client.get("/api/oportunidades", headers=headers_b)
+    assert listed.status_code == 200
+    ids = {row["id"] for row in listed.json()["items"]}
+    assert opp_id not in ids
+
+
+def test_cross_tenant_audit_denied(client: TestClient):
+    db = TestingSessionLocal()
+    try:
+        org_a, user_a, _ = _create_tenant_user(db, org_name="Tenant A Audit")
+        org_b, user_b, password_b = _create_tenant_user(db, org_name="Tenant B Audit")
+        from app.models import AuditLog
+
+        log = AuditLog(
+            organization_id=org_a.id,
+            user_id=user_a.id,
+            action="tenant.test.audit",
+            detail="evento tenant A",
+        )
+        db.add(log)
+        db.commit()
+        log_id = log.id
+        username_b = user_b.username
+    finally:
+        db.close()
+
+    headers_b = auth_header(_token(client, username_b, password_b))
+    res = client.get("/api/audit/logs", headers=headers_b)
+    assert res.status_code == 200
+    ids = {row["id"] for row in res.json()}
+    assert log_id not in ids
+
+
+def test_cross_tenant_employee_detail_edit_execute_denied(client: TestClient):
+    db = TestingSessionLocal()
+    try:
+        org_a, user_a, _ = _create_tenant_user(db, org_name="Tenant A Emp")
+        org_b, user_b, password_b = _create_tenant_user(db, org_name="Tenant B Emp")
+        emp_a = AIEmployee(
+            organization_id=org_a.id,
+            code=f"emp-edit-{uuid.uuid4().hex[:6]}",
+            name="Empleado Editar A",
+            specialty="general",
+            lifecycle_status="ACTIVE",
+        )
+        db.add(emp_a)
+        db.commit()
+        emp_a_id = emp_a.id
+        username_b = user_b.username
+    finally:
+        db.close()
+
+    headers_b = auth_header(_token(client, username_b, password_b))
+    detail = client.get(f"/api/agent-factory/employees/{emp_a_id}", headers=headers_b)
+    assert detail.status_code == 404
+
+    patched = client.patch(
+        f"/api/agent-factory/employees/{emp_a_id}",
+        headers=headers_b,
+        json={"name": "Hackeado"},
+    )
+    assert patched.status_code == 404
+
+    executed = client.post(f"/api/agent-factory/employees/{emp_a_id}/test", headers=headers_b)
+    assert executed.status_code in {400, 404}
+
+
 def test_bootstrap_org_has_slug(client: TestClient):
     db = TestingSessionLocal()
     try:

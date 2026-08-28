@@ -12,12 +12,27 @@
 |-------|-------|
 | **Rama** | `cursor/v1-multitenant` |
 | **Base V1** | `dc51d5ce4852d37e5eef8b5112d1260a002ee3bf` |
-| **HEAD final** | `7dc789d` |
+| **HEAD final** | Ver commit actual en rama |
 | **PR** | [#29](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/29) (draft, sin merge) |
 
 ---
 
-## 2. MODELO TENANT
+## 2. PRECHECK OBLIGATORIO
+
+```
+git fetch origin --prune          → OK
+git rev-parse --show-toplevel     → /workspace (D:\EMPLEADOS_IA en entorno Windows)
+git branch --show-current         → cursor/v1-multitenant ✓
+git rev-parse HEAD                → f424ca0984b70fd97c181a1bdfc9b5cf8a344c0a
+git rev-parse origin/main         → dc51d5ce4852d37e5eef8b5112d1260a002ee3bf (base V1) ✓
+git status --short                → limpio (sin archivos no versionados tocados)
+```
+
+Rama verificada: **EXACTAMENTE** `cursor/v1-multitenant`. Base V1: `dc51d5c`. Rama contiene commits de Paquete C sobre la base.
+
+---
+
+## 3. MODELO TENANT
 
 Se reutiliza la entidad existente **`Organization`** como tenant/empresa.
 
@@ -35,7 +50,7 @@ No se introdujeron entidades `Company` ni `Tenant` paralelas.
 
 ---
 
-## 3. MAPA DE MODELOS (RESUMEN)
+## 4. MAPA DE MODELOS (RESUMEN)
 
 | Modelo | `organization_id` | Alcance actual | Riesgo cross-tenant | Acción |
 |--------|-------------------|----------------|---------------------|--------|
@@ -48,7 +63,7 @@ No se introdujeron entidades `Company` ni `Tenant` paralelas.
 
 ---
 
-## 4. ALTA DE EMPRESA
+## 5. ALTA DE EMPRESA
 
 Flujo implementado:
 
@@ -172,21 +187,41 @@ Textos en español. Diseño compacto existente respetado.
 - `frontend/src/AppShell.tsx` — menú empresas
 
 ### Tests
-- `tests/test_multitenant_v1.py` *(nuevo — 11 tests)*
+- `tests/test_multitenant_v1.py` *(nuevo — 14 tests)*
 
 ---
 
 ## 13. PRUEBAS Y RESULTADOS
 
+| Caso | Test |
+|------|------|
+| A. Alta de empresa | `test_superadmin_can_list_and_create_company` |
+| B. Duplicados | `test_duplicate_slug_rejected` |
+| C. Admin inicial | incluido en alta |
+| D. Tenant A / B | `_create_tenant_user` + cross-tenant |
+| E. Cross-tenant list | `test_cross_tenant_employee_list_denied` |
+| F. Cross-tenant detail | knowledge, automation, operations, opportunities |
+| G. Cross-tenant edit | `test_cross_tenant_employee_detail_edit_execute_denied` |
+| H. Cross-tenant delete | N/A (endpoints devuelven 404) |
+| I. Cross-tenant execute | `test_cross_tenant_employee_detail_edit_execute_denied` |
+| J. Empresa inactiva | `test_inactive_company_blocks_login` |
+| K. Agent Factory | `test_cross_tenant_employee_list_denied` |
+| L. Knowledge | `test_cross_tenant_knowledge_denied` |
+| M. Automations | `test_cross_tenant_automation_denied` |
+| N. FinOps | `test_cross_tenant_finops_denied` |
+| O. Opportunities | `test_cross_tenant_opportunities_denied` |
+| P. Superadmin | `test_superadmin_*`, `test_bootstrap_org_has_slug` |
+| Q. Legacy | `test_bootstrap_org_has_slug` |
+
 ```
-tests/test_multitenant_v1.py                    11 passed
+tests/test_multitenant_v1.py                    14 passed
 tests/test_admin_840.py + 840b                  PASS
 tests/test_automations_810b.py                  PASS
 tests/test_knowledge_930.py                     PASS
 tests/test_finops_950_adversarial.py            PASS
 tests/test_oportunidades_proactivas_1030.py     PASS
 ────────────────────────────────────────────────────────
-Suite Paquete C + regresión relevante:         125 passed
+Suite Paquete C + regresión relevante:         144 passed
 Frontend build:                                 PASS
 git diff --check (archivos paquete):            PASS
 ```
