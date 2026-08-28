@@ -13,7 +13,7 @@
 |-------|-------|
 | Rama de trabajo | `cursor/v1-infra-produccion` |
 | Base V1 | `dc51d5c` |
-| HEAD final | *(ver commit tras push)* |
+| HEAD final | `fee50b2` (`fee50b28...`) |
 | PR | *(ver sección 4)* |
 
 ---
@@ -78,7 +78,8 @@ $ git status --short
 |-------|-------|
 | Rama | `cursor/v1-infra-produccion` |
 | Base | `main` |
-| URL | *(completar tras crear PR)* |
+| URL | https://github.com/jcmencop12026/EMPLEADOS_IA/pull/30 |
+| Número | #30 |
 | Merge | **NO** (pendiente revisión humana) |
 
 ---
