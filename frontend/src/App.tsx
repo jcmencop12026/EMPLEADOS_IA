@@ -7,6 +7,7 @@ import { AutomationRunsPage } from "./pages/AutomationRunsPage";
 import { AutomationWizardPage } from "./pages/AutomationWizardPage";
 import { AutomationsPage } from "./pages/AutomationsPage";
 import { AdminCompaniesPage } from "./pages/admin/AdminCompaniesPage";
+import { AdminLlmProvidersPage } from "./pages/admin/AdminLlmProvidersPage";
 import { AdminConfigPage } from "./pages/admin/AdminConfigPage";
 import { AdminOrganizationPage } from "./pages/admin/AdminOrganizationPage";
 import { AdminRolesPage } from "./pages/admin/AdminRolesPage";
@@ -83,6 +84,9 @@ export default function App() {
           </Route>
           <Route element={<RequirePermission anyOf={["admin.config.view"]} />}>
             <Route path="administracion/configuracion" element={<AdminConfigPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["llm.view"]} />}>
+            <Route path="administracion/proveedores-ia" element={<AdminLlmProvidersPage />} />
           </Route>
           <Route element={<RequirePermission anyOf={["admin.security.view"]} />}>
             <Route path="administracion/seguridad" element={<AdminSecurityPage />} />

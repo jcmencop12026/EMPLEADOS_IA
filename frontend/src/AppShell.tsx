@@ -59,6 +59,7 @@ const MENU: NavSection[] = [
       { to: "/administracion/roles", label: "Roles y permisos" },
       { to: "/administracion/organizacion", label: "Organización" },
       { to: "/administracion/configuracion", label: "Configuración" },
+      { to: "/administracion/proveedores-ia", label: "Proveedores IA" },
       { to: "/administracion/seguridad", label: "Seguridad" },
     ],
   },

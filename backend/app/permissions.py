@@ -112,6 +112,12 @@ TEST_LAB_PERMISSIONS = {
     "test_lab.run",
 }
 
+LLM_PERMISSIONS = {
+    "llm.view",
+    "llm.manage",
+    "llm.use",
+}
+
 FINOPS_PERMISSIONS = {
     "finops.view",
     "finops.manage",
@@ -197,6 +203,9 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "finops.manage": ("FinOps", "Gestionar costos y valor"),
     "finops.budget": ("FinOps", "Gestionar presupuestos"),
     "finops.rates": ("FinOps", "Gestionar tarifas"),
+    "llm.view": ("Proveedores IA", "Ver proveedores de inferencia"),
+    "llm.manage": ("Proveedores IA", "Administrar proveedores de inferencia"),
+    "llm.use": ("Proveedores IA", "Ejecutar inferencia LLM"),
     "oportunidades.view": ("Oportunidades", "Ver centro de oportunidades"),
     "oportunidades.manage": ("Oportunidades", "Gestionar oportunidades"),
     "oportunidades.evaluate": ("Oportunidades", "Evaluar y priorizar oportunidades"),
@@ -225,6 +234,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | KNOWLEDGE_PERMISSIONS
         | TEST_LAB_PERMISSIONS
         | FINOPS_PERMISSIONS
+        | LLM_PERMISSIONS
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
     ),
@@ -279,6 +289,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "finops.view",
         "finops.manage",
         "finops.budget",
+        "llm.view",
+        "llm.manage",
+        "llm.use",
         "salud.cargar_datos",
         "salud.ejecutar_analisis",
         "salud.consultar_diagnostico",

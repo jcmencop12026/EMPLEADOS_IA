@@ -22,6 +22,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/administracion/roles": ["admin.role.view"],
   "/administracion/organizacion": ["admin.organization.view"],
   "/administracion/configuracion": ["admin.config.view"],
+  "/administracion/proveedores-ia": ["llm.view"],
   "/administracion/seguridad": ["admin.security.view"],
 };
 
