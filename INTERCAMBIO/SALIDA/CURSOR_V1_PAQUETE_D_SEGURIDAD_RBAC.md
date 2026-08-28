@@ -12,8 +12,8 @@
 |-------|-------|
 | **Rama** | `cursor/v1-seguridad-rbac` |
 | **Base V1** | `dc51d5ce4852d37e5eef8b5112d1260a002ee3bf` |
-| **HEAD final** | *(ver commit en rama)* |
-| **PR** | *(creado contra `main` — sin merge)* |
+| **HEAD final** | `8e1d158` |
+| **PR** | [#28](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/28) (draft, sin merge) |
 
 ---
 
