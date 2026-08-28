@@ -26,16 +26,35 @@ from app.services.finops_service import registrar_consumo
 from app.services.knowledge_retrieval import retrieve_knowledge
 
 
-LLM_PROVIDERS = {"openai", "ollama", "azure-openai", "anthropic", "gemini"}
+LLM_PROVIDERS = frozenset({"openai", "ollama", "azure-openai", "anthropic", "gemini"})
+NON_LLM_PROVIDER_MARKERS = frozenset(
+    {
+        "python",
+        "rule",
+        "tool",
+        "rule-engine",
+        "rules",
+        "deterministic",
+        "none",
+        "sql",
+        "automation",
+        "human",
+        "hybrid",
+        "docint",
+        "rips",
+        "custom",
+    }
+)
 
 
 def is_llm_provider(provider: str | None) -> bool:
+    """Allowlist estricta — solo proveedores LLM explícitos del gateway V1."""
     if not provider:
         return False
     normalized = provider.lower().strip()
-    if normalized in ("rule-engine", "rules", "deterministic", "none"):
+    if normalized in NON_LLM_PROVIDER_MARKERS:
         return False
-    return normalized in LLM_PROVIDERS or normalized not in ("python", "rule", "tool")
+    return normalized in LLM_PROVIDERS
 
 
 def should_use_llm(
@@ -44,11 +63,9 @@ def should_use_llm(
 ) -> bool:
     from app.enums import ExecutorType
 
-    if tool_executor_type == ExecutorType.AI_AGENT:
-        return True
-    if employee and is_llm_provider(employee.model_provider):
-        return True
-    return False
+    if tool_executor_type != ExecutorType.AI_AGENT:
+        return False
+    return True
 
 
 def _load_policy(db: Session, employee_id: str) -> EmployeeModelPolicy | None:

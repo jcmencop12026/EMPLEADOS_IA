@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.gateway.adapters.openai_adapter import OpenAIAdapter
 from app.llm_models import LlmInferenceLog
 from app.models import Organization, Permission, Role, RolePermission, User
+from app.enums import ExecutorType
 from app.orchestration_models import AIEmployee, FinOpsRecord, WorkPlan
 from app.security import hash_password
 from app.services.coordinator import _run_execution
@@ -317,7 +318,7 @@ def test_i_rule_python_tool_coexist(client: TestClient, token: str):
     from app.services.llm_execution import is_llm_provider, should_use_llm
 
     assert not is_llm_provider(provider)
-    assert not should_use_llm(rule_emp)
+    assert not should_use_llm(rule_emp, ExecutorType.RULE)
 
     caps = client.get("/api/capabilities", headers=auth_header(token))
     assert caps.status_code == 200

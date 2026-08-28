@@ -88,7 +88,11 @@ def test_secret_masking_and_sanitize():
 def test_is_llm_provider():
     assert is_llm_provider("openai")
     assert is_llm_provider("ollama")
+    assert is_llm_provider("azure-openai")
     assert not is_llm_provider("rule-engine")
+    assert not is_llm_provider("docint")
+    assert not is_llm_provider("custom")
+    assert not is_llm_provider("typo-provider")
     assert not is_llm_provider(None)
 
 
@@ -415,7 +419,7 @@ def test_should_use_llm_executor():
         specialty="s",
         model_provider="openai",
     )
-    assert should_use_llm(emp, ExecutorType.PYTHON)
+    assert not should_use_llm(emp, ExecutorType.PYTHON)
 
 
 def test_provider_create_service(db, org_user):
