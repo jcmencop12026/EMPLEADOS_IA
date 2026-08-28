@@ -1,0 +1,8 @@
+{
+  "version": "1",
+  "nombre": "ORQUESTADOR_EXPERIENCIA_1010_CERTIFICACION_V1",
+  "descripcion": "Paquete adversarial externo para reauditoría ORQUESTADOR-EXPERIENCIA-1010",
+  "casos": ["OX_A", "OX_B", "OX_C", "OX_D", "OX_E", "OX_F", "OX_G", "OX_H"],
+  "fuente": "especificacion_externa_embebida",
+  "nota": "No incorporar casos OX como reglas especiales del producto"
+}

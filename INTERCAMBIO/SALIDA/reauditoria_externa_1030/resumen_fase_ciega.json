@@ -1,0 +1,34 @@
+{
+  "fase": "ciega",
+  "timestamp": "2026-08-27T20:54:05.796200+00:00",
+  "paquete_externo": "NO_DISPONIBLE",
+  "casos_ejecutados": [
+    "OP-A",
+    "OP-B",
+    "OP-C",
+    "OP-D",
+    "OP-E",
+    "OP-F",
+    "NS-1",
+    "NS-2",
+    "PX-1",
+    "PX-2",
+    "PX-3",
+    "PX-4"
+  ],
+  "archivos": [
+    "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_1030/brutos/OP-A_ANTES_ORACULO.json",
+    "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_1030/brutos/OP-B_ANTES_ORACULO.json",
+    "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_1030/brutos/OP-C_ANTES_ORACULO.json",
+    "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_1030/brutos/OP-E_ANTES_ORACULO.json",
+    "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_1030/brutos/OP-F_ANTES_ORACULO.json",
+    "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_1030/brutos/NS-1_ANTES_ORACULO.json",
+    "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_1030/brutos/NS-2_ANTES_ORACULO.json",
+    "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_1030/brutos/OP-D_ANTES_ORACULO.json",
+    "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_1030/brutos/PX-1_ANTES_ORACULO.json",
+    "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_1030/brutos/PX-2_ANTES_ORACULO.json",
+    "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_1030/brutos/PX-3_ANTES_ORACULO.json",
+    "/workspace/INTERCAMBIO/SALIDA/reauditoria_externa_1030/brutos/PX-4_ANTES_ORACULO.json"
+  ],
+  "nota": "Resultados congelados antes de consultar oráculo externo."
+}

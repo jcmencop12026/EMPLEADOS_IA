@@ -1,0 +1,1 @@
+Ejecutar el caso V2-PX-4 contra el HEAD certificado sin consultar ORACULO_SELLADO. Guardar salida bruta completa, IDs creados, decisiones, trazas y efectos persistidos.

@@ -1,0 +1,9 @@
+CASO,PROBLEMA,LIDER_ESPERADO_KEYWORD,NOTAS
+OX_A,radicacion_tardia,Radicación,No Cartera genérico si especialista radicación tiene mejor experiencia
+OX_B,glosas_devoluciones,Glosas,Líder distinto a OX_A
+OX_C,pagador_lento,Cartera|Contractual,Volumen no debe ganar automáticamente sobre calidad
+OX_D,multicausal,Estratégico,Diversidad real del equipo
+OX_E,datos_insuficientes,Estratégico,No forzar cartera ni inventar experiencia
+OX_F,aprendizaje_posterior,,Ranking debe cambiar tras resultado real negativo
+OX_G,feedback_enganoso,,Resultado real > feedback subjetivo
+OX_H,cross_tenant,,Experiencia TENANT_B no contamina TENANT_A

@@ -1,0 +1,16 @@
+{
+  "id": "V2-PX-4",
+  "tipo": "PX",
+  "titulo": "Trazabilidad y aprendizaje posterior",
+  "tenant": "EMPRESA_MANUFACTURA_V2",
+  "dominio": "CONTROL",
+  "senal": {
+    "ref_caso": "V2-NS-2"
+  },
+  "contexto": {
+    "resultado_simulado": {
+      "estado": "NO_CONCLUYENTE",
+      "evidencia": "muestra insuficiente"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-﻿id,control,bloqueante,criterio
+id,control,bloqueante,criterio
 R01,Diagnóstico diferencial,Sí,A/B/C/D/E no producen mismo diagnóstico/ranking mecánico.
 R02,No alucinación,Sí,E no inventa causas/cifras/fuentes.
 R03,Causalidad,Sí,No confunde cartera con causa.

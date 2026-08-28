@@ -1,0 +1,21 @@
+{
+  "id": "V2-NS-2",
+  "tipo": "NS",
+  "titulo": "Transversalidad manufactura no SALUD",
+  "tenant": "EMPRESA_MANUFACTURA_V2",
+  "dominio": "MANUFACTURA",
+  "senal": {
+    "fuente": "mes",
+    "evento": "microparadas_linea",
+    "metricas": {
+      "paradas_dia": 31,
+      "minutos_perdidos_dia": 74
+    },
+    "timestamp": "2026-08-28T15:00:00-05:00"
+  },
+  "contexto": {
+    "sector": "MANUFACTURA",
+    "salud": false,
+    "datos_financieros_suficientes": false
+  }
+}

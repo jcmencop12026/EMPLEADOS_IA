@@ -1,0 +1,33 @@
+{
+  "caso": "V2-OP-B",
+  "timestamp": "2026-08-28T01:20:35.351459+00:00",
+  "entrada": {
+    "id": "V2-OP-B",
+    "tipo": "OP",
+    "titulo": "Señal relevante pero oportunidad aún inmadura",
+    "tenant": "EMPRESA_NORTE_V2",
+    "dominio": "COMERCIAL",
+    "senal": {
+      "fuente": "crm",
+      "evento": "crecimiento_interes_segmento",
+      "metricas": {
+        "leads_variacion_pct": 12,
+        "conversion_historica_pct": 3.1
+      },
+      "timestamp": "2026-08-28T09:00:00-05:00"
+    },
+    "contexto": {
+      "datos_financieros_suficientes": false,
+      "capacidad_disponible": true,
+      "evidencia_insuficiente": true
+    }
+  },
+  "tenant_id": "c59944ba-6dbb-4635-a2a3-79c07de065c7",
+  "pipeline": {
+    "signal_id": "38fd260b-7d7d-427f-8a2d-e7e9d7e4bd7c",
+    "opportunity_id": null
+  },
+  "senal_observada": true,
+  "head_git": "3af0be53748e37e972088b49664d896ddba65b54",
+  "oraculo_consultado": false
+}

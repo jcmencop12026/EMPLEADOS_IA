@@ -1,0 +1,14 @@
+{
+  "id": "V2-OP-E",
+  "esperado": {
+    "es_oportunidad": "POSIBLE",
+    "momento": "OBSERVAR",
+    "finops_permitido": false,
+    "debe_inventar_valor": false,
+    "valor_materializado": false,
+    "reglas": [
+      "no calcular ROI/ahorro monetario sin base",
+      "debe marcar insuficiencia de datos"
+    ]
+  }
+}

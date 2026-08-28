@@ -1,0 +1,13 @@
+control,casos,esperado,observado,resultado,observacion
+R01,V2-PX-1,proactividad/idempotencia,"{'idempotente': True, 'signals': 1}",PASS,
+R02,V2-OP-B,señal≠oportunidad,"{'oportunidad_creada': True, 'pertinencia': 'ACTUAR', 'momento': 'AHORA'}",FAIL,señal inmadura generó oportunidad (R02);momento AHORA cuando debía OBSERVAR
+R03,V2-OP-D,priorización global D1,"{'primero': 'Competencia D1', 'por_que': 'Priorizada por impacto (score=0.6552)'}",PASS,
+R04,"V2-OP-C,V2-OP-F",momento PROGRAMAR/OBSERVAR,C=PASS F=FAIL,FAIL,
+R05,"V2-OP-E,V2-NS-2",no inventar valor,E=PASS NS2=PASS,PASS,
+R06,V2-OP-F,contradicción,"{'pertinencia': 'SOLICITAR_APROBACION', 'momento': 'AHORA', 'conflicto': True}",FAIL,momento AHORA con contradicción
+R07,"V2-NS-1,V2-NS-2",transversalidad,NS1=PASS NS2=PASS,PASS,
+R08,V2-PX-1,idempotencia,"{'idempotente': True, 'signals': 1}",PASS,
+R09,V2-PX-3,potencial≠materializado,"{'potencial': 1800000.0, 'materializado': 0.0, 'separados': True}",PASS,
+R10,V2-PX-2,cross-tenant,"{'fail_closed': True, 'contaminacion': False}",PASS,
+R11,V2-OP-A,NBA+plan,"{'momento': 'AHORA', 'estado': 'PRIORIZADA', 'work_plan_id': None, 'pertinencia': 'ACTUAR', 'autorizacion': 'AUTOMATICA_BAJO_POLITICA'}",FAIL,"se esperaba WorkPlan creado;se esperaba aprobación, gate=AUTOMATICA_BAJO_POLITICA"
+R12,V2-PX-4,trazabilidad,"{'etapas': ['TRANSICION_EN_EVALUACION', 'TRANSICION_PRIORIZADA', 'TRANSICION_APROBADA', 'RESULTADO', 'ACTIVACION', 'TRANSICION_EN_EJECUCION', 'OPORTUNIDAD_CREADA', 'TRANSICION_EN_SEGUIMIENTO', 'SENAL_CREADA', 'TRANSICION_MATERIALIZADA'], 'experiencias': 1}",PASS,

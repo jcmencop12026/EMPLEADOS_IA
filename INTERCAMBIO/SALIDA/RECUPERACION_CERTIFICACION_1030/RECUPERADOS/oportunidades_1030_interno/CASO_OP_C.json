@@ -1,0 +1,35 @@
+{
+  "signal_id": "19ba21b2-9e76-4cb0-b64c-98059b77b8b9",
+  "opportunity_id": "fb394b84-a349-437e-9cb5-052279f26cb9",
+  "codigo": "OPP-00003",
+  "estado": "PENDIENTE_APROBACION",
+  "pertinencia": "SOLICITAR_APROBACION",
+  "prioridad_score": 0.705,
+  "siguiente_accion": {
+    "que": "Mitigar riesgo regulatorio con plan de cumplimiento",
+    "por_que": "Riesgo o costo requiere aprobación",
+    "cuando": "AHORA",
+    "quien": "Equipo IA asignado",
+    "quien_id": "d3a401a1-deac-4f83-9385-ad9b8e608e05",
+    "herramienta": "Orquestador + capacidades asignadas",
+    "canal": "Centro de operaciones",
+    "costo_estimado": 0.0,
+    "autorizacion": "REQUIERE_APROBACION",
+    "resultado_esperado": "Materializar valor potencial estimado",
+    "kpi_objetivo": "mejora_indicador_principal",
+    "reevaluar_en_horas": 72,
+    "escalar_si": "Sin avance en 7 días o KPI empeora",
+    "abandonar_si": "Capacidad no disponible tras 30 días",
+    "ejecutable": true
+  },
+  "capacidad": {
+    "empleados_disponibles": 9,
+    "herramientas_activas": 10,
+    "ejecutable": true,
+    "requiere_aprobacion": false,
+    "human_gate": "AUTOMATICA_BAJO_POLITICA",
+    "limitaciones": [],
+    "mensaje": "Capacidad disponible"
+  },
+  "deduplicated": false
+}

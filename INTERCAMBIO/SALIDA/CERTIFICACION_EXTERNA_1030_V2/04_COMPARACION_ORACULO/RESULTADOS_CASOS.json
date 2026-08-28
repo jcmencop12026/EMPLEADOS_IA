@@ -1,0 +1,255 @@
+[
+  {
+    "caso": "V2-OP-A",
+    "resultado": "FAIL",
+    "esperado": {
+      "es_oportunidad": true,
+      "momento": "AHORA",
+      "prioridad": "ALTA",
+      "debe_crear_plan": true,
+      "finops_permitido": true,
+      "valor_materializado": false,
+      "requiere_aprobacion": true,
+      "reglas": [
+        "debe distinguir señal de oportunidad",
+        "debe proponer siguiente mejor acción concreta",
+        "no debe declarar valor materializado antes de ejecución"
+      ]
+    },
+    "observado": {
+      "momento": "AHORA",
+      "estado": "PRIORIZADA",
+      "work_plan_id": null,
+      "pertinencia": "ACTUAR",
+      "autorizacion": "AUTOMATICA_BAJO_POLITICA"
+    },
+    "notas": [
+      "se esperaba WorkPlan creado",
+      "se esperaba aprobación, gate=AUTOMATICA_BAJO_POLITICA"
+    ]
+  },
+  {
+    "caso": "V2-OP-B",
+    "resultado": "FAIL",
+    "esperado": {
+      "es_oportunidad": false,
+      "momento": "OBSERVAR",
+      "prioridad": "MEDIA_O_MENOR",
+      "debe_crear_plan": false,
+      "finops_permitido": false,
+      "valor_materializado": false,
+      "reglas": [
+        "no debe convertir toda señal en oportunidad",
+        "debe solicitar/esperar evidencia adicional",
+        "no inventar impacto económico"
+      ]
+    },
+    "observado": {
+      "oportunidad_creada": true,
+      "pertinencia": "ACTUAR",
+      "momento": "AHORA"
+    },
+    "notas": [
+      "señal inmadura generó oportunidad (R02)",
+      "momento AHORA cuando debía OBSERVAR"
+    ]
+  },
+  {
+    "caso": "V2-OP-C",
+    "resultado": "PASS",
+    "esperado": {
+      "es_oportunidad": true,
+      "momento": "PROGRAMAR",
+      "prioridad": "MEDIA",
+      "debe_crear_plan": true,
+      "finops_permitido": true,
+      "valor_materializado": false,
+      "reglas": [
+        "no ejecutar AHORA una oportunidad futura",
+        "debe preservar fecha/condición de activación"
+      ]
+    },
+    "observado": {
+      "momento": "PROGRAMAR",
+      "estado": "PRIORIZADA"
+    },
+    "notas": []
+  },
+  {
+    "caso": "V2-OP-D",
+    "resultado": "PASS",
+    "esperado": {
+      "es_oportunidad": true,
+      "momento": "AHORA",
+      "debe_priorizar_globalmente": true,
+      "preferencia": "D1",
+      "valor_materializado": false,
+      "reglas": [
+        "la prioridad debe considerar impacto, urgencia y esfuerzo",
+        "debe explicar la selección y el tratamiento de la alternativa no elegida"
+      ]
+    },
+    "observado": {
+      "primero": "Competencia D1",
+      "por_que": "Priorizada por impacto (score=0.6552)"
+    },
+    "notas": []
+  },
+  {
+    "caso": "V2-OP-E",
+    "resultado": "PASS",
+    "esperado": {
+      "es_oportunidad": "POSIBLE",
+      "momento": "OBSERVAR",
+      "finops_permitido": false,
+      "debe_inventar_valor": false,
+      "valor_materializado": false,
+      "reglas": [
+        "no calcular ROI/ahorro monetario sin base",
+        "debe marcar insuficiencia de datos"
+      ]
+    },
+    "observado": {
+      "pertinencia": "OBSERVAR",
+      "valor_potencial": 0.0,
+      "certidumbre": "NO_CUANTIFICABLE"
+    },
+    "notas": []
+  },
+  {
+    "caso": "V2-OP-F",
+    "resultado": "FAIL",
+    "esperado": {
+      "es_oportunidad": "INDETERMINADA",
+      "momento": "OBSERVAR",
+      "debe_conservar_contradiccion": true,
+      "debe_crear_plan": false,
+      "valor_materializado": false,
+      "reglas": [
+        "no ocultar ni resolver arbitrariamente el conflicto",
+        "debe proponer verificación/siguiente acción"
+      ]
+    },
+    "observado": {
+      "pertinencia": "SOLICITAR_APROBACION",
+      "momento": "AHORA",
+      "conflicto": true
+    },
+    "notas": [
+      "momento AHORA con contradicción"
+    ]
+  },
+  {
+    "caso": "V2-NS-1",
+    "resultado": "PASS",
+    "esperado": {
+      "es_oportunidad": true,
+      "no_depende_salud": true,
+      "debe_crear_plan": true,
+      "valor_materializado": false,
+      "reglas": [
+        "pipeline transversal sin hardcode SALUD",
+        "acción coherente con logística"
+      ]
+    },
+    "observado": {
+      "dominio": "administrativo",
+      "tipo": "AUTOMATIZACION",
+      "finops": null
+    },
+    "notas": []
+  },
+  {
+    "caso": "V2-NS-2",
+    "resultado": "PASS",
+    "esperado": {
+      "es_oportunidad": true,
+      "no_depende_salud": true,
+      "finops_permitido": false,
+      "valor_materializado": false,
+      "reglas": [
+        "puede detectar oportunidad sin cuantificar dinero",
+        "no inventar FINOPS"
+      ]
+    },
+    "observado": {
+      "dominio": "administrativo",
+      "tipo": "PRODUCTIVIDAD",
+      "finops": null
+    },
+    "notas": []
+  },
+  {
+    "caso": "V2-PX-1",
+    "resultado": "PASS",
+    "esperado": {
+      "duplicados_permitidos": false,
+      "reglas": [
+        "segunda ejecución no debe crear oportunidad/WorkPlan/FINOPS duplicados"
+      ]
+    },
+    "observado": {
+      "idempotente": true,
+      "signals": 1
+    },
+    "notas": []
+  },
+  {
+    "caso": "V2-PX-2",
+    "resultado": "PASS",
+    "esperado": {
+      "acceso_cruzado_permitido": false,
+      "reglas": [
+        "ningún dato, oportunidad, plan o resultado del tenant origen debe exponerse al intruso"
+      ]
+    },
+    "observado": {
+      "fail_closed": true,
+      "contaminacion": false
+    },
+    "notas": []
+  },
+  {
+    "caso": "V2-PX-3",
+    "resultado": "PASS",
+    "esperado": {
+      "valor_materializado": false,
+      "reglas": [
+        "puede existir valor potencial, nunca materializado sin resultado verificable"
+      ]
+    },
+    "observado": {
+      "potencial": 1800000.0,
+      "materializado": 0.0,
+      "separados": true
+    },
+    "notas": []
+  },
+  {
+    "caso": "V2-PX-4",
+    "resultado": "PASS",
+    "esperado": {
+      "debe_trazar_cadena_completa": true,
+      "debe_registrar_aprendizaje": true,
+      "reglas": [
+        "señal→oportunidad→decisión→plan/acción→resultado→atribución→aprendizaje debe ser reconstruible"
+      ]
+    },
+    "observado": {
+      "etapas": [
+        "TRANSICION_EN_EVALUACION",
+        "TRANSICION_PRIORIZADA",
+        "TRANSICION_APROBADA",
+        "RESULTADO",
+        "ACTIVACION",
+        "TRANSICION_EN_EJECUCION",
+        "OPORTUNIDAD_CREADA",
+        "TRANSICION_EN_SEGUIMIENTO",
+        "SENAL_CREADA",
+        "TRANSICION_MATERIALIZADA"
+      ],
+      "experiencias": 1
+    },
+    "notas": []
+  }
+]

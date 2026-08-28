@@ -1,0 +1,35 @@
+{
+  "signal_id": "4bea5293-77b0-464f-a427-324583cc8ea0",
+  "opportunity_id": "5df03d32-2414-4045-93ea-f39c9e6c1544",
+  "codigo": "OPP-00002",
+  "estado": "PRIORIZADA",
+  "pertinencia": "ACTUAR",
+  "prioridad_score": 0.3584,
+  "siguiente_accion": {
+    "que": "Diseñar e implementar automatización del proceso repetitivo",
+    "por_que": "Evidencia, impacto y capacidad suficientes",
+    "cuando": "PROGRAMAR",
+    "quien": "Equipo IA asignado",
+    "quien_id": "d3a401a1-deac-4f83-9385-ad9b8e608e05",
+    "herramienta": "Orquestador + capacidades asignadas",
+    "canal": "Automatización",
+    "costo_estimado": 0.0,
+    "autorizacion": "AUTOMATICA_BAJO_POLITICA",
+    "resultado_esperado": "Materializar valor potencial estimado",
+    "kpi_objetivo": "mejora_indicador_principal",
+    "reevaluar_en_horas": 72,
+    "escalar_si": "Sin avance en 7 días o KPI empeora",
+    "abandonar_si": "Capacidad no disponible tras 30 días",
+    "ejecutable": true
+  },
+  "capacidad": {
+    "empleados_disponibles": 9,
+    "herramientas_activas": 10,
+    "ejecutable": true,
+    "requiere_aprobacion": false,
+    "human_gate": "AUTOMATICA_BAJO_POLITICA",
+    "limitaciones": [],
+    "mensaje": "Capacidad disponible"
+  },
+  "deduplicated": false
+}

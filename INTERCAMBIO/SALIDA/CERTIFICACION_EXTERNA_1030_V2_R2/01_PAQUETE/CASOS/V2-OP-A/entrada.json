@@ -1,0 +1,23 @@
+{
+  "id": "V2-OP-A",
+  "tipo": "OP",
+  "titulo": "Oportunidad real urgente con capacidad disponible",
+  "tenant": "EMPRESA_NORTE_V2",
+  "dominio": "OPERACIONES",
+  "senal": {
+    "fuente": "telemetria_operativa",
+    "evento": "incremento_sostenido_demanda",
+    "metricas": {
+      "demanda_variacion_pct": 34,
+      "capacidad_ociosa_pct": 21,
+      "margen_estimado_pct": 18
+    },
+    "timestamp": "2026-08-28T08:10:00-05:00"
+  },
+  "contexto": {
+    "contrato_activo": true,
+    "capacidad_disponible": true,
+    "datos_financieros_suficientes": true,
+    "restriccion": "ventana comercial vence en 36 horas"
+  }
+}

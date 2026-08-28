@@ -1,0 +1,15 @@
+{
+  "id": "V2-PX-2",
+  "tipo": "PX",
+  "titulo": "Aislamiento cross-tenant",
+  "tenant": "CONTROL_MULTITENANT",
+  "dominio": "CONTROL",
+  "senal": {
+    "tenant_origen": "EMPRESA_NORTE_V2",
+    "tenant_intruso": "EMPRESA_SUR_V2",
+    "ref_caso": "V2-OP-A"
+  },
+  "contexto": {
+    "intento_lectura_cruzada": true
+  }
+}

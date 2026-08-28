@@ -1,0 +1,267 @@
+{
+  "caso": "OP-D",
+  "timestamp": "2026-08-27T20:54:05.508693+00:00",
+  "oportunidades": [
+    {
+      "id": "a47aae2a-ff5b-4357-a1fd-514eb4fb231e",
+      "codigo": "OPP-00008",
+      "estado": "PRIORIZADA",
+      "dominio": "financiero",
+      "tipo": "FINANCIERA",
+      "pertinencia": "POSPONER",
+      "momento": "OBSERVAR",
+      "prioridad_score": 0.7234,
+      "prioridad_componentes": {
+        "impacto": 0.25,
+        "urgencia": 0.16,
+        "confianza": 0.105,
+        "riesgo_inverso": 0.06,
+        "esfuerzo_inverso": 0.05,
+        "valor_esperado": 0.0504,
+        "probabilidad": 0.048
+      },
+      "siguiente_accion": {
+        "que": "Ejecutar acción de recuperación financiera prioritaria",
+        "por_que": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN",
+        "cuando": "OBSERVAR",
+        "quien": "Equipo IA asignado",
+        "quien_id": null,
+        "herramienta": "Orquestador + capacidades asignadas",
+        "canal": "Automatización",
+        "costo_estimado": 0.0,
+        "autorizacion": "PROHIBIDA",
+        "resultado_esperado": "Materializar valor potencial estimado",
+        "kpi_objetivo": "mejora_indicador_principal",
+        "reevaluar_en_horas": 72,
+        "escalar_si": "Sin avance en 7 días o KPI empeora",
+        "abandonar_si": "Capacidad no disponible tras 30 días",
+        "ejecutable": false
+      },
+      "valor_potencial": 7000000.0,
+      "valor_materializado": 0.0,
+      "contexto": {
+        "componentes": {
+          "organization_id": "02b54396-24b6-4542-b6cf-f797be426c99",
+          "dominio": "financiero",
+          "indicadores": {
+            "cartera": 30000000
+          },
+          "historico": {},
+          "eventos": [],
+          "conocimiento_autorizado": null,
+          "workplans_abiertos": 0,
+          "oportunidades_similares": 0,
+          "payload": {
+            "titulo": "Competencia por capacidad — recuperación cartera",
+            "tipo_oportunidad": "FINANCIERA",
+            "indicadores": {
+              "cartera": 30000000
+            },
+            "impacto_estimado": 10000000,
+            "valor_potencial": 7000000,
+            "urgencia": "ALTA",
+            "source_reference": "op-d1-534fa8"
+          }
+        },
+        "suficiencia": "PARCIAL",
+        "faltantes": [
+          "histórico"
+        ],
+        "conflicto": false
+      }
+    },
+    {
+      "id": "f701b407-0b39-4082-98e6-571da1c090d4",
+      "codigo": "OPP-00009",
+      "estado": "PRIORIZADA",
+      "dominio": "administrativo",
+      "tipo": "AUTOMATIZACION",
+      "pertinencia": "POSPONER",
+      "momento": "OBSERVAR",
+      "prioridad_score": 0.6948,
+      "prioridad_componentes": {
+        "impacto": 0.225,
+        "urgencia": 0.16,
+        "confianza": 0.105,
+        "riesgo_inverso": 0.06,
+        "esfuerzo_inverso": 0.05,
+        "valor_esperado": 0.0468,
+        "probabilidad": 0.048
+      },
+      "siguiente_accion": {
+        "que": "Diseñar e implementar automatización del proceso repetitivo",
+        "por_que": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN",
+        "cuando": "OBSERVAR",
+        "quien": "Equipo IA asignado",
+        "quien_id": null,
+        "herramienta": "Orquestador + capacidades asignadas",
+        "canal": "Automatización",
+        "costo_estimado": 0.0,
+        "autorizacion": "PROHIBIDA",
+        "resultado_esperado": "Materializar valor potencial estimado",
+        "kpi_objetivo": "mejora_indicador_principal",
+        "reevaluar_en_horas": 72,
+        "escalar_si": "Sin avance en 7 días o KPI empeora",
+        "abandonar_si": "Capacidad no disponible tras 30 días",
+        "ejecutable": false
+      },
+      "valor_potencial": 6500000.0,
+      "valor_materializado": 0.0,
+      "contexto": {
+        "componentes": {
+          "organization_id": "02b54396-24b6-4542-b6cf-f797be426c99",
+          "dominio": "administrativo",
+          "indicadores": {
+            "volumen": 800
+          },
+          "historico": {},
+          "eventos": [],
+          "conocimiento_autorizado": null,
+          "workplans_abiertos": 0,
+          "oportunidades_similares": 0,
+          "payload": {
+            "titulo": "Competencia por capacidad — automatización",
+            "tipo_oportunidad": "AUTOMATIZACION",
+            "indicadores": {
+              "volumen": 800
+            },
+            "impacto_estimado": 9000000,
+            "valor_potencial": 6500000,
+            "urgencia": "ALTA",
+            "source_reference": "op-d2-f61627"
+          }
+        },
+        "suficiencia": "SUFICIENTE",
+        "faltantes": [],
+        "conflicto": false
+      }
+    }
+  ],
+  "priorizacion_global": {
+    "metodologia": "Score explicable multi-factor",
+    "ranking": [
+      {
+        "opportunity_id": "cb7c3978-8ec2-4a25-96fd-fe0f5347d785",
+        "titulo": "Recuperación financiera urgente",
+        "prioridad_score": 0.7506,
+        "componentes": {
+          "impacto": 0.25,
+          "urgencia": 0.2,
+          "confianza": 0.105,
+          "riesgo_inverso": 0.04,
+          "esfuerzo_inverso": 0.05,
+          "valor_esperado": 0.0576,
+          "probabilidad": 0.048
+        },
+        "ranking": 1
+      },
+      {
+        "opportunity_id": "a47aae2a-ff5b-4357-a1fd-514eb4fb231e",
+        "titulo": "Competencia por capacidad — recuperación cartera",
+        "prioridad_score": 0.7234,
+        "componentes": {
+          "impacto": 0.25,
+          "urgencia": 0.16,
+          "confianza": 0.105,
+          "riesgo_inverso": 0.06,
+          "esfuerzo_inverso": 0.05,
+          "valor_esperado": 0.0504,
+          "probabilidad": 0.048
+        },
+        "ranking": 2
+      },
+      {
+        "opportunity_id": "303c2246-6d7e-452d-8335-28a871c59b63",
+        "titulo": "Riesgo de cumplimiento regulatorio",
+        "prioridad_score": 0.705,
+        "componentes": {
+          "impacto": 0.25,
+          "urgencia": 0.16,
+          "confianza": 0.105,
+          "riesgo_inverso": 0.02,
+          "esfuerzo_inverso": 0.05,
+          "valor_esperado": 0.072,
+          "probabilidad": 0.048
+        },
+        "ranking": 3
+      },
+      {
+        "opportunity_id": "f701b407-0b39-4082-98e6-571da1c090d4",
+        "titulo": "Competencia por capacidad — automatización",
+        "prioridad_score": 0.6948,
+        "componentes": {
+          "impacto": 0.225,
+          "urgencia": 0.16,
+          "confianza": 0.105,
+          "riesgo_inverso": 0.06,
+          "esfuerzo_inverso": 0.05,
+          "valor_esperado": 0.0468,
+          "probabilidad": 0.048
+        },
+        "ranking": 4
+      },
+      {
+        "opportunity_id": "1322af61-ad55-4f5f-9086-25dd4fd1fb50",
+        "titulo": "Recuperar conversión comercial",
+        "prioridad_score": 0.6626,
+        "componentes": {
+          "impacto": 0.2,
+          "urgencia": 0.16,
+          "confianza": 0.105,
+          "riesgo_inverso": 0.06,
+          "esfuerzo_inverso": 0.05,
+          "valor_esperado": 0.0396,
+          "probabilidad": 0.048
+        },
+        "ranking": 5
+      },
+      {
+        "opportunity_id": "00b9d82f-fa3e-4e7a-94c6-20d69930d3e1",
+        "titulo": "Información contradictoria",
+        "prioridad_score": 0.4571,
+        "componentes": {
+          "impacto": 0.125,
+          "urgencia": 0.1,
+          "confianza": 0.0525,
+          "riesgo_inverso": 0.06,
+          "esfuerzo_inverso": 0.05,
+          "valor_esperado": 0.0216,
+          "probabilidad": 0.048
+        },
+        "ranking": 6
+      },
+      {
+        "opportunity_id": "8ea0adb7-5861-4992-81e4-ebadca7ffdb6",
+        "titulo": "Automatizar proceso administrativo repetitivo",
+        "prioridad_score": 0.4385,
+        "componentes": {
+          "impacto": 0.0625,
+          "urgencia": 0.1,
+          "confianza": 0.105,
+          "riesgo_inverso": 0.06,
+          "esfuerzo_inverso": 0.05,
+          "valor_esperado": 0.013,
+          "probabilidad": 0.048
+        },
+        "ranking": 7
+      },
+      {
+        "opportunity_id": "d251bd5c-e1ce-4921-931f-b28a4c4f9bfc",
+        "titulo": "Automatización alto volumen bajo valor unitario",
+        "prioridad_score": 0.3584,
+        "componentes": {
+          "impacto": 0.0125,
+          "urgencia": 0.04,
+          "confianza": 0.105,
+          "riesgo_inverso": 0.06,
+          "esfuerzo_inverso": 0.09,
+          "valor_esperado": 0.0029,
+          "probabilidad": 0.048
+        },
+        "ranking": 8
+      }
+    ],
+    "por_que_primero": "Priorizada por impacto (score=0.7506)",
+    "total": 8
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "id": "V2-PX-1",
+  "esperado": {
+    "duplicados_permitidos": false,
+    "reglas": [
+      "segunda ejecución no debe crear oportunidad/WorkPlan/FINOPS duplicados"
+    ]
+  }
+}

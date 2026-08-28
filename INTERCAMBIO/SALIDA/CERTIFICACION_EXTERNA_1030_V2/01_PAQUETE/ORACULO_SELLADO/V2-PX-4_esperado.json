@@ -1,0 +1,10 @@
+{
+  "id": "V2-PX-4",
+  "esperado": {
+    "debe_trazar_cadena_completa": true,
+    "debe_registrar_aprendizaje": true,
+    "reglas": [
+      "señal→oportunidad→decisión→plan/acción→resultado→atribución→aprendizaje debe ser reconstruible"
+    ]
+  }
+}

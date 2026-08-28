@@ -1,0 +1,9 @@
+{
+  "id": "V2-PX-2",
+  "esperado": {
+    "acceso_cruzado_permitido": false,
+    "reglas": [
+      "ningún dato, oportunidad, plan o resultado del tenant origen debe exponerse al intruso"
+    ]
+  }
+}

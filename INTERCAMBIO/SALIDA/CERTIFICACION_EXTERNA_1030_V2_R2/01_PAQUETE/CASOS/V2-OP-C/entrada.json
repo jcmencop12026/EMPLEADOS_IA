@@ -1,0 +1,21 @@
+{
+  "id": "V2-OP-C",
+  "tipo": "OP",
+  "titulo": "Oportunidad válida pero no inmediata",
+  "tenant": "EMPRESA_SUR_V2",
+  "dominio": "ABASTECIMIENTO",
+  "senal": {
+    "fuente": "erp",
+    "evento": "descuento_proveedor_programado",
+    "metricas": {
+      "descuento_pct": 11,
+      "stock_dias": 58
+    },
+    "timestamp": "2026-08-28T10:15:00-05:00"
+  },
+  "contexto": {
+    "inicio_ventana": "2026-09-15",
+    "datos_financieros_suficientes": true,
+    "urgencia_actual": false
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "caso": "OP-E",
+  "timestamp": "2026-08-27T20:54:05.468468+00:00",
+  "pipeline": {
+    "signal_id": "bfdf34c5-a92d-466a-a497-f7582b53226c",
+    "opportunity_id": "95f42c5a-f064-410c-a152-6cc46c8e60c9",
+    "codigo": "OPP-00004",
+    "estado": "DATOS_INSUFICIENTES",
+    "pertinencia": "SOLICITAR_DATOS",
+    "prioridad_score": 0.0,
+    "siguiente_accion": {
+      "que": "Atender oportunidad: Datos insuficientes para conclusión",
+      "por_que": "Contexto insuficiente — faltan: indicadores, histórico",
+      "cuando": "AHORA",
+      "quien": "Equipo IA asignado",
+      "quien_id": null,
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Automatización",
+      "costo_estimado": 0.0,
+      "autorizacion": "PROHIBIDA",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": false
+    },
+    "capacidad": {
+      "empleados_disponibles": 0,
+      "herramientas_activas": 0,
+      "ejecutable": false,
+      "requiere_aprobacion": false,
+      "human_gate": "PROHIBIDA",
+      "limitaciones": [
+        "Sin empleados IA activos"
+      ],
+      "mensaje": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN"
+    },
+    "deduplicated": false
+  },
+  "oportunidad": {
+    "id": "95f42c5a-f064-410c-a152-6cc46c8e60c9",
+    "codigo": "OPP-00004",
+    "estado": "DATOS_INSUFICIENTES",
+    "dominio": "financiero",
+    "tipo": "OPERATIVA",
+    "pertinencia": "SOLICITAR_DATOS",
+    "momento": null,
+    "prioridad_score": 0.0,
+    "prioridad_componentes": {},
+    "siguiente_accion": {
+      "que": "Atender oportunidad: Datos insuficientes para conclusión",
+      "por_que": "Contexto insuficiente — faltan: indicadores, histórico",
+      "cuando": "AHORA",
+      "quien": "Equipo IA asignado",
+      "quien_id": null,
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Automatización",
+      "costo_estimado": 0.0,
+      "autorizacion": "PROHIBIDA",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": false
+    },
+    "valor_potencial": 0.0,
+    "valor_materializado": 0.0,
+    "contexto": {
+      "componentes": {
+        "organization_id": "02b54396-24b6-4542-b6cf-f797be426c99",
+        "dominio": "financiero",
+        "indicadores": {},
+        "historico": {},
+        "eventos": [],
+        "conocimiento_autorizado": null,
+        "workplans_abiertos": 0,
+        "oportunidades_similares": 0,
+        "payload": {
+          "titulo": "Datos insuficientes para conclusión",
+          "tipo_oportunidad": "OPERATIVA",
+          "indicadores": {},
+          "source_reference": "op-e-7a2060"
+        }
+      },
+      "suficiencia": "INSUFICIENTE",
+      "faltantes": [
+        "indicadores",
+        "histórico"
+      ],
+      "conflicto": false
+    }
+  }
+}

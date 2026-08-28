@@ -1,0 +1,56 @@
+{
+  "caso": "PX-2",
+  "timestamp": "2026-08-27T20:54:05.533933+00:00",
+  "ejecuciones": [
+    {
+      "signal_id": "2737bb60-5a24-48a2-85bf-3338141ce349",
+      "opportunity_id": "a5d672d2-3198-4c73-bab2-508207e7ef4a",
+      "codigo": "OPP-00011",
+      "estado": "PRIORIZADA",
+      "pertinencia": "POSPONER",
+      "prioridad_score": 0.4385,
+      "siguiente_accion": {
+        "que": "Diseñar e implementar automatización del proceso repetitivo",
+        "por_que": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN",
+        "cuando": "OBSERVAR",
+        "quien": "Equipo IA asignado",
+        "quien_id": null,
+        "herramienta": "Orquestador + capacidades asignadas",
+        "canal": "Automatización",
+        "costo_estimado": 0.0,
+        "autorizacion": "PROHIBIDA",
+        "resultado_esperado": "Materializar valor potencial estimado",
+        "kpi_objetivo": "mejora_indicador_principal",
+        "reevaluar_en_horas": 72,
+        "escalar_si": "Sin avance en 7 días o KPI empeora",
+        "abandonar_si": "Capacidad no disponible tras 30 días",
+        "ejecutable": false
+      },
+      "capacidad": {
+        "empleados_disponibles": 0,
+        "herramientas_activas": 0,
+        "ejecutable": false,
+        "requiere_aprobacion": false,
+        "human_gate": "PROHIBIDA",
+        "limitaciones": [
+          "Sin empleados IA activos"
+        ],
+        "mensaje": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN"
+      },
+      "deduplicated": false
+    },
+    {
+      "signal_id": "2737bb60-5a24-48a2-85bf-3338141ce349",
+      "opportunity_id": "a5d672d2-3198-4c73-bab2-508207e7ef4a",
+      "deduplicated": true
+    },
+    {
+      "signal_id": "2737bb60-5a24-48a2-85bf-3338141ce349",
+      "opportunity_id": "a5d672d2-3198-4c73-bab2-508207e7ef4a",
+      "deduplicated": true
+    }
+  ],
+  "signal_ids_unicos": 1,
+  "oportunidades_activas_equivalentes": 3,
+  "idempotente": true
+}

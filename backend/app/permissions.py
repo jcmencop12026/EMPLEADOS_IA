@@ -119,6 +119,14 @@ FINOPS_PERMISSIONS = {
     "finops.rates",
 }
 
+OPORTUNIDADES_PERMISSIONS = {
+    "oportunidades.view",
+    "oportunidades.manage",
+    "oportunidades.evaluate",
+    "oportunidades.approve",
+    "oportunidades.activate",
+}
+
 ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "employee.view": ("Empleados IA", "Ver directorio de empleados"),
     "employee.create": ("Empleados IA", "Crear empleados"),
@@ -183,6 +191,11 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "finops.manage": ("FinOps", "Gestionar costos y valor"),
     "finops.budget": ("FinOps", "Gestionar presupuestos"),
     "finops.rates": ("FinOps", "Gestionar tarifas"),
+    "oportunidades.view": ("Oportunidades", "Ver centro de oportunidades"),
+    "oportunidades.manage": ("Oportunidades", "Gestionar oportunidades"),
+    "oportunidades.evaluate": ("Oportunidades", "Evaluar y priorizar oportunidades"),
+    "oportunidades.approve": ("Oportunidades", "Aprobar oportunidades"),
+    "oportunidades.activate": ("Oportunidades", "Activar oportunidades"),
 }
 
 SYSTEM_ROLE_CODES = {"admin", "operator", "viewer"}
@@ -204,6 +217,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | TEST_LAB_PERMISSIONS
         | FINOPS_PERMISSIONS
         | SALUD_PERMISSIONS
+        | OPORTUNIDADES_PERMISSIONS
     ),
     "operator": {
         "employee.view",
@@ -244,6 +258,11 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "salud.ejecutar_analisis",
         "salud.consultar_diagnostico",
         "salud.aceptar_recomendaciones",
+        "oportunidades.view",
+        "oportunidades.manage",
+        "oportunidades.evaluate",
+        "oportunidades.approve",
+        "oportunidades.activate",
     },
     "viewer": {
         "employee.view",
@@ -260,6 +279,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "test_lab.view",
         "finops.view",
         "salud.consultar_diagnostico",
+        "oportunidades.view",
     },
 }
 

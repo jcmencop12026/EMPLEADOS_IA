@@ -1,0 +1,113 @@
+{
+  "caso": "OP-C",
+  "timestamp": "2026-08-27T20:54:05.460950+00:00",
+  "pipeline": {
+    "signal_id": "e1e226db-c09d-4ee5-9814-424a6fbeb952",
+    "opportunity_id": "303c2246-6d7e-452d-8335-28a871c59b63",
+    "codigo": "OPP-00003",
+    "estado": "PRIORIZADA",
+    "pertinencia": "POSPONER",
+    "prioridad_score": 0.705,
+    "siguiente_accion": {
+      "que": "Mitigar riesgo regulatorio con plan de cumplimiento",
+      "por_que": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN",
+      "cuando": "OBSERVAR",
+      "quien": "Equipo IA asignado",
+      "quien_id": null,
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Automatización",
+      "costo_estimado": 0.0,
+      "autorizacion": "PROHIBIDA",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": false
+    },
+    "capacidad": {
+      "empleados_disponibles": 0,
+      "herramientas_activas": 0,
+      "ejecutable": false,
+      "requiere_aprobacion": false,
+      "human_gate": "PROHIBIDA",
+      "limitaciones": [
+        "Sin empleados IA activos"
+      ],
+      "mensaje": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN"
+    },
+    "deduplicated": false
+  },
+  "oportunidad": {
+    "id": "303c2246-6d7e-452d-8335-28a871c59b63",
+    "codigo": "OPP-00003",
+    "estado": "PRIORIZADA",
+    "dominio": "financiero",
+    "tipo": "CUMPLIMIENTO",
+    "pertinencia": "POSPONER",
+    "momento": "OBSERVAR",
+    "prioridad_score": 0.705,
+    "prioridad_componentes": {
+      "impacto": 0.25,
+      "urgencia": 0.16,
+      "confianza": 0.105,
+      "riesgo_inverso": 0.02,
+      "esfuerzo_inverso": 0.05,
+      "valor_esperado": 0.072,
+      "probabilidad": 0.048
+    },
+    "siguiente_accion": {
+      "que": "Mitigar riesgo regulatorio con plan de cumplimiento",
+      "por_que": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN",
+      "cuando": "OBSERVAR",
+      "quien": "Equipo IA asignado",
+      "quien_id": null,
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Automatización",
+      "costo_estimado": 0.0,
+      "autorizacion": "PROHIBIDA",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": false
+    },
+    "valor_potencial": 15000000.0,
+    "valor_materializado": 0.0,
+    "contexto": {
+      "componentes": {
+        "organization_id": "02b54396-24b6-4542-b6cf-f797be426c99",
+        "dominio": "financiero",
+        "indicadores": {
+          "incumplimientos": 3,
+          "sla_horas": 24
+        },
+        "historico": {},
+        "eventos": [],
+        "conocimiento_autorizado": null,
+        "workplans_abiertos": 0,
+        "oportunidades_similares": 0,
+        "payload": {
+          "titulo": "Riesgo de cumplimiento regulatorio",
+          "tipo_oportunidad": "CUMPLIMIENTO",
+          "indicadores": {
+            "incumplimientos": 3,
+            "sla_horas": 24
+          },
+          "impacto_estimado": 20000000,
+          "valor_potencial": 15000000,
+          "urgencia": "ALTA",
+          "riesgo": "CRITICO",
+          "sla_horas": 36,
+          "source_reference": "op-c-328912"
+        }
+      },
+      "suficiencia": "PARCIAL",
+      "faltantes": [
+        "histórico"
+      ],
+      "conflicto": false
+    }
+  }
+}

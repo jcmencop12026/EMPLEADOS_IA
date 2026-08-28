@@ -1,0 +1,13 @@
+{
+  "available_data": ["facturacion"],
+  "experiencias": [
+    {
+      "employee_code": "ips-cartera-analyst",
+      "count": 10,
+      "dominio": "cartera",
+      "tipo_problema": "comportamiento_pagador",
+      "estado": "EXITO",
+      "resultado_real": "Experiencia previa en cartera"
+    }
+  ]
+}

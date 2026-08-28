@@ -1,0 +1,13 @@
+{
+  "id": "V2-NS-2",
+  "esperado": {
+    "es_oportunidad": true,
+    "no_depende_salud": true,
+    "finops_permitido": false,
+    "valor_materializado": false,
+    "reglas": [
+      "puede detectar oportunidad sin cuantificar dinero",
+      "no inventar FINOPS"
+    ]
+  }
+}

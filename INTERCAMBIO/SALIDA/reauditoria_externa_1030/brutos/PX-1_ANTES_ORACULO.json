@@ -1,0 +1,100 @@
+{
+  "caso": "PX-1",
+  "timestamp": "2026-08-27T20:54:05.521416+00:00",
+  "sin_prompt_humano": true,
+  "origen": "proactive_scheduler",
+  "tick_results": [
+    {
+      "signal_id": "d4a81437-b607-4dd3-afb6-194a54e6637c",
+      "opportunity_id": "29ce0e04-3b37-423e-b8a4-2ae38824b328",
+      "codigo": "OPP-00010",
+      "estado": "PRIORIZADA",
+      "pertinencia": "POSPONER",
+      "prioridad_score": 0.4385,
+      "siguiente_accion": {
+        "que": "Diseñar e implementar automatización del proceso repetitivo",
+        "por_que": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN",
+        "cuando": "OBSERVAR",
+        "quien": "Equipo IA asignado",
+        "quien_id": null,
+        "herramienta": "Orquestador + capacidades asignadas",
+        "canal": "Automatización",
+        "costo_estimado": 0.0,
+        "autorizacion": "PROHIBIDA",
+        "resultado_esperado": "Materializar valor potencial estimado",
+        "kpi_objetivo": "mejora_indicador_principal",
+        "reevaluar_en_horas": 72,
+        "escalar_si": "Sin avance en 7 días o KPI empeora",
+        "abandonar_si": "Capacidad no disponible tras 30 días",
+        "ejecutable": false
+      },
+      "capacidad": {
+        "empleados_disponibles": 0,
+        "herramientas_activas": 0,
+        "ejecutable": false,
+        "requiere_aprobacion": false,
+        "human_gate": "PROHIBIDA",
+        "limitaciones": [
+          "Sin empleados IA activos"
+        ],
+        "mensaje": "ACCIÓN RECOMENDABLE PERO NO EJECUTABLE AÚN"
+      },
+      "deduplicated": false
+    }
+  ],
+  "trazabilidad": {
+    "opportunity_id": "29ce0e04-3b37-423e-b8a4-2ae38824b328",
+    "correlation_id": "b9cb60cb-3649-4cc7-ab18-26d5094bf5b9",
+    "estado": "PRIORIZADA",
+    "trazas": [
+      {
+        "etapa": "SENAL_CREADA",
+        "detalle": {
+          "evento": "px1_proactividad_real",
+          "tipo": "px1_scheduler"
+        },
+        "fecha": "2026-08-27T20:54:05.510859"
+      },
+      {
+        "etapa": "TRANSICION_EN_EVALUACION",
+        "detalle": {
+          "anterior": "DETECTADA",
+          "nuevo": "EN_EVALUACION",
+          "motivo": "Señal procesada"
+        },
+        "fecha": "2026-08-27T20:54:05.512459"
+      },
+      {
+        "etapa": "TRANSICION_PRIORIZADA",
+        "detalle": {
+          "anterior": "EN_EVALUACION",
+          "nuevo": "PRIORIZADA",
+          "motivo": "Evaluación completada"
+        },
+        "fecha": "2026-08-27T20:54:05.512463"
+      },
+      {
+        "etapa": "OPORTUNIDAD_CREADA",
+        "detalle": {
+          "codigo": "OPP-00010",
+          "tipo": "AUTOMATIZACION",
+          "estado": "PRIORIZADA"
+        },
+        "fecha": "2026-08-27T20:54:05.514422"
+      }
+    ],
+    "transiciones": [
+      {
+        "de": "DETECTADA",
+        "a": "EN_EVALUACION",
+        "motivo": "Señal procesada"
+      },
+      {
+        "de": "EN_EVALUACION",
+        "a": "PRIORIZADA",
+        "motivo": "Evaluación completada"
+      }
+    ],
+    "seguimiento": []
+  }
+}

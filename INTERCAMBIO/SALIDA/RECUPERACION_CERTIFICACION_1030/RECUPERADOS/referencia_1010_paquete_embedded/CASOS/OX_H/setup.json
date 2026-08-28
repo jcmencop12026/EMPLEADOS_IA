@@ -1,0 +1,13 @@
+{
+  "available_data": ["radicacion", "facturacion"],
+  "tenant_b_experiencia": {
+    "employee_code": "ips-radicacion-analyst",
+    "dominio": "radicacion",
+    "tipo_problema": "radicacion_tardia",
+    "count": 8,
+    "estado": "EXITO",
+    "resultado_real": "Éxito extremo TENANT_B secreto",
+    "kpi_despues": {"dias_radicacion": 3}
+  },
+  "tenant_a_experiencias": []
+}

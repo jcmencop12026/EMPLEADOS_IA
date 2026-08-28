@@ -1,0 +1,35 @@
+{
+  "signal_id": "46914e9d-42c3-44e0-b052-cbe18febe4ad",
+  "opportunity_id": "e34663d6-7a6d-46c6-8efb-7d7c14bc6944",
+  "codigo": "OPP-00006",
+  "estado": "PRIORIZADA",
+  "pertinencia": "SOLICITAR_APROBACION",
+  "prioridad_score": 0.4571,
+  "siguiente_accion": {
+    "que": "Activar campaña de conversión con capacidad disponible",
+    "por_que": "Información contradictoria — requiere validación humana",
+    "cuando": "AHORA",
+    "quien": "Equipo IA asignado",
+    "quien_id": "d3a401a1-deac-4f83-9385-ad9b8e608e05",
+    "herramienta": "Orquestador + capacidades asignadas",
+    "canal": "Automatización",
+    "costo_estimado": 0.0,
+    "autorizacion": "AUTOMATICA_BAJO_POLITICA",
+    "resultado_esperado": "Materializar valor potencial estimado",
+    "kpi_objetivo": "mejora_indicador_principal",
+    "reevaluar_en_horas": 72,
+    "escalar_si": "Sin avance en 7 días o KPI empeora",
+    "abandonar_si": "Capacidad no disponible tras 30 días",
+    "ejecutable": true
+  },
+  "capacidad": {
+    "empleados_disponibles": 9,
+    "herramientas_activas": 10,
+    "ejecutable": true,
+    "requiere_aprobacion": false,
+    "human_gate": "AUTOMATICA_BAJO_POLITICA",
+    "limitaciones": [],
+    "mensaje": "Capacidad disponible"
+  },
+  "deduplicated": false
+}

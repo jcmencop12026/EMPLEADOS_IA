@@ -1,0 +1,392 @@
+{
+  "caso": "V2-NS-2",
+  "timestamp": "2026-08-28T01:20:36.335799+00:00",
+  "entrada": {
+    "id": "V2-NS-2",
+    "tipo": "NS",
+    "titulo": "Transversalidad manufactura no SALUD",
+    "tenant": "EMPRESA_MANUFACTURA_V2",
+    "dominio": "MANUFACTURA",
+    "senal": {
+      "fuente": "mes",
+      "evento": "microparadas_linea",
+      "metricas": {
+        "paradas_dia": 31,
+        "minutos_perdidos_dia": 74
+      },
+      "timestamp": "2026-08-28T15:00:00-05:00"
+    },
+    "contexto": {
+      "sector": "MANUFACTURA",
+      "salud": false,
+      "datos_financieros_suficientes": false
+    }
+  },
+  "tenant_id": "340d3068-fc62-4249-9587-da5e00bfb20d",
+  "pipeline": {
+    "signal_id": "17705ffd-edb6-47ca-97e9-9056ad4cba4d",
+    "opportunity_id": "52d23730-b3c6-40ee-841c-47a31000ae43",
+    "codigo": "OPP-00001",
+    "estado": "PRIORIZADA",
+    "pertinencia": "ACTUAR",
+    "prioridad_score": 0.4166,
+    "siguiente_accion": {
+      "que": "Atender oportunidad: Transversalidad manufactura no SALUD",
+      "por_que": "Evidencia, impacto y capacidad suficientes",
+      "cuando": "AHORA",
+      "quien": "Equipo IA asignado",
+      "quien_id": "8e08e8ef-3da7-40f6-a237-98d533273c86",
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Automatización",
+      "costo_estimado": 0.0,
+      "autorizacion": "AUTOMATICA_BAJO_POLITICA",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": true
+    },
+    "capacidad": {
+      "empleados_disponibles": 2,
+      "herramientas_activas": 20,
+      "ejecutable": true,
+      "requiere_aprobacion": false,
+      "human_gate": "AUTOMATICA_BAJO_POLITICA",
+      "limitaciones": [],
+      "mensaje": "Capacidad disponible"
+    },
+    "deduplicated": false
+  },
+  "oportunidad": {
+    "id": "52d23730-b3c6-40ee-841c-47a31000ae43",
+    "codigo": "OPP-00001",
+    "estado": "PRIORIZADA",
+    "tipo": "PRODUCTIVIDAD",
+    "dominio": "administrativo",
+    "signal_id": "17705ffd-edb6-47ca-97e9-9056ad4cba4d",
+    "pertinencia": "ACTUAR",
+    "momento": "AHORA",
+    "confianza": 0.7,
+    "prioridad_score": 0.4166,
+    "prioridad_componentes": {
+      "impacto": 0.045,
+      "urgencia": 0.1,
+      "confianza": 0.105,
+      "riesgo_inverso": 0.06,
+      "esfuerzo_inverso": 0.05,
+      "valor_esperado": 0.0086,
+      "probabilidad": 0.048
+    },
+    "siguiente_accion": {
+      "que": "Atender oportunidad: Transversalidad manufactura no SALUD",
+      "por_que": "Evidencia, impacto y capacidad suficientes",
+      "cuando": "AHORA",
+      "quien": "Equipo IA asignado",
+      "quien_id": "8e08e8ef-3da7-40f6-a237-98d533273c86",
+      "herramienta": "Orquestador + capacidades asignadas",
+      "canal": "Automatización",
+      "costo_estimado": 0.0,
+      "autorizacion": "AUTOMATICA_BAJO_POLITICA",
+      "resultado_esperado": "Materializar valor potencial estimado",
+      "kpi_objetivo": "mejora_indicador_principal",
+      "reevaluar_en_horas": 72,
+      "escalar_si": "Sin avance en 7 días o KPI empeora",
+      "abandonar_si": "Capacidad no disponible tras 30 días",
+      "ejecutable": true
+    },
+    "equipo": {
+      "dominios": [
+        "facturacion"
+      ],
+      "dominio_principal": "facturacion",
+      "tipo_problema": "concentracion_facturacion",
+      "asignaciones": [
+        {
+          "employee_id": "8e08e8ef-3da7-40f6-a237-98d533273c86",
+          "employee_code": "docint-analyst",
+          "employee_name": "Analista Documental IA",
+          "specialty": "DOCINT",
+          "domain": "facturacion",
+          "score": 0.467,
+          "factores": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.7,
+            "diversidad": 1.0
+          },
+          "factors": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.7,
+            "diversidad": 1.0
+          },
+          "pesos": {
+            "capacidad": 0.25,
+            "experiencia": 0.2,
+            "desempeno": 0.15,
+            "costo": 0.1,
+            "disponibilidad": 0.1,
+            "riesgo": 0.1,
+            "diversidad": 0.1
+          },
+          "razon_seleccion": "mejor puntaje disponible para facturacion",
+          "experiencia_consultada": [],
+          "finops": {
+            "score": 0.6,
+            "costo_promedio": null,
+            "explicacion": "Sin historial FINOPS — neutro"
+          }
+        }
+      ],
+      "equipo": [
+        {
+          "employee_id": "8e08e8ef-3da7-40f6-a237-98d533273c86",
+          "employee_code": "docint-analyst",
+          "employee_name": "Analista Documental IA",
+          "specialty": "DOCINT",
+          "domain": "facturacion",
+          "score": 0.467,
+          "factores": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.7,
+            "diversidad": 1.0
+          },
+          "factors": {
+            "capacidad": 0.06,
+            "experiencia": 0.35,
+            "desempeno": 0.35,
+            "costo": 0.6,
+            "disponibilidad": 1.0,
+            "riesgo": 0.7,
+            "diversidad": 1.0
+          },
+          "pesos": {
+            "capacidad": 0.25,
+            "experiencia": 0.2,
+            "desempeno": 0.15,
+            "costo": 0.1,
+            "disponibilidad": 0.1,
+            "riesgo": 0.1,
+            "diversidad": 0.1
+          },
+          "razon_seleccion": "mejor puntaje disponible para facturacion",
+          "experiencia_consultada": [],
+          "finops": {
+            "score": 0.6,
+            "costo_promedio": null,
+            "explicacion": "Sin historial FINOPS — neutro"
+          },
+          "rol": "LIDER",
+          "razon_rol": "Líder por dominio principal 'facturacion': mejor puntaje disponible para facturacion"
+        }
+      ],
+      "lider": {
+        "employee_id": "8e08e8ef-3da7-40f6-a237-98d533273c86",
+        "employee_code": "docint-analyst",
+        "employee_name": "Analista Documental IA",
+        "specialty": "DOCINT",
+        "domain": "facturacion",
+        "score": 0.467,
+        "factores": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        },
+        "factors": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        },
+        "pesos": {
+          "capacidad": 0.25,
+          "experiencia": 0.2,
+          "desempeno": 0.15,
+          "costo": 0.1,
+          "disponibilidad": 0.1,
+          "riesgo": 0.1,
+          "diversidad": 0.1
+        },
+        "razon_seleccion": "mejor puntaje disponible para facturacion",
+        "experiencia_consultada": [],
+        "finops": {
+          "score": 0.6,
+          "costo_promedio": null,
+          "explicacion": "Sin historial FINOPS — neutro"
+        }
+      },
+      "consolidador": {
+        "employee_id": "8e08e8ef-3da7-40f6-a237-98d533273c86",
+        "employee_code": "docint-analyst",
+        "employee_name": "Analista Documental IA",
+        "specialty": "DOCINT",
+        "domain": "facturacion",
+        "score": 0.467,
+        "factores": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        },
+        "factors": {
+          "capacidad": 0.06,
+          "experiencia": 0.35,
+          "desempeno": 0.35,
+          "costo": 0.6,
+          "disponibilidad": 1.0,
+          "riesgo": 0.7,
+          "diversidad": 1.0
+        },
+        "pesos": {
+          "capacidad": 0.25,
+          "experiencia": 0.2,
+          "desempeno": 0.15,
+          "costo": 0.1,
+          "disponibilidad": 0.1,
+          "riesgo": 0.1,
+          "diversidad": 0.1
+        },
+        "razon_seleccion": "mejor puntaje disponible para facturacion",
+        "experiencia_consultada": [],
+        "finops": {
+          "score": 0.6,
+          "costo_promedio": null,
+          "explicacion": "Sin historial FINOPS — neutro"
+        },
+        "rol": "LIDER",
+        "razon_rol": "Líder por dominio principal 'facturacion': mejor puntaje disponible para facturacion"
+      },
+      "validador": null,
+      "disidente": null,
+      "razon_seleccion_global": "Seleccionado Analista Documental IA como líder porque mejor puntaje disponible para facturacion en dominio principal 'facturacion' (tipo: concentracion_facturacion)",
+      "candidatos_evaluados": 2,
+      "factores_pesos": {
+        "capacidad": 0.25,
+        "experiencia": 0.2,
+        "desempeno": 0.15,
+        "costo": 0.1,
+        "disponibilidad": 0.1,
+        "riesgo": 0.1,
+        "diversidad": 0.1
+      },
+      "selection_log_id": "03f37d05-e0a9-45c1-b606-b944c83e4555"
+    },
+    "work_plan_id": null,
+    "finops_reference": null,
+    "valor_potencial": 1200000.0,
+    "valor_materializado": 0.0,
+    "valor_potencial_certidumbre": "ESTIMADO",
+    "atribucion_nivel": null,
+    "contexto": {
+      "componentes": {
+        "organization_id": "340d3068-fc62-4249-9587-da5e00bfb20d",
+        "dominio": "administrativo",
+        "indicadores": {
+          "paradas_dia": 31,
+          "minutos_perdidos_dia": 74
+        },
+        "historico": {},
+        "eventos": [],
+        "conocimiento_autorizado": null,
+        "workplans_abiertos": 0,
+        "oportunidades_similares": 0,
+        "payload": {
+          "titulo": "Transversalidad manufactura no SALUD",
+          "indicadores": {
+            "paradas_dia": 31,
+            "minutos_perdidos_dia": 74
+          },
+          "source_reference": "cert-v2-V2-NS-2",
+          "tipo_oportunidad": "PRODUCTIVIDAD",
+          "impacto_estimado": 1800000,
+          "valor_potencial": 1200000
+        },
+        "senal_inmadura": false,
+        "evidencia_insuficiente": false
+      },
+      "suficiencia": "SUFICIENTE",
+      "faltantes": [],
+      "conflicto": false,
+      "senal_inmadura": false,
+      "evidencia_insuficiente": false
+    },
+    "trazas": {
+      "opportunity_id": "52d23730-b3c6-40ee-841c-47a31000ae43",
+      "correlation_id": "bad6864f-acd5-4d45-8003-dbb38bce1277",
+      "estado": "PRIORIZADA",
+      "trazas": [
+        {
+          "etapa": "SENAL_CREADA",
+          "detalle": {
+            "evento": "microparadas_linea",
+            "tipo": "productividad"
+          },
+          "fecha": "2026-08-28T01:20:36.336672"
+        },
+        {
+          "etapa": "TRANSICION_EN_EVALUACION",
+          "detalle": {
+            "anterior": "DETECTADA",
+            "nuevo": "EN_EVALUACION",
+            "motivo": "Señal procesada"
+          },
+          "fecha": "2026-08-28T01:20:36.338239"
+        },
+        {
+          "etapa": "TRANSICION_PRIORIZADA",
+          "detalle": {
+            "anterior": "EN_EVALUACION",
+            "nuevo": "PRIORIZADA",
+            "motivo": "Evaluación completada"
+          },
+          "fecha": "2026-08-28T01:20:36.338243"
+        },
+        {
+          "etapa": "OPORTUNIDAD_CREADA",
+          "detalle": {
+            "codigo": "OPP-00001",
+            "tipo": "PRODUCTIVIDAD",
+            "estado": "PRIORIZADA"
+          },
+          "fecha": "2026-08-28T01:20:36.341938"
+        }
+      ],
+      "transiciones": [
+        {
+          "de": "DETECTADA",
+          "a": "EN_EVALUACION",
+          "motivo": "Señal procesada"
+        },
+        {
+          "de": "EN_EVALUACION",
+          "a": "PRIORIZADA",
+          "motivo": "Evaluación completada"
+        }
+      ],
+      "seguimiento": []
+    }
+  },
+  "head_git": "3af0be53748e37e972088b49664d896ddba65b54",
+  "oraculo_consultado": false
+}

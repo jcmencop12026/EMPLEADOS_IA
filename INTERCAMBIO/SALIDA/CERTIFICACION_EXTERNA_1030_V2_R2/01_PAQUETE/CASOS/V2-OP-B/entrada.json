@@ -1,0 +1,21 @@
+{
+  "id": "V2-OP-B",
+  "tipo": "OP",
+  "titulo": "Señal relevante pero oportunidad aún inmadura",
+  "tenant": "EMPRESA_NORTE_V2",
+  "dominio": "COMERCIAL",
+  "senal": {
+    "fuente": "crm",
+    "evento": "crecimiento_interes_segmento",
+    "metricas": {
+      "leads_variacion_pct": 12,
+      "conversion_historica_pct": 3.1
+    },
+    "timestamp": "2026-08-28T09:00:00-05:00"
+  },
+  "contexto": {
+    "datos_financieros_suficientes": false,
+    "capacidad_disponible": true,
+    "evidencia_insuficiente": true
+  }
+}
