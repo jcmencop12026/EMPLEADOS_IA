@@ -10,19 +10,16 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "finops_records",
-        sa.Column("opportunity_id", sa.String(length=36), nullable=True),
-    )
+    with op.batch_alter_table("finops_records") as batch_op:
+        batch_op.add_column(sa.Column("opportunity_id", sa.String(length=36), nullable=True))
+        batch_op.create_foreign_key(
+            "fk_finops_records_opportunity_id",
+            "opportunities",
+            ["opportunity_id"],
+            ["id"],
+            ondelete="SET NULL",
+        )
     op.create_index("ix_finops_records_opportunity_id", "finops_records", ["opportunity_id"])
-    op.create_foreign_key(
-        "fk_finops_records_opportunity_id",
-        "finops_records",
-        "opportunities",
-        ["opportunity_id"],
-        ["id"],
-        ondelete="SET NULL",
-    )
 
     op.add_column(
         "finops_budgets",
@@ -55,6 +52,7 @@ def downgrade() -> None:
     op.drop_index("ix_finops_budget_alert_budget", table_name="finops_budget_alert_states")
     op.drop_table("finops_budget_alert_states")
     op.drop_column("finops_budgets", "alert_threshold_pct")
-    op.drop_constraint("fk_finops_records_opportunity_id", "finops_records", type_="foreignkey")
     op.drop_index("ix_finops_records_opportunity_id", table_name="finops_records")
-    op.drop_column("finops_records", "opportunity_id")
+    with op.batch_alter_table("finops_records") as batch_op:
+        batch_op.drop_constraint("fk_finops_records_opportunity_id", type_="foreignkey")
+        batch_op.drop_column("opportunity_id")
