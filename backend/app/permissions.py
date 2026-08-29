@@ -153,6 +153,13 @@ DIAGNOSTICOS_PERMISSIONS = {
     "diagnosticos.manage",
 }
 
+INTELIGENCIA_EXTERNA_PERMISSIONS = {
+    "inteligencia_externa.view",
+    "inteligencia_externa.manage",
+    "inteligencia_externa.ingest",
+    "inteligencia_externa.validate",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -242,6 +249,10 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "diagnosticos.generate": ("Diagnósticos", "Generar diagnósticos"),
     "diagnosticos.validate": ("Diagnósticos", "Validar diagnósticos"),
     "diagnosticos.manage": ("Diagnósticos", "Administrar configuración de diagnóstico"),
+    "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
+    "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
+    "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
+    "inteligencia_externa.validate": ("Inteligencia externa", "Validar análisis externo"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -271,6 +282,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | LINEA_BASE_PERMISSIONS
         | VALORACION_PERMISSIONS
         | DIAGNOSTICOS_PERMISSIONS
+        | INTELIGENCIA_EXTERNA_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -290,6 +302,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | LINEA_BASE_PERMISSIONS
         | VALORACION_PERMISSIONS
         | DIAGNOSTICOS_PERMISSIONS
+        | INTELIGENCIA_EXTERNA_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -349,6 +362,10 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "diagnosticos.view",
         "diagnosticos.generate",
         "diagnosticos.validate",
+        "inteligencia_externa.view",
+        "inteligencia_externa.manage",
+        "inteligencia_externa.ingest",
+        "inteligencia_externa.validate",
     },
     "viewer": {
         "employee.view",
@@ -370,6 +387,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "valoracion.view",
         "valoracion.roi",
         "diagnosticos.view",
+        "inteligencia_externa.view",
     },
 }
 
