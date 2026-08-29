@@ -34,7 +34,11 @@ services:
         condition: service_healthy
     environment:
       APP_ENV: ${APP_ENV:-prod}
-      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-empleados}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-empleados_ia}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-empleados}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: ${POSTGRES_DB:-empleados_ia}
       JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET en .env}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5180,http://127.0.0.1:5180}
       ENABLE_API_DOCS: ${ENABLE_API_DOCS:-false}
