@@ -25,7 +25,23 @@ from app import orchestration_models  # noqa: F401, E402
 from app import salud_models  # noqa: F401, E402
 from app import experience_models  # noqa: F401, E402
 from app import opportunity_models  # noqa: F401, E402
+from app import baseline_models  # noqa: F401, E402
+from app import valuation_models  # noqa: F401, E402
+from app import diagnostic_models  # noqa: F401, E402
+from app import external_models  # noqa: F401, E402
+from app import continuidad_models  # noqa: F401, E402
+from app import governance_models  # noqa: F401, E402
+from app import integration_models  # noqa: F401, E402
+from app import learning_models  # noqa: F401, E402
+from app import optimization_models  # noqa: F401, E402
+from app import commercial_models  # noqa: F401, E402
+from app import tco_models  # noqa: F401, E402
+from app import implementacion_models  # noqa: F401, E402
+from app import segmentation_models  # noqa: F401, E402
 from app import llm_models  # noqa: F401, E402
+from app import security_models  # noqa: F401, E402
+from app import identity_models  # noqa: F401, E402
+from app import scim_models  # noqa: F401, E402
 from app.database import Base, SessionLocal, engine, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.seed import bootstrap  # noqa: E402
@@ -122,6 +138,10 @@ else:
     Base.metadata.create_all(bind=engine)
     _bootstrap_db = TestingSessionLocal()
     bootstrap(_bootstrap_db)
+    from app.seed_permissions import bootstrap_permissions
+
+    bootstrap_permissions(_bootstrap_db)
+    _bootstrap_db.commit()
     _bootstrap_db.close()
 
 
@@ -175,7 +195,12 @@ else:
 
 @pytest.fixture
 def token(client: TestClient) -> str:
-    res = client.post("/api/auth/login", json={"username": "admin", "password": "Admin2026*"})
+    from app.config import settings
+
+    res = client.post(
+        "/api/auth/login",
+        json={"username": settings.bootstrap_admin_username, "password": settings.bootstrap_admin_password},
+    )
     assert res.status_code == 200
     return res.json()["access_token"]
 

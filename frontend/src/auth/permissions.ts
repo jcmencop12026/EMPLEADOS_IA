@@ -1,6 +1,6 @@
 /** Permisos mínimos por ruta de navegación — alineado con RBAC backend 840B. */
 export const ROUTE_PERMISSIONS: Record<string, string[]> = {
-  "/": [],
+  "/": ["control_center.view"],
   "/operaciones": ["operations.view"],
   "/operaciones/solicitud": ["operations.execute"],
   "/ejecuciones": ["operations.view"],
@@ -13,9 +13,24 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/herramientas": ["tool.view"],
   "/conocimiento": ["knowledge.view"],
   "/test-lab": ["test_lab.view"],
+  "/lineas-base": ["linea_base.view"],
+  "/comercial": ["comercial.view"],
+  "/tco": ["tco.view"],
+  "/implementacion": ["implementacion.view"],
+  "/comercial/segmentacion": ["segmentacion.view"],
   "/oportunidades": ["oportunidades.view"],
+  "/senales": ["oportunidades.view"],
+  "/diagnosticos": ["diagnosticos.view"],
+  "/inteligencia-externa": ["inteligencia_externa.view"],
+  "/continuidad": ["continuidad.view"],
+  "/integraciones": ["integraciones.view"],
+  "/integraciones/nueva": ["integraciones.create"],
+  "/aprendizaje": ["aprendizaje.view"],
+  "/optimizacion": ["optimizacion.view"],
   "/costos-valor": ["finops.view"],
+  "/gobernanza-datos": ["datos.view"],
   "/notificaciones": ["notification.view"],
+  "/mi-seguridad": [],
   "/auditoria": ["audit.view"],
   "/administracion/empresas": ["platform.organization.view"],
   "/administracion/usuarios": ["admin.user.view"],
@@ -23,7 +38,8 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/administracion/organizacion": ["admin.organization.view"],
   "/administracion/configuracion": ["admin.config.view"],
   "/administracion/proveedores-ia": ["llm.view"],
-  "/administracion/seguridad": ["admin.security.view"],
+  "/administracion/seguridad": ["admin.security.view", "seguridad.view"],
+  "/administracion/identidad": ["identidad.view"],
 };
 
 export function canAccessRoute(path: string, permissions: Set<string>): boolean {

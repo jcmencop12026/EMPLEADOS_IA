@@ -57,6 +57,21 @@ ADMIN_PERMISSIONS = {
     "admin.security.view",
 }
 
+SECURITY_PERMISSIONS = {
+    "seguridad.view",
+    "seguridad.manage_policy",
+    "seguridad.revoke_sessions",
+    "seguridad.audit",
+}
+
+IDENTITY_PERMISSIONS = {
+    "identidad.view",
+    "identidad.manage",
+    "identidad.test",
+    "identidad.activate",
+    "identidad.audit",
+}
+
 OPERATIONS_PERMISSIONS = {
     "operations.view",
     "operations.execute",
@@ -133,10 +148,132 @@ OPORTUNIDADES_PERMISSIONS = {
     "oportunidades.activate",
 }
 
+
+LINEA_BASE_PERMISSIONS = {
+    "linea_base.view",
+    "linea_base.manage",
+    "linea_base.validate",
+}
+
+VALORACION_PERMISSIONS = {
+    "valoracion.view",
+    "valoracion.manage",
+    "valoracion.validate",
+    "valoracion.roi",
+}
+
+DIAGNOSTICOS_PERMISSIONS = {
+    "diagnosticos.view",
+    "diagnosticos.generate",
+    "diagnosticos.validate",
+    "diagnosticos.manage",
+}
+
+INTELIGENCIA_EXTERNA_PERMISSIONS = {
+    "inteligencia_externa.view",
+    "inteligencia_externa.manage",
+    "inteligencia_externa.ingest",
+    "inteligencia_externa.validate",
+}
+
+DATOS_PERMISSIONS = {
+    "datos.view",
+    "datos.classify",
+    "datos.manage_policy",
+    "datos.export",
+    "datos.audit",
+    "datos.requests",
+    "datos.retention",
+}
+
+INTEGRATION_PERMISSIONS = {
+    "integraciones.view",
+    "integraciones.create",
+    "integraciones.configure",
+    "integraciones.test",
+    "integraciones.execute",
+    "integraciones.manage_secrets",
+}
+
+APRENDIZAJE_PERMISSIONS = {
+    "aprendizaje.view",
+    "aprendizaje.evaluate",
+    "aprendizaje.recalibrate",
+    "aprendizaje.approve",
+}
+
+OPTIMIZACION_PERMISSIONS = {
+    "optimizacion.view",
+    "optimizacion.simulate",
+    "optimizacion.create",
+    "optimizacion.approve",
+    "optimizacion.execute",
+    "optimizacion.configure",
+}
+
+COMMERCIAL_PERMISSIONS = {
+    "comercial.view",
+    "comercial.simulate",
+    "comercial.create",
+    "comercial.approve",
+    "comercial.manage_plans",
+}
+
+TCO_PERMISSIONS = {
+    "tco.view",
+    "tco.manage",
+    "tco.simulate",
+    "proveedores.view",
+    "proveedores.manage",
+    "alianzas.view",
+    "alianzas.manage",
+}
+
+IMPLEMENTACION_PERMISSIONS = {
+    "implementacion.view",
+    "implementacion.manage",
+    "implementacion.approve_go_live",
+    "exito_cliente.view",
+    "exito_cliente.manage",
+    "exito_cliente.review",
+}
+
+SEGMENTATION_PERMISSIONS = {
+    "segmentacion.view",
+    "segmentacion.manage",
+    "planes.view",
+    "planes.manage",
+    "planes.recommend",
+    "planes.approve_discount",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
     "platform.organization.manage",
+}
+
+CONTROL_CENTER_PERMISSIONS = {
+    "control_center.view",
+}
+
+CONTINUIDAD_PERMISSIONS = {
+    "continuidad.view",
+    "continuidad.manage",
+    "continuidad.activate",
+    "continuidad.test",
+}
+
+INCIDENTES_PERMISSIONS = {
+    "incidentes.view",
+    "incidentes.manage",
+    "incidentes.close",
+}
+
+BACKUPS_PERMISSIONS = {
+    "backups.view",
+    "backups.manage",
+    "backups.verify",
 }
 
 ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
@@ -183,6 +320,15 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "admin.config.view": ("Administración", "Ver configuración"),
     "admin.config.edit": ("Administración", "Editar configuración"),
     "admin.security.view": ("Administración", "Ver panel de seguridad"),
+    "seguridad.view": ("Seguridad", "Ver resumen de seguridad de la organización"),
+    "seguridad.manage_policy": ("Seguridad", "Gestionar políticas de seguridad"),
+    "seguridad.revoke_sessions": ("Seguridad", "Revocar sesiones de usuarios"),
+    "seguridad.audit": ("Seguridad", "Consultar eventos de seguridad"),
+    "identidad.view": ("Identidad", "Consultar proveedores y políticas SSO"),
+    "identidad.manage": ("Identidad", "Configurar identidad empresarial"),
+    "identidad.test": ("Identidad", "Probar proveedores de identidad"),
+    "identidad.activate": ("Identidad", "Activar o desactivar proveedores"),
+    "identidad.audit": ("Identidad", "Consultar auditoría de login SSO"),
     "capability.view": ("Capacidades", "Ver catálogo de capacidades"),
     "capability.manage": ("Capacidades", "Gestionar capacidades"),
     "tool.view": ("Herramientas", "Ver catálogo de herramientas"),
@@ -211,9 +357,82 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "oportunidades.evaluate": ("Oportunidades", "Evaluar y priorizar oportunidades"),
     "oportunidades.approve": ("Oportunidades", "Aprobar oportunidades"),
     "oportunidades.activate": ("Oportunidades", "Activar oportunidades"),
+    "linea_base.view": ("Línea base", "Consultar líneas base e impacto"),
+    "linea_base.manage": ("Línea base", "Crear línea base y registrar mediciones"),
+    "linea_base.validate": ("Línea base", "Validar impacto y atribución"),
+    "valoracion.view": ("Valoración económica", "Consultar valoración de oportunidades"),
+    "valoracion.manage": ("Valoración económica", "Crear y modificar valoraciones"),
+    "valoracion.validate": ("Valoración económica", "Validar valoraciones"),
+    "valoracion.roi": ("Valoración económica", "Consultar retorno y beneficio neto"),
+    "diagnosticos.view": ("Diagnósticos", "Consultar diagnósticos transversales"),
+    "diagnosticos.generate": ("Diagnósticos", "Generar diagnósticos"),
+    "diagnosticos.validate": ("Diagnósticos", "Validar diagnósticos"),
+    "diagnosticos.manage": ("Diagnósticos", "Administrar configuración de diagnóstico"),
+    "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
+    "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
+    "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
+    "inteligencia_externa.validate": ("Inteligencia externa", "Validar análisis externo"),
+    "datos.view": ("Gobierno de datos", "Consultar catálogo y políticas"),
+    "datos.classify": ("Gobierno de datos", "Clasificar y catalogar datos"),
+    "datos.manage_policy": ("Gobierno de datos", "Gestionar políticas de datos"),
+    "datos.export": ("Gobierno de datos", "Registrar exportaciones"),
+    "datos.audit": ("Gobierno de datos", "Auditar accesos y hallazgos"),
+    "datos.requests": ("Gobierno de datos", "Gestionar solicitudes sobre datos"),
+    "datos.retention": ("Gobierno de datos", "Gestionar retención y legal hold"),
+    "integraciones.view": ("Integraciones", "Consultar conectores e historial"),
+    "integraciones.create": ("Integraciones", "Crear conectores"),
+    "integraciones.configure": ("Integraciones", "Configurar conectores y mapeos"),
+    "integraciones.test": ("Integraciones", "Probar conexión de conectores"),
+    "integraciones.execute": ("Integraciones", "Ejecutar conectores"),
+    "integraciones.manage_secrets": ("Integraciones", "Gestionar referencias de credenciales"),
+    "aprendizaje.view": ("Aprendizaje", "Consultar ciclos y patrones de aprendizaje"),
+    "aprendizaje.evaluate": ("Aprendizaje", "Evaluar ciclos y registrar retroalimentación"),
+    "aprendizaje.recalibrate": ("Aprendizaje", "Aplicar recalibraciones aprobadas"),
+    "aprendizaje.approve": ("Aprendizaje", "Aprobar o rechazar recalibraciones"),
+    "optimizacion.view": ("Optimización", "Consultar recomendaciones y simulaciones"),
+    "optimizacion.simulate": ("Optimización", "Ejecutar simulaciones de portafolio"),
+    "optimizacion.create": ("Optimización", "Crear y recalcular recomendaciones"),
+    "optimizacion.approve": ("Optimización", "Aprobar o rechazar recomendaciones"),
+    "optimizacion.execute": ("Optimización", "Ejecutar recomendaciones aprobadas"),
+    "optimizacion.configure": ("Optimización", "Configurar pesos y objetivos"),
+    "comercial.view": ("Comercial", "Consultar propuestas y planes comerciales"),
+    "comercial.simulate": ("Comercial", "Simular valor y precio"),
+    "comercial.create": ("Comercial", "Crear y editar propuestas comerciales"),
+    "comercial.approve": ("Comercial", "Aprobar precio final y propuestas"),
+    "comercial.manage_plans": ("Comercial", "Administrar planes comerciales"),
+    "tco.view": ("TCO", "Consultar costo total y tablero"),
+    "tco.manage": ("TCO", "Gestionar costos y distribuciones"),
+    "tco.simulate": ("TCO", "Simular escenarios de costo"),
+    "proveedores.view": ("Proveedores", "Consultar proveedores y aliados"),
+    "proveedores.manage": ("Proveedores", "Administrar proveedores, tarifas y contratos"),
+    "alianzas.view": ("Alianzas", "Consultar alianzas estratégicas"),
+    "alianzas.manage": ("Alianzas", "Gestionar alianzas estratégicas"),
+    "implementacion.view": ("Implementación", "Consultar proyectos de implementación"),
+    "implementacion.manage": ("Implementación", "Gestionar implementación y pilotos"),
+    "implementacion.approve_go_live": ("Implementación", "Aprobar salida a producción"),
+    "exito_cliente.view": ("Éxito del cliente", "Consultar planes de éxito y salud"),
+    "exito_cliente.manage": ("Éxito del cliente", "Gestionar adopción y objetivos"),
+    "exito_cliente.review": ("Éxito del cliente", "Realizar revisiones periódicas"),
+    "segmentacion.view": ("Segmentación", "Consultar segmentos y perfiles comerciales"),
+    "segmentacion.manage": ("Segmentación", "Administrar segmentación y perfiles"),
+    "planes.view": ("Planes", "Consultar catálogo de planes y paquetes"),
+    "planes.manage": ("Planes", "Administrar planes, paquetes y versiones"),
+    "planes.recommend": ("Planes", "Generar recomendaciones de plan"),
+    "planes.approve_discount": ("Planes", "Aprobar descuentos comerciales"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
+    "control_center.view": ("Centro de Control", "Ver centro de control ejecutivo"),
+    "continuidad.view": ("Continuidad", "Consultar continuidad operativa y resiliencia"),
+    "continuidad.manage": ("Continuidad", "Administrar servicios críticos y planes"),
+    "continuidad.activate": ("Continuidad", "Activar planes de contingencia"),
+    "continuidad.test": ("Continuidad", "Ejecutar pruebas de continuidad y restauración"),
+    "incidentes.view": ("Incidentes", "Consultar incidentes operativos"),
+    "incidentes.manage": ("Incidentes", "Gestionar incidentes operativos"),
+    "incidentes.close": ("Incidentes", "Cerrar incidentes operativos"),
+    "backups.view": ("Respaldos", "Consultar políticas y ejecuciones de respaldo"),
+    "backups.manage": ("Respaldos", "Administrar políticas y registrar ejecuciones"),
+    "backups.verify": ("Respaldos", "Verificar integridad de respaldos"),
 }
 
 SYSTEM_ROLE_CODES = {"admin", "operator", "viewer", "superadmin"}
@@ -237,6 +456,24 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | LLM_PERMISSIONS
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
+        | LINEA_BASE_PERMISSIONS
+        | VALORACION_PERMISSIONS
+        | DIAGNOSTICOS_PERMISSIONS
+        | INTELIGENCIA_EXTERNA_PERMISSIONS
+        | CONTROL_CENTER_PERMISSIONS
+        | CONTINUIDAD_PERMISSIONS
+        | INCIDENTES_PERMISSIONS
+        | BACKUPS_PERMISSIONS
+        | DATOS_PERMISSIONS
+        | INTEGRATION_PERMISSIONS
+        | APRENDIZAJE_PERMISSIONS
+        | OPTIMIZACION_PERMISSIONS
+        | SECURITY_PERMISSIONS
+        | IDENTITY_PERMISSIONS
+        | COMMERCIAL_PERMISSIONS
+        | TCO_PERMISSIONS
+        | IMPLEMENTACION_PERMISSIONS
+        | SEGMENTATION_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -253,7 +490,25 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | LLM_PERMISSIONS
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
+        | LINEA_BASE_PERMISSIONS
+        | VALORACION_PERMISSIONS
+        | DIAGNOSTICOS_PERMISSIONS
+        | INTELIGENCIA_EXTERNA_PERMISSIONS
+        | CONTROL_CENTER_PERMISSIONS
+        | CONTINUIDAD_PERMISSIONS
+        | INCIDENTES_PERMISSIONS
+        | BACKUPS_PERMISSIONS
+        | DATOS_PERMISSIONS
+        | INTEGRATION_PERMISSIONS
+        | APRENDIZAJE_PERMISSIONS
+        | OPTIMIZACION_PERMISSIONS
+        | COMMERCIAL_PERMISSIONS
+        | TCO_PERMISSIONS
+        | IMPLEMENTACION_PERMISSIONS
+        | SEGMENTATION_PERMISSIONS
         | PLATFORM_PERMISSIONS
+        | SECURITY_PERMISSIONS
+        | IDENTITY_PERMISSIONS
     ),
     "operator": {
         "employee.view",
@@ -302,6 +557,67 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "oportunidades.evaluate",
         "oportunidades.approve",
         "oportunidades.activate",
+        "linea_base.view",
+        "linea_base.manage",
+        "linea_base.validate",
+        "valoracion.view",
+        "valoracion.manage",
+        "valoracion.validate",
+        "valoracion.roi",
+        "diagnosticos.view",
+        "diagnosticos.generate",
+        "diagnosticos.validate",
+        "inteligencia_externa.view",
+        "inteligencia_externa.manage",
+        "inteligencia_externa.ingest",
+        "inteligencia_externa.validate",
+        "control_center.view",
+        "continuidad.view",
+        "continuidad.manage",
+        "continuidad.activate",
+        "continuidad.test",
+        "incidentes.view",
+        "incidentes.manage",
+        "incidentes.close",
+        "backups.view",
+        "backups.manage",
+        "backups.verify",
+        "datos.view",
+        "datos.classify",
+        "datos.manage_policy",
+        "datos.export",
+        "datos.audit",
+        "datos.requests",
+        "datos.retention",
+        "integraciones.view",
+        "integraciones.create",
+        "integraciones.configure",
+        "integraciones.test",
+        "integraciones.execute",
+        "aprendizaje.view",
+        "aprendizaje.evaluate",
+        "aprendizaje.recalibrate",
+        "optimizacion.view",
+        "optimizacion.simulate",
+        "optimizacion.create",
+        "comercial.view",
+        "comercial.simulate",
+        "comercial.create",
+        "tco.view",
+        "tco.manage",
+        "tco.simulate",
+        "proveedores.view",
+        "proveedores.manage",
+        "alianzas.view",
+        "implementacion.view",
+        "implementacion.manage",
+        "exito_cliente.view",
+        "exito_cliente.manage",
+        "segmentacion.view",
+        "segmentacion.manage",
+        "planes.view",
+        "planes.manage",
+        "planes.recommend",
     },
     "viewer": {
         "employee.view",
@@ -319,6 +635,29 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "finops.view",
         "salud.consultar_diagnostico",
         "oportunidades.view",
+        "linea_base.view",
+        "valoracion.view",
+        "valoracion.roi",
+        "diagnosticos.view",
+        "inteligencia_externa.view",
+        "control_center.view",
+        "continuidad.view",
+        "incidentes.view",
+        "backups.view",
+        "datos.view",
+        "integraciones.view",
+        "aprendizaje.view",
+        "optimizacion.view",
+        "comercial.view",
+        "comercial.simulate",
+        "tco.view",
+        "tco.simulate",
+        "proveedores.view",
+        "alianzas.view",
+        "implementacion.view",
+        "exito_cliente.view",
+        "segmentacion.view",
+        "planes.view",
     },
 }
 

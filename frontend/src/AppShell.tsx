@@ -11,13 +11,14 @@ const MENU: NavSection[] = [
   {
     id: "inicio",
     label: "Inicio",
-    items: [{ to: "/", label: "Panel de control", end: true }],
+    items: [{ to: "/", label: "Centro de Control", end: true }],
   },
   {
     id: "operaciones",
     label: "Operaciones",
     items: [
       { to: "/operaciones", label: "Centro de operaciones" },
+      { to: "/operaciones/solicitud", label: "Nueva solicitud" },
       { to: "/ejecuciones", label: "Ejecuciones" },
       { to: "/aprobaciones", label: "Aprobaciones" },
       { to: "/automatizaciones", label: "Automatizaciones" },
@@ -37,15 +38,29 @@ const MENU: NavSection[] = [
       { to: "/capacidades", label: "Capacidades" },
       { to: "/herramientas", label: "Herramientas" },
       { to: "/conocimiento", label: "Conocimiento" },
-      { to: "/test-lab", label: "Test Lab" },
+      { to: "/test-lab", label: "Laboratorio de pruebas" },
     ],
   },
   {
     id: "analisis",
     label: "Análisis y control",
     items: [
+      { to: "/lineas-base", label: "Líneas base e impacto" },
+      { to: "/comercial", label: "Comercial y valor" },
+      { to: "/tco", label: "TCO y aliados" },
+      { to: "/implementacion", label: "Implementación" },
+      { to: "/comercial/segmentacion", label: "Segmentación y planes" },
       { to: "/oportunidades", label: "Centro de oportunidades" },
+      { to: "/senales", label: "Señales y fuentes" },
+      { to: "/diagnosticos", label: "Diagnósticos" },
+      { to: "/inteligencia-externa", label: "Inteligencia externa" },
+      { to: "/continuidad", label: "Continuidad" },
+      { to: "/integraciones", label: "Integraciones" },
+      { to: "/aprendizaje", label: "Aprendizaje" },
+      { to: "/optimizacion", label: "Optimización" },
       { to: "/costos-valor", label: "Costos y valor" },
+      { to: "/gobernanza-datos", label: "Gobierno de datos" },
+      { to: "/mi-seguridad", label: "Mi seguridad" },
       { to: "/notificaciones", label: "Notificaciones" },
       { to: "/auditoria", label: "Auditoría" },
     ],
@@ -61,6 +76,7 @@ const MENU: NavSection[] = [
       { to: "/administracion/configuracion", label: "Configuración" },
       { to: "/administracion/proveedores-ia", label: "Proveedores IA" },
       { to: "/administracion/seguridad", label: "Seguridad" },
+      { to: "/administracion/identidad", label: "Identidad empresarial" },
     ],
   },
 ];
@@ -164,7 +180,7 @@ export function AppShell() {
     <div className={`layout ${collapsed ? "sidebar-collapsed" : ""}`}>
       <aside className="sidebar" title="Navegación principal">
         <div className="brand-row">
-          <div className="brand">Enterprise AI OS</div>
+          <div className="brand">Sistema empresarial de IA</div>
           <button
             type="button"
             className="btn-icon"
@@ -192,7 +208,7 @@ export function AppShell() {
       </aside>
       <div className="main">
         <header className="topbar">
-          <span>EMPLEADOS_IA · Orquestador E2E · Workspace Salud</span>
+          <span>EMPLEADOS_IA · Centro de operaciones · Módulo Salud</span>
           <NavLink className="notification-bell" to="/notificaciones" title="Centro de notificaciones">
             🔔{unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}
           </NavLink>
