@@ -985,18 +985,47 @@ export type OpportunityItem = {
   tipo: string;
   dominio: string;
   titulo: string;
+  descripcion?: string | null;
   estado: string;
   urgencia: string;
+  riesgo?: string | null;
   impacto_estimado: number | null;
   valor_potencial: number | null;
   valor_potencial_certidumbre: string;
   valor_materializado: number | null;
   confianza: number;
   pertinencia: string | null;
+  pertinencia_razon?: string | null;
   momento: string | null;
   prioridad_score: number | null;
   siguiente_accion: Record<string, unknown> | null;
+  equipo?: Record<string, unknown> | null;
+  work_plan_id?: string | null;
+  finops_reference?: string | null;
+  atribucion_nivel?: string | null;
+  correlation_id?: string | null;
+  contexto?: Record<string, unknown> | null;
+  evidencia?: Record<string, unknown> | unknown[] | null;
+  resultado?: Record<string, unknown> | null;
   fecha_deteccion: string | null;
+};
+
+export type OpportunityTrackingItem = {
+  id?: string;
+  accion: string;
+  resultado?: string | null;
+  responsable_id?: string | null;
+  bloqueo?: string | null;
+  fecha?: string | null;
+};
+
+export type OpportunityTrace = {
+  opportunity_id: string;
+  correlation_id: string;
+  estado: string;
+  trazas: Array<{ etapa: string; detalle: unknown; fecha: string }>;
+  transiciones: Array<{ de: string; a: string; motivo?: string | null; actor_id?: string | null; fecha?: string | null }>;
+  seguimiento: OpportunityTrackingItem[];
 };
 
 export type OpportunitySummary = {
@@ -1032,11 +1061,36 @@ export async function approveOpportunity(id: string, aprobado = true, motivo?: s
   });
 }
 
-export async function activateOpportunity(id: string): Promise<Record<string, unknown>> {
-  return api(`/api/oportunidades/${id}/activar`, { method: "POST", body: JSON.stringify({}) });
+export async function activateOpportunity(
+  id: string,
+  autoExecute = false,
+): Promise<Record<string, unknown>> {
+  return api(`/api/oportunidades/${id}/activar`, {
+    method: "POST",
+    body: JSON.stringify({ auto_execute: autoExecute }),
+  });
 }
 
-export async function fetchOpportunityTrace(id: string): Promise<Record<string, unknown>> {
+export async function addOpportunityTracking(
+  id: string,
+  data: { accion: string; bloqueo?: string; kpi_inicial?: Record<string, unknown>; kpi_objetivo?: Record<string, unknown> },
+): Promise<{ tracking_id: string }> {
+  return api(`/api/oportunidades/${id}/seguimiento`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function registerOpportunityResult(
+  id: string,
+  data: {
+    valor_real?: number;
+    valor_esperado?: number;
+    evidencia?: Record<string, unknown>;
+    estado_resultado?: string;
+  },
+): Promise<{ resultado: Record<string, unknown>; oportunidad: OpportunityItem }> {
+  return api(`/api/oportunidades/${id}/resultado`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchOpportunityTrace(id: string): Promise<OpportunityTrace> {
   return api(`/api/oportunidades/${id}/trazabilidad`);
 }
 
