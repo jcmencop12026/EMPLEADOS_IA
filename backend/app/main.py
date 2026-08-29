@@ -23,6 +23,7 @@ from app import integration_models  # noqa: F401 — integraciones 1330
 from app import learning_models  # noqa: F401 — aprendizaje y repriorización 1260
 from app import optimization_models  # noqa: F401 — optimización 1290
 from app import commercial_models  # noqa: F401 — modelo comercial 1280
+from app import tco_models  # noqa: F401 — TCO y ecosistema 1320
 from app import llm_models  # noqa: F401 — LLM Gateway V1
 from app import security_models  # noqa: F401 — seguridad avanzada 1300
 from app import identity_models  # noqa: F401 — identidad empresarial 1370
@@ -61,6 +62,7 @@ from app.routers import (
     aprendizaje,
     optimizacion,
     comercial,
+    tco,
     test_lab,
     tools,
 )
@@ -166,6 +168,7 @@ app.include_router(integraciones.router)
 app.include_router(aprendizaje.router)
 app.include_router(optimizacion.router)
 app.include_router(comercial.router)
+app.include_router(tco.router)
 app.include_router(llm_providers.router)
 
 
