@@ -1,0 +1,12 @@
+FASE 2 — Reproducción en 1350 antes de corrección (mismo error heredado)
+Rama: cursor/1350-gobierno-datos-privacidad @ 3216b7d (solo 1120 sin fix)
+Motor: SQLite
+
+Primer fallo (1120 sin fix): ValueError: Constraint must have a name en 1120 upgrade
+
+Tras aplicar solo fix 1120 (sin fix 1110):
+NotImplementedError: No support for ALTER of constraints in SQLite dialect
+Archivo: backend/alembic/versions/1110a1b2c3d4e_finops_traceability_1110.py línea 18
+Operación: op.create_foreign_key sin batch_alter_table en SQLite
+
+Conclusión FASE 2: 1350 NO introduce el defecto; hereda cadena 1250a. Tras fix 1120, expone segundo defecto heredado en 1110.

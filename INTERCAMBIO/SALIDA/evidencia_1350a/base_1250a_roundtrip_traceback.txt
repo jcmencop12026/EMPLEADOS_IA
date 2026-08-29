@@ -1,0 +1,20 @@
+FASE 1 — Reproducción en base 1250a (sin 1350)
+Base: cursor/1250a-fix-aislamiento-tests @ 6352836813da85e31514e19cef125bcff53b4191
+Worktree: /tmp/emp1250a-test
+Motor: SQLite (pytest, alembic Context impl SQLiteImpl)
+Test: tests/test_admin_840b_v3.py::test_migration_roundtrip_upgrade_downgrade_upgrade
+
+Resultado: FAILED
+
+Error exacto:
+ValueError: Constraint must have a name
+Ubicación: alembic/operations/batch.py:665 in add_constraint
+Archivo migración: backend/alembic/versions/1120a1b2c3d4e_senales_reales_deteccion.py línea 31 (upgrade)
+Operación: batch_alter_table("proactive_signals") con add_column(source_id) + ForeignKey sin nombre
+
+Revisión alcanzada antes del fallo (stderr):
+- upgrade d1e2f3a4b5c6 -> 1120a1b2c3d4e (inicia, falla en batch_alter)
+
+Head esperado en cadena 1250a: 1250a1b2c3d4e (nunca alcanzado en BD limpia SQLite)
+
+Conclusión FASE 1: el fallo existe en la base 1250a SIN migración 1350.
