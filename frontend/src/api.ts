@@ -1719,10 +1719,78 @@ export type CentroControlResumen = {
     disponible: boolean;
     dashboard?: Record<string, unknown>;
     tokens_periodo?: number;
+    presupuestos?: Array<Record<string, unknown>>;
+  } | null;
+  finops_extendido?: {
+    disponible: boolean;
+    estado?: string;
+    consumos_periodo?: number;
+    tokens_periodo?: number;
+    costo_periodo?: number | null;
+    presupuestos?: Array<Record<string, unknown>>;
+    alertas_registradas?: number;
+    presupuestos_con_bloqueo?: number;
+    oportunidades_con_costo?: number;
+    enlace?: string;
   } | null;
   valor_retorno?: Record<string, unknown> | null;
   diagnostico?: Record<string, unknown> | null;
   senales?: Record<string, unknown> | null;
+  inteligencia_externa?: {
+    disponible: boolean;
+    estado?: string;
+    fuentes_activas?: number;
+    total_senales?: number;
+    sin_validar?: number;
+    riesgos_abiertos?: number;
+    oportunidades_detectadas?: number;
+    tendencias?: number;
+    recientes?: Array<{
+      id: string;
+      titulo: string;
+      clasificacion?: string;
+      relevancia?: string;
+      es_riesgo?: boolean;
+      validada?: boolean;
+      enlace: string;
+    }>;
+    enlace?: string;
+  } | null;
+  llm?: {
+    disponible?: boolean;
+    total?: number;
+    degradados?: number;
+    proveedores?: Array<{
+      id: string;
+      nombre: string;
+      proveedor: string;
+      modelo?: string | null;
+      habilitado: boolean;
+      errores_24h: number;
+      latencia_media_ms?: number | null;
+      tokens_24h?: number;
+      estado?: string;
+      enlace: string;
+    }>;
+    enlace?: string;
+  } | null;
+  auditoria_reciente?: Array<{
+    id: string;
+    accion: string;
+    detalle?: string | null;
+    actor?: string | null;
+    modulo?: string | null;
+    fecha?: string | null;
+    enlace: string;
+  }> | null;
+  actividad_reciente?: Array<{
+    id: string;
+    tipo: string;
+    plan_id?: string | null;
+    fecha?: string | null;
+    enlace?: string | null;
+  }>;
+  cadena_ejecutiva?: Array<Record<string, unknown>> | null;
   salud_plataforma?: Record<string, unknown> | null;
 };
 
