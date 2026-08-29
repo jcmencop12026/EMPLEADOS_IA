@@ -28,11 +28,9 @@ Cierre funcional de la cadena comercial/implementación **1280 → 1320 → 1340
 
 | Commit | SHA | Descripción |
 |--------|-----|-------------|
-| TESTS | `9d12878e8c0f0e2b0e8b8e8f8e8e8e8e8e8e8e8` | 20 escenarios obligatorios pre-Fase 2 |
-| VALOR-COMERCIAL | `36d9e2b` | Separación POTENCIAL ≠ precio; contrato Centro Control |
-| COSTOS-IA-PLANES | `75904c4` | Herencia `credential_mode` desde plan |
-
-> Nota: SHA TESTS completo en repo: `git rev-parse 9d12878`
+| TESTS | `9d12878d38c24e2ce2c4e939c35f29fe5c0c869b` | 20 escenarios obligatorios pre-Fase 2 |
+| VALOR-COMERCIAL | `36d9e2b2a4af904616845320003b8193196f1959` | Separación POTENCIAL ≠ precio; contrato Centro Control |
+| COSTOS-IA-PLANES | `75904c43271dd27aa918de0cd4461507726ac8ae` | Herencia `credential_mode` desde plan |
 
 ---
 
