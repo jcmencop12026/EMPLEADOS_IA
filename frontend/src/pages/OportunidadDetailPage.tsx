@@ -1,10 +1,11 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import type { OpportunityItem, OpportunityTrace } from "../api";
+import type { OpportunityItem, OpportunityTrace, ValuationSummary } from "../api";
 import {
   activateOpportunity,
   addOpportunityTracking,
   approveOpportunity,
+  createValuation,
   decideApproval,
   evaluateOpportunity,
   fetchExecution,
@@ -12,13 +13,19 @@ import {
   fetchOpportunity,
   fetchOpportunityEconomics,
   fetchOpportunityTrace,
+  fetchValuationSummary,
   registerOpportunityResult,
+  registerValuationCost,
+  registerValuationReal,
   runOperation,
+  updateValuationExpected,
+  updateValuationScenario,
+  validateValuation,
   type FinOpsOpportunityEconomics,
 } from "../api";
 import { usePermissions } from "../hooks/usePermissions";
 
-type Tab = "resumen" | "evidencia" | "seguimiento" | "resultado" | "ejecucion" | "trazabilidad" | "finops";
+type Tab = "resumen" | "evidencia" | "seguimiento" | "resultado" | "ejecucion" | "trazabilidad" | "finops" | "valoracion";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "resumen", label: "Resumen" },
@@ -28,6 +35,18 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "ejecucion", label: "Ejecución" },
   { id: "trazabilidad", label: "Trazabilidad" },
   { id: "finops", label: "FinOps" },
+  { id: "valoracion", label: "Valoración" },
+];
+
+const VALUE_TYPES = [
+  "AHORRO",
+  "PÉRDIDA EVITADA",
+  "INGRESO RECUPERADO",
+  "PRODUCTIVIDAD LIBERADA",
+  "NUEVO INGRESO",
+  "OPORTUNIDAD COMERCIAL",
+  "RIESGO MITIGADO",
+  "OTRO",
 ];
 
 const ESTADO_LABELS: Record<string, string> = {
@@ -76,6 +95,7 @@ export function OportunidadDetailPage() {
   const [opp, setOpp] = useState<OpportunityItem | null>(null);
   const [trace, setTrace] = useState<OpportunityTrace | null>(null);
   const [economics, setEconomics] = useState<FinOpsOpportunityEconomics | null>(null);
+  const [valuation, setValuation] = useState<ValuationSummary | null>(null);
   const [tab, setTab] = useState<Tab>("resumen");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -98,20 +118,24 @@ export function OportunidadDetailPage() {
   const canManage = has("oportunidades.manage");
   const canRunOps = has("operations.manage");
   const canDecideApproval = has("operations.approve");
+  const canValManage = has("valoracion.manage");
+  const canValValidate = has("valoracion.validate");
 
   async function reload() {
     if (!opportunityId) return;
     setLoading(true);
     setError(null);
     try {
-      const [o, t, eco] = await Promise.all([
+      const [o, t, eco, val] = await Promise.all([
         fetchOpportunity(opportunityId),
         fetchOpportunityTrace(opportunityId),
         fetchOpportunityEconomics(opportunityId).catch(() => null),
+        fetchValuationSummary(opportunityId).catch(() => null),
       ]);
       setOpp(o);
       setTrace(t);
       setEconomics(eco);
+      setValuation(val);
       if (o.work_plan_id) {
         const [approvals, execution] = await Promise.all([
           fetchOperationApprovals(o.work_plan_id).catch(() => []),
@@ -247,6 +271,108 @@ export function OportunidadDetailPage() {
       await reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al registrar resultado");
+    }
+  }
+
+  async function onCrearValoracion() {
+    if (!opportunityId) return;
+    try {
+      await createValuation(opportunityId, {
+        value_type: "AHORRO",
+        scope: "INTERNO",
+        currency: "USD",
+      });
+      setMsg("Valoración creada");
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al crear valoración");
+    }
+  }
+
+  async function onGuardarEsperado() {
+    if (!opportunityId) return;
+    const gross = prompt("Valor bruto esperado:");
+    const prob = prompt("Probabilidad (0-1):");
+    if (!gross || !prob) return;
+    try {
+      await updateValuationExpected(opportunityId, {
+        gross_value: gross,
+        probability: prob,
+        period_days: 90,
+        value_nature: "ESTIMADA",
+        assumptions: "Estimación inicial",
+        source: "Usuario",
+      });
+      setMsg("Valor esperado actualizado");
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al actualizar valor esperado");
+    }
+  }
+
+  async function onGuardarEscenario(tipo: string) {
+    if (!opportunityId) return;
+    const valor = prompt(`Valor escenario ${tipo}:`);
+    const prob = prompt("Probabilidad (0-1):");
+    if (!valor || !prob) return;
+    try {
+      await updateValuationScenario(opportunityId, tipo, {
+        value_amount: valor,
+        probability: prob,
+        assumptions: `Escenario ${tipo}`,
+      });
+      setMsg(`Escenario ${tipo} actualizado`);
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al actualizar escenario");
+    }
+  }
+
+  async function onRegistrarReal() {
+    if (!opportunityId) return;
+    const valor = prompt("Valor materializado:");
+    if (!valor) return;
+    try {
+      await registerValuationReal(opportunityId, {
+        materialized_value: valor,
+        value_nature: "VERIFICADO",
+        attribution_level: "ATRIBUIBLE",
+        source: "Medición interna",
+        evidence: "Registro manual",
+      });
+      setMsg("Valor real registrado");
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al registrar valor real");
+    }
+  }
+
+  async function onRegistrarCosto() {
+    if (!opportunityId) return;
+    const monto = prompt("Monto del costo:");
+    if (!monto) return;
+    try {
+      await registerValuationCost(opportunityId, {
+        cost_type: "HORAS HUMANAS",
+        amount: monto,
+        currency: "USD",
+        description: "Costo de ejecución",
+      });
+      setMsg("Costo registrado");
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al registrar costo");
+    }
+  }
+
+  async function onValidar() {
+    if (!opportunityId) return;
+    try {
+      await validateValuation(opportunityId);
+      setMsg("Valoración validada");
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al validar valoración");
     }
   }
 
@@ -542,6 +668,107 @@ export function OportunidadDetailPage() {
                   ))}
                 </tbody>
               </table>
+            )}
+          </div>
+        )}
+
+        {tab === "valoracion" && (
+          <div>
+            {!valuation?.has_valuation ? (
+              <div>
+                <p className="muted">Sin valoración económica registrada.</p>
+                {canValManage && (
+                  <button type="button" onClick={onCrearValoracion}>Crear valoración</button>
+                )}
+              </div>
+            ) : (
+              <>
+                {canValManage && (
+                  <div className="toolbar compact-toolbar" style={{ marginBottom: "1rem" }}>
+                    <button type="button" onClick={onGuardarEsperado}>Valor esperado</button>
+                    <button type="button" onClick={() => onGuardarEscenario("CONSERVADOR")}>Esc. conservador</button>
+                    <button type="button" onClick={() => onGuardarEscenario("BASE")}>Esc. base</button>
+                    <button type="button" onClick={() => onGuardarEscenario("OPTIMISTA")}>Esc. optimista</button>
+                    <button type="button" onClick={onRegistrarReal}>Valor real</button>
+                    <button type="button" onClick={onRegistrarCosto}>Costo ejecución</button>
+                    {canValValidate && (
+                      <button type="button" onClick={onValidar}>Validar</button>
+                    )}
+                  </div>
+                )}
+
+                <dl className="detail-grid">
+                  <dt>Tipo de valor</dt>
+                  <dd>{valuation.valuation?.value_type} ({valuation.valuation?.scope})</dd>
+                  <dt>Estado</dt><dd>{valuation.valuation?.status} · v{valuation.valuation?.version}</dd>
+                  <dt className="highlight-esperado">Valor esperado ajustado</dt>
+                  <dd>{valuation.adjusted_expected ?? "—"} <span className="badge">ESPERADO</span></dd>
+                  <dt>Valor bruto esperado</dt><dd>{valuation.gross_expected ?? "—"}</dd>
+                  <dt className="highlight-real">Valor materializado</dt>
+                  <dd>{valuation.materialized_value ?? "—"} <span className="badge">REAL</span></dd>
+                  <dt>Valor atribuible</dt>
+                  <dd>
+                    {valuation.attributable_value ?? "—"}
+                    {valuation.real?.value_nature && (
+                      <span className="badge"> {valuation.real.value_nature}</span>
+                    )}
+                  </dd>
+                  <dt>Costo total ejecución</dt><dd>{valuation.total_execution_cost ?? "—"} (IA: {valuation.finops_ia_cost_label})</dd>
+                  <dt>Beneficio neto</dt><dd>{valuation.net_benefit ?? "—"}</dd>
+                  <dt>Retorno</dt><dd>{valuation.return_label ?? "NO CALCULABLE"}</dd>
+                  <dt>Periodo recuperación</dt><dd>{valuation.payback_label ?? "NO CALCULABLE"}</dd>
+                  <dt>Atribución</dt>
+                  <dd>{valuation.real?.attribution_level ?? "—"}</dd>
+                </dl>
+
+                {valuation.missing_for_calculation && valuation.missing_for_calculation.length > 0 && (
+                  <p className="muted" style={{ marginTop: "0.5rem" }}>
+                    Datos faltantes: {valuation.missing_for_calculation.join("; ")}
+                  </p>
+                )}
+
+                {valuation.scenarios && valuation.scenarios.length > 0 && (
+                  <table className="data-table compact-table" style={{ marginTop: "1rem" }}>
+                    <thead>
+                      <tr>
+                        <th>Escenario</th>
+                        <th>Valor</th>
+                        <th>Prob.</th>
+                        <th>Ajustado</th>
+                        <th>Costo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {valuation.scenarios.map((s) => (
+                        <tr key={s.scenario_type}>
+                          <td>{s.scenario_type}</td>
+                          <td>{s.value_amount ?? "—"}</td>
+                          <td>{s.probability ?? "—"}</td>
+                          <td>{s.adjusted_value ?? "—"}</td>
+                          <td>{s.cost ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+
+                {valuation.history && valuation.history.length > 0 && (
+                  <details style={{ marginTop: "1rem" }}>
+                    <summary>Histórico ({valuation.history.length})</summary>
+                    <ul>
+                      {valuation.history.map((h, i) => (
+                        <li key={i} className="mono">
+                          v{h.version} · {h.action} · {h.change_summary ?? ""} · {h.changed_at?.slice(0, 19)}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+
+                <p className="muted" style={{ marginTop: "0.75rem", fontSize: "0.85rem" }}>
+                  Tipos disponibles: {VALUE_TYPES.join(", ")}
+                </p>
+              </>
             )}
           </div>
         )}
