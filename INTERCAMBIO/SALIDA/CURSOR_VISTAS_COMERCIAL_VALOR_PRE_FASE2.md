@@ -30,7 +30,7 @@ Se expusieron en el frontend las capacidades ya construidas en la cadena 1280/13
 | UI-COSTOS-IA | `764107d6e3643bf4eb67a7adad9a39e421edbcd0` | Labels FinOps, TCO categorías |
 | UI-IMPLEMENTACION | `2883574e26e91dd62363bbc30e92ab0bead08736` | Ciclo implementación, tablero |
 | TESTS | `4e3921fd41778fd6a0ab48b728cab2538d1abc35` | Contrato API vistas comerciales |
-| DOC | `5ae325b622ae2b417e5c8de9481ef1334548efce` | Este entregable |
+| DOC | `825fcc3fcfb7cd9798085447e8ecc9cab097ce05` | Este entregable |
 
 ---
 
@@ -178,7 +178,7 @@ RAMA:
 cursor/vistas-comercial-valor-pre-fase2-dec7
 
 HEAD:
-d150e4c345d8b4b00299a751f5a1eba1f9971c2e
+5ae325b622ae2b417e5c8de9481ef1334548efce
 
 PLANES:
 PASS
