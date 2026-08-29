@@ -27,6 +27,7 @@ from app.integration_models import IntegrationConnector, IntegrationExecution, I
 from app.integration_security import redact_sensitive_headers
 from app.models import Organization
 from app.services import integration_executors as exec_mod
+from app.services import integration_wiring as wiring
 from app.services import signal_ingestion_service as signal_svc
 from app.tenant_scope import ORG_STATUS_ACTIVE
 
@@ -98,6 +99,7 @@ def connector_to_dict(row: IntegrationConnector) -> dict[str, Any]:
             "consecutive_failures": row.consecutive_failures,
             "circuit_open": _is_circuit_open(row),
         },
+        "gov_catalog_entry_id": row.gov_catalog_entry_id,
         "created_at": row.created_at.isoformat() if row.created_at else None,
     }
 
@@ -154,6 +156,12 @@ def create_connector(db: Session, organization_id: str, data: dict[str, Any], us
     secret_ref = None
     if data.get("secret_env_var"):
         secret_ref = build_env_secret_ref(data["secret_env_var"])
+    gov_catalog_entry_id = data.get("gov_catalog_entry_id")
+    if gov_catalog_entry_id:
+        try:
+            wiring.validate_gov_catalog_entry(db, organization_id, gov_catalog_entry_id)
+        except ValueError as exc:
+            raise IntegrationValidationError(str(exc)) from exc
     row = IntegrationConnector(
         organization_id=organization_id,
         code=code,
@@ -163,6 +171,7 @@ def create_connector(db: Session, organization_id: str, data: dict[str, Any], us
         status=ConnectorStatus.BORRADOR,
         auth_type=data.get("auth_type", "NINGUNA"),
         secret_ref=secret_ref,
+        gov_catalog_entry_id=gov_catalog_entry_id,
         config_json=_json(data.get("config")) if data.get("config") else None,
         mapping_json=_json(data.get("mapping")) if data.get("mapping") else None,
         schema_json=_json(data.get("schema")) if data.get("schema") else None,
@@ -199,6 +208,14 @@ def update_connector(db: Session, organization_id: str, connector_id: str, data:
         row.schema_json = _json(data["schema"])
     if data.get("secret_env_var"):
         row.secret_ref = build_env_secret_ref(data["secret_env_var"])
+    if "gov_catalog_entry_id" in data:
+        gid = data.get("gov_catalog_entry_id")
+        if gid:
+            try:
+                wiring.validate_gov_catalog_entry(db, organization_id, gid)
+            except ValueError as exc:
+                raise IntegrationValidationError(str(exc)) from exc
+        row.gov_catalog_entry_id = gid
     db.flush()
     write_audit(db, action="integraciones.conector.editado", organization_id=organization_id, user_id=user_id,
                 detail=_json({"connector_id": connector_id}), commit=False)
@@ -255,7 +272,9 @@ def _record_execution(
     records_processed: int = 0, records_valid: int = 0, records_rejected: int = 0,
     latency_ms: int | None = None, error_category: str | None = None, error_message: str | None = None,
     idempotency_key: str | None = None, trigger_mode: str = TriggerMode.MANUAL,
+    correlation_id: str | None = None,
 ) -> IntegrationExecution:
+    summary = {"correlation_id": correlation_id} if correlation_id else None
     ex = IntegrationExecution(
         connector_id=row.id,
         organization_id=row.organization_id,
@@ -270,6 +289,7 @@ def _record_execution(
         error_message=error_message[:500] if error_message else None,
         idempotency_key=idempotency_key,
         user_id=user_id,
+        result_summary_json=_json(summary) if summary else None,
     )
     db.add(ex)
     db.flush()
@@ -281,10 +301,28 @@ def execute_connector(
     *, idempotency_key: str | None = None, payload: dict | None = None,
 ) -> dict[str, Any]:
     row = _get_connector(db, organization_id, connector_id)
+    correlation_id = wiring.new_correlation_id()
+    prev_cont_estado: str | None = None
+    try:
+        servicio = wiring.ensure_continuidad_servicio(db, organization_id, row, user_id)
+        prev_cont_estado = servicio.estado_operacional
+    except Exception:
+        prev_cont_estado = None
+
+    wiring.identity_preflight_execute(db, organization_id, user_id)
+
     if row.status not in (ConnectorStatus.ACTIVO, ConnectorStatus.DEGRADADO):
         raise IntegrationValidationError(f"Conector no activo (estado: {row.status})")
     if _is_circuit_open(row):
         raise IntegrationValidationError("Circuit breaker abierto — servicio temporalmente no disponible")
+
+    preflight = wiring.gov_preflight(db, organization_id, row, correlation_id)
+    if not preflight.allowed:
+        wiring.audit_preflight_denied(db, organization_id, user_id, connector_id, preflight)
+        raise IntegrationValidationError(
+            f"Preflight gobierno: {preflight.decision} — {'; '.join(preflight.reasons)}"
+        )
+
     if idempotency_key:
         prev = db.query(IntegrationExecution).filter(
             IntegrationExecution.connector_id == row.id,
@@ -292,7 +330,7 @@ def execute_connector(
             IntegrationExecution.status == ExecutionStatus.EXITOSA,
         ).first()
         if prev:
-            return {"idempotent": True, "execution_id": prev.id, "status": prev.status}
+            return {"idempotent": True, "execution_id": prev.id, "status": prev.status, "correlation_id": correlation_id}
 
     config = _parse_json(row.config_json) or {}
     mapping = _parse_json(row.mapping_json)
@@ -311,6 +349,10 @@ def execute_connector(
                 payload=payload,
             )
             records = exec_mod.apply_mapping(result.get("records", []), mapping)
+            if preflight.minimization_action:
+                records = wiring.apply_gov_masking(
+                    db, organization_id, records, preflight.minimization_action,
+                )
             valid, schema_errors = exec_mod.validate_schema(records, schema)
             rejected = len(records) - len(valid)
 
@@ -325,14 +367,66 @@ def execute_connector(
             if row.status == ConnectorStatus.DEGRADADO:
                 row.status = ConnectorStatus.ACTIVO
 
+            ex_status = ExecutionStatus.EXITOSA if not schema_errors else ExecutionStatus.PARCIAL
             ex = _record_execution(
-                db, row, status=ExecutionStatus.EXITOSA if not schema_errors else ExecutionStatus.PARCIAL,
+                db, row, status=ex_status,
                 user_id=user_id, records_processed=len(records), records_valid=len(valid),
                 records_rejected=rejected, latency_ms=result.get("latency_ms"),
-                idempotency_key=idempotency_key,
+                idempotency_key=idempotency_key, correlation_id=correlation_id,
             )
-            write_audit(db, action="integraciones.conector.ejecutado", organization_id=organization_id, user_id=user_id,
-                        detail=_json({"connector_id": connector_id, "execution_id": ex.id, "valid": len(valid)}), commit=False)
+
+            audit_detail = {
+                "connector_id": connector_id,
+                "execution_id": ex.id,
+                "valid": len(valid),
+                "correlation_id": correlation_id,
+                "gov_decision": preflight.decision,
+            }
+            if preflight.catalog_entry_id:
+                wiring.gov_register_access(
+                    db, organization_id, user_id,
+                    catalog_entry_id=preflight.catalog_entry_id,
+                    connector_id=connector_id,
+                    action="INTEGRACION_EJECUTAR",
+                    result="OK",
+                    correlation_id=correlation_id,
+                    detail={"execution_id": ex.id, "records_valid": len(valid)},
+                )
+                wiring.gov_register_lineage(
+                    db, organization_id, user_id,
+                    catalog_entry_id=preflight.catalog_entry_id,
+                    connector_id=connector_id,
+                    execution_id=ex.id,
+                    status=ex_status,
+                    records_valid=len(valid),
+                    records_rejected=rejected,
+                    correlation_id=correlation_id,
+                )
+                wiring.gov_register_execution_result(
+                    db, organization_id, user_id,
+                    catalog_entry_id=preflight.catalog_entry_id,
+                    connector_id=connector_id,
+                    execution_id=ex.id,
+                    technical_status=ex_status,
+                    functional_ok=len(valid) > 0 or not schema_errors,
+                    correlation_id=correlation_id,
+                )
+
+            write_audit(
+                db, action="integraciones.conector.ejecutado",
+                organization_id=organization_id, user_id=user_id,
+                detail=_json(audit_detail), commit=False,
+            )
+
+            wiring.sync_continuidad_from_connector(
+                db, organization_id, row,
+                prev_estado=prev_cont_estado, user_id=user_id, correlation_id=correlation_id,
+            )
+            if row.gov_catalog_entry_id and config.get("register_backup_metadata"):
+                wiring.register_connector_backup_metadata(
+                    db, organization_id, row, user_id, correlation_id,
+                )
+
             return {
                 "execution_id": ex.id,
                 "status": ex.status,
@@ -342,12 +436,15 @@ def execute_connector(
                 "schema_errors": schema_errors,
                 "signals_created": signals_created,
                 "latency_ms": result.get("latency_ms"),
+                "correlation_id": correlation_id,
             }
         except exec_mod.ExecutorError as exc:
             last_error = exc
             if attempt < row.retry_max:
                 time.sleep(row.retry_delay_ms / 1000.0 * (attempt + 1))
             continue
+        except ValueError as exc:
+            raise IntegrationValidationError(str(exc)) from exc
 
     row.consecutive_failures += 1
     row.last_error_at = _utcnow()
@@ -359,10 +456,28 @@ def execute_connector(
         db, row, status=ExecutionStatus.FALLIDA, user_id=user_id,
         error_category=last_error.category if last_error else ErrorCategory.DESCONOCIDO,
         error_message=str(last_error) if last_error else None,
-        idempotency_key=idempotency_key,
+        idempotency_key=idempotency_key, correlation_id=correlation_id,
     )
-    write_audit(db, action="integraciones.conector.ejecutado", organization_id=organization_id, user_id=user_id,
-                detail=_json({"connector_id": connector_id, "execution_id": ex.id, "failed": True}), commit=False)
+    if preflight.catalog_entry_id:
+        wiring.gov_register_access(
+            db, organization_id, user_id,
+            catalog_entry_id=preflight.catalog_entry_id,
+            connector_id=connector_id,
+            action="INTEGRACION_EJECUTAR",
+            result="ERROR",
+            correlation_id=correlation_id,
+            detail={"execution_id": ex.id, "failed": True},
+        )
+    write_audit(
+        db, action="integraciones.conector.ejecutado",
+        organization_id=organization_id, user_id=user_id,
+        detail=_json({"connector_id": connector_id, "execution_id": ex.id, "failed": True, "correlation_id": correlation_id}),
+        commit=False,
+    )
+    wiring.sync_continuidad_from_connector(
+        db, organization_id, row,
+        prev_estado=prev_cont_estado, user_id=user_id, correlation_id=correlation_id,
+    )
     raise IntegrationValidationError(str(last_error) if last_error else "Ejecución fallida")
 
 

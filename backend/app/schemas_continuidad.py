@@ -60,6 +60,7 @@ class BackupEjecucionCreate(BaseModel):
     hash_referencia: str | None = None
     ubicacion_logica: str | None = None
     error_seguro: str | None = None
+    catalog_entry_id: str | None = None
 
 
 class BackupVerificacionCreate(BaseModel):
@@ -80,6 +81,7 @@ class RestorePruebaCreate(BaseModel):
     resultado: str = "EXITOSO"
     datos_validados: str | None = None
     evidencia: str | None = None
+    catalog_entry_id: str | None = None
 
 
 class IncidenteCreate(BaseModel):

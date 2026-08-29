@@ -221,6 +221,7 @@ def registrar_restore(
         db.commit()
         return {"id": row.id, "tipo": row.tipo, "entorno_destino": row.entorno_destino}
     except svc.ContinuidadValidationError as exc:
+        db.commit()
         raise _validation_error(exc) from exc
 
 
