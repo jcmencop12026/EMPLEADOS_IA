@@ -33,6 +33,7 @@ import { ContinuidadPage } from "./pages/ContinuidadPage";
 import { IntegracionesPage } from "./pages/IntegracionesPage";
 import { IntegracionWizardPage } from "./pages/IntegracionWizardPage";
 import { IntegracionDetailPage } from "./pages/IntegracionDetailPage";
+import { IntegracionTrazabilidadPage } from "./pages/IntegracionTrazabilidadPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
@@ -98,6 +99,7 @@ export default function App() {
           <Route path="continuidad" element={<ContinuidadPage />} />
           <Route path="integraciones" element={<IntegracionesPage />} />
           <Route path="integraciones/nueva" element={<IntegracionWizardPage />} />
+          <Route path="integraciones/trazabilidad" element={<IntegracionTrazabilidadPage />} />
           <Route path="integraciones/:connectorId" element={<IntegracionDetailPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
           <Route element={<RequirePermission anyOf={["platform.organization.view"]} />}>

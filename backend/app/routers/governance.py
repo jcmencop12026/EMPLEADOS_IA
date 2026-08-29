@@ -243,7 +243,7 @@ def create_ai_usage(
 
 @router.get("/politicas-proveedor", response_model=list[ProviderPolicyOut])
 def list_provider_policies(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    check_permission(user, "datos.manage_policy", db)
+    check_permission(user, "datos.view", db)
     return svc.list_provider_policies(db, user.organization_id)
 
 

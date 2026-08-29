@@ -2003,7 +2003,15 @@ export type ContinuidadTablero = {
   backups_fallidos: number;
   restauraciones_verificadas: number;
   acciones_pendientes: number;
-  alertas: Array<{ tipo: string; mensaje: string }>;
+  alertas: Array<{
+    id?: string;
+    tipo: string;
+    mensaje: string;
+    severidad?: string;
+    entidad_ref?: string | null;
+    created_at?: string | null;
+    resuelta?: boolean;
+  }>;
   centro_control_adapter?: Record<string, unknown>;
   integracion_1330_prep?: Record<string, unknown>;
   integracion_1260_prep?: Record<string, unknown>;
@@ -2074,6 +2082,33 @@ export type GovFinding = {
   description: string;
   status: string;
 };
+
+export type GovProviderPolicy = {
+  id: string;
+  organization_id: string | null;
+  classification_level_id: string | null;
+  category_id: string | null;
+  decision: string;
+  minimization_action: string | null;
+  provider_scope: string | null;
+  is_mandatory_global: boolean;
+};
+
+export async function fetchGovProviderPolicies(): Promise<GovProviderPolicy[]> {
+  return api("/api/gobierno-datos/politicas-proveedor");
+}
+
+export async function evaluateGovProvider(data: Record<string, unknown>): Promise<{
+  result: string;
+  reasons: string[];
+  minimization_action?: string | null;
+}> {
+  return api("/api/gobierno-datos/evaluar-proveedor", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchGovLineage(entryId: string): Promise<Array<Record<string, unknown>>> {
+  return api(`/api/gobierno-datos/catalogo/${entryId}/linaje`);
+}
 
 export async function fetchGovDashboard(): Promise<GovDashboard> {
   return api("/api/gobierno-datos/dashboard");
@@ -2146,9 +2181,25 @@ export type IntegrationConnector = {
     consecutive_failures: number;
     circuit_open: boolean;
   };
+  gov_catalog_entry_id?: string | null;
   webhook_token?: string;
   webhook_url_hint?: string;
   created_at: string | null;
+};
+
+export type IntegrationConnectorOverview = IntegrationConnector & {
+  organization_name?: string;
+  proveedor_ref?: string;
+  continuidad_estado?: string | null;
+  continuidad_servicio_id?: string | null;
+  politica_decision?: string | null;
+  politica_restricciones?: string[];
+  ultima_ejecucion?: {
+    id: string;
+    status: string;
+    started_at: string | null;
+    correlation_id?: string | null;
+  } | null;
 };
 
 export type IntegrationExecution = {
@@ -2161,6 +2212,7 @@ export type IntegrationExecution = {
   records_rejected: number;
   error_category: string | null;
   error_message: string | null;
+  correlation_id?: string | null;
 };
 
 export type IntegrationHealth = {
@@ -2181,6 +2233,68 @@ export async function fetchIntegrationCatalog(): Promise<IntegrationCatalogItem[
 
 export async function fetchIntegrationConnectors(): Promise<IntegrationConnector[]> {
   return api("/api/integraciones/conectores");
+}
+
+export async function fetchIntegrationConnectorsOverview(): Promise<IntegrationConnectorOverview[]> {
+  return api("/api/integraciones/conectores?vista=operativa");
+}
+
+export type IntegrationWiringDetail = {
+  connector: IntegrationConnector;
+  catalog_entry: Record<string, unknown> | null;
+  policy: Record<string, unknown> | null;
+  preflight: {
+    allowed: boolean;
+    decision: string;
+    reasons: string[];
+    minimization_action?: string | null;
+  } | null;
+  executions: IntegrationExecution[];
+  health: IntegrationHealth;
+  lineage: Array<Record<string, unknown>>;
+  access_logs: Array<Record<string, unknown>>;
+  continuidad: {
+    proveedor_ref: string;
+    servicio_id: string | null;
+    servicio_nombre: string | null;
+    estado_operacional: string | null;
+  };
+  eventos: Array<{
+    id: string;
+    tipo: string;
+    mensaje: string;
+    severidad: string;
+    entidad_ref: string | null;
+    created_at: string | null;
+    resuelta: boolean;
+  }>;
+  auditoria: Array<{
+    id: string;
+    action: string;
+    detail: string | null;
+    user_id: string | null;
+    created_at: string | null;
+  }>;
+};
+
+export type IntegrationTraceStep = {
+  etapa: string;
+  origen: string;
+  referencia: string;
+  estado: string;
+  detalle: string;
+  timestamp: string | null;
+};
+
+export async function fetchIntegrationWiringDetail(id: string): Promise<IntegrationWiringDetail> {
+  return api(`/api/integraciones/conectores/${id}/cableado`);
+}
+
+export async function fetchIntegrationTrace(correlationId: string): Promise<{
+  correlation_id: string;
+  pasos: IntegrationTraceStep[];
+}> {
+  return api(`/api/integraciones/trazabilidad/${encodeURIComponent(correlationId)}`);
 }
 
 export async function fetchIntegrationConnector(id: string): Promise<IntegrationConnector> {
@@ -2210,6 +2324,7 @@ export async function executeIntegrationConnector(
   records_rejected: number;
   signals_created?: number;
   idempotent?: boolean;
+  correlation_id?: string;
 }> {
   return api(`/api/integraciones/conectores/${id}/ejecutar`, { method: "POST", body: JSON.stringify(data) });
 }

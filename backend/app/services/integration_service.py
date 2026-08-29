@@ -25,7 +25,10 @@ from app.integration_enums import (
 )
 from app.integration_models import IntegrationConnector, IntegrationExecution, IntegrationWebhookEvent
 from app.integration_security import redact_sensitive_headers
-from app.models import Organization
+from app.continuidad_models import ContinuidadAlerta, ContinuidadServicioCritico
+from app.governance_models import GovAccessLog, GovLineageEvent
+from app.models import AuditLog, Organization
+from app.services import governance_service as gov_svc
 from app.services import integration_executors as exec_mod
 from app.services import integration_wiring as wiring
 from app.services import signal_ingestion_service as signal_svc
@@ -556,6 +559,7 @@ def list_executions(db: Session, organization_id: str, connector_id: str, limit:
             "latency_ms": r.latency_ms, "records_processed": r.records_processed,
             "records_valid": r.records_valid, "records_rejected": r.records_rejected,
             "error_category": r.error_category, "error_message": r.error_message,
+            "correlation_id": (_parse_json(r.result_summary_json) or {}).get("correlation_id"),
         }
         for r in rows
     ]
@@ -578,3 +582,255 @@ def get_health(db: Session, organization_id: str, connector_id: str) -> dict[str
         "total_executions": total,
         "success_rate": round(success / total * 100, 2) if total else None,
     }
+
+
+def list_connectors_overview(db: Session, organization_id: str) -> list[dict[str, Any]]:
+    """Vista operativa — grilla integraciones con gobierno y continuidad."""
+    org = db.get(Organization, organization_id)
+    org_name = org.name if org else ""
+    rows = list_connectors(db, organization_id)
+    conn_ids = [r.id for r in rows]
+    servicio_map: dict[str, ContinuidadServicioCritico] = {}
+    for svc in db.query(ContinuidadServicioCritico).filter(
+        ContinuidadServicioCritico.organization_id == organization_id,
+        ContinuidadServicioCritico.is_active.is_(True),
+    ):
+        ref = svc.proveedor_ref or ""
+        if ref.startswith(wiring.PROVEEDOR_REF_PREFIX):
+            servicio_map[ref[len(wiring.PROVEEDOR_REF_PREFIX):]] = svc
+
+    last_ex: dict[str, IntegrationExecution] = {}
+    if conn_ids:
+        for ex in (
+            db.query(IntegrationExecution)
+            .filter(IntegrationExecution.connector_id.in_(conn_ids))
+            .order_by(IntegrationExecution.started_at.desc())
+        ):
+            if ex.connector_id not in last_ex:
+                last_ex[ex.connector_id] = ex
+
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        item = connector_to_dict(row)
+        item["organization_name"] = org_name
+        item["proveedor_ref"] = wiring.proveedor_ref_for_connector(row.id)
+        svc = servicio_map.get(row.id)
+        item["continuidad_estado"] = svc.estado_operacional if svc else None
+        item["continuidad_servicio_id"] = svc.id if svc else None
+        policy = None
+        if row.gov_catalog_entry_id:
+            policy = gov_svc.get_connector_policy_view(db, organization_id, row.gov_catalog_entry_id)
+        item["politica_decision"] = policy.get("provider_decision") if policy else None
+        item["politica_restricciones"] = policy.get("restrictions") if policy else []
+        ex = last_ex.get(row.id)
+        if ex:
+            summary = _parse_json(ex.result_summary_json) or {}
+            item["ultima_ejecucion"] = {
+                "id": ex.id,
+                "status": ex.status,
+                "started_at": ex.started_at.isoformat() if ex.started_at else None,
+                "correlation_id": summary.get("correlation_id"),
+            }
+        else:
+            item["ultima_ejecucion"] = None
+        out.append(item)
+    return out
+
+
+def get_wiring_detail(db: Session, organization_id: str, connector_id: str) -> dict[str, Any]:
+    """Detalle cableado — catálogo, política, linaje, auditoría y continuidad."""
+    row = _get_connector(db, organization_id, connector_id)
+    catalog: dict[str, Any] | None = None
+    policy: dict[str, Any] | None = None
+    lineage: list[dict[str, Any]] = []
+    access_logs: list[dict[str, Any]] = []
+    if row.gov_catalog_entry_id:
+        entry = gov_svc.get_catalog_entry(db, organization_id, row.gov_catalog_entry_id)
+        if entry:
+            catalog = gov_svc.catalog_to_dict(entry, db)
+        policy = gov_svc.get_connector_policy_view(db, organization_id, row.gov_catalog_entry_id)
+        try:
+            lineage = gov_svc.list_lineage(db, organization_id, row.gov_catalog_entry_id)
+        except LookupError:
+            lineage = []
+        access_rows = (
+            db.query(GovAccessLog)
+            .filter(
+                GovAccessLog.organization_id == organization_id,
+                GovAccessLog.catalog_entry_id == row.gov_catalog_entry_id,
+            )
+            .order_by(GovAccessLog.created_at.desc())
+            .limit(40)
+            .all()
+        )
+        access_logs = [gov_svc.access_log_to_dict(r) for r in access_rows]
+
+    ref = wiring.proveedor_ref_for_connector(row.id)
+    servicio = (
+        db.query(ContinuidadServicioCritico)
+        .filter(
+            ContinuidadServicioCritico.organization_id == organization_id,
+            ContinuidadServicioCritico.proveedor_ref == ref,
+            ContinuidadServicioCritico.is_active.is_(True),
+        )
+        .first()
+    )
+    entidad_refs = {connector_id, row.gov_catalog_entry_id or "", servicio.id if servicio else ""}
+    alertas = (
+        db.query(ContinuidadAlerta)
+        .filter(
+            ContinuidadAlerta.organization_id == organization_id,
+            ContinuidadAlerta.entidad_ref.in_([r for r in entidad_refs if r]),
+        )
+        .order_by(ContinuidadAlerta.created_at.desc())
+        .limit(30)
+        .all()
+    )
+    audit_rows = (
+        db.query(AuditLog)
+        .filter(
+            AuditLog.organization_id == organization_id,
+            AuditLog.detail.contains(connector_id),
+        )
+        .order_by(AuditLog.created_at.desc())
+        .limit(40)
+        .all()
+    )
+    preflight = None
+    if row.gov_catalog_entry_id:
+        pre = wiring.gov_preflight(db, organization_id, row, wiring.new_correlation_id())
+        preflight = {
+            "allowed": pre.allowed,
+            "decision": pre.decision,
+            "reasons": pre.reasons,
+            "minimization_action": pre.minimization_action,
+        }
+
+    return {
+        "connector": connector_to_dict(row),
+        "catalog_entry": catalog,
+        "policy": policy,
+        "preflight": preflight,
+        "executions": list_executions(db, organization_id, connector_id, limit=25),
+        "health": get_health(db, organization_id, connector_id),
+        "lineage": lineage,
+        "access_logs": access_logs,
+        "continuidad": {
+            "proveedor_ref": ref,
+            "servicio_id": servicio.id if servicio else None,
+            "servicio_nombre": servicio.nombre if servicio else None,
+            "estado_operacional": servicio.estado_operacional if servicio else None,
+        },
+        "eventos": [
+            {
+                "id": a.id,
+                "tipo": a.tipo,
+                "mensaje": a.mensaje,
+                "severidad": a.severidad,
+                "entidad_ref": a.entidad_ref,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+                "resuelta": a.resuelta,
+            }
+            for a in alertas
+        ],
+        "auditoria": [
+            {
+                "id": a.id,
+                "action": a.action,
+                "detail": a.detail,
+                "user_id": a.user_id,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+            }
+            for a in audit_rows
+        ],
+    }
+
+
+_TRACE_STAGE_MAP = {
+    "auth.login": "IDENTIDAD",
+    "auth.login.mfa": "IDENTIDAD",
+    "integraciones.preflight.denegado": "PREFLIGHT",
+    "integraciones.conector.ejecutado": "EJECUCIÓN",
+    "integraciones.conector.probado": "EJECUCIÓN",
+    "integraciones.salud.recuperada": "CONTINUIDAD",
+    "integraciones.backup.metadata": "BACKUP",
+    "continuidad.restore.bloqueado": "RESTORE",
+}
+
+
+def trace_correlation(db: Session, organization_id: str, correlation_id: str) -> dict[str, Any]:
+    """Timeline compacto por correlation_id."""
+    cid = correlation_id.strip()
+    if not cid:
+        raise IntegrationValidationError("correlation_id requerido")
+
+    pasos: list[dict[str, Any]] = []
+
+    for ex in db.query(IntegrationExecution).filter(
+        IntegrationExecution.organization_id == organization_id,
+    ):
+        summary = _parse_json(ex.result_summary_json) or {}
+        if summary.get("correlation_id") == cid:
+            pasos.append({
+                "etapa": "EJECUCIÓN",
+                "origen": "integration_execution",
+                "referencia": ex.id,
+                "estado": ex.status,
+                "detalle": f"Procesados {ex.records_processed}, válidos {ex.records_valid}",
+                "timestamp": ex.started_at.isoformat() if ex.started_at else None,
+            })
+
+    for log in db.query(AuditLog).filter(
+        AuditLog.organization_id == organization_id,
+        AuditLog.detail.contains(cid),
+    ).limit(80):
+        pasos.append({
+            "etapa": _TRACE_STAGE_MAP.get(log.action, "AUDITORÍA"),
+            "origen": "audit",
+            "referencia": log.id,
+            "estado": log.action,
+            "detalle": (log.detail or "")[:240],
+            "timestamp": log.created_at.isoformat() if log.created_at else None,
+        })
+
+    for acc in db.query(GovAccessLog).filter(
+        GovAccessLog.organization_id == organization_id,
+        GovAccessLog.detail.contains(cid),
+    ).limit(40):
+        pasos.append({
+            "etapa": "GOBIERNO",
+            "origen": "gov_access",
+            "referencia": acc.id,
+            "estado": f"{acc.action} / {acc.result}",
+            "detalle": acc.detail or "",
+            "timestamp": acc.created_at.isoformat() if acc.created_at else None,
+        })
+
+    for lin in db.query(GovLineageEvent).filter(
+        GovLineageEvent.organization_id == organization_id,
+        GovLineageEvent.metadata_json.contains(cid),
+    ).limit(40):
+        pasos.append({
+            "etapa": "LINAJE",
+            "origen": "gov_lineage",
+            "referencia": lin.id,
+            "estado": lin.step_type,
+            "detalle": lin.label,
+            "timestamp": lin.created_at.isoformat() if lin.created_at else None,
+        })
+
+    for al in db.query(ContinuidadAlerta).filter(
+        ContinuidadAlerta.organization_id == organization_id,
+        ContinuidadAlerta.mensaje.contains(cid),
+    ).limit(20):
+        pasos.append({
+            "etapa": "CONTINUIDAD",
+            "origen": "continuidad_alerta",
+            "referencia": al.id,
+            "estado": al.tipo,
+            "detalle": al.mensaje,
+            "timestamp": al.created_at.isoformat() if al.created_at else None,
+        })
+
+    pasos.sort(key=lambda p: p.get("timestamp") or "")
+    return {"correlation_id": cid, "pasos": pasos}
