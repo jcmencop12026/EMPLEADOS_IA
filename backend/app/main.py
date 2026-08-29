@@ -59,6 +59,7 @@ from app.routers import (
     soporte,
     test_lab,
     tools,
+    trabajo,
 )
 from app.seed import bootstrap
 from app.security_config import validate_security_settings
@@ -161,6 +162,7 @@ app.include_router(governance.router)
 app.include_router(integraciones.router)
 app.include_router(llm_providers.router)
 app.include_router(soporte.router)
+app.include_router(trabajo.router)
 
 
 @app.get("/health")
