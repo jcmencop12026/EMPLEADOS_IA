@@ -7,40 +7,55 @@ import {
   ejecutarRecomendacionOptimizacion,
   fetchOptimizacionRecomendacion,
 } from "../api";
+import { ExecutionStatusPanel } from "../components/optimizacion/ExecutionStatusPanel";
+import { HelpTooltip } from "../components/optimizacion/HelpTooltip";
+import { EstadoBadge } from "../components/optimizacion/EstadoBadge";
+import { SemanticBadge } from "../components/optimizacion/SemanticBadge";
+import { TOOLTIPS } from "../lib/optimizacionLabels";
 
 export function OptimizacionDetailPage() {
   const { recId } = useParams<{ recId: string }>();
   const [detail, setDetail] = useState<OptimizacionRecomendacion | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
+  function load() {
     if (!recId) return;
     fetchOptimizacionRecomendacion(recId)
       .then(setDetail)
       .catch((e) => setError(e instanceof Error ? e.message : "Error"));
+  }
+
+  useEffect(() => {
+    load();
   }, [recId]);
 
   async function onAprobar() {
     if (!recId) return;
     const justificacion = window.prompt("Justificación de aprobación:");
     if (!justificacion) return;
+    setBusy(true);
     try {
       await aprobarRecomendacionOptimizacion(recId, justificacion);
-      const updated = await fetchOptimizacionRecomendacion(recId);
-      setDetail(updated);
+      load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al aprobar");
+    } finally {
+      setBusy(false);
     }
   }
 
-  async function onEjecutar() {
+  async function onEjecutar(tipo: "AUTOMATICA" | "HUMANA_EXTERNA") {
     if (!recId) return;
+    setBusy(true);
+    setError(null);
     try {
-      await ejecutarRecomendacionOptimizacion(recId, "AUTOMATICA");
-      const updated = await fetchOptimizacionRecomendacion(recId);
-      setDetail(updated);
+      await ejecutarRecomendacionOptimizacion(recId, tipo);
+      load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al ejecutar");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -48,12 +63,14 @@ export function OptimizacionDetailPage() {
     if (!recId) return;
     const ref = window.prompt("Referencia externa de ejecución:");
     if (!ref) return;
+    setBusy(true);
     try {
       await confirmarEjecucionHumanaOptimizacion(recId, ref);
-      const updated = await fetchOptimizacionRecomendacion(recId);
-      setDetail(updated);
+      load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al confirmar ejecución");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -64,16 +81,18 @@ export function OptimizacionDetailPage() {
   const ejecEstado = detail.ejecucion?.estado;
   const puedeEjecutar = detail.estado === "APROBADA" && detail.factible && !ejecEstado;
   const pendienteHumana = ejecEstado === "PENDIENTE_EJECUCION_HUMANA";
-
   const seleccionados = (detail.items ?? []).filter((i) => i.seleccionado);
   const excluidos = (detail.items ?? []).filter((i) => !i.seleccionado);
 
   return (
     <div className="page">
-      <header className="page-header">
+      <header className="page-header compact">
         <p className="muted"><Link to="/optimizacion">← Optimización</Link></p>
-        <h1>{detail.codigo}</h1>
-        <p className="muted">{detail.objetivo} — {detail.estado}{ejecEstado ? ` / ${ejecEstado}` : ""}</p>
+        <h1>{detail.codigo} <SemanticBadge kind="RECOMENDACION" /></h1>
+        <p className="muted">
+          {detail.objetivo} — <EstadoBadge estado={detail.estado} />
+          {ejecEstado && <> / <EstadoBadge estado={ejecEstado} tipo="ejecucion" /></>}
+        </p>
       </header>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -84,86 +103,84 @@ export function OptimizacionDetailPage() {
         </div>
       )}
 
-      <section className="card" style={{ marginBottom: "1rem" }}>
-        <h2>Resumen del portafolio</h2>
-        <p>Valor: {detail.valor_esperado_total?.toLocaleString("es-CO")}</p>
-        <p>Costo: {detail.costo_esperado_total?.toLocaleString("es-CO")}</p>
-        <p>Impacto: {detail.impacto_esperado_total?.toLocaleString("es-CO")}</p>
-        <p>ROI: {detail.roi_esperado != null ? detail.roi_esperado.toFixed(2) : "—"}</p>
-        {detail.estado === "PROPUESTA" && (
-          <button type="button" className="btn btn-primary" onClick={onAprobar}>
-            Aprobar recomendación
-          </button>
-        )}
-        {puedeEjecutar && (
-          <button type="button" className="btn btn-primary" onClick={onEjecutar} style={{ marginLeft: "0.5rem" }}>
-            Ejecutar recomendación
-          </button>
-        )}
-        {pendienteHumana && (
-          <button type="button" className="btn btn-secondary" onClick={onConfirmarHumana} style={{ marginLeft: "0.5rem" }}>
-            Confirmar ejecución humana
-          </button>
-        )}
-        {detail.estado === "FALLIDA" && (
-          <p className="alert alert-error">Ejecución fallida: {String(detail.ejecucion?.error ?? "Error desconocido")}</p>
-        )}
-        {detail.estado === "EJECUTADA" && detail.ejecucion?.execution_reference && (
-          <p className="muted">Referencia: {detail.ejecucion.execution_reference}</p>
-        )}
+      <section className="card compact-panel" style={{ marginBottom: "1rem" }}>
+        <h2>Resumen</h2>
+        <div className="compact-metrics">
+          <div><span className="muted">Valor esperado</span><strong>{detail.valor_esperado_total?.toLocaleString("es-CO")}</strong></div>
+          <div><span className="muted">Costo</span><strong>{detail.costo_esperado_total?.toLocaleString("es-CO")}</strong></div>
+          <div><span className="muted">ROI</span><strong>{detail.roi_esperado != null ? detail.roi_esperado.toFixed(2) : "—"}</strong></div>
+          <div><span className="muted">Riesgo prom.</span><strong>{detail.riesgo_promedio != null ? detail.riesgo_promedio.toFixed(2) : "—"}</strong></div>
+          <div><span className="muted">Confianza</span><strong>{detail.confianza_promedio != null ? detail.confianza_promedio.toFixed(2) : "—"}</strong></div>
+        </div>
+        <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {detail.estado === "PROPUESTA" && (
+            <button type="button" className="btn btn-primary btn-sm" onClick={onAprobar} disabled={busy}>
+              Aprobar recomendación
+            </button>
+          )}
+          {puedeEjecutar && (
+            <>
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => onEjecutar("AUTOMATICA")} disabled={busy}>
+                Ejecutar automáticamente
+              </button>
+              <button type="button" className="btn btn-sm" onClick={() => onEjecutar("HUMANA_EXTERNA")} disabled={busy}>
+                Marcar pendiente humana
+              </button>
+            </>
+          )}
+          {pendienteHumana && (
+            <button type="button" className="btn btn-secondary btn-sm" onClick={onConfirmarHumana} disabled={busy}>
+              Confirmar ejecución humana
+            </button>
+          )}
+        </div>
       </section>
 
-      <section className="card" style={{ marginBottom: "1rem" }}>
-        <h2>Selección recomendada (orden)</h2>
-        <table className="data-table">
+      <ExecutionStatusPanel detail={detail} />
+
+      <section className="card compact-panel" style={{ marginBottom: "1rem" }}>
+        <h2>Selección recomendada</h2>
+        <table className="data-table compact-table">
           <thead>
-            <tr>
-              <th>Orden</th>
-              <th>Oportunidad</th>
-              <th>Puntuación</th>
-              <th>Factores</th>
-            </tr>
+            <tr><th>Orden</th><th>Oportunidad</th><th>Puntuación</th><th>Riesgo</th><th>Confianza</th><th>Aprendizaje</th></tr>
           </thead>
           <tbody>
             {seleccionados.map((i) => (
               <tr key={i.opportunity_id}>
                 <td>{i.orden}</td>
-                <td>
-                  <Link to={`/oportunidades/${i.opportunity_id}`}>{i.opportunity_id.slice(0, 8)}…</Link>
-                </td>
+                <td><Link to={`/oportunidades/${i.opportunity_id}`}>{i.opportunity_id.slice(0, 8)}…</Link></td>
                 <td>{i.puntuacion_total}</td>
-                <td>
-                  <pre style={{ fontSize: "0.75rem", margin: 0 }}>
-                    {JSON.stringify(i.factores?.contribuciones ?? i.factores, null, 0)}
-                  </pre>
-                </td>
+                <td>{i.riesgo ?? "—"}</td>
+                <td>{i.confianza ?? "—"}</td>
+                <td>{i.aprendizaje ? <SemanticBadge kind="INFERENCIA" /> : "—"}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </section>
 
-      <section className="card" style={{ marginBottom: "1rem" }}>
-        <h2>Excluidas</h2>
-        {excluidos.length === 0 ? (
-          <p className="muted">Ninguna</p>
-        ) : (
+      {excluidos.length > 0 && (
+        <section className="card compact-panel" style={{ marginBottom: "1rem" }}>
+          <h2>Excluidas</h2>
           <ul>
             {excluidos.map((i) => (
-              <li key={i.opportunity_id}>
-                {i.opportunity_id.slice(0, 8)}… — {i.exclusion_razon} (puntuación: {i.puntuacion_total})
-              </li>
+              <li key={i.opportunity_id}>{i.opportunity_id.slice(0, 8)}… — {i.exclusion_razon}</li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
+
+      {detail.aprendizaje_influencia && (
+        <section className="card compact-panel" style={{ marginBottom: "1rem" }}>
+          <h2>Influencia de aprendizaje <HelpTooltip text={TOOLTIPS.aprendizaje} /></h2>
+          <pre className="compact-pre">{JSON.stringify(detail.aprendizaje_influencia, null, 2)}</pre>
+        </section>
+      )}
 
       {detail.explicacion && (
-        <section className="card">
+        <section className="card compact-panel">
           <h2>Explicación</h2>
-          <pre style={{ whiteSpace: "pre-wrap", fontSize: "0.85rem" }}>
-            {JSON.stringify(detail.explicacion, null, 2)}
-          </pre>
+          <pre className="compact-pre">{JSON.stringify(detail.explicacion, null, 2)}</pre>
         </section>
       )}
     </div>
