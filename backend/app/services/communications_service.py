@@ -883,6 +883,224 @@ def upsert_preference(db: Session, org_id: str, user: User, data: dict[str, Any]
     }
 
 
+def _resolve_org_admin_id(db: Session, org_id: str) -> str | None:
+    admin = (
+        db.query(User)
+        .filter(User.organization_id == org_id, User.role == "admin", User.is_active.is_(True))
+        .first()
+    )
+    return admin.id if admin else None
+
+
+def _is_terminal_comm_failure(msg: CommMessage, now: datetime) -> bool:
+    """Fallo terminal: reintentos agotados y sin reintento programado futuro."""
+    if msg.estado != "FALLIDA":
+        return False
+    if msg.intentos < msg.max_intentos:
+        return False
+    if msg.proximo_intento and _as_utc(msg.proximo_intento) > now:
+        return False
+    return True
+
+
+def _trabajo_action(codigo: str, etiqueta: str, permiso: str | None = None, href: str | None = None) -> dict[str, Any]:
+    return {"codigo": codigo, "etiqueta": etiqueta, "permiso": permiso, "href": href, "payload": None}
+
+
+def collect_trabajo_items(
+    db: Session,
+    org_id: str,
+    user: User,
+    *,
+    organization_name: str | None = None,
+    now: datetime | None = None,
+) -> tuple[list[dict[str, Any]], set[str], set[str]]:
+    """Ítems accionables para Mi Trabajo. Retorna (items, msg_ids, correlation_ids)."""
+    ts = now or _utcnow()
+    items: list[dict[str, Any]] = []
+    msg_ids: set[str] = set()
+    correlation_ids: set[str] = set()
+    seen_item_keys: set[str] = set()
+
+    terminal_msgs = (
+        db.query(CommMessage)
+        .filter(CommMessage.organization_id == org_id, CommMessage.estado == "FALLIDA")
+        .all()
+    )
+    for msg in terminal_msgs:
+        if not _is_terminal_comm_failure(msg, ts):
+            continue
+        item_key = f"comunicacion:msg:{msg.id}"
+        if item_key in seen_item_keys:
+            continue
+        seen_item_keys.add(item_key)
+        msg_ids.add(msg.id)
+        if msg.correlation_id:
+            correlation_ids.add(msg.correlation_id)
+        ch = db.query(CommChannel).filter(CommChannel.id == msg.channel_id).first() if msg.channel_id else None
+        responsable = msg.creador_id
+        if msg.destinatario_tipo == "USUARIO" and msg.destinatario_id:
+            responsable = msg.destinatario_id
+        if not responsable:
+            responsable = _resolve_org_admin_id(db, org_id)
+        tipo = "comunicacion_envio_critico"
+        if msg.tipo_comunicacion and "CRIT" in msg.tipo_comunicacion.upper():
+            tipo = "comunicacion_envio_critico"
+        items.append(
+            {
+                "id": item_key,
+                "source_id": msg.id,
+                "tipo": tipo,
+                "asunto": sanitize_comm_text(msg.asunto or f"Comunicación fallida ({msg.tipo_comunicacion})"),
+                "modulo": "comunicaciones",
+                "modulo_etiqueta": "Centro de Información y Comunicaciones",
+                "organization_id": org_id,
+                "organization_name": organization_name,
+                "prioridad": "ALTA",
+                "prioridad_orden": 3,
+                "estado_dominio": msg.estado,
+                "estado_presentacion": "FALLIDA",
+                "responsable_id": responsable,
+                "responsable_nombre": None,
+                "created_at": msg.updated_at or msg.created_at,
+                "fecha_limite": None,
+                "antiguedad_horas": None,
+                "vencida": False,
+                "correlation_id": msg.correlation_id,
+                "requires_action": True,
+                "informativa": False,
+                "semantic_kind": "HECHO",
+                "detalle": sanitize_comm_text(
+                    f"Canal {ch.tipo if ch else '—'}: reintentos agotados ({msg.intentos}/{msg.max_intentos})."
+                ),
+                "enlace": f"/comunicaciones?mensaje={msg.id}",
+                "trazabilidad_enlace": None,
+                "acciones": [
+                    _trabajo_action("ver", "Abrir comunicación", "communications.view", f"/comunicaciones?mensaje={msg.id}"),
+                ],
+                "metadata": {
+                    "communication_id": msg.id,
+                    "channel_tipo": ch.tipo if ch else None,
+                    "intentos": msg.intentos,
+                    "max_intentos": msg.max_intentos,
+                    "event_id": msg.event_id,
+                    "rule_id": msg.rule_id,
+                    "estado_accionable": "reintentos_agotados",
+                },
+            }
+        )
+
+    blocked_channels = (
+        db.query(CommChannel)
+        .filter(
+            CommChannel.organization_id == org_id,
+            CommChannel.activo.is_(True),
+            CommChannel.estado.in_(["ERROR", "DEGRADADO"]),
+        )
+        .all()
+    )
+    for ch in blocked_channels:
+        item_key = f"comunicacion:canal:{ch.id}"
+        if item_key in seen_item_keys:
+            continue
+        has_terminal = any(m.channel_id == ch.id for m in terminal_msgs if _is_terminal_comm_failure(m, ts))
+        if not has_terminal and ch.estado != "ERROR":
+            continue
+        seen_item_keys.add(item_key)
+        items.append(
+            {
+                "id": item_key,
+                "source_id": ch.id,
+                "tipo": "comunicacion_canal_bloqueado",
+                "asunto": f"Canal bloqueado: {ch.nombre}",
+                "modulo": "comunicaciones",
+                "modulo_etiqueta": "Centro de Información y Comunicaciones",
+                "organization_id": org_id,
+                "organization_name": organization_name,
+                "prioridad": "ALTA",
+                "prioridad_orden": 3,
+                "estado_dominio": ch.estado,
+                "estado_presentacion": "PENDIENTE",
+                "responsable_id": _resolve_org_admin_id(db, org_id),
+                "responsable_nombre": None,
+                "created_at": ch.updated_at or ch.created_at,
+                "fecha_limite": None,
+                "antiguedad_horas": None,
+                "vencida": False,
+                "correlation_id": None,
+                "requires_action": True,
+                "informativa": False,
+                "detalle": f"Canal {ch.tipo} en estado {ch.estado}.",
+                "enlace": "/comunicaciones?tab=canales",
+                "trazabilidad_enlace": None,
+                "acciones": [
+                    _trabajo_action("ver", "Revisar canales", "communications.view", "/comunicaciones?tab=canales"),
+                ],
+                "metadata": {
+                    "channel_id": ch.id,
+                    "channel_tipo": ch.tipo,
+                    "estado_accionable": "canal_bloqueado",
+                },
+            }
+        )
+
+    for ch in (
+        db.query(CommChannel)
+        .filter(
+            CommChannel.organization_id == org_id,
+            CommChannel.activo.is_(True),
+            CommChannel.tipo == "CORREO_ELECTRONICO",
+            CommChannel.secret_ref.is_(None),
+        )
+        .all()
+    ):
+        failed_on_channel = [m for m in terminal_msgs if m.channel_id == ch.id and _is_terminal_comm_failure(m, ts)]
+        if not failed_on_channel:
+            continue
+        item_key = f"comunicacion:config:{ch.id}"
+        if item_key in seen_item_keys:
+            continue
+        seen_item_keys.add(item_key)
+        items.append(
+            {
+                "id": item_key,
+                "source_id": ch.id,
+                "tipo": "comunicacion_configuracion_requerida",
+                "asunto": f"Configuración requerida: {ch.nombre}",
+                "modulo": "comunicaciones",
+                "modulo_etiqueta": "Centro de Información y Comunicaciones",
+                "organization_id": org_id,
+                "organization_name": organization_name,
+                "prioridad": "MEDIA",
+                "prioridad_orden": 2,
+                "estado_dominio": "CONFIG_FALTANTE",
+                "estado_presentacion": "PENDIENTE",
+                "responsable_id": _resolve_org_admin_id(db, org_id),
+                "responsable_nombre": None,
+                "created_at": ch.updated_at or ch.created_at,
+                "fecha_limite": None,
+                "antiguedad_horas": None,
+                "vencida": False,
+                "correlation_id": None,
+                "requires_action": True,
+                "informativa": False,
+                "detalle": "El canal de correo requiere credenciales configuradas tras fallos de envío.",
+                "enlace": "/comunicaciones?tab=canales",
+                "trazabilidad_enlace": None,
+                "acciones": [
+                    _trabajo_action("ver", "Configurar canal", "communications.channel.manage", "/comunicaciones?tab=canales"),
+                ],
+                "metadata": {
+                    "channel_id": ch.id,
+                    "estado_accionable": "configuracion_requerida",
+                    "secret_configured": False,
+                },
+            }
+        )
+
+    return items, msg_ids, correlation_ids
+
+
 def _comms_event_subscriber(event: EventMessage, db: Session) -> None:
     try:
         evaluate_rules_for_event(db, event)

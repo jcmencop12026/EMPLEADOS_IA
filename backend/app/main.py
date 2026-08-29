@@ -71,6 +71,7 @@ from app.routers import (
     test_lab,
     tools,
     comunicaciones,
+    trabajo,
 )
 from app.seed import bootstrap
 from app.security_config import validate_security_settings
@@ -161,6 +162,7 @@ app.include_router(automations.runs_router)
 app.include_router(notification_routes.notifications_router)
 app.include_router(notification_routes.rules_router)
 app.include_router(comunicaciones.router)
+app.include_router(trabajo.router)
 app.include_router(finops.router)
 app.include_router(salud.router)
 app.include_router(experience.router)
