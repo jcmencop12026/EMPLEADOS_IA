@@ -26,6 +26,7 @@ import { ComercialPropuestaDetailPage } from "./pages/ComercialPropuestaDetailPa
 import { TcoPage } from "./pages/TcoPage";
 import { ImplementacionPage } from "./pages/ImplementacionPage";
 import { ImplementacionDetailPage } from "./pages/ImplementacionDetailPage";
+import { SegmentacionPage } from "./pages/SegmentacionPage";
 import { SenalesPage } from "./pages/SenalesPage";
 import { SenalDetailPage } from "./pages/SenalDetailPage";
 import { DiagnosticosPage } from "./pages/DiagnosticosPage";
@@ -84,6 +85,7 @@ export default function App() {
           <Route path="lineas-base" element={<LineasBasePage />} />
           <Route path="lineas-base/:lineaBaseId" element={<LineaBaseDetailPage />} />
           <Route path="comercial" element={<ComercialPage />} />
+          <Route path="comercial/segmentacion" element={<SegmentacionPage />} />
           <Route path="comercial/propuestas/:proposalId" element={<ComercialPropuestaDetailPage />} />
           <Route path="tco" element={<TcoPage />} />
           <Route path="implementacion" element={<ImplementacionPage />} />

@@ -235,11 +235,30 @@ def list_plans(db: Session, organization_id: str) -> list[CommercialPlan]:
 
 def create_proposal(db: Session, organization_id: str, data: dict[str, Any], user_id: str | None) -> CommercialProposal:
     _ensure_org_active(db, organization_id)
+    package_id = data.get("package_id")
+    segment_id = data.get("segment_id")
+    catalog_snap = None
+    profile_snap = None
+    if package_id or data.get("plan_id") or segment_id:
+        from app.services.segmentation_service import build_proposal_catalog_snapshot, get_profile, _profile_to_dict
+        catalog_snap = build_proposal_catalog_snapshot(
+            db, organization_id,
+            plan_id=data.get("plan_id"),
+            package_id=package_id,
+            segment_id=segment_id,
+        )
+        prof = get_profile(db, organization_id)
+        if prof:
+            profile_snap = _profile_to_dict(prof)
     row = CommercialProposal(
         organization_id=organization_id,
         codigo=_next_codigo(db, organization_id),
         titulo=data.get("titulo") or "Propuesta comercial",
         plan_id=data.get("plan_id"),
+        package_id=package_id,
+        segment_id=segment_id,
+        catalog_snapshot_json=_json(catalog_snap) if catalog_snap else None,
+        profile_snapshot_json=_json(profile_snap) if profile_snap else None,
         credential_mode=data.get("credential_mode", CredentialMode.IA_ADMINISTRADA),
         diagnostic_id=data.get("diagnostic_id"),
         currency=data.get("currency", "USD"),

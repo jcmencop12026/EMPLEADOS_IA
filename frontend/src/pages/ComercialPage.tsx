@@ -50,6 +50,7 @@ export function ComercialPage() {
       <header className="ops-header">
         <h1>Modelo comercial basado en valor</h1>
         <p>Planes, simulación y propuestas trazables al valor económico.</p>
+        <Link to="/comercial/segmentacion">Segmentación y planes verticales →</Link>
       </header>
       {error && <p className="error-text">{error}</p>}
       {loading ? (

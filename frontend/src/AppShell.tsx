@@ -49,6 +49,7 @@ const MENU: NavSection[] = [
       { to: "/comercial", label: "Comercial y valor" },
       { to: "/tco", label: "TCO y aliados" },
       { to: "/implementacion", label: "Implementación" },
+      { to: "/comercial/segmentacion", label: "Segmentación y planes" },
       { to: "/oportunidades", label: "Centro de oportunidades" },
       { to: "/senales", label: "Señales y fuentes" },
       { to: "/diagnosticos", label: "Diagnósticos" },

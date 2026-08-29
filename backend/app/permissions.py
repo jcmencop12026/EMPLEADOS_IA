@@ -187,6 +187,15 @@ IMPLEMENTACION_PERMISSIONS = {
     "exito_cliente.review",
 }
 
+SEGMENTATION_PERMISSIONS = {
+    "segmentacion.view",
+    "segmentacion.manage",
+    "planes.view",
+    "planes.manage",
+    "planes.recommend",
+    "planes.approve_discount",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -302,6 +311,12 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "exito_cliente.view": ("Éxito del cliente", "Consultar planes de éxito y salud"),
     "exito_cliente.manage": ("Éxito del cliente", "Gestionar adopción y objetivos"),
     "exito_cliente.review": ("Éxito del cliente", "Realizar revisiones periódicas"),
+    "segmentacion.view": ("Segmentación", "Consultar segmentos y perfiles comerciales"),
+    "segmentacion.manage": ("Segmentación", "Administrar segmentación y perfiles"),
+    "planes.view": ("Planes", "Consultar catálogo de planes y paquetes"),
+    "planes.manage": ("Planes", "Administrar planes, paquetes y versiones"),
+    "planes.recommend": ("Planes", "Generar recomendaciones de plan"),
+    "planes.approve_discount": ("Planes", "Aprobar descuentos comerciales"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -337,6 +352,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | COMMERCIAL_PERMISSIONS
         | TCO_PERMISSIONS
         | IMPLEMENTACION_PERMISSIONS
+        | SEGMENTATION_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -361,6 +377,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | COMMERCIAL_PERMISSIONS
         | TCO_PERMISSIONS
         | IMPLEMENTACION_PERMISSIONS
+        | SEGMENTATION_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -438,6 +455,11 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "implementacion.manage",
         "exito_cliente.view",
         "exito_cliente.manage",
+        "segmentacion.view",
+        "segmentacion.manage",
+        "planes.view",
+        "planes.manage",
+        "planes.recommend",
     },
     "viewer": {
         "employee.view",
@@ -469,6 +491,8 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "alianzas.view",
         "implementacion.view",
         "exito_cliente.view",
+        "segmentacion.view",
+        "planes.view",
     },
 }
 
