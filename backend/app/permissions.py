@@ -112,6 +112,12 @@ TEST_LAB_PERMISSIONS = {
     "test_lab.run",
 }
 
+LLM_PERMISSIONS = {
+    "llm.view",
+    "llm.manage",
+    "llm.use",
+}
+
 FINOPS_PERMISSIONS = {
     "finops.view",
     "finops.manage",
@@ -125,6 +131,12 @@ OPORTUNIDADES_PERMISSIONS = {
     "oportunidades.evaluate",
     "oportunidades.approve",
     "oportunidades.activate",
+}
+
+PLATFORM_PERMISSIONS = {
+    "platform.organization.view",
+    "platform.organization.create",
+    "platform.organization.manage",
 }
 
 ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
@@ -191,14 +203,20 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "finops.manage": ("FinOps", "Gestionar costos y valor"),
     "finops.budget": ("FinOps", "Gestionar presupuestos"),
     "finops.rates": ("FinOps", "Gestionar tarifas"),
+    "llm.view": ("Proveedores IA", "Ver proveedores de inferencia"),
+    "llm.manage": ("Proveedores IA", "Administrar proveedores de inferencia"),
+    "llm.use": ("Proveedores IA", "Ejecutar inferencia LLM"),
     "oportunidades.view": ("Oportunidades", "Ver centro de oportunidades"),
     "oportunidades.manage": ("Oportunidades", "Gestionar oportunidades"),
     "oportunidades.evaluate": ("Oportunidades", "Evaluar y priorizar oportunidades"),
     "oportunidades.approve": ("Oportunidades", "Aprobar oportunidades"),
     "oportunidades.activate": ("Oportunidades", "Activar oportunidades"),
+    "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
+    "platform.organization.create": ("Plataforma", "Crear empresas"),
+    "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
 }
 
-SYSTEM_ROLE_CODES = {"admin", "operator", "viewer"}
+SYSTEM_ROLE_CODES = {"admin", "operator", "viewer", "superadmin"}
 
 PROTECTED_ASSIGNMENT_ROLE_CODES = {"superadmin", "platform_admin", "SUPERADMIN"}
 
@@ -216,8 +234,26 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | KNOWLEDGE_PERMISSIONS
         | TEST_LAB_PERMISSIONS
         | FINOPS_PERMISSIONS
+        | LLM_PERMISSIONS
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
+    ),
+    "superadmin": (
+        EMPLOYEE_PERMISSIONS
+        | NOTIFICATION_PERMISSIONS
+        | ADMIN_PERMISSIONS
+        | OPERATIONS_PERMISSIONS
+        | AUTOMATION_PERMISSIONS
+        | AUDIT_PERMISSIONS
+        | CAPABILITY_PERMISSIONS
+        | TOOL_PERMISSIONS
+        | KNOWLEDGE_PERMISSIONS
+        | TEST_LAB_PERMISSIONS
+        | FINOPS_PERMISSIONS
+        | LLM_PERMISSIONS
+        | SALUD_PERMISSIONS
+        | OPORTUNIDADES_PERMISSIONS
+        | PLATFORM_PERMISSIONS
     ),
     "operator": {
         "employee.view",
@@ -254,6 +290,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "finops.view",
         "finops.manage",
         "finops.budget",
+        "llm.view",
+        "llm.manage",
+        "llm.use",
         "salud.cargar_datos",
         "salud.ejecutar_analisis",
         "salud.consultar_diagnostico",

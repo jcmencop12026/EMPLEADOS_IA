@@ -114,10 +114,29 @@ export type UserMe = {
 export type Organization = {
   id: string;
   name: string;
+  slug?: string;
   status?: string;
   timezone?: string;
   created_at: string;
   updated_at?: string | null;
+};
+
+export type PlatformOrganization = {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  timezone: string;
+  created_at: string;
+  updated_at?: string | null;
+  users_count: number;
+};
+
+export type PlatformOrganizationCreateResponse = {
+  organization: PlatformOrganization;
+  admin_user_id: string;
+  admin_username: string;
+  temporary_password?: string | null;
 };
 
 export type AdminUser = {
@@ -562,6 +581,32 @@ export async function fetchSecuritySummary(): Promise<SecuritySummary> {
   return api<SecuritySummary>("/api/admin/security");
 }
 
+export async function fetchPlatformOrganizations(): Promise<PlatformOrganization[]> {
+  return api<PlatformOrganization[]>("/api/platform/organizations");
+}
+
+export async function createPlatformOrganization(data: {
+  name: string;
+  slug: string;
+  timezone?: string;
+  admin_username: string;
+  admin_password?: string;
+  admin_email?: string;
+  admin_full_name?: string;
+}): Promise<PlatformOrganizationCreateResponse> {
+  return api<PlatformOrganizationCreateResponse>("/api/platform/organizations", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function setPlatformOrganizationStatus(orgId: string, status: "ACTIVE" | "INACTIVE"): Promise<PlatformOrganization> {
+  return api<PlatformOrganization>(`/api/platform/organizations/${orgId}/status`, {
+    method: "POST",
+    body: JSON.stringify({ status }),
+  });
+}
+
 export async function fetchMe(): Promise<UserMe> {
   return api<UserMe>("/api/auth/me");
 }
@@ -997,4 +1042,92 @@ export async function fetchOpportunityTrace(id: string): Promise<Record<string, 
 
 export async function prioritizeOpportunities(): Promise<Record<string, unknown>> {
   return api("/api/oportunidades/priorizar", { method: "POST", body: JSON.stringify({}) });
+}
+
+// --- Señales reales (1120) ---
+
+export type SignalSourceItem = {
+  id: string;
+  code: string;
+  name: string;
+  tipo_fuente: string;
+  descripcion: string | null;
+  is_active: boolean;
+  configuracion: Record<string, unknown> | null;
+  created_at: string | null;
+};
+
+export type SignalItem = {
+  id: string;
+  tipo: string;
+  dominio: string;
+  origen: string;
+  modo_ingesta: string;
+  proceso: string | null;
+  metrica: string | null;
+  valor_metrica: string | null;
+  unidad: string | null;
+  referencia: string | null;
+  evidencia_resumen: string | null;
+  estado_procesamiento: string;
+  procesada: boolean;
+  opportunity_id?: string | null;
+  signal_at: string | null;
+  created_at: string | null;
+};
+
+export async function fetchSignalSources(): Promise<SignalSourceItem[]> {
+  return api("/api/senales/fuentes");
+}
+
+export async function fetchRecentSignals(modo?: string): Promise<SignalItem[]> {
+  const q = modo ? `?modo=${encodeURIComponent(modo)}` : "";
+  return api(`/api/senales${q}`);
+}
+
+export async function fetchSignalTrace(signalId: string): Promise<Record<string, unknown>> {
+  return api(`/api/senales/${signalId}/trazabilidad`);
+}
+
+export type LlmProvider = {
+  id: string;
+  organization_id: string;
+  name: string;
+  provider_type: string;
+  model_default: string | null;
+  endpoint: string | null;
+  timeout_seconds: number;
+  priority: number;
+  is_enabled: boolean;
+  is_fallback: boolean;
+  secret_ref: string | null;
+  secret_configured: boolean;
+  secret_masked: string | null;
+  config_json: Record<string, unknown> | null;
+};
+
+export type LlmTestResult = {
+  success: boolean;
+  status: string;
+  message: string;
+  provider?: string;
+  model?: string;
+  latency_ms?: number;
+  error_category?: string;
+};
+
+export async function fetchLlmProviders(): Promise<LlmProvider[]> {
+  return api("/api/llm/providers");
+}
+
+export async function createLlmProvider(data: Record<string, unknown>): Promise<LlmProvider> {
+  return api("/api/llm/providers", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateLlmProvider(id: string, data: Record<string, unknown>): Promise<LlmProvider> {
+  return api(`/api/llm/providers/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function testLlmProvider(id: string): Promise<LlmTestResult> {
+  return api(`/api/llm/providers/${id}/test`, { method: "POST", body: JSON.stringify({}) });
 }
