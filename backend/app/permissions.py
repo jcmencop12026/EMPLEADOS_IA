@@ -148,6 +148,7 @@ OPORTUNIDADES_PERMISSIONS = {
     "oportunidades.activate",
 }
 
+
 LINEA_BASE_PERMISSIONS = {
     "linea_base.view",
     "linea_base.manage",
@@ -183,6 +184,15 @@ DATOS_PERMISSIONS = {
     "datos.audit",
     "datos.requests",
     "datos.retention",
+}
+
+INTEGRATION_PERMISSIONS = {
+    "integraciones.view",
+    "integraciones.create",
+    "integraciones.configure",
+    "integraciones.test",
+    "integraciones.execute",
+    "integraciones.manage_secrets",
 }
 
 PLATFORM_PERMISSIONS = {
@@ -317,6 +327,12 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "datos.audit": ("Gobierno de datos", "Auditar accesos y hallazgos"),
     "datos.requests": ("Gobierno de datos", "Gestionar solicitudes sobre datos"),
     "datos.retention": ("Gobierno de datos", "Gestionar retención y legal hold"),
+    "integraciones.view": ("Integraciones", "Consultar conectores e historial"),
+    "integraciones.create": ("Integraciones", "Crear conectores"),
+    "integraciones.configure": ("Integraciones", "Configurar conectores y mapeos"),
+    "integraciones.test": ("Integraciones", "Probar conexión de conectores"),
+    "integraciones.execute": ("Integraciones", "Ejecutar conectores"),
+    "integraciones.manage_secrets": ("Integraciones", "Gestionar referencias de credenciales"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -363,6 +379,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | INCIDENTES_PERMISSIONS
         | BACKUPS_PERMISSIONS
         | DATOS_PERMISSIONS
+        | INTEGRATION_PERMISSIONS
         | SECURITY_PERMISSIONS
         | IDENTITY_PERMISSIONS
     ),
@@ -390,7 +407,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | INCIDENTES_PERMISSIONS
         | BACKUPS_PERMISSIONS
         | DATOS_PERMISSIONS
-        | PLATFORM_PERMISSIONS
+        | INTEGRATION_PERMISSIONS
         | SECURITY_PERMISSIONS
         | IDENTITY_PERMISSIONS
     ),
@@ -455,7 +472,6 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "inteligencia_externa.manage",
         "inteligencia_externa.ingest",
         "inteligencia_externa.validate",
-        "control_center.view",
         "continuidad.view",
         "continuidad.manage",
         "continuidad.activate",
@@ -473,6 +489,11 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "datos.audit",
         "datos.requests",
         "datos.retention",
+        "integraciones.view",
+        "integraciones.create",
+        "integraciones.configure",
+        "integraciones.test",
+        "integraciones.execute",
     },
     "viewer": {
         "employee.view",
@@ -495,11 +516,11 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "valoracion.roi",
         "diagnosticos.view",
         "inteligencia_externa.view",
-        "control_center.view",
         "continuidad.view",
         "incidentes.view",
         "backups.view",
         "datos.view",
+        "integraciones.view",
     },
 }
 

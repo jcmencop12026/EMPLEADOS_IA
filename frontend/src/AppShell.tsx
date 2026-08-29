@@ -51,6 +51,7 @@ const MENU: NavSection[] = [
       { to: "/diagnosticos", label: "Diagnósticos" },
       { to: "/inteligencia-externa", label: "Inteligencia externa" },
       { to: "/continuidad", label: "Continuidad" },
+      { to: "/integraciones", label: "Integraciones" },
       { to: "/costos-valor", label: "Costos y valor" },
       { to: "/gobernanza-datos", label: "Gobierno de datos" },
       { to: "/mi-seguridad", label: "Mi seguridad" },
