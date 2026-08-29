@@ -367,6 +367,72 @@ export async function transitionNotification(id: string, action: "read" | "ackno
   return api<NotificationItem>(`/api/notifications/${id}/${action}`, { method: "POST" });
 }
 
+export type TrabajoAccion = {
+  codigo: string;
+  etiqueta: string;
+  permiso?: string | null;
+  href?: string | null;
+  payload?: Record<string, unknown> | null;
+};
+
+export type TrabajoItem = {
+  id: string;
+  source_id: string;
+  tipo: string;
+  asunto: string;
+  modulo: string;
+  organization_id: string;
+  organization_name?: string | null;
+  prioridad: string;
+  prioridad_orden: number;
+  estado_dominio: string;
+  estado_presentacion: string;
+  responsable_id?: string | null;
+  responsable_nombre?: string | null;
+  created_at?: string | null;
+  fecha_limite?: string | null;
+  antiguedad_horas?: number | null;
+  vencida: boolean;
+  correlation_id?: string | null;
+  requires_action: boolean;
+  informativa: boolean;
+  semantic_kind?: string | null;
+  detalle?: string | null;
+  enlace: string;
+  trazabilidad_enlace?: string | null;
+  acciones: TrabajoAccion[];
+  metadata?: Record<string, unknown>;
+};
+
+export type TrabajoResumen = {
+  organization_id: string;
+  pendientes: number;
+  vencidas: number;
+  requieren_aprobacion: number;
+  total_visible: number;
+};
+
+export type TrabajoItemsResponse = {
+  items: TrabajoItem[];
+  total: number;
+  filtros_aplicados: Record<string, unknown>;
+};
+
+export async function fetchTrabajoItems(params: Record<string, string | boolean | undefined> = {}): Promise<TrabajoItemsResponse> {
+  const qs = new URLSearchParams();
+  for (const [key, val] of Object.entries(params)) {
+    if (val !== undefined && val !== "") {
+      qs.set(key, String(val));
+    }
+  }
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return api<TrabajoItemsResponse>(`/api/trabajo/items${suffix}`);
+}
+
+export async function fetchTrabajoResumen(): Promise<TrabajoResumen> {
+  return api<TrabajoResumen>("/api/trabajo/resumen");
+}
+
 export type EmployeeTemplate = { code: string; name: string; description?: string; specialty: string };
 export type CapabilityItem = { id: string; code: string; name: string; risk_level: string };
 export type ToolItem = { id: string; code: string; name: string; executor_type: string; risk_level: string };
