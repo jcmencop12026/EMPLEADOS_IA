@@ -15,6 +15,8 @@ if "DATABASE_URL" not in os.environ:
     os.environ["DATABASE_URL"] = f"sqlite:///{_TEST_DB}"
 if "JWT_SECRET" not in os.environ:
     os.environ.setdefault("JWT_SECRET", "test-secret-mvp-cert803")
+# Forzar credenciales de bootstrap de prueba (el .env del entorno puede diferir).
+os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "Admin2026*"
 
 from app import automation_models  # noqa: F401, E402
 from app import finops_models  # noqa: F401, E402
@@ -30,6 +32,9 @@ from app import valuation_models  # noqa: F401, E402
 from app import diagnostic_models  # noqa: F401, E402
 from app import external_models  # noqa: F401, E402
 from app import llm_models  # noqa: F401, E402
+from app import security_models  # noqa: F401, E402
+from app import identity_models  # noqa: F401, E402
+from app import scim_models  # noqa: F401, E402
 from app.database import Base, SessionLocal, engine, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.seed import bootstrap  # noqa: E402

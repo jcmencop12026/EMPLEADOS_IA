@@ -57,6 +57,21 @@ ADMIN_PERMISSIONS = {
     "admin.security.view",
 }
 
+SECURITY_PERMISSIONS = {
+    "seguridad.view",
+    "seguridad.manage_policy",
+    "seguridad.revoke_sessions",
+    "seguridad.audit",
+}
+
+IDENTITY_PERMISSIONS = {
+    "identidad.view",
+    "identidad.manage",
+    "identidad.test",
+    "identidad.activate",
+    "identidad.audit",
+}
+
 OPERATIONS_PERMISSIONS = {
     "operations.view",
     "operations.execute",
@@ -214,6 +229,15 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "admin.config.view": ("Administración", "Ver configuración"),
     "admin.config.edit": ("Administración", "Editar configuración"),
     "admin.security.view": ("Administración", "Ver panel de seguridad"),
+    "seguridad.view": ("Seguridad", "Ver resumen de seguridad de la organización"),
+    "seguridad.manage_policy": ("Seguridad", "Gestionar políticas de seguridad"),
+    "seguridad.revoke_sessions": ("Seguridad", "Revocar sesiones de usuarios"),
+    "seguridad.audit": ("Seguridad", "Consultar eventos de seguridad"),
+    "identidad.view": ("Identidad", "Consultar proveedores y políticas SSO"),
+    "identidad.manage": ("Identidad", "Configurar identidad empresarial"),
+    "identidad.test": ("Identidad", "Probar proveedores de identidad"),
+    "identidad.activate": ("Identidad", "Activar o desactivar proveedores"),
+    "identidad.audit": ("Identidad", "Consultar auditoría de login SSO"),
     "capability.view": ("Capacidades", "Ver catálogo de capacidades"),
     "capability.manage": ("Capacidades", "Gestionar capacidades"),
     "tool.view": ("Herramientas", "Ver catálogo de herramientas"),
@@ -289,6 +313,8 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | DIAGNOSTICOS_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
+        | SECURITY_PERMISSIONS
+        | IDENTITY_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -311,6 +337,8 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | PLATFORM_PERMISSIONS
+        | SECURITY_PERMISSIONS
+        | IDENTITY_PERMISSIONS
     ),
     "operator": {
         "employee.view",

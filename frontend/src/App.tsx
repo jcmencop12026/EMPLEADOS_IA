@@ -12,6 +12,7 @@ import { AdminConfigPage } from "./pages/admin/AdminConfigPage";
 import { AdminOrganizationPage } from "./pages/admin/AdminOrganizationPage";
 import { AdminRolesPage } from "./pages/admin/AdminRolesPage";
 import { AdminSecurityPage } from "./pages/admin/AdminSecurityPage";
+import { AdminIdentidadPage } from "./pages/admin/AdminIdentidadPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { AuditPage } from "./pages/AuditPage";
 import { CapabilitiesPage } from "./pages/CapabilitiesPage";
@@ -37,6 +38,7 @@ import { ExecutionsPage } from "./pages/ExecutionsPage";
 import { KnowledgeDetailPage } from "./pages/KnowledgeDetailPage";
 import { KnowledgePage } from "./pages/KnowledgePage";
 import { LoginPage } from "./pages/LoginPage";
+import { MiSeguridadPage } from "./pages/MiSeguridadPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { OperationDetailPage } from "./pages/OperationDetailPage";
 import { OperationsCenterPage } from "./pages/OperationsCenterPage";
@@ -106,13 +108,17 @@ export default function App() {
           <Route element={<RequirePermission anyOf={["llm.view"]} />}>
             <Route path="administracion/proveedores-ia" element={<AdminLlmProvidersPage />} />
           </Route>
-          <Route element={<RequirePermission anyOf={["admin.security.view"]} />}>
+          <Route element={<RequirePermission anyOf={["admin.security.view", "seguridad.view"]} />}>
             <Route path="administracion/seguridad" element={<AdminSecurityPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["identidad.view"]} />}>
+            <Route path="administracion/identidad" element={<AdminIdentidadPage />} />
           </Route>
           <Route element={<RequirePermission anyOf={["audit.view"]} />}>
             <Route path="auditoria" element={<AuditPage />} />
           </Route>
           <Route path="notificaciones" element={<NotificationsPage />} />
+          <Route path="mi-seguridad" element={<MiSeguridadPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />

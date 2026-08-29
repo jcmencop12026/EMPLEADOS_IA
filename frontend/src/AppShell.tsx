@@ -50,6 +50,7 @@ const MENU: NavSection[] = [
       { to: "/diagnosticos", label: "Diagnósticos" },
       { to: "/inteligencia-externa", label: "Inteligencia externa" },
       { to: "/costos-valor", label: "Costos y valor" },
+      { to: "/mi-seguridad", label: "Mi seguridad" },
       { to: "/notificaciones", label: "Notificaciones" },
       { to: "/auditoria", label: "Auditoría" },
     ],
@@ -65,6 +66,7 @@ const MENU: NavSection[] = [
       { to: "/administracion/configuracion", label: "Configuración" },
       { to: "/administracion/proveedores-ia", label: "Proveedores IA" },
       { to: "/administracion/seguridad", label: "Seguridad" },
+      { to: "/administracion/identidad", label: "Identidad empresarial" },
     ],
   },
 ];
