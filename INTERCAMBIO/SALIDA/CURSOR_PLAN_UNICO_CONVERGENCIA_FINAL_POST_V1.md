@@ -2,7 +2,7 @@
 
 **Tipo:** Diseño / procedimiento — **NO EJECUTAR**  
 **Fecha:** 2026-08-29 (actualizado — base puente fijada)  
-**Base de integración:** `7cf3906ccda8c1fd66fd1d6e77497f032fe72c50` (`cursor/base-puente-v1-post-v1`)  
+**Base de integración:** `f2f1c0e832d17255c0d4a42a0c6ac06b4814d002` (`cursor/base-puente-v1-post-v1`)  
 **HEAD funcional puente:** `d57b831e41b8e017da612c3c442f9f29c981f674`  
 **Referencia histórica (ya no es base directa):** `eb229806136e29acddc0f592b5f017f5c3cb2958`  
 **Agente:** Cursor (plan de convergencia)
@@ -33,7 +33,7 @@ Este plan es el **procedimiento único**; los insumos pendientes de A/B/C siguen
 ## 0.1. Flujo conceptual de convergencia
 
 ```
-BASE PUENTE REAL (7cf3906)
+BASE PUENTE REAL (9ce1bd7 — funcional d57b831)
     ↓
 piezas limpias 1260–1380
     ↓
@@ -62,7 +62,7 @@ certificación post-V1
 |-------|-----------------|
 | **Nombre** | `cursor/convergencia-final-post-v1-integracion` |
 | **Creación** | Solo tras gate §0 |
-| **Origen** | `7cf3906ccda8c1fd66fd1d6e77497f032fe72c50` |
+| **Origen** | `9ce1bd7b1ab545563f1b6aefb193d2ad401e9805` |
 | **Destino futuro** | Rama de integración certificada; **NO merge a `main`** en esta fase |
 | **Convención** | Un commit de merge/replay por **grupo funcional** certificado; tags anotados opcionales `conv-grupo-N` |
 
@@ -74,7 +74,7 @@ certificación post-V1
 
 | Elemento | SHA / HEAD | Contenido ya integrado |
 |----------|------------|------------------------|
-| **Base única (puente)** | `7cf3906ccda8c1fd66fd1d6e77497f032fe72c50` | POST-V1 1100–1250 + delta funcional V1 (4 cherry-picks) |
+| **Base única (puente)** | `f2f1c0e832d17255c0d4a42a0c6ac06b4814d002` | POST-V1 1100–1250 + delta funcional V1 (4 cherry-picks) + docs |
 | **HEAD funcional** | `d57b831e41b8e017da612c3c442f9f29c981f674` | Último commit de código antes del documental |
 | **Ancestro POST-V1** | `eb229806136e29acddc0f592b5f017f5c3cb2958` | Contenido 1100–1220, 1230, 1240, merge `1250f` |
 | **Alembic HEAD base** | `1250f1a2b3c4d` | Cadena hasta convergencia final post-V1 |
@@ -477,7 +477,7 @@ Tras G3: ejecutar tests de protección SUPERADMIN.
 
 | Insumo | SHA / referencia | Estado |
 |--------|------------------|--------|
-| **Base puente** | `7cf3906ccda8c1fd66fd1d6e77497f032fe72c50` | **COMPLETADO** |
+| **Base puente** | `f2f1c0e832d17255c0d4a42a0c6ac06b4814d002` | **COMPLETADO** |
 | HEAD funcional puente | `d57b831e41b8e017da612c3c442f9f29c981f674` | **COMPLETADO** |
 | Ancestro POST-V1 | `eb229806136e29acddc0f592b5f017f5c3cb2958` | Referencia histórica |
 | Alembic HEAD base | `1250f1a2b3c4d` | Verificado |
@@ -509,7 +509,7 @@ Tras G3: ejecutar tests de protección SUPERADMIN.
 ## Checklist de ejecución (cuando se autorice)
 
 - [ ] Gate §0 cerrado (A cadena limpia + B 1330 + C mapa 1260/1270/1290)
-- [ ] Crear rama `cursor/convergencia-final-post-v1-integracion` desde `7cf3906`
+- [ ] Crear rama `cursor/convergencia-final-post-v1-integracion` desde `f2f1c0e`
 - [ ] G6 → G5 → merge Alembic 1350∥1360 → G3 → G2 → G4 → G1 → G9 (orden sujeto a reconciliación final)
 - [ ] Merge revision Alembic única (G9)
 - [ ] Batería acumulativa §11 (SQLite + **PostgreSQL obligatorio** + frontend)
@@ -534,7 +534,7 @@ Tras G3: ejecutar tests de protección SUPERADMIN.
 
 ## Veredicto del plan
 
-**PLAN ACTUALIZADO** — base puente `7cf3906` fijada como raíz de integración 1260–1380.
+**PLAN ACTUALIZADO** — base puente `f2f1c0e` (funcional `d57b831`) fijada como raíz de integración 1260–1380.
 
 La convergencia es viable sobre la **base puente certificada** (funcional APTA; PostgreSQL PENDIENTE) mediante cherry-pick secuencial de grupos divergentes, merge controlado selectivo (1360) y merge revision Alembic final. El riesgo principal confirmado sigue siendo la **pérdida de 1250/1240/1230/V1** si se usa merge directo de HEAD identidad; mitigado por estrategia C y base puente ya construida.
 

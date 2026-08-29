@@ -37,9 +37,10 @@ be8ba9f feat(1230): Centro de Control ejecutivo — capa de consolidación
 
 | Campo | SHA |
 |-------|-----|
-| **HEAD remoto real** | `7cf3906ccda8c1fd66fd1d6e77497f032fe72c50` |
+| **HEAD remoto real** | `f2f1c0e832d17255c0d4a42a0c6ac06b4814d002` |
 | **HEAD funcional** | `d57b831e41b8e017da612c3c442f9f29c981f674` |
-| **Commit documental** | `7cf3906ccda8c1fd66fd1d6e77497f032fe72c50` |
+| **Commit documental (certificación)** | `7cf3906ccda8c1fd66fd1d6e77497f032fe72c50` |
+| **Commit documental (plan actualizado)** | `9ce1bd7b1ab545563f1b6aefb193d2ad401e9805` |
 | **Ancestro POST-V1** | `eb229806136e29acddc0f592b5f017f5c3cb2958` |
 
 ---
@@ -111,7 +112,7 @@ be8ba9f feat(1230): Centro de Control ejecutivo — capa de consolidación
 ## Estructura del plan actualizado
 
 ```
-BASE PUENTE REAL (7cf3906)
+BASE PUENTE REAL (9ce1bd7 — funcional d57b831)
     ↓
 piezas limpias 1260–1380
     ↓
@@ -187,7 +188,7 @@ No se repite PostgreSQL en Cloud sin entorno disponible.
 | `CURSOR_PLAN_UNICO_CONVERGENCIA_FINAL_POST_V1.md` | **ACTUALIZADO** |
 | `CURSOR_BASE_PUENTE_SHA_Y_PLAN_ACTUALIZADO.md` | **CREADO** (este documento) |
 
-**Base del plan:** `7cf3906ccda8c1fd66fd1d6e77497f032fe72c50`
+**Base del plan:** `f2f1c0e832d17255c0d4a42a0c6ac06b4814d002` (funcional: `d57b831`)
 
 ---
 
@@ -213,13 +214,14 @@ RAMA:
 cursor/base-puente-v1-post-v1
 
 HEAD REMOTO REAL:
-7cf3906ccda8c1fd66fd1d6e77497f032fe72c50
+f2f1c0e832d17255c0d4a42a0c6ac06b4814d002
 
 HEAD FUNCIONAL:
 d57b831e41b8e017da612c3c442f9f29c981f674
 
 COMMIT DOCUMENTAL:
-7cf3906ccda8c1fd66fd1d6e77497f032fe72c50
+7cf3906ccda8c1fd66fd1d6e77497f032fe72c50 (certificación)
+9ce1bd7b1ab545563f1b6aefb193d2ad401e9805 (plan actualizado)
 
 EB229806 ES ANCESTRO:
 SI
@@ -252,7 +254,7 @@ PLAN ÚNICO ACTUALIZADO:
 SI
 
 BASE DEL PLAN:
-7cf3906ccda8c1fd66fd1d6e77497f032fe72c50
+f2f1c0e832d17255c0d4a42a0c6ac06b4814d002
 
 INSUMOS COMPLETADOS:
 Mapa integral A; Preparación release V1 C; Análisis puente V1/post-V1;
