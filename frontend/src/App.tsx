@@ -15,10 +15,10 @@ import { AdminSecurityPage } from "./pages/admin/AdminSecurityPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { AuditPage } from "./pages/AuditPage";
 import { CapabilitiesPage } from "./pages/CapabilitiesPage";
+import { CentroControlPage } from "./pages/CentroControlPage";
 import { CostosValorPage } from "./pages/CostosValorPage";
 import { OportunidadesPage } from "./pages/OportunidadesPage";
 import { OportunidadDetailPage } from "./pages/OportunidadDetailPage";
-import { DashboardPage } from "./pages/DashboardPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
@@ -45,7 +45,8 @@ export default function App() {
       />
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route index element={<DashboardPage />} />
+          <Route index element={<CentroControlPage />} />
+          <Route path="panel" element={<Navigate to="/" replace />} />
           <Route path="operaciones" element={<OperationsHubPage />} />
           <Route path="operaciones/solicitud" element={<OperationsCenterPage />} />
           <Route path="operaciones/:operationId" element={<OperationDetailPage />} />
