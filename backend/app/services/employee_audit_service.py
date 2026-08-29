@@ -33,6 +33,8 @@ from app.services.employee_audit_metrics import (
 AUDIT_EVENT_GUARD = "_employee_audit_guard"
 AUDIT_LOOP_EVENT_PREFIX = "employee.audit."
 
+HUMAN_REVIEW_ACTIONS = frozenset({"SOLICITAR_REVISION_HUMANA"})
+
 RULE_ACTION_MAP: dict[str, str] = {
     "FAILED_EXECUTIONS_HIGH": "SOLICITAR_REVISION_HUMANA",
     "ERROR_RATE_HIGH": "SOLICITAR_REVISION_HUMANA",
@@ -780,38 +782,92 @@ def centro_control_resumen(db: Session, user: User, organization_id: str | None 
 
 
 def list_trabajo_contract(db: Session, org_id: str) -> list[dict[str, Any]]:
-    """Contrato portable para Mi Trabajo — no modifica trabajo_service."""
-    rows = (
+    """Contrato portable — vista resumida (Mi Trabajo usa collect vía trabajo_service)."""
+    out: list[dict[str, Any]] = []
+    for finding, assessment, health, _policy in iter_human_work_findings(db, org_id):
+        tipo = _auditor_trabajo_tipo(health, finding.severity)
+        out.append(
+            {
+                "id": f"auditoria_hallazgo:{finding.id}",
+                "tipo": tipo,
+                "asunto": finding.title,
+                "modulo": "auditor_empleados",
+                "employee_id": finding.employee_id,
+                "severity": finding.severity,
+                "health_status": health,
+                "recommended_action": finding.recommended_action,
+                "correlation_id": finding.correlation_id,
+                "enlace": f"/empleados/auditoria?employee_id={finding.employee_id}&finding_id={finding.id}",
+                "requires_action": True,
+            }
+        )
+    return out
+
+
+def _parse_policy_allowed_actions(policy: EmployeeAuditPolicy | None) -> dict[str, Any]:
+    raw = _json_loads(policy.allowed_actions_json) if policy else None
+    return raw if isinstance(raw, dict) else {}
+
+
+def finding_requires_human_work(
+    finding: EmployeeAuditFinding,
+    health: str | None,
+    policy: EmployeeAuditPolicy | None,
+) -> bool:
+    """Solo hallazgos que exigen actuación humana — excluye SALUDABLE/OBSERVAR por defecto."""
+    health = health or "OBSERVAR"
+    if health in ("SALUDABLE", "OBSERVAR"):
+        return False
+    if health in ("CRITICO", "REQUIERE_INTERVENCION"):
+        return True
+    if finding.severity == "CRITICO":
+        return True
+    if health == "REQUIERE_MEJORA":
+        action = finding.recommended_action or ""
+        if action in HUMAN_REVIEW_ACTIONS:
+            return True
+        allowed = _parse_policy_allowed_actions(policy)
+        action_cfg = allowed.get(action) if action else None
+        if isinstance(action_cfg, dict) and action_cfg.get("requires_human"):
+            return True
+        if action_cfg is True:
+            return True
+    return False
+
+
+def _auditor_trabajo_tipo(health: str | None, severity: str) -> str:
+    if health == "CRITICO" or severity == "CRITICO":
+        return "auditor_empleado_critico"
+    if health == "REQUIERE_INTERVENCION":
+        return "auditor_empleado_intervencion"
+    return "auditor_empleado_revision"
+
+
+def iter_human_work_findings(
+    db: Session,
+    org_id: str,
+) -> list[tuple[EmployeeAuditFinding, EmployeeAuditAssessment | None, str | None, EmployeeAuditPolicy]]:
+    """Hallazgos abiertos del Auditor que requieren intervención humana."""
+    policy = get_or_create_org_policy(db, org_id)
+    findings = (
         db.query(EmployeeAuditFinding)
         .filter(
             EmployeeAuditFinding.organization_id == org_id,
             EmployeeAuditFinding.status == "ABIERTO",
-            EmployeeAuditFinding.severity.in_(["CRITICO", "ADVERTENCIA"]),
         )
         .order_by(EmployeeAuditFinding.created_at.desc())
-        .limit(50)
+        .limit(100)
         .all()
     )
-    out: list[dict[str, Any]] = []
-    for f in rows:
-        assessment = db.query(EmployeeAuditAssessment).filter(EmployeeAuditAssessment.id == f.assessment_id).first()
-        health = assessment.health_status if assessment else "OBSERVAR"
-        requires = f.severity == "CRITICO" or health in ("CRITICO", "REQUIERE_INTERVENCION")
-        out.append(
-            {
-                "id": f"auditoria_hallazgo:{f.id}",
-                "tipo": "auditoria_hallazgo",
-                "asunto": f.title,
-                "modulo": "auditor_empleados",
-                "employee_id": f.employee_id,
-                "severity": f.severity,
-                "health_status": health,
-                "recommended_action": f.recommended_action,
-                "correlation_id": f.correlation_id,
-                "enlace": f"/empleados/auditoria?employee_id={f.employee_id}",
-                "requires_action": requires,
-            }
+    out: list[tuple[EmployeeAuditFinding, EmployeeAuditAssessment | None, str | None, EmployeeAuditPolicy]] = []
+    for finding in findings:
+        assessment = (
+            db.query(EmployeeAuditAssessment).filter(EmployeeAuditAssessment.id == finding.assessment_id).first()
         )
+        health = assessment.health_status if assessment else None
+        if not finding_requires_human_work(finding, health, policy):
+            continue
+        out.append((finding, assessment, health, policy))
     return out
 
 
