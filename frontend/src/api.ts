@@ -2653,4 +2653,3 @@ export async function fetchLlmRoutingExplain(preferredProvider?: string): Promis
   const q = preferredProvider ? `?preferred_provider=${encodeURIComponent(preferredProvider)}` : "";
   return api(`/api/llm/routing/explain${q}`);
 }
-}
