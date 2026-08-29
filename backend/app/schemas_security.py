@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.schemas_semantic import SemanticMetaFields
+
 
 class MfaChallengeResponse(BaseModel):
     mfa_required: bool = True
@@ -76,7 +78,7 @@ class SecurityPolicyUpdate(BaseModel):
     excess_session_policy: str | None = None
 
 
-class SecurityEventOut(BaseModel):
+class SecurityEventOut(SemanticMetaFields):
     id: str
     event_type: str
     user_id: str | None = None

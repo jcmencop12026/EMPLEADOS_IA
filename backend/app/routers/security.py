@@ -27,6 +27,7 @@ from app.security import verify_password
 from app.services import mfa_service
 from app.services.request_context import client_ip
 from app.services.security_event_service import list_security_events, log_security_event
+from app.services.semantic_enrichment_post_v1 import enrich_list_semantic, from_security_event
 from app.services.security_policy_service import (
     get_or_create_policy,
     is_mfa_required_for_user,
@@ -232,7 +233,11 @@ def security_events(
     user: User = Depends(require_permission("seguridad.audit")),
 ):
     rows = list_security_events(db, organization_id=user.organization_id, limit=min(limit, 200), event_type=event_type)
-    return [SecurityEventOut.model_validate(row) for row in rows]
+    enriched = enrich_list_semantic(
+        [SecurityEventOut.model_validate(row).model_dump() for row in rows],
+        from_security_event,
+    )
+    return [SecurityEventOut(**row) for row in enriched]
 
 
 @router.get("/admin/sessions", response_model=list[SessionOut])

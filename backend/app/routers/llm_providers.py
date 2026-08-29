@@ -27,6 +27,13 @@ from app.services.llm_provider_service import (
     list_providers,
     update_provider,
 )
+from app.services.semantic_enrichment_post_v1 import (
+    enrich_list_semantic,
+    from_llm_inference_log,
+    from_llm_output,
+    from_llm_test_result,
+)
+from app.services.semantic_contract import attach_semantic
 
 router = APIRouter(prefix="/api/llm", tags=["llm"])
 
@@ -86,7 +93,7 @@ def api_test_provider(
     check_permission(user, "llm.manage", db)
     result = llm_gateway.test_provider_connection(db, user.organization_id, provider_id)
     if result.success:
-        return LlmTestConnectionResult(
+        base = LlmTestConnectionResult(
             success=True,
             status="disponible",
             message="Conexión exitosa con el proveedor.",
@@ -94,6 +101,7 @@ def api_test_provider(
             model=result.model,
             latency_ms=result.latency_ms,
         )
+        return LlmTestConnectionResult(**attach_semantic(base.model_dump(), from_llm_test_result(base.model_dump())))
     error = result.error
     status_map = {
         "AUTH_ERROR": "autenticacion_fallida",
@@ -102,7 +110,7 @@ def api_test_provider(
         "CONFIGURATION_ERROR": "configuracion_invalida",
     }
     category = error.category if error else "ERROR"
-    return LlmTestConnectionResult(
+    base = LlmTestConnectionResult(
         success=False,
         status=status_map.get(str(category), "error"),
         message=error.message if error else "Error de conexión.",
@@ -111,6 +119,7 @@ def api_test_provider(
         latency_ms=result.latency_ms,
         error_category=str(category) if error else None,
     )
+    return LlmTestConnectionResult(**attach_semantic(base.model_dump(), from_llm_test_result(base.model_dump())))
 
 
 @router.get("/inference-logs", response_model=list[LlmInferenceLogOut])
@@ -120,7 +129,12 @@ def api_inference_logs(
     user: User = Depends(get_current_user),
 ):
     check_permission(user, "llm.view", db)
-    return list_inference_logs(db, user.organization_id, limit=min(limit, 200))
+    logs = list_inference_logs(db, user.organization_id, limit=min(limit, 200))
+    enriched = enrich_list_semantic(
+        [LlmInferenceLogOut.model_validate(row).model_dump() for row in logs],
+        from_llm_inference_log,
+    )
+    return [LlmInferenceLogOut(**row) for row in enriched]
 
 
 @router.post("/complete", response_model=LlmCompleteResponse)
@@ -149,13 +163,14 @@ def api_complete(
         user_id=user.id,
     )
     if output.get("error"):
-        return LlmCompleteResponse(
+        base = LlmCompleteResponse(
             text=None,
             error=output.get("error"),
             trace_id=output.get("trace_id"),
             fallback_used=output.get("fallback_used", False),
         )
-    return LlmCompleteResponse(
+        return base
+    base = LlmCompleteResponse(
         text=output.get("response"),
         provider=output.get("provider"),
         model=output.get("model"),
@@ -167,3 +182,4 @@ def api_complete(
         trace_id=output.get("trace_id"),
         fallback_used=output.get("fallback_used", False),
     )
+    return LlmCompleteResponse(**attach_semantic(base.model_dump(), from_llm_output()))

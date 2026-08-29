@@ -23,6 +23,7 @@ from app.schemas import TokenResponse
 from app.schemas_security import MfaChallengeResponse
 from app.services import identity_service as svc
 from app.services import sso_login_service as sso_svc
+from app.services.semantic_enrichment_post_v1 import enrich_identity_payload, enrich_scim_payload
 from app.services.request_context import client_ip, client_user_agent
 from app.services.security_event_service import log_security_event
 from app.security import verify_password
@@ -227,14 +228,16 @@ def saml_acs(body: SamlAcsRequest, request: Request, db: Session = Depends(get_d
 @router.get("/eventos")
 def login_events(user: User = Depends(require_permission("identidad.audit")), db: Session = Depends(get_db)):
   rows = svc.list_login_audits(db, user.organization_id)
-  return [
+  items = [
     {
       "id": r.id, "login_method": r.login_method, "result": r.result,
       "user_id": r.user_id, "provider_id": r.provider_id,
       "detail": r.detail, "ip_address": r.ip_address, "created_at": r.created_at,
+      "event_type": r.result,
     }
     for r in rows
   ]
+  return enrich_identity_payload({"eventos": items})["eventos"]
 
 
 @router.post("/break-glass", response_model=TokenResponse)
@@ -361,7 +364,8 @@ def scim_conflicts(user: User = Depends(require_permission("identidad.audit")), 
     rows = db.query(ScimConflict).filter(
         ScimConflict.organization_id == user.organization_id, ScimConflict.resolved.is_(False)
     ).order_by(ScimConflict.created_at.desc()).limit(50).all()
-    return [
-        {"id": r.id, "conflict_type": r.conflict_type, "external_id": r.external_id, "detail": r.detail, "created_at": r.created_at.isoformat()}
+    items = [
+        {"id": r.id, "tipo": "CONFLICTO", "conflict_type": r.conflict_type, "external_id": r.external_id, "detail": r.detail, "created_at": r.created_at.isoformat()}
         for r in rows
     ]
+    return enrich_scim_payload({"conflictos": items})["conflictos"]

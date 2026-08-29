@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.schemas_semantic import SemanticMetaFields
+
 
 class LlmProviderOut(BaseModel):
     id: str
@@ -57,7 +59,7 @@ class LlmProviderUpdate(BaseModel):
     config_json: dict[str, Any] | None = None
 
 
-class LlmTestConnectionResult(BaseModel):
+class LlmTestConnectionResult(SemanticMetaFields):
     success: bool
     status: str
     message: str
@@ -67,7 +69,7 @@ class LlmTestConnectionResult(BaseModel):
     error_category: str | None = None
 
 
-class LlmInferenceLogOut(BaseModel):
+class LlmInferenceLogOut(SemanticMetaFields):
     id: str
     trace_id: str
     employee_id: str | None = None
@@ -102,7 +104,7 @@ class LlmCompleteRequest(BaseModel):
     knowledge_query: str | None = None
 
 
-class LlmCompleteResponse(BaseModel):
+class LlmCompleteResponse(SemanticMetaFields):
     text: str | None = None
     provider: str | None = None
     model: str | None = None
