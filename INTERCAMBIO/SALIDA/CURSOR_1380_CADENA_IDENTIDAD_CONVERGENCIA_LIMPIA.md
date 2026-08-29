@@ -12,7 +12,7 @@
 |-------|-------|
 | **BASE** | `eb229806136e29acddc0f592b5f017f5c3cb2958` (`cursor/1250-convergencia-final-post-v1`) |
 | **RAMA** | `cursor/1380-identidad-convergencia-limpia` |
-| **HEAD** | `315451193ba0c8efd463baa965b657651aa467c7` |
+| **HEAD** | `43dbfcafdd981404c3988e9b84d0a99530f07f46` |
 
 ---
 
