@@ -417,6 +417,38 @@ export async function activateEmployee(id: string): Promise<Record<string, unkno
   return api(`/api/agent-factory/employees/${id}/activate`, { method: "POST" });
 }
 
+export async function fetchEmployeeInventory(id: string): Promise<Record<string, unknown>> {
+  return api<Record<string, unknown>>(`/api/agent-factory/employees/${id}/inventory`);
+}
+
+export async function fetchEmployeeHealth(id: string): Promise<Record<string, unknown>> {
+  return api<Record<string, unknown>>(`/api/agent-factory/employees/${id}/health`);
+}
+
+export async function validateEmployee(id: string): Promise<Record<string, unknown>> {
+  return api<Record<string, unknown>>(`/api/agent-factory/employees/${id}/validate`);
+}
+
+export async function fetchEmployeeVersions(id: string): Promise<Array<Record<string, unknown>>> {
+  return api<Array<Record<string, unknown>>>(`/api/agent-factory/employees/${id}/versions`);
+}
+
+export async function rollbackEmployee(id: string, data: { target_version: number; reason: string; force?: boolean }): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${id}/rollback`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function trainEmployee(id: string, data: { training_type: string; reason: string; source?: string; config_delta?: Record<string, unknown> }): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${id}/train`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function retireEmployee(id: string, reason: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${id}/retire`, { method: "POST", body: JSON.stringify({ reason }) });
+}
+
+export async function requestEmployeeApproval(id: string, data: { kind: string; reason: string; target_version?: number }): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${id}/request-approval`, { method: "POST", body: JSON.stringify(data) });
+}
+
 
 export type AutomationItem = {
   id: string;

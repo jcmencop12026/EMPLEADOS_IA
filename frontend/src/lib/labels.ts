@@ -13,6 +13,18 @@ export const LIFECYCLE_STATUS: Record<string, string> = {
   RETIRED: "Retirado",
 };
 
+/** Fases funcionales MB-06 (mapeo API). */
+export const LIFECYCLE_PHASE: Record<string, string> = {
+  BORRADOR: "Borrador",
+  CONFIGURADO: "Configurado",
+  EN_PRUEBAS: "En pruebas",
+  APROBADO: "Aprobado",
+  PUBLICADO: "Publicado",
+  ACTIVO: "Activo",
+  PAUSADO: "Pausado",
+  RETIRADO: "Retirado",
+};
+
 export const EXECUTION_STATUS: Record<string, string> = {
   COMPLETED: "Completado",
   WAITING_APPROVAL: "Esperando aprobación",

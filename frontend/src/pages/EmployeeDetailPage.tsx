@@ -9,24 +9,48 @@ import {
   certifyEmployee,
   fetchEmployeeCapabilities,
   fetchEmployeeDetail,
+  fetchEmployeeHealth,
+  fetchEmployeeInventory,
   fetchEmployeeKnowledge,
   fetchEmployeeTools,
+  fetchEmployeeVersions,
   publishEmployee,
   removeEmployeeCapability,
   removeEmployeeKnowledge,
   removeEmployeeTool,
+  requestEmployeeApproval,
+  retireEmployee,
+  rollbackEmployee,
   testEmployee,
+  trainEmployee,
+  validateEmployee,
   type CatalogItem,
 } from "../api";
 import { ErrorState, LoadingState } from "../components/AsyncState";
-import { label, LIFECYCLE_STATUS, MATURITY, RISK_LEVEL } from "../lib/labels";
+import { label, LIFECYCLE_STATUS, LIFECYCLE_PHASE, MATURITY, RISK_LEVEL } from "../lib/labels";
 
-const TABS = ["Resumen", "Asignaciones", "Pruebas", "Certificación", "Versiones", "Actividad"] as const;
+const TABS = [
+  "Resumen",
+  "Configuración",
+  "Conocimiento",
+  "Herramientas",
+  "Modelo",
+  "Automatizaciones",
+  "Límites",
+  "Versiones",
+  "Pruebas",
+  "Publicación",
+  "Historial",
+] as const;
 
 export function EmployeeDetailPage() {
   const { employeeId } = useParams<{ employeeId: string }>();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Resumen");
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
+  const [inventory, setInventory] = useState<Record<string, unknown> | null>(null);
+  const [health, setHealth] = useState<Record<string, unknown> | null>(null);
+  const [versions, setVersions] = useState<Array<Record<string, unknown>>>([]);
+  const [validation, setValidation] = useState<Record<string, unknown> | null>(null);
   const [capAssignments, setCapAssignments] = useState<{ assigned: CatalogItem[]; available: CatalogItem[] }>({ assigned: [], available: [] });
   const [toolAssignments, setToolAssignments] = useState<{ assigned: CatalogItem[]; available: CatalogItem[] }>({ assigned: [], available: [] });
   const [knowledgeAssignments, setKnowledgeAssignments] = useState<{ assigned: CatalogItem[]; available: CatalogItem[] }>({ assigned: [], available: [] });
@@ -38,13 +62,19 @@ export function EmployeeDetailPage() {
   async function load() {
     if (!employeeId) return;
     try {
-      const [d, caps, tools, knowledge] = await Promise.all([
+      const [d, caps, tools, knowledge, inv, h, vers] = await Promise.all([
         fetchEmployeeDetail(employeeId),
         fetchEmployeeCapabilities(employeeId),
         fetchEmployeeTools(employeeId),
         fetchEmployeeKnowledge(employeeId),
+        fetchEmployeeInventory(employeeId),
+        fetchEmployeeHealth(employeeId),
+        fetchEmployeeVersions(employeeId),
       ]);
       setDetail(d);
+      setInventory(inv);
+      setHealth(h);
+      setVersions(vers);
       setCapAssignments(caps);
       setToolAssignments(tools);
       setKnowledgeAssignments(knowledge);
@@ -55,7 +85,7 @@ export function EmployeeDetailPage() {
 
   useEffect(() => { load(); }, [employeeId]);
 
-  async function runAction(action: "test" | "certify" | "publish" | "activate") {
+  async function runAction(action: "test" | "certify" | "publish" | "activate" | "validate" | "approval") {
     if (!employeeId) return;
     setLoading(true);
     setError(null);
@@ -64,9 +94,17 @@ export function EmployeeDetailPage() {
       if (action === "certify") setCertResult(await certifyEmployee(employeeId));
       if (action === "publish") await publishEmployee(employeeId);
       if (action === "activate") await activateEmployee(employeeId);
+      if (action === "validate") setValidation(await validateEmployee(employeeId));
+      if (action === "approval") {
+        await requestEmployeeApproval(employeeId, {
+          kind: "PUBLISH",
+          reason: "Solicitud de publicación desde ficha de empleado",
+        });
+      }
       await load();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No se pudo completar la acción.");
+      const msg = e instanceof ApiError ? e.message : "No se pudo completar la acción.";
+      setError(typeof msg === "string" ? msg : JSON.stringify(msg));
     } finally {
       setLoading(false);
     }
@@ -98,11 +136,47 @@ export function EmployeeDetailPage() {
     }
   }
 
+  async function handleTrain() {
+    if (!employeeId) return;
+    setLoading(true);
+    try {
+      await trainEmployee(employeeId, {
+        training_type: "INSTRUCTIONS",
+        reason: "Capacitación manual desde ficha",
+        source: "ui-empleado",
+        config_delta: { instructions: { operating_rules: "Procedimiento actualizado desde UI" } },
+      });
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Error en capacitación");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRetire() {
+    if (!employeeId || !window.confirm("¿Retirar este empleado IA?")) return;
+    setLoading(true);
+    try {
+      await retireEmployee(employeeId, "Retiro solicitado desde ficha de empleado");
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Error al retirar");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (!detail && !error) return <LoadingState message="Cargando empleado…" />;
   if (error && !detail) return <ErrorState message={error} onRetry={load} />;
 
   const lifecycle = String(detail?.lifecycle_status || "");
+  const phase = String(inventory?.lifecycle_phase || detail?.lifecycle_phase || "");
   const caps = (detail?.capabilities as Array<{ code: string; name: string }>) || [];
+  const model = inventory?.model as Record<string, unknown> | undefined;
+  const limits = inventory?.limits as Record<string, unknown> | undefined;
+  const finops = inventory?.finops as Record<string, unknown> | undefined;
+  const automations = (inventory?.automations as Array<Record<string, unknown>>) || [];
 
   return (
     <div className="ops-page">
@@ -112,9 +186,10 @@ export function EmployeeDetailPage() {
         <span className={`badge status-${lifecycle}`} title={lifecycle}>
           {label(LIFECYCLE_STATUS, lifecycle)}
         </span>
+        {phase && <span className="badge muted">{label(LIFECYCLE_PHASE, phase) || phase}</span>}
       </header>
 
-      <div className="tab-bar">
+      <div className="tab-bar compact-tab-bar">
         {TABS.map((t) => (
           <button key={t} type="button" className={`tab-btn ${tab === t ? "active" : ""}`} onClick={() => setTab(t)}>{t}</button>
         ))}
@@ -124,93 +199,150 @@ export function EmployeeDetailPage() {
         {tab === "Resumen" && (
           <>
             <p className="mono muted">{String(detail?.code)} · v{String(detail?.version)}</p>
+            <p><strong>Fase:</strong> {label(LIFECYCLE_PHASE, phase) || phase || "—"}</p>
             <p><strong>Especialidad:</strong> {String(detail?.specialty)}</p>
+            <p><strong>Objetivo:</strong> {String(inventory?.objective || detail?.objective || "—")}</p>
             <p><strong>Riesgo:</strong> {label(RISK_LEVEL, String(detail?.risk_level))} · <strong>Madurez:</strong> {label(MATURITY, String(detail?.maturity))}</p>
-            <p><strong>Capacidades:</strong> {caps.map((c) => c.code || c).join(", ") || (detail?.capabilities as string[])?.join(", ")}</p>
+            {health && (
+              <ul className="compact-list muted">
+                <li>Última prueba: {String(health.last_test_result || "—")} {health.last_test_at ? `(${String(health.last_test_at).slice(0, 19)})` : ""}</li>
+                <li>Última publicación: {health.last_publication ? String(health.last_publication).slice(0, 19) : "—"}</li>
+                <li>Última capacitación: {health.last_training_at ? String(health.last_training_at).slice(0, 19) : "—"}</li>
+              </ul>
+            )}
             <div className="ops-actions">
               <Link className="btn" to={`/empleados/${employeeId}/editar`}>Editar configuración</Link>
-              <Link className="btn" to="/test-lab">Abrir laboratorio de pruebas</Link>
+              <button type="button" className="btn" disabled={loading} onClick={() => runAction("validate")}>Validar</button>
               <button type="button" className="btn" disabled={loading} onClick={() => runAction("test")}>Ejecutar pruebas</button>
               <button type="button" className="btn" disabled={loading} onClick={() => runAction("certify")}>Certificar</button>
+              <button type="button" className="btn" disabled={loading} onClick={() => runAction("approval")}>Solicitar aprobación</button>
               <button type="button" className="btn primary" disabled={loading || lifecycle !== "CERTIFIED"} onClick={() => runAction("publish")}>Publicar</button>
               <button type="button" className="btn primary" disabled={loading || !["PUBLISHED", "PAUSED"].includes(lifecycle)} onClick={() => runAction("activate")}>Activar</button>
+              <button type="button" className="btn" disabled={loading} onClick={handleTrain}>Capacitar</button>
+              <button type="button" className="btn danger" disabled={loading} onClick={handleRetire}>Retirar</button>
             </div>
+            {validation && <pre className="mono result-pre">{JSON.stringify(validation, null, 2)}</pre>}
           </>
         )}
-        {tab === "Asignaciones" && (
-          <div className="assign-grid">
-            <div>
-              <h3>Capacidades asignadas</h3>
-              <ul className="assign-list">
-                {capAssignments.assigned.map((c) => (
-                  <li key={c.id}>{c.name} <button type="button" className="btn-link" onClick={() => handleRemove("cap", c.id)}>Retirar</button></li>
-                ))}
-              </ul>
-              <h4>Disponibles</h4>
-              <ul className="assign-list">
-                {capAssignments.available.map((c) => (
-                  <li key={c.id}>{c.name} <button type="button" className="btn-link" onClick={() => handleAssign("cap", c.id)}>Asignar</button></li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h3>Herramientas asignadas</h3>
-              <ul className="assign-list">
-                {toolAssignments.assigned.map((t) => (
-                  <li key={t.id}>{t.name} <button type="button" className="btn-link" onClick={() => handleRemove("tool", t.id)}>Retirar</button></li>
-                ))}
-              </ul>
-              <h4>Disponibles</h4>
-              <ul className="assign-list">
-                {toolAssignments.available.map((t) => (
-                  <li key={t.id}>{t.name} <button type="button" className="btn-link" onClick={() => handleAssign("tool", t.id)}>Asignar</button></li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h3>Fuentes asignadas</h3>
-              <ul className="assign-list">
-                {knowledgeAssignments.assigned.map((k) => (
-                  <li key={k.id}>{k.name} <button type="button" className="btn-link" onClick={() => handleRemove("knowledge", k.id)}>Retirar</button></li>
-                ))}
-              </ul>
-              <h4>Disponibles</h4>
-              <ul className="assign-list">
-                {knowledgeAssignments.available.map((k) => (
-                  <li key={k.id}>{k.name} <button type="button" className="btn-link" onClick={() => handleAssign("knowledge", k.id)}>Asignar</button></li>
-                ))}
-              </ul>
-            </div>
+
+        {tab === "Configuración" && (
+          <>
+            <p><strong>Rol:</strong> {String(inventory?.role || "—")}</p>
+            <p><strong>Responsabilidades:</strong> {String(inventory?.responsibilities || "—")}</p>
+            <p><strong>Capacidades:</strong> {caps.map((c) => c.code || c).join(", ") || "—"}</p>
+            <Link className="btn" to={`/empleados/${employeeId}/editar`}>Abrir asistente de configuración</Link>
+          </>
+        )}
+
+        {tab === "Conocimiento" && (
+          <div>
+            <h3>Fuentes asignadas (930)</h3>
+            <ul className="assign-list">
+              {knowledgeAssignments.assigned.map((k) => (
+                <li key={k.id}>{k.name} <button type="button" className="btn-link" onClick={() => handleRemove("knowledge", k.id)}>Retirar</button></li>
+              ))}
+            </ul>
+            <h4>Disponibles</h4>
+            <ul className="assign-list">
+              {knowledgeAssignments.available.map((k) => (
+                <li key={k.id}>{k.name} <button type="button" className="btn-link" onClick={() => handleAssign("knowledge", k.id)}>Asignar</button></li>
+              ))}
+            </ul>
           </div>
         )}
-        {tab === "Pruebas" && (
+
+        {tab === "Herramientas" && (
+          <div>
+            <ul className="assign-list">
+              {toolAssignments.assigned.map((t) => (
+                <li key={t.id}>{t.name} <button type="button" className="btn-link" onClick={() => handleRemove("tool", t.id)}>Retirar</button></li>
+              ))}
+            </ul>
+            <h4>Disponibles</h4>
+            <ul className="assign-list">
+              {toolAssignments.available.map((t) => (
+                <li key={t.id}>{t.name} <button type="button" className="btn-link" onClick={() => handleAssign("tool", t.id)}>Asignar</button></li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {tab === "Modelo" && (
           <>
-            {testResult ? (
-              <pre className="mono result-pre">{JSON.stringify(testResult, null, 2)}</pre>
-            ) : (
-              <p className="muted">Ejecute pruebas desde Resumen o <Link to="/test-lab">laboratorio de pruebas</Link>.</p>
-            )}
+            <p><strong>Proveedor:</strong> {String(model?.provider || "—")}</p>
+            <p><strong>Modelo:</strong> {String(model?.model || "—")}</p>
+            <p><strong>Fallback:</strong> {String(model?.fallback_model || "—")}</p>
+            <p className="muted">Las credenciales permanecen en infraestructura segura (sin secretos en el empleado).</p>
           </>
         )}
-        {tab === "Certificación" && (
+
+        {tab === "Automatizaciones" && (
+          automations.length === 0 ? (
+            <p className="muted">Sin automatizaciones vinculadas. <Link to="/automatizaciones">Gestionar automatizaciones</Link></p>
+          ) : (
+            <ul>{automations.map((a) => <li key={String(a.id)}>{String(a.name)} — {String(a.status)}</li>)}</ul>
+          )
+        )}
+
+        {tab === "Límites" && (
           <>
+            <p><strong>Timeout:</strong> {String(limits?.timeout_seconds ?? "—")}s</p>
+            <p><strong>Tareas concurrentes:</strong> {String(limits?.max_concurrent_tasks ?? "—")}</p>
+            <p><strong>Presupuesto diario:</strong> {finops?.budget_daily != null ? String(finops.budget_daily) : "—"}</p>
+            <p><strong>Límite costo diario:</strong> {finops?.daily_cost_limit != null ? String(finops.daily_cost_limit) : "—"}</p>
+          </>
+        )}
+
+        {tab === "Versiones" && (
+          <table className="data-table">
+            <thead><tr><th>Versión</th><th>Estado</th><th>Motivo</th><th>Fecha</th><th></th></tr></thead>
+            <tbody>
+              {versions.map((v) => (
+                <tr key={String(v.id)}>
+                  <td>{String(v.version)}</td>
+                  <td>{String(v.status)}</td>
+                  <td>{String(v.change_reason || "—")}</td>
+                  <td className="mono">{String(v.created_at).slice(0, 19)}</td>
+                  <td>
+                    {Number(v.version) < Number(detail?.version) && (
+                      <button
+                        type="button"
+                        className="btn-link"
+                        onClick={() => employeeId && rollbackEmployee(employeeId, { target_version: Number(v.version), reason: "Rollback desde UI" }).then(load)}
+                      >
+                        Restaurar
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {tab === "Pruebas" && (
+          <>
+            {(detail?.test_cases as Array<Record<string, unknown>>)?.map((tc) => (
+              <p key={String(tc.id)}>{String(tc.name)} — {String(tc.test_category || tc.test_type)}</p>
+            ))}
+            {testResult ? <pre className="mono result-pre">{JSON.stringify(testResult, null, 2)}</pre> : <p className="muted">Ejecute pruebas desde Resumen.</p>}
+          </>
+        )}
+
+        {tab === "Publicación" && (
+          <>
+            <p><strong>Estado:</strong> {label(LIFECYCLE_STATUS, lifecycle)}</p>
+            <p><strong>Certificaciones:</strong></p>
             {(detail?.certifications as Array<Record<string, unknown>>)?.map((c) => (
               <p key={String(c.id)}>{String(c.result)} — score {String(c.score)} (v{String(c.version)})</p>
             ))}
             {certResult && <pre className="mono result-pre">{JSON.stringify(certResult, null, 2)}</pre>}
           </>
         )}
-        {tab === "Versiones" && (
-          <table className="data-table">
-            <thead><tr><th>Versión</th><th>Estado</th><th>Fecha</th></tr></thead>
-            <tbody>
-              {((detail?.versions as Array<Record<string, unknown>>) || []).map((v) => (
-                <tr key={String(v.id)}><td>{String(v.version)}</td><td>{label(LIFECYCLE_STATUS, String(v.status))}</td><td className="mono">{String(v.created_at).slice(0, 19)}</td></tr>
-              ))}
-            </tbody>
-          </table>
+
+        {tab === "Historial" && (
+          <p className="muted">Estado operativo: {String(detail?.status)} · Versión activa: v{String(health?.active_version ?? detail?.version)}</p>
         )}
-        {tab === "Actividad" && <p className="muted">Estado operativo: {String(detail?.status)}</p>}
         {error && <p className="error">{error}</p>}
       </section>
     </div>
