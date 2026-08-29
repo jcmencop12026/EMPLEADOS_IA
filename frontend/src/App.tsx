@@ -34,8 +34,6 @@ import { IntegracionesPage } from "./pages/IntegracionesPage";
 import { IntegracionWizardPage } from "./pages/IntegracionWizardPage";
 import { IntegracionDetailPage } from "./pages/IntegracionDetailPage";
 import { IntegracionTrazabilidadPage } from "./pages/IntegracionTrazabilidadPage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
 import { EmployeeWizardPage } from "./pages/EmployeeWizardPage";

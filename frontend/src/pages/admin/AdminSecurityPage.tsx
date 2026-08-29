@@ -126,7 +126,7 @@ export function AdminSecurityPage() {
                 onChange={(e) => setPolicy({ ...policy, lockout_minutes: Number(e.target.value) })}
               />
             </label>
-            <button type="button" onClick={onSavePolicy}>Guardar política</button>
+            <button type="button" className="btn primary" onClick={onSavePolicy}>Guardar política</button>
           </div>
         </section>
       )}
@@ -142,7 +142,7 @@ export function AdminSecurityPage() {
                 <td>{s.ip_address || "—"}</td>
                 <td>{new Date(s.last_activity_at).toLocaleString()}</td>
                 <td>
-                  <button type="button" onClick={() => revokeAdminSession(s.id).then(load)}>Revocar</button>
+                  <button type="button" className="btn" onClick={() => revokeAdminSession(s.id).then(load)}>Revocar</button>
                 </td>
               </tr>
             ))}
