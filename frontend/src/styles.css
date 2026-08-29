@@ -1007,7 +1007,7 @@ body {
   font-size: 12px;
 }
 
-/* Bloque 1230 — Centro de Control */
+/* Bloques 1100/1230 — UI compacta compartida */
 .compact-panel {
   padding: 12px 14px;
   margin-bottom: 10px;
@@ -1021,6 +1021,64 @@ body {
   margin-bottom: 10px;
 }
 
+.compact-tabs {
+  margin-bottom: 8px;
+}
+
+.chain-panel {
+  margin-bottom: 10px;
+}
+
+.chain-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
+.chain-list li {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.chain-list li.done {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.chain-list li.pending {
+  color: #64748b;
+}
+
+.estado-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #e2e8f0;
+}
+
+.compact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 480px;
+  margin-bottom: 12px;
+}
+
+.compact-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
 .compact-table {
   font-size: 12px;
 }
@@ -1028,6 +1086,33 @@ body {
 .compact-table th,
 .compact-table td {
   padding: 6px 8px;
+}
+
+.stack-gap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inline-input {
+  min-width: 180px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.approval-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
 }
 
 .page-header.compact h1 {
@@ -1051,3 +1136,4 @@ body {
   gap: 10px;
   margin-bottom: 10px;
 }
+
