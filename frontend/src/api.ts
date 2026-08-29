@@ -1986,10 +1986,20 @@ export type CommercialPlanItem = {
   id: string;
   code: string;
   name: string;
+  descripcion?: string | null;
   margen_minimo_pct: number;
+  fraccion_valor_sugerida?: number | null;
   consumo_ia_incluido_tokens?: number | null;
   presupuesto_ia_incluido?: number | null;
+  excedente_ia_por_millon?: number | null;
+  alerta_consumo_pct?: number | null;
+  bloqueo_excedente?: boolean;
   credential_mode: string;
+  precio_base_mensual?: number | null;
+  precio_minimo?: number | null;
+  precio_maximo?: number | null;
+  limits?: Record<string, unknown> | null;
+  currency?: string;
 };
 
 export type CommercialProposalSummary = {
@@ -2004,6 +2014,9 @@ export type CommercialProposalSummary = {
 
 export type CommercialProposalDetail = CommercialProposalSummary & {
   escenario_recomendado: string;
+  credential_mode?: string;
+  currency?: string;
+  valor_total_esperado?: number | null;
   costo_total?: number | null;
   beneficio_neto_cliente?: number | null;
   roi_pct?: number | null;
@@ -2011,6 +2024,11 @@ export type CommercialProposalDetail = CommercialProposalSummary & {
   margen_pct?: number | null;
   pct_valor_conservado_cliente?: number | null;
   pct_valor_capturado_empleados_ia?: number | null;
+  desglose_naturaleza?: Record<string, number> | null;
+  valor_potencial_atribuible?: number | null;
+  contrato_centro_control?: Record<string, unknown> | null;
+  plan?: CommercialPlanItem | null;
+  vigencia_hasta?: string | null;
   valores: Array<{
     id: string;
     categoria: string;
@@ -2028,7 +2046,7 @@ export type CommercialProposalDetail = CommercialProposalSummary & {
     probabilidad?: number | null;
     es_recomendado: boolean;
   }>;
-  costos: Array<{ id: string; categoria: string; clase_costo: string; monto: number }>;
+  costos: Array<{ id: string; categoria: string; clase_costo: string; monto: number; finops_record_id?: string | null; descripcion?: string | null }>;
   alertas_doble_conteo: Array<{ id: string; severidad: string; mensaje: string }>;
   trazabilidad: Record<string, unknown>;
 };
@@ -2082,6 +2100,10 @@ export async function approveCommercialProposal(proposalId: string) {
 
 export async function detectCommercialDoubleCount(proposalId: string) {
   return api(`/api/comercial/propuestas/${proposalId}/detectar-doble-conteo`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchCommercialTraceability(proposalId: string): Promise<Record<string, unknown>> {
+  return api(`/api/comercial/propuestas/${proposalId}/trazabilidad`);
 }
 
 export async function fetchCommercialPlan(id: string): Promise<CommercialPlanItem> {
@@ -2181,6 +2203,7 @@ export type ImplProyectoSummary = {
   titulo: string;
   estado: string;
   avance_pct: number;
+  proposal_id?: string | null;
   valor_compromiso?: Record<string, unknown> | null;
 };
 

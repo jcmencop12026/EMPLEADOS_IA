@@ -17,6 +17,8 @@ import {
   registrarImplPilotoResultado,
   type ImplProyectoDetalle,
 } from "../api";
+import { ImplementationCycleBar } from "../components/comercial/ImplementationCycleBar";
+import { formatMoney } from "../lib/comercialLabels";
 import { usePermissions } from "../hooks/usePermissions";
 
 const CHECKLIST = [
@@ -82,7 +84,8 @@ export function ImplementacionDetailPage() {
       <header className="ops-header">
         <Link to="/implementacion">← Implementaciones</Link>
         <h1>{detalle.codigo} — {detalle.titulo}</h1>
-        <p>Estado: {detalle.estado} | Avance: {detalle.avance_pct}%</p>
+        <p className="muted">Estado: {detalle.estado} · Avance: {detalle.avance_pct}%</p>
+        <ImplementationCycleBar estado={detalle.estado} />
       </header>
       {msg && <p className="info-text">{msg}</p>}
       <nav className="tab-nav">
@@ -93,12 +96,28 @@ export function ImplementacionDetailPage() {
         ))}
       </nav>
       {tab === "resumen" && t && (
-        <section className="panel">
-          <h2>Tablero</h2>
-          <p>Fase actual: {t.fase_actual}</p>
-          <p>Valor comprometido: {JSON.stringify(t.valor_esperado)}</p>
-          {t.tco && <p>TCO integrado: {t.tco.total}</p>}
-          <pre>{JSON.stringify(t.trazabilidad, null, 2)}</pre>
+        <section className="panel compact-panel">
+          <h2>Seguimiento del valor</h2>
+          <div className="metrics-grid compact-metrics">
+            <div><strong>Fase actual</strong><span>{t.fase_actual}</span></div>
+            <div><strong>Valor comprometido</strong><span>{formatMoney(detalle.valor_compromiso?.valor_atribuible_total as number | undefined)}</span></div>
+            <div><strong>Precio comprometido</strong><span>{formatMoney((detalle.valor_compromiso?.precio_final ?? detalle.valor_compromiso?.precio_sugerido) as number | undefined)}</span></div>
+            {t.tco && <div><strong>TCO integrado</strong><span>{formatMoney(t.tco.total)}</span></div>}
+            {t.salud && <div><strong>Salud cliente</strong><span>{t.salud.resultado} ({t.salud.puntuacion})</span></div>}
+          </div>
+          {t.trazabilidad && (
+            <details className="compact-details">
+              <summary>Trazabilidad implementación</summary>
+              <ul className="compact-list">
+                <li>Qué vendimos: {JSON.stringify(t.trazabilidad.que_vendimos)}</li>
+                <li>Qué prometimos: {String(t.trazabilidad.que_prometimos ?? "—")}</li>
+                <li>Qué implementamos: {String(t.trazabilidad.que_implementamos ?? "—")}</li>
+              </ul>
+            </details>
+          )}
+          {detalle.proposal_id && (
+            <p><Link to={`/comercial/propuestas/${detalle.proposal_id}`}>Ver propuesta comercial vinculada →</Link></p>
+          )}
         </section>
       )}
       {tab === "hitos" && (
