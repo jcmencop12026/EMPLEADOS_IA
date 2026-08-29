@@ -7,7 +7,7 @@
 | Bloque | 1350 |
 | Rama | `cursor/1350-gobierno-datos-privacidad` |
 | Base | `cursor/1250a-fix-aislamiento-tests` @ `6352836813da85e31514e19cef125bcff53b4191` |
-| HEAD | `3cbc83b6813da85e31514e19cef125bcff53b4191` |
+| HEAD | `a17cb6ca867f520331794ada0372d2861b52b371` |
 | Alembic head | `1350a1b2c3d4e` |
 
 ## Alcance implementado
