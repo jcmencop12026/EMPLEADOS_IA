@@ -114,7 +114,10 @@ def start_proactive_scheduler() -> None:
 
 
 def stop_proactive_scheduler() -> None:
+    global _thread
     _stop.set()
+    if _thread:
+        _thread.join(timeout=5)
     logger.info("Proactive scheduler stopped")
 
 

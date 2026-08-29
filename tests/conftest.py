@@ -1,16 +1,14 @@
 import os
 import tempfile
 import threading
-import time
 import uuid
 from pathlib import Path
 from urllib.parse import urlparse
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text
-from sqlalchemy.exc import OperationalError
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
+from sqlalchemy.orm import close_all_sessions
 
 if "DATABASE_URL" not in os.environ:
     _TEST_DB = tempfile.mktemp(suffix=".db")
@@ -28,15 +26,19 @@ from app import salud_models  # noqa: F401, E402
 from app import experience_models  # noqa: F401, E402
 from app import opportunity_models  # noqa: F401, E402
 from app import llm_models  # noqa: F401, E402
-from app.database import Base, get_db  # noqa: E402
+from app.database import Base, SessionLocal, engine, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.seed import bootstrap  # noqa: E402
 from app.services import automation_scheduler  # noqa: E402
 from app.services import proactive_scheduler  # noqa: E402
 
 _db_url = os.environ["DATABASE_URL"]
-_connect_args = {"check_same_thread": False} if _db_url.startswith("sqlite") else {}
 _pg_reset_lock = threading.Lock()
+
+# Un único engine compartido con app.database — evita conexiones huérfanas en TRUNCATE.
+TestingSessionLocal = SessionLocal
+automation_scheduler.SessionLocal = TestingSessionLocal
+proactive_scheduler.SessionLocal = TestingSessionLocal
 
 
 def _is_postgresql_url(url: str) -> bool:
@@ -81,50 +83,38 @@ def _ensure_postgresql_schema() -> None:
         )
 
 
+def _stop_background_workers() -> None:
+    automation_scheduler.stop_scheduler()
+    proactive_scheduler.stop_proactive_scheduler()
+
+
 def _reset_postgresql_test_database() -> None:
     if not _is_safe_test_database(_db_url):
         raise RuntimeError(
             "Refusing PostgreSQL test reset: DATABASE_URL no apunta a una BD de prueba segura. "
             f"BD detectada: {_postgresql_database_name(_db_url)!r}"
         )
-    last_error: Exception | None = None
     with _pg_reset_lock:
-        for attempt in range(5):
-            try:
-                automation_scheduler.stop_scheduler()
-                proactive_scheduler.stop_proactive_scheduler()
-                engine.dispose()
-                with engine.begin() as conn:
-                    conn.execute(text("SELECT pg_advisory_lock(8421030)"))
-                    try:
-                        tables = conn.execute(
-                            text(
-                                "SELECT tablename FROM pg_tables "
-                                "WHERE schemaname = 'public' AND tablename NOT LIKE 'alembic_%'"
-                            )
-                        ).scalars().all()
-                        if tables:
-                            quoted = ", ".join(f'"{table}"' for table in tables)
-                            conn.execute(text(f"TRUNCATE {quoted} RESTART IDENTITY CASCADE"))
-                    finally:
-                        conn.execute(text("SELECT pg_advisory_unlock(8421030)"))
-                db = TestingSessionLocal()
-                try:
-                    bootstrap(db)
-                finally:
-                    db.close()
-                return
-            except OperationalError as exc:
-                last_error = exc
-                if "deadlock" not in str(exc).lower():
-                    raise
-                time.sleep(0.05 * (attempt + 1))
-    if last_error is not None:
-        raise last_error
+        _stop_background_workers()
+        close_all_sessions()
+        engine.dispose()
+        with engine.begin() as conn:
+            tables = conn.execute(
+                text(
+                    "SELECT tablename FROM pg_tables "
+                    "WHERE schemaname = 'public' AND tablename NOT LIKE 'alembic_%'"
+                )
+            ).scalars().all()
+            if tables:
+                quoted = ", ".join(f'"{table}"' for table in tables)
+                conn.execute(text(f"TRUNCATE {quoted} RESTART IDENTITY CASCADE"))
+        db = TestingSessionLocal()
+        try:
+            bootstrap(db)
+            db.commit()
+        finally:
+            db.close()
 
-
-engine = create_engine(_db_url, connect_args=_connect_args)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 if _is_postgresql_url(_db_url):
     _ensure_postgresql_schema()
@@ -144,7 +134,6 @@ def _override_get_db():
 
 
 app.dependency_overrides[get_db] = _override_get_db
-automation_scheduler.SessionLocal = TestingSessionLocal
 
 
 @pytest.fixture(autouse=True)
@@ -154,8 +143,7 @@ def _postgresql_test_isolation():
         _reset_postgresql_test_database()
     yield
     if _is_postgresql_url(_db_url):
-        automation_scheduler.stop_scheduler()
-        proactive_scheduler.stop_proactive_scheduler()
+        _stop_background_workers()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -167,11 +155,9 @@ def _postgresql_session_cleanup():
 
 def _client_context():
     with TestClient(app) as test_client:
-        automation_scheduler.stop_scheduler()
-        proactive_scheduler.stop_proactive_scheduler()
+        _stop_background_workers()
         yield test_client
-        proactive_scheduler.stop_proactive_scheduler()
-        automation_scheduler.stop_scheduler()
+        _stop_background_workers()
 
 
 if _is_postgresql_url(_db_url):
