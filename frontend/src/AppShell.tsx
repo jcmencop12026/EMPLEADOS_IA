@@ -11,7 +11,7 @@ const MENU: NavSection[] = [
   {
     id: "inicio",
     label: "Inicio",
-    items: [{ to: "/", label: "Panel de control", end: true }],
+    items: [{ to: "/", label: "Centro de Control", end: true }],
   },
   {
     id: "operaciones",

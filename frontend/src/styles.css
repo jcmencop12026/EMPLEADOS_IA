@@ -1007,7 +1007,7 @@ body {
   font-size: 12px;
 }
 
-/* Bloques 1100/1200 — UI operativa compacta */
+/* Bloques 1100/1200/1230 — UI operativa compacta */
 .compact-panel {
   padding: 12px 14px;
   margin-bottom: 10px;
@@ -1123,4 +1123,16 @@ body {
 .section-title {
   font-size: 13px;
   margin: 0 0 8px;
+}
+
+.centro-control-page .cc-metric-card {
+  text-decoration: none;
+  color: inherit;
+}
+
+.cc-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
 }

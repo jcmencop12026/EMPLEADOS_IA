@@ -37,6 +37,7 @@ from app.routers import (
     salud,
     experience,
     linea_base,
+    control_center,
     oportunidades,
     senales,
     valoracion,
@@ -135,6 +136,7 @@ app.include_router(linea_base.router)
 app.include_router(valoracion.router)
 app.include_router(diagnosticos.router)
 app.include_router(inteligencia_externa.router)
+app.include_router(control_center.router)
 app.include_router(llm_providers.router)
 
 

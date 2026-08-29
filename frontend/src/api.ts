@@ -1632,3 +1632,57 @@ export async function updateLineaBaseAtribucion(
 export async function fetchLineasBaseByOpportunity(opportunityId: string): Promise<{ items: LineaBaseItem[] }> {
   return api(`/api/lineas-base/oportunidad/${opportunityId}`);
 }
+
+// --- Centro de Control ejecutivo (1230) ---
+
+export type CentroControlIndicador = {
+  id: string;
+  label: string;
+  valor: unknown;
+  disponible: boolean;
+  estado?: string | null;
+  enlace: string;
+};
+
+export type CentroControlAtencion = {
+  prioridad: number;
+  tipo: string;
+  titulo: string;
+  detalle?: string | null;
+  fecha?: string | null;
+  enlace: string;
+  origen: string;
+};
+
+export type CentroControlResumen = {
+  generated_at: string;
+  organization_id: string;
+  resumen_ejecutivo: { indicadores: CentroControlIndicador[]; operaciones?: Record<string, number> | null };
+  atencion_requerida: CentroControlAtencion[];
+  empleados_ia?: {
+    total: number;
+    activos: number;
+    items: Array<{
+      id: string;
+      nombre: string;
+      estado: string;
+      ultima_actividad?: string | null;
+      enlace: string;
+    }>;
+  } | null;
+  oportunidades?: Record<string, unknown> | null;
+  impacto?: Record<string, unknown> | null;
+  finops?: {
+    disponible: boolean;
+    dashboard?: Record<string, unknown>;
+    tokens_periodo?: number;
+  } | null;
+  valor_retorno?: Record<string, unknown> | null;
+  diagnostico?: Record<string, unknown> | null;
+  senales?: Record<string, unknown> | null;
+  salud_plataforma?: Record<string, unknown> | null;
+};
+
+export async function fetchCentroControlResumen(periodo = "mtd"): Promise<CentroControlResumen> {
+  return api(`/api/centro-control/resumen-ejecutivo?periodo=${encodeURIComponent(periodo)}`);
+}

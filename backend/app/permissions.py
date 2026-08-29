@@ -166,6 +166,10 @@ PLATFORM_PERMISSIONS = {
     "platform.organization.manage",
 }
 
+CONTROL_CENTER_PERMISSIONS = {
+    "control_center.view",
+}
+
 ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "employee.view": ("Empleados IA", "Ver directorio de empleados"),
     "employee.create": ("Empleados IA", "Crear empleados"),
@@ -256,6 +260,7 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
+    "control_center.view": ("Centro de Control", "Ver centro de control ejecutivo"),
 }
 
 SYSTEM_ROLE_CODES = {"admin", "operator", "viewer", "superadmin"}
@@ -283,6 +288,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | VALORACION_PERMISSIONS
         | DIAGNOSTICOS_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
+        | CONTROL_CENTER_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -303,6 +309,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | VALORACION_PERMISSIONS
         | DIAGNOSTICOS_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
+        | CONTROL_CENTER_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -366,6 +373,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "inteligencia_externa.manage",
         "inteligencia_externa.ingest",
         "inteligencia_externa.validate",
+        "control_center.view",
     },
     "viewer": {
         "employee.view",
@@ -388,6 +396,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "valoracion.roi",
         "diagnosticos.view",
         "inteligencia_externa.view",
+        "control_center.view",
     },
 }
 
