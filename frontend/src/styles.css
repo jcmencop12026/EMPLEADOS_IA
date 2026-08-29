@@ -1168,6 +1168,13 @@ body {
   background: #e8f0f5;
 }
 
+.cc-tag-sin_clasificar,
+.cc-tag-sin-clasificar {
+  color: #555;
+  background: #f5f5f5;
+  border-color: #bbb;
+}
+
 .cc-tag-certeza {
   color: #3d3d3d;
   background: #f0f0f0;
