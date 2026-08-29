@@ -57,6 +57,8 @@ def create_session(
     ip_address: str | None,
     user_agent: str | None,
     mfa_verified: bool,
+    auth_method: str | None = None,
+    identity_provider_id: str | None = None,
 ) -> UserSession:
     policy = get_or_create_policy(db, user.organization_id)
     active = list_active_sessions(db, user.id)
@@ -77,6 +79,8 @@ def create_session(
         user_agent=(user_agent or "")[:300] or None,
         expires_at=expires_at,
         mfa_verified=mfa_verified,
+        auth_method=auth_method,
+        identity_provider_id=identity_provider_id,
     )
     db.add(session)
     db.flush()

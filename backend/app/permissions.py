@@ -64,6 +64,14 @@ SECURITY_PERMISSIONS = {
     "seguridad.audit",
 }
 
+IDENTITY_PERMISSIONS = {
+    "identidad.view",
+    "identidad.manage",
+    "identidad.test",
+    "identidad.activate",
+    "identidad.audit",
+}
+
 OPERATIONS_PERMISSIONS = {
     "operations.view",
     "operations.execute",
@@ -254,6 +262,11 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "seguridad.manage_policy": ("Seguridad", "Gestionar políticas de seguridad"),
     "seguridad.revoke_sessions": ("Seguridad", "Revocar sesiones de usuarios"),
     "seguridad.audit": ("Seguridad", "Consultar eventos de seguridad"),
+    "identidad.view": ("Identidad", "Consultar proveedores y políticas SSO"),
+    "identidad.manage": ("Identidad", "Configurar identidad empresarial"),
+    "identidad.test": ("Identidad", "Probar proveedores de identidad"),
+    "identidad.activate": ("Identidad", "Activar o desactivar proveedores"),
+    "identidad.audit": ("Identidad", "Consultar auditoría de login SSO"),
     "capability.view": ("Capacidades", "Ver catálogo de capacidades"),
     "capability.manage": ("Capacidades", "Gestionar capacidades"),
     "tool.view": ("Herramientas", "Ver catálogo de herramientas"),
@@ -351,6 +364,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | BACKUPS_PERMISSIONS
         | DATOS_PERMISSIONS
         | SECURITY_PERMISSIONS
+        | IDENTITY_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -378,6 +392,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | DATOS_PERMISSIONS
         | PLATFORM_PERMISSIONS
         | SECURITY_PERMISSIONS
+        | IDENTITY_PERMISSIONS
     ),
     "operator": {
         "employee.view",

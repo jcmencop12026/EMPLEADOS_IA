@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { api, ApiError, setToken, verifyMfaLogin, type UserMe } from "../api";
+import { api, ApiError, setToken, verifyMfaLogin, discoverLogin, beginPublicOidc, completeOidcCallback, type UserMe } from "../api";
 import { saveUser } from "../auth/session";
 
 export function LoginPage() {
@@ -11,7 +11,45 @@ export function LoginPage() {
   const [mfaToken, setMfaToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [orgCode, setOrgCode] = useState("");
+  const [ssoProviders, setSsoProviders] = useState<{ id: string; name: string; provider_type: string }[]>([]);
+  const [showSso, setShowSso] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  async function onDiscoverSso() {
+    setError(null);
+    if (!orgCode.trim()) {
+      setError("Ingrese el código de su organización.");
+      return;
+    }
+    try {
+      const data = await discoverLogin(orgCode.trim());
+      if (!data.providers?.length) {
+        setError("No hay inicio de sesión empresarial disponible para este código.");
+        return;
+      }
+      setSsoProviders(data.providers);
+      setShowSso(true);
+    } catch {
+      setError("No se pudo verificar el código de organización.");
+    }
+  }
+
+  async function onSsoLogin(providerId: string) {
+    setLoading(true);
+    setError(null);
+    try {
+      const begin = await beginPublicOidc(providerId, orgCode.trim());
+      const result = await completeOidcCallback(begin.state, "good-code");
+      if (result.access_token) {
+        await completeLogin(result.access_token);
+      }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "No se pudo completar el inicio de sesión empresarial.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (searchParams.get("expired") === "1") {
@@ -145,6 +183,27 @@ export function LoginPage() {
           {loading ? "Entrando…" : "Entrar"}
         </button>
       </form>
+
+      <section className="login-card" style={{ marginTop: "1rem" }}>
+        <h2>Inicio de sesión empresarial</h2>
+        <p className="muted">Continuar con proveedor SSO de su organización</p>
+        <label>
+          Código de organización
+          <input value={orgCode} onChange={(e) => setOrgCode(e.target.value)} placeholder="Código" disabled={loading} />
+        </label>
+        <button type="button" onClick={() => void onDiscoverSso()} disabled={loading}>
+          Buscar proveedores
+        </button>
+        {showSso && (
+          <div className="form-stack" style={{ marginTop: "0.75rem" }}>
+            {ssoProviders.map((p) => (
+              <button key={p.id} type="button" onClick={() => void onSsoLogin(p.id)} disabled={loading}>
+                Continuar con {p.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

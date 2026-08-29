@@ -24,6 +24,8 @@ class UserMe(BaseModel):
     full_name: str | None = None
     status: str = "ACTIVE"
     permissions: list[str] = Field(default_factory=list)
+    auth_via_sso: bool = False
+    identity_provider_name: str | None = None
 
     model_config = {"from_attributes": True}
 
