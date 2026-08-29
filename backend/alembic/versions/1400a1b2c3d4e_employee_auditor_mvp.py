@@ -1,11 +1,15 @@
-"""Migración — Auditor determinístico Empleados IA MVP."""
+"""Migración — Auditor determinístico Empleados IA MVP.
+
+revision_id 1400a1b2c3d4e: identificador único portable del Auditor.
+NO define un bloque funcional «1400» en el producto.
+"""
 
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
 
-revision: str = "1390a1b2c3d4e"
+revision: str = "1400a1b2c3d4e"
 down_revision: Union[str, Sequence[str], None] = "1330b1b2c3d4f"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

@@ -16,7 +16,7 @@
 | Eventos | `backend/app/services/employee_audit_events.py` | Bus existente + `employee.audit.scheduled` (810C) |
 | API | `backend/app/routers/empleados_auditor.py` | REST `/api/empleados-auditor/*` |
 | Frontend | `frontend/src/pages/EmployeeAuditorPage.tsx` | Vista `/empleados/auditoria` |
-| Migración | `backend/alembic/versions/1390a1b2c3d4e_employee_auditor_mvp.py` | Genealogía única |
+| Migración | `backend/alembic/versions/1400a1b2c3d4e_employee_auditor_mvp.py` | Genealogía única |
 
 **No modificado:** `agent_factory`, Fábrica/ciclo de vida, `trabajo_service`, Centro de Control UI.
 
@@ -154,9 +154,29 @@ Permisos: `auditor_empleados.view`, `auditor_empleados.execute`, `auditor_emplea
 
 | Campo | Valor |
 |-------|-------|
-| revision | `1390a1b2c3d4e` |
+| revision | `1400a1b2c3d4e` |
 | down_revision | `1330b1b2c3d4f` |
-| head | `1390a1b2c3d4e` (único) |
+| head | `1400a1b2c3d4e` (único) |
+
+**Nota:** el identificador `1400a1b2c3d4e` es solo un revision_id Alembic portable del Auditor; **no** define un bloque funcional «1400» en el producto.
+
+---
+
+## CORRECCIÓN DE COLISIÓN ALEMBIC
+
+| Campo | Valor |
+|-------|-------|
+| revision_id anterior | `1390a1b2c3d4e` |
+| revision_id nuevo | `1400a1b2c3d4e` |
+| motivo | Colisión con `1390a1b2c3d4e_merge_comercial_implementacion_fase1` en rama comercial `cursor/ensayo-comercial-implementacion-sobre-fase1` |
+| down_revision | `1330b1b2c3d4f` (head real de `cursor/bandeja-trabajo-humano-unificada`) |
+| heads | 1 (`1400a1b2c3d4e`) |
+| roundtrip SQLite | upgrade → downgrade -1 → upgrade **PASS** |
+| tests | `test_employee_auditor_mvp` 12 passed; `test_bandeja_trabajo_humano` 6 passed; `test_migration_control` 7 passed |
+| archivos tocados | migración renombrada; `migration_ledger.json`; `schema_repair.py` HEAD_REVISION |
+| commit corrección | `<SHA post-fix>` |
+
+**Receta port para General:** conservar commits funcionales del Auditor; al portar sobre central, **reparentar** `1400a1b2c3d4e` al head central real del momento — no asumir `down_revision=1330b1b2c3d4f` si la cadena central divergió.
 
 ---
 
@@ -176,7 +196,7 @@ Ruta `/empleados/auditoria` — salud, hallazgos, auditoría manual (RBAC), deta
 
 ## 18. Receta de integración central
 
-1. Reparent migración `1390a1b2c3d4e` al head de Fase2 cuando General converja.
+1. Reparent migración `1400a1b2c3d4e` al head de Fase2 cuando General converja.
 2. Registrar automatización 810C con `INTERNAL_EVENT` → `employee.audit.scheduled`.
 3. Opcional: fusionar `contrato-trabajo` en `trabajo_service.list_items`.
 4. Opcional: consumir `resumen-centro-control` en sección SALUD DE EMPLEADOS IA del Centro de Control.
