@@ -1059,8 +1059,27 @@ def get_full_trace(db: Session, opportunity_id: str, organization_id: str) -> di
         "correlation_id": opp.correlation_id,
         "estado": opp.estado,
         "trazas": [{"etapa": t.etapa, "detalle": _parse_json(t.detalle_json), "fecha": t.created_at.isoformat()} for t in traces],
-        "transiciones": [{"de": t.estado_anterior, "a": t.estado_nuevo, "motivo": t.motivo} for t in transitions],
-        "seguimiento": [{"accion": t.accion, "resultado": t.resultado} for t in tracking],
+        "transiciones": [
+            {
+                "de": t.estado_anterior,
+                "a": t.estado_nuevo,
+                "motivo": t.motivo,
+                "actor_id": t.actor_id,
+                "fecha": t.created_at.isoformat() if t.created_at else None,
+            }
+            for t in transitions
+        ],
+        "seguimiento": [
+            {
+                "id": t.id,
+                "accion": t.accion,
+                "resultado": t.resultado,
+                "responsable_id": t.responsable_id,
+                "bloqueo": t.bloqueo,
+                "fecha": t.created_at.isoformat() if t.created_at else None,
+            }
+            for t in tracking
+        ],
     }
 
 
