@@ -13,6 +13,7 @@ import {
   type MfaStatus,
   type UserSession,
 } from "../api";
+import { getCachedUser } from "../auth/session";
 import { ErrorState, LoadingState } from "../components/AsyncState";
 
 export function MiSeguridadPage() {
@@ -122,6 +123,17 @@ export function MiSeguridadPage() {
       </header>
 
       {message && <p className="panel" role="status">{message}</p>}
+
+      {getCachedUser()?.auth_via_sso && (
+        <section className="panel">
+          <h2>Autenticación empresarial (SSO)</h2>
+          <p>
+            Su acceso está gestionado por el proveedor de identidad
+            {getCachedUser()?.identity_provider_name ? ` (${getCachedUser()?.identity_provider_name})` : ""}.
+          </p>
+          <p className="muted">La contraseña local puede estar restringida según la política de su organización.</p>
+        </section>
+      )}
 
       <section className="panel">
         <h2>Autenticación multifactor (MFA)</h2>
