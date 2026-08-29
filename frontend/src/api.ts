@@ -1729,3 +1729,35 @@ export type CentroControlResumen = {
 export async function fetchCentroControlResumen(periodo = "mtd"): Promise<CentroControlResumen> {
   return api(`/api/centro-control/resumen-ejecutivo?periodo=${encodeURIComponent(periodo)}`);
 }
+
+export type ContinuidadServicio = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  tipo: string;
+  criticidad: string;
+  rto_valor: number | null;
+  rto_unidad: string | null;
+  rpo_valor: number | null;
+  rpo_unidad: string | null;
+  estado_operacional: string;
+  proveedor_ref?: string | null;
+};
+
+export type ContinuidadTablero = {
+  servicios_criticos: ContinuidadServicio[];
+  servicios_degradados: ContinuidadServicio[];
+  incidentes_abiertos: number;
+  backups_recientes: Array<{ recurso: string; resultado: string; estado_registro: string }>;
+  backups_fallidos: number;
+  restauraciones_verificadas: number;
+  acciones_pendientes: number;
+  alertas: Array<{ tipo: string; mensaje: string }>;
+  centro_control_adapter?: Record<string, unknown>;
+  integracion_1330_prep?: Record<string, unknown>;
+  integracion_1260_prep?: Record<string, unknown>;
+};
+
+export async function fetchContinuidadTablero(): Promise<ContinuidadTablero> {
+  return api("/api/continuidad/tablero");
+}
