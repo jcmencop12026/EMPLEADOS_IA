@@ -1147,6 +1147,49 @@ export async function deactivateKnowledgeDocument(id: string): Promise<Knowledge
   return api<KnowledgeDocumentItem>(`/api/knowledge/${id}/deactivate`, { method: "POST" });
 }
 
+function parseContentDispositionFilename(header: string | null): string | null {
+  if (!header) return null;
+  const match = /filename\*?=(?:UTF-8''|")?([^";]+)/i.exec(header);
+  if (!match?.[1]) return null;
+  try {
+    return decodeURIComponent(match[1].replace(/"/g, ""));
+  } catch {
+    return match[1].replace(/"/g, "");
+  }
+}
+
+/** Descarga autenticada vía Bearer — no expone token en URL. */
+export async function downloadKnowledgeDocument(id: string, fallbackFilename?: string): Promise<void> {
+  const headers = new Headers();
+  const token = getToken();
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  const res = await fetch(`/api/knowledge/${id}/download`, { headers });
+  if (!res.ok) {
+    const text = await res.text();
+    const detail = parseDetail(text);
+    throw new ApiError(res.status, userMessage(res.status, detail), detail);
+  }
+  const blob = await res.blob();
+  const filename =
+    parseContentDispositionFilename(res.headers.get("Content-Disposition")) ||
+    fallbackFilename ||
+    `documento-${id}`;
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    anchor.rel = "noopener";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 export async function uploadKnowledgeFile(file: File, name?: string): Promise<KnowledgeDocumentItem> {
   const form = new FormData();
   form.append("file", file);

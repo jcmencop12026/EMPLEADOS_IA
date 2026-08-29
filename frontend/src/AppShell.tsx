@@ -18,6 +18,7 @@ const MENU: NavSection[] = [
     label: "Operaciones",
     items: [
       { to: "/operaciones", label: "Centro de operaciones" },
+      { to: "/operaciones/solicitud", label: "Nueva solicitud" },
       { to: "/ejecuciones", label: "Ejecuciones" },
       { to: "/aprobaciones", label: "Aprobaciones" },
       { to: "/automatizaciones", label: "Automatizaciones" },
@@ -37,7 +38,7 @@ const MENU: NavSection[] = [
       { to: "/capacidades", label: "Capacidades" },
       { to: "/herramientas", label: "Herramientas" },
       { to: "/conocimiento", label: "Conocimiento" },
-      { to: "/test-lab", label: "Test Lab" },
+      { to: "/test-lab", label: "Laboratorio de pruebas" },
     ],
   },
   {
@@ -168,7 +169,7 @@ export function AppShell() {
     <div className={`layout ${collapsed ? "sidebar-collapsed" : ""}`}>
       <aside className="sidebar" title="Navegación principal">
         <div className="brand-row">
-          <div className="brand">Enterprise AI OS</div>
+          <div className="brand">Sistema empresarial de IA</div>
           <button
             type="button"
             className="btn-icon"
@@ -196,7 +197,7 @@ export function AppShell() {
       </aside>
       <div className="main">
         <header className="topbar">
-          <span>EMPLEADOS_IA · Orquestador E2E · Workspace Salud</span>
+          <span>EMPLEADOS_IA · Centro de operaciones · Módulo Salud</span>
           <NavLink className="notification-bell" to="/notificaciones" title="Centro de notificaciones">
             🔔{unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}
           </NavLink>
