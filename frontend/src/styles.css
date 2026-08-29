@@ -741,6 +741,32 @@ body {
   padding: 4px 6px;
 }
 
+.mono-sm {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+}
+
+.truncate {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linkish {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.row-highlight td {
+  background: rgba(255, 193, 7, 0.12);
+}
+
 @media (max-width: 768px) {
   .layout {
     flex-direction: column;
