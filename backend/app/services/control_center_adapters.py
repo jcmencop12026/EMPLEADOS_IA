@@ -548,3 +548,114 @@ class SenalesAdapter:
             ],
             "enlace": "/senales",
         }
+
+
+class InteligenciaExternaAdapter:
+    """Bloque 1240 — inteligencia externa, señales estratégicas y riesgos."""
+
+    modulo = "inteligencia_externa"
+    bloque = "1240"
+
+    def fetch(
+        self,
+        db: Session,
+        organization_id: str,
+        *,
+        permissions: set[str],
+        period_start: datetime | None = None,
+    ) -> dict[str, Any]:
+        if "inteligencia_externa.view" not in permissions:
+            return {
+                **_no_disponible(self.modulo, self.bloque, "Requiere inteligencia_externa.view"),
+                "restringido": True,
+            }
+        from app.external_intelligence_enums import RelevanceLevel, SignalClassification
+        from app.external_models import ExternalSignalExtension, ExternalSource
+        from app.opportunity_models import ProactiveSignal
+
+        fuentes_activas = (
+            db.query(func.count(ExternalSource.id))
+            .filter(
+                ExternalSource.organization_id == organization_id,
+                ExternalSource.is_active.is_(True),
+                ExternalSource.estado == "ACTIVA",
+            )
+            .scalar()
+            or 0
+        )
+
+        ext_base = db.query(ExternalSignalExtension).filter(
+            ExternalSignalExtension.organization_id == organization_id
+        )
+        if period_start:
+            ext_base = ext_base.filter(ExternalSignalExtension.captured_at >= period_start)
+
+        total_senales = ext_base.count()
+        sin_validar = (
+            ext_base.filter(ExternalSignalExtension.validated_at.is_(None))
+            .count()
+        )
+        riesgos_abiertos = (
+            ext_base.filter(
+                ExternalSignalExtension.is_risk.is_(True),
+                ExternalSignalExtension.validated_at.is_(None),
+            )
+            .count()
+        )
+        oportunidades_ext = (
+            ext_base.filter(ExternalSignalExtension.classification == SignalClassification.OPORTUNIDAD)
+            .count()
+        )
+        tendencias = (
+            ext_base.filter(ExternalSignalExtension.classification == SignalClassification.TENDENCIA)
+            .count()
+        )
+
+        por_clasificacion = dict(
+            db.query(ExternalSignalExtension.classification, func.count())
+            .filter(ExternalSignalExtension.organization_id == organization_id)
+            .group_by(ExternalSignalExtension.classification)
+            .all()
+        )
+
+        recientes_q = (
+            db.query(ExternalSignalExtension, ProactiveSignal)
+            .join(ProactiveSignal, ProactiveSignal.id == ExternalSignalExtension.signal_id)
+            .filter(ExternalSignalExtension.organization_id == organization_id)
+            .order_by(ExternalSignalExtension.captured_at.desc())
+        )
+        if period_start:
+            recientes_q = recientes_q.filter(ExternalSignalExtension.captured_at >= period_start)
+        recientes_rows = recientes_q.limit(5).all()
+
+        recientes = [
+            {
+                "id": ext.signal_id,
+                "titulo": (sig.tipo or ext.hecho_observado or "Señal externa")[:120],
+                "clasificacion": ext.classification,
+                "relevancia": ext.relevance,
+                "es_riesgo": ext.is_risk,
+                "validada": ext.validated_at is not None,
+                "freshness": ext.freshness_status,
+                "enlace": f"/inteligencia-externa/senales/{ext.signal_id}",
+            }
+            for ext, sig in recientes_rows
+        ]
+
+        tiene_datos = total_senales > 0 or fuentes_activas > 0
+        return {
+            "disponible": tiene_datos or fuentes_activas > 0,
+            "estado": "Integrado con módulo 1240" if tiene_datos or fuentes_activas else "Sin datos",
+            "modulo": self.modulo,
+            "bloque": self.bloque,
+            "origen": "externa",
+            "fuentes_activas": fuentes_activas,
+            "total_senales": total_senales,
+            "sin_validar": sin_validar,
+            "riesgos_abiertos": riesgos_abiertos,
+            "oportunidades_detectadas": oportunidades_ext,
+            "tendencias": tendencias,
+            "por_clasificacion": por_clasificacion,
+            "recientes": recientes,
+            "enlace": "/inteligencia-externa",
+        }
