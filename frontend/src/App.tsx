@@ -16,6 +16,7 @@ import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { AuditPage } from "./pages/AuditPage";
 import { CapabilitiesPage } from "./pages/CapabilitiesPage";
 import { CostosValorPage } from "./pages/CostosValorPage";
+import { GobernanzaDatosPage } from "./pages/GobernanzaDatosPage";
 import { LineasBasePage } from "./pages/LineasBasePage";
 import { LineaBaseDetailPage } from "./pages/LineaBaseDetailPage";
 import { OportunidadesPage } from "./pages/OportunidadesPage";
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="herramientas" element={<ToolsPage />} />
           <Route path="test-lab" element={<TestLabPage />} />
           <Route path="costos-valor" element={<CostosValorPage />} />
+          <Route path="gobernanza-datos" element={<GobernanzaDatosPage />} />
           <Route path="lineas-base" element={<LineasBasePage />} />
           <Route path="lineas-base/:lineaBaseId" element={<LineaBaseDetailPage />} />
           <Route path="oportunidades" element={<OportunidadesPage />} />

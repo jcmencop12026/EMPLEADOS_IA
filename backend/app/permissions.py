@@ -153,6 +153,16 @@ DIAGNOSTICOS_PERMISSIONS = {
     "diagnosticos.manage",
 }
 
+DATOS_PERMISSIONS = {
+    "datos.view",
+    "datos.classify",
+    "datos.manage_policy",
+    "datos.export",
+    "datos.audit",
+    "datos.requests",
+    "datos.retention",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -242,6 +252,13 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "diagnosticos.generate": ("Diagnósticos", "Generar diagnósticos"),
     "diagnosticos.validate": ("Diagnósticos", "Validar diagnósticos"),
     "diagnosticos.manage": ("Diagnósticos", "Administrar configuración de diagnóstico"),
+    "datos.view": ("Gobierno de datos", "Consultar catálogo y políticas"),
+    "datos.classify": ("Gobierno de datos", "Clasificar y catalogar datos"),
+    "datos.manage_policy": ("Gobierno de datos", "Gestionar políticas de datos"),
+    "datos.export": ("Gobierno de datos", "Registrar exportaciones"),
+    "datos.audit": ("Gobierno de datos", "Auditar accesos y hallazgos"),
+    "datos.requests": ("Gobierno de datos", "Gestionar solicitudes sobre datos"),
+    "datos.retention": ("Gobierno de datos", "Gestionar retención y legal hold"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -271,6 +288,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | LINEA_BASE_PERMISSIONS
         | VALORACION_PERMISSIONS
         | DIAGNOSTICOS_PERMISSIONS
+        | DATOS_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -290,6 +308,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | LINEA_BASE_PERMISSIONS
         | VALORACION_PERMISSIONS
         | DIAGNOSTICOS_PERMISSIONS
+        | DATOS_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -349,6 +368,13 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "diagnosticos.view",
         "diagnosticos.generate",
         "diagnosticos.validate",
+        "datos.view",
+        "datos.classify",
+        "datos.manage_policy",
+        "datos.export",
+        "datos.audit",
+        "datos.requests",
+        "datos.retention",
     },
     "viewer": {
         "employee.view",
@@ -370,6 +396,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "valoracion.view",
         "valoracion.roi",
         "diagnosticos.view",
+        "datos.view",
     },
 }
 

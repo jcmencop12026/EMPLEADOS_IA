@@ -1571,3 +1571,105 @@ export async function updateLineaBaseAtribucion(
 export async function fetchLineasBaseByOpportunity(opportunityId: string): Promise<{ items: LineaBaseItem[] }> {
   return api(`/api/lineas-base/oportunidad/${opportunityId}`);
 }
+
+// --- Gobierno de datos (1350) ---
+
+export type GovDashboard = {
+  fuentes_catalogadas: number;
+  sin_clasificar: number;
+  riesgo_alto: number;
+  retencion_vencida: number;
+  exportaciones: number;
+  solicitudes_abiertas: number;
+  hallazgos_abiertos: number;
+  acciones_pendientes: number;
+};
+
+export type GovClassification = {
+  id: string;
+  code: string;
+  name: string;
+  sensitivity_rank: number;
+};
+
+export type GovDataCategory = {
+  id: string;
+  code: string;
+  name: string;
+};
+
+export type GovCatalogEntry = {
+  id: string;
+  name: string;
+  classification_name?: string | null;
+  classification_level_id?: string | null;
+  data_environment: string;
+  status: string;
+  functional_owner?: string | null;
+  secret_status?: string | null;
+};
+
+export type GovRetentionPolicy = {
+  id: string;
+  name: string;
+  scope_type: string;
+  duration_unit: string;
+  duration_value?: number | null;
+  disposition: string;
+};
+
+export type GovSubjectRequest = {
+  id: string;
+  request_type: string;
+  status: string;
+  subject_ref?: string | null;
+  created_at?: string | null;
+};
+
+export type GovFinding = {
+  id: string;
+  finding_type: string;
+  severity: string;
+  description: string;
+  status: string;
+};
+
+export async function fetchGovDashboard(): Promise<GovDashboard> {
+  return api("/api/gobierno-datos/dashboard");
+}
+
+export async function fetchGovCatalog(): Promise<GovCatalogEntry[]> {
+  return api("/api/gobierno-datos/catalogo");
+}
+
+export async function createGovCatalogEntry(data: Record<string, unknown>): Promise<GovCatalogEntry> {
+  return api("/api/gobierno-datos/catalogo", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchGovClassifications(): Promise<GovClassification[]> {
+  return api("/api/gobierno-datos/clasificaciones");
+}
+
+export async function fetchGovCategories(): Promise<GovDataCategory[]> {
+  return api("/api/gobierno-datos/categorias");
+}
+
+export async function fetchGovRetentionPolicies(): Promise<GovRetentionPolicy[]> {
+  return api("/api/gobierno-datos/retencion");
+}
+
+export async function fetchGovAccessLogs(): Promise<Array<Record<string, unknown>>> {
+  return api("/api/gobierno-datos/accesos");
+}
+
+export async function fetchGovSubjectRequests(): Promise<GovSubjectRequest[]> {
+  return api("/api/gobierno-datos/solicitudes");
+}
+
+export async function fetchGovFindings(): Promise<GovFinding[]> {
+  return api("/api/gobierno-datos/hallazgos");
+}
+
+export async function scanGovFindings(): Promise<GovFinding[]> {
+  return api("/api/gobierno-datos/hallazgos/escanear", { method: "POST", body: JSON.stringify({}) });
+}
