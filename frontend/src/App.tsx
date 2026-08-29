@@ -30,6 +30,9 @@ import { DiagnosticoDetailPage } from "./pages/DiagnosticoDetailPage";
 import { InteligenciaExternaPage } from "./pages/InteligenciaExternaPage";
 import { InteligenciaExternaDetailPage } from "./pages/InteligenciaExternaDetailPage";
 import { ContinuidadPage } from "./pages/ContinuidadPage";
+import { IntegracionesPage } from "./pages/IntegracionesPage";
+import { IntegracionWizardPage } from "./pages/IntegracionWizardPage";
+import { IntegracionDetailPage } from "./pages/IntegracionDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
@@ -93,6 +96,9 @@ export default function App() {
           <Route path="inteligencia-externa" element={<InteligenciaExternaPage />} />
           <Route path="inteligencia-externa/senales/:signalId" element={<InteligenciaExternaDetailPage />} />
           <Route path="continuidad" element={<ContinuidadPage />} />
+          <Route path="integraciones" element={<IntegracionesPage />} />
+          <Route path="integraciones/nueva" element={<IntegracionWizardPage />} />
+          <Route path="integraciones/:connectorId" element={<IntegracionDetailPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
           <Route element={<RequirePermission anyOf={["platform.organization.view"]} />}>
             <Route path="administracion/empresas" element={<AdminCompaniesPage />} />
