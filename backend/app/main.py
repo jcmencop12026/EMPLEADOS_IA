@@ -13,6 +13,7 @@ from app import orchestration_models, notifications  # noqa: F401 — registra t
 from app import salud_models  # noqa: F401 — registra tablas IPS
 from app import experience_models  # noqa: F401 — experiencia transversal core
 from app import opportunity_models  # noqa: F401 — oportunidades proactivas 1030
+from app import valuation_models  # noqa: F401 — valoración económica 1210
 from app import llm_models  # noqa: F401 — LLM Gateway V1
 from app.health import build_health_report, health_http_status
 from app.routers import (
@@ -33,6 +34,7 @@ from app.routers import (
     salud,
     experience,
     oportunidades,
+    valoracion,
     test_lab,
     tools,
 )
@@ -121,6 +123,7 @@ app.include_router(finops.router)
 app.include_router(salud.router)
 app.include_router(experience.router)
 app.include_router(oportunidades.router)
+app.include_router(valoracion.router)
 app.include_router(llm_providers.router)
 
 
