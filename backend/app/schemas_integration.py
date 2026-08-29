@@ -23,6 +23,7 @@ class ConnectorCreate(BaseModel):
     retry_max: int = 3
     timeout_ms: int = 30000
     allow_internal_urls: bool = False
+    gov_catalog_entry_id: str | None = None
     generate_webhook_token: bool = False
 
 
@@ -36,6 +37,7 @@ class ConnectorUpdate(BaseModel):
     signal_source_code: str | None = None
     status: str | None = None
     secret_env_var: str | None = None
+    gov_catalog_entry_id: str | None = None
 
 
 class ExecuteRequest(BaseModel):
