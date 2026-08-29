@@ -21,6 +21,7 @@ from app import continuidad_models  # noqa: F401 — continuidad operativa 1360
 from app import governance_models  # noqa: F401 — gobierno de datos 1350
 from app import commercial_models  # noqa: F401 — modelo comercial 1280
 from app import tco_models  # noqa: F401 — TCO y ecosistema 1320
+from app import implementacion_models  # noqa: F401 — implementación 1340
 from app import llm_models  # noqa: F401 — LLM Gateway V1
 from app import security_models  # noqa: F401 — seguridad avanzada 1300
 from app import identity_models  # noqa: F401 — identidad empresarial 1370
@@ -57,6 +58,7 @@ from app.routers import (
     scim,
     comercial,
     tco,
+    implementacion,
     test_lab,
     tools,
 )
@@ -160,6 +162,7 @@ app.include_router(control_center.router)
 app.include_router(governance.router)
 app.include_router(comercial.router)
 app.include_router(tco.router)
+app.include_router(implementacion.router)
 app.include_router(llm_providers.router)
 
 

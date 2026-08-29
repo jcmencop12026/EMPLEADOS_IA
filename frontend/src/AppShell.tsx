@@ -48,6 +48,7 @@ const MENU: NavSection[] = [
       { to: "/lineas-base", label: "Líneas base e impacto" },
       { to: "/comercial", label: "Comercial y valor" },
       { to: "/tco", label: "TCO y aliados" },
+      { to: "/implementacion", label: "Implementación" },
       { to: "/oportunidades", label: "Centro de oportunidades" },
       { to: "/senales", label: "Señales y fuentes" },
       { to: "/diagnosticos", label: "Diagnósticos" },
