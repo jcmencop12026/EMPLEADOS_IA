@@ -92,7 +92,7 @@ Fallback seguro: **SIN_CLASIFICAR** (nunca se promueve automáticamente a HECHO)
 | **BACKEND** | `14db04d90048d27bdccfff48c7396091f8c64fd3` |
 | **FRONTEND** | `303d140ed8d64c4ba2499c28e4dcf660ddeb5538` |
 | **TESTS** | `19f2afe58a15b6084ebc5c60b7b92f0da9aacb3a` |
-| **DOC** | `ed91736` *(HEAD de rama)* |
+| **DOC** | `f3c8a916668b4830bd2ceefcc1897fde93c05cb3` |
 
 ---
 
@@ -141,7 +141,7 @@ RAMA:
 cursor/semantica-hecho-inferencia-recomendacion-p1
 
 HEAD:
-6af8f4591ed2fa0a5bf7389713c8dc79ee41b2e8
+ed91736
 
 COMMIT BACKEND:
 14db04d90048d27bdccfff48c7396091f8c64fd3
