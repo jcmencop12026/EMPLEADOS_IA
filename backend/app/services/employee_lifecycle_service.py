@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.audit import write_audit
 from app.automation_models import Automation
+from app.models import User
 from app.enums import (
     ApprovalStatus,
     EmployeeApprovalKind,
@@ -550,6 +551,163 @@ def request_approval(
         "work_plan_id": plan.id,
         "status": "PENDING",
         "kind": kind,
+    }
+
+
+def assert_factory_approval_decision_allowed(db: Session, approval: ApprovalRequest, user_id: str) -> str | None:
+    """Segregación: el solicitante no puede decidir su propia solicitud de fábrica."""
+    factory = (
+        db.query(EmployeeFactoryApproval)
+        .filter(EmployeeFactoryApproval.approval_request_id == approval.id)
+        .first()
+    )
+    if factory and approval.requested_by == user_id:
+        return "El solicitante no puede aprobar su propia solicitud"
+    return None
+
+
+def sync_factory_approval_on_decide(db: Session, approval_request_id: str, decision: str) -> None:
+    factory = (
+        db.query(EmployeeFactoryApproval)
+        .filter(EmployeeFactoryApproval.approval_request_id == approval_request_id)
+        .first()
+    )
+    if not factory:
+        return
+    factory.status = "APPROVED" if decision == "approve" else "REJECTED"
+
+
+def list_employee_approvals(
+    db: Session,
+    org_id: str,
+    employee_id: str,
+    *,
+    viewer_id: str | None = None,
+) -> list[dict[str, Any]] | None:
+    emp = _get_employee(db, org_id, employee_id)
+    if not emp:
+        return None
+
+    rows = (
+        db.query(EmployeeFactoryApproval, ApprovalRequest)
+        .join(ApprovalRequest, ApprovalRequest.id == EmployeeFactoryApproval.approval_request_id)
+        .filter(
+            EmployeeFactoryApproval.organization_id == org_id,
+            EmployeeFactoryApproval.employee_id == employee_id,
+        )
+        .order_by(EmployeeFactoryApproval.created_at.desc())
+        .all()
+    )
+
+    user_ids: set[str] = set()
+    for factory_row, approval_row in rows:
+        user_ids.add(approval_row.requested_by)
+        user_ids.add(factory_row.created_by_id)
+        if approval_row.decided_by:
+            user_ids.add(approval_row.decided_by)
+
+    users = (
+        {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()}
+        if user_ids
+        else {}
+    )
+
+    def _user_name(uid: str) -> str | None:
+        user = users.get(uid)
+        if not user:
+            return None
+        return user.full_name or user.username
+
+    result: list[dict[str, Any]] = []
+    for factory_row, approval_row in rows:
+        can_decide = (
+            approval_row.status == "PENDING"
+            and viewer_id is not None
+            and approval_row.requested_by != viewer_id
+        )
+        result.append({
+            "factory_approval_id": factory_row.id,
+            "approval_request_id": approval_row.id,
+            "approval_kind": factory_row.approval_kind,
+            "status": factory_row.status,
+            "approval_status": approval_row.status,
+            "reason": approval_row.reason,
+            "requested_by_id": approval_row.requested_by,
+            "requested_by_name": _user_name(approval_row.requested_by),
+            "requester_id": factory_row.created_by_id,
+            "requester_name": _user_name(factory_row.created_by_id),
+            "decided_by_id": approval_row.decided_by,
+            "decided_by_name": _user_name(approval_row.decided_by) if approval_row.decided_by else None,
+            "decision_comment": approval_row.decision_comment,
+            "target_version": factory_row.target_version,
+            "created_at": factory_row.created_at.isoformat(),
+            "requested_at": approval_row.created_at.isoformat(),
+            "decided_at": approval_row.decided_at.isoformat() if approval_row.decided_at else None,
+            "can_decide": can_decide,
+            "work_plan_id": approval_row.work_plan_id,
+        })
+    return result
+
+
+def decide_employee_approval(
+    db: Session,
+    org_id: str,
+    user_id: str,
+    employee_id: str,
+    approval_request_id: str,
+    *,
+    decision: str,
+    comment: str | None = None,
+) -> dict[str, Any]:
+    emp = _get_employee(db, org_id, employee_id)
+    if not emp:
+        return {"error": "Empleado no encontrado"}
+
+    factory = (
+        db.query(EmployeeFactoryApproval)
+        .filter(
+            EmployeeFactoryApproval.organization_id == org_id,
+            EmployeeFactoryApproval.employee_id == employee_id,
+            EmployeeFactoryApproval.approval_request_id == approval_request_id,
+        )
+        .first()
+    )
+    if not factory:
+        return {"error": "Aprobación de fábrica no encontrada para este empleado"}
+
+    from app.services.coordinator import decide_approval
+
+    result = decide_approval(
+        db,
+        approval_id=approval_request_id,
+        organization_id=org_id,
+        user_id=user_id,
+        decision=decision,
+        comment=comment,
+    )
+    if result.get("error"):
+        return result
+
+    db.refresh(factory)
+    write_audit(
+        db,
+        action="employee.approval_decided",
+        organization_id=org_id,
+        user_id=user_id,
+        detail=json.dumps({
+            "employee_id": employee_id,
+            "approval_request_id": approval_request_id,
+            "decision": decision,
+            "kind": factory.approval_kind,
+        }, ensure_ascii=False),
+    )
+    return {
+        "factory_approval_id": factory.id,
+        "approval_request_id": approval_request_id,
+        "status": factory.status,
+        "approval_status": result.get("status", factory.status),
+        "kind": factory.approval_kind,
+        "decision": decision,
     }
 
 

@@ -7,6 +7,8 @@ import {
   assignEmployeeKnowledge,
   assignEmployeeTool,
   certifyEmployee,
+  decideEmployeeApproval,
+  fetchEmployeeApprovals,
   fetchEmployeeCapabilities,
   fetchEmployeeDetail,
   fetchEmployeeHealth,
@@ -25,8 +27,10 @@ import {
   trainEmployee,
   validateEmployee,
   type CatalogItem,
+  type EmployeeApprovalRecord,
 } from "../api";
 import { ErrorState, LoadingState } from "../components/AsyncState";
+import { usePermissions } from "../hooks/usePermissions";
 import { label, LIFECYCLE_STATUS, LIFECYCLE_PHASE, MATURITY, RISK_LEVEL } from "../lib/labels";
 
 const TABS = [
@@ -39,17 +43,22 @@ const TABS = [
   "Límites",
   "Versiones",
   "Pruebas",
+  "Aprobación",
   "Publicación",
   "Historial",
 ] as const;
 
 export function EmployeeDetailPage() {
   const { employeeId } = useParams<{ employeeId: string }>();
+  const { has } = usePermissions();
+  const canEdit = has("employee.edit");
+  const canApprove = has("employee.approve");
   const [tab, setTab] = useState<(typeof TABS)[number]>("Resumen");
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
   const [inventory, setInventory] = useState<Record<string, unknown> | null>(null);
   const [health, setHealth] = useState<Record<string, unknown> | null>(null);
   const [versions, setVersions] = useState<Array<Record<string, unknown>>>([]);
+  const [approvals, setApprovals] = useState<EmployeeApprovalRecord[]>([]);
   const [validation, setValidation] = useState<Record<string, unknown> | null>(null);
   const [capAssignments, setCapAssignments] = useState<{ assigned: CatalogItem[]; available: CatalogItem[] }>({ assigned: [], available: [] });
   const [toolAssignments, setToolAssignments] = useState<{ assigned: CatalogItem[]; available: CatalogItem[] }>({ assigned: [], available: [] });
@@ -62,7 +71,7 @@ export function EmployeeDetailPage() {
   async function load() {
     if (!employeeId) return;
     try {
-      const [d, caps, tools, knowledge, inv, h, vers] = await Promise.all([
+      const [d, caps, tools, knowledge, inv, h, vers, appr] = await Promise.all([
         fetchEmployeeDetail(employeeId),
         fetchEmployeeCapabilities(employeeId),
         fetchEmployeeTools(employeeId),
@@ -70,11 +79,13 @@ export function EmployeeDetailPage() {
         fetchEmployeeInventory(employeeId),
         fetchEmployeeHealth(employeeId),
         fetchEmployeeVersions(employeeId),
+        fetchEmployeeApprovals(employeeId),
       ]);
       setDetail(d);
       setInventory(inv);
       setHealth(h);
       setVersions(vers);
+      setApprovals(appr);
       setCapAssignments(caps);
       setToolAssignments(tools);
       setKnowledgeAssignments(knowledge);
@@ -85,7 +96,7 @@ export function EmployeeDetailPage() {
 
   useEffect(() => { load(); }, [employeeId]);
 
-  async function runAction(action: "test" | "certify" | "publish" | "activate" | "validate" | "approval") {
+  async function runAction(action: "test" | "certify" | "publish" | "activate" | "validate") {
     if (!employeeId) return;
     setLoading(true);
     setError(null);
@@ -95,12 +106,6 @@ export function EmployeeDetailPage() {
       if (action === "publish") await publishEmployee(employeeId);
       if (action === "activate") await activateEmployee(employeeId);
       if (action === "validate") setValidation(await validateEmployee(employeeId));
-      if (action === "approval") {
-        await requestEmployeeApproval(employeeId, {
-          kind: "PUBLISH",
-          reason: "Solicitud de publicación desde ficha de empleado",
-        });
-      }
       await load();
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : "No se pudo completar la acción.";
@@ -167,6 +172,41 @@ export function EmployeeDetailPage() {
     }
   }
 
+  async function handleRequestApproval() {
+    if (!employeeId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await requestEmployeeApproval(employeeId, {
+        kind: "PUBLISH",
+        reason: "Solicitud de publicación desde ficha de empleado",
+      });
+      setTab("Aprobación");
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "No se pudo solicitar aprobación.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDecideApproval(approvalRequestId: string, decision: "approve" | "reject") {
+    if (!employeeId) return;
+    const comment = decision === "reject"
+      ? window.prompt("Motivo del rechazo (opcional)") || undefined
+      : undefined;
+    setLoading(true);
+    setError(null);
+    try {
+      await decideEmployeeApproval(employeeId, approvalRequestId, decision, comment);
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "No se pudo procesar la decisión.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (!detail && !error) return <LoadingState message="Cargando empleado…" />;
   if (error && !detail) return <ErrorState message={error} onRetry={load} />;
 
@@ -215,7 +255,9 @@ export function EmployeeDetailPage() {
               <button type="button" className="btn" disabled={loading} onClick={() => runAction("validate")}>Validar</button>
               <button type="button" className="btn" disabled={loading} onClick={() => runAction("test")}>Ejecutar pruebas</button>
               <button type="button" className="btn" disabled={loading} onClick={() => runAction("certify")}>Certificar</button>
-              <button type="button" className="btn" disabled={loading} onClick={() => runAction("approval")}>Solicitar aprobación</button>
+              {canEdit && (
+                <button type="button" className="btn" disabled={loading} onClick={handleRequestApproval}>Solicitar aprobación</button>
+              )}
               <button type="button" className="btn primary" disabled={loading || lifecycle !== "CERTIFIED"} onClick={() => runAction("publish")}>Publicar</button>
               <button type="button" className="btn primary" disabled={loading || !["PUBLISHED", "PAUSED"].includes(lifecycle)} onClick={() => runAction("activate")}>Activar</button>
               <button type="button" className="btn" disabled={loading} onClick={handleTrain}>Capacitar</button>
@@ -326,6 +368,61 @@ export function EmployeeDetailPage() {
               <p key={String(tc.id)}>{String(tc.name)} — {String(tc.test_category || tc.test_type)}</p>
             ))}
             {testResult ? <pre className="mono result-pre">{JSON.stringify(testResult, null, 2)}</pre> : <p className="muted">Ejecute pruebas desde Resumen.</p>}
+          </>
+        )}
+
+        {tab === "Aprobación" && (
+          <>
+            <p className="muted">Solicitudes de aprobación vinculadas a este empleado. Las acciones respetan RBAC.</p>
+            {canEdit && (
+              <button type="button" className="btn" disabled={loading} onClick={handleRequestApproval}>
+                Solicitar aprobación de publicación
+              </button>
+            )}
+            {approvals.length === 0 ? (
+              <p className="muted">Sin solicitudes de aprobación registradas.</p>
+            ) : (
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Estado</th>
+                    <th>Tipo</th>
+                    <th>Solicitado</th>
+                    <th>Solicitante</th>
+                    <th>Aprobador</th>
+                    <th>Resultado</th>
+                    <th>Comentario</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {approvals.map((item) => (
+                    <tr key={item.factory_approval_id}>
+                      <td>{item.status}</td>
+                      <td>{item.approval_kind}</td>
+                      <td className="mono">{new Date(item.requested_at).toLocaleString()}</td>
+                      <td>{item.requested_by_name || item.requested_by_id}</td>
+                      <td>{item.decided_by_name || (item.approval_status === "PENDING" ? "—" : "—")}</td>
+                      <td>{item.approval_status}</td>
+                      <td className="cell-truncate" title={item.decision_comment || item.reason}>
+                        {item.decision_comment || item.reason}
+                      </td>
+                      <td>
+                        {canApprove && item.can_decide && item.approval_status === "PENDING" && (
+                          <span className="notification-actions">
+                            <button type="button" className="btn" disabled={loading} onClick={() => handleDecideApproval(item.approval_request_id, "approve")} title="Aprobar">✓</button>
+                            <button type="button" className="btn" disabled={loading} onClick={() => handleDecideApproval(item.approval_request_id, "reject")} title="Rechazar">×</button>
+                          </span>
+                        )}
+                        {item.approval_status === "PENDING" && !item.can_decide && canApprove && (
+                          <span className="muted" title="No puede aprobar su propia solicitud">Segregación</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </>
         )}
 

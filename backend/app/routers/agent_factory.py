@@ -6,6 +6,7 @@ from app.deps import get_current_user
 from app.models import User
 from app.permissions import check_permission
 from app.schemas_factory import (
+    EmployeeApprovalOut,
     EmployeeApprovalRequest,
     EmployeeCreateRequest,
     EmployeeOut,
@@ -17,7 +18,7 @@ from app.schemas_factory import (
     EmployeeVersionCreateRequest,
     TemplateOut,
 )
-from app.schemas_orchestration import PlanResponse, RouteTaskRequest
+from app.schemas_orchestration import ApprovalDecisionRequest, PlanResponse, RouteTaskRequest
 from app.services import agent_factory, employee_lifecycle_service
 from app.services.coordinator import route_task
 
@@ -214,6 +215,49 @@ def request_approval(
     )
     if result.get("error"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
+    return result
+
+
+@router.get("/employees/{employee_id}/approvals", response_model=list[EmployeeApprovalOut])
+def list_employee_approvals(
+    employee_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "employee.view", db)
+    rows = employee_lifecycle_service.list_employee_approvals(
+        db, user.organization_id, employee_id, viewer_id=user.id,
+    )
+    if rows is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empleado no encontrado")
+    return rows
+
+
+@router.post("/employees/{employee_id}/approvals/{approval_request_id}/decide")
+def decide_employee_approval(
+    employee_id: str,
+    approval_request_id: str,
+    body: ApprovalDecisionRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "employee.approve", db)
+    result = employee_lifecycle_service.decide_employee_approval(
+        db,
+        user.organization_id,
+        user.id,
+        employee_id,
+        approval_request_id,
+        decision=body.decision,
+        comment=body.comment,
+    )
+    if result.get("error") == "Empleado no encontrado":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result["error"])
+    if result.get("error") == "Aprobación de fábrica no encontrada para este empleado":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result["error"])
+    if result.get("error"):
+        code = status.HTTP_403_FORBIDDEN if "solicitante" in result["error"].lower() else status.HTTP_400_BAD_REQUEST
+        raise HTTPException(status_code=code, detail=result["error"])
     return result
 
 

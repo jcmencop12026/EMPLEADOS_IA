@@ -262,3 +262,101 @@ def test_model_policy_no_secrets_in_inventory(client, token):
     dumped = json.dumps(inv)
     assert "api_key" not in dumped.lower()
     assert "secret" not in dumped.lower() or inv["model"].get("provider") == "rule-engine"
+
+
+def _create_approver_user(client, org_id: str) -> str:
+    username = f"approver-mb06-{uuid.uuid4().hex[:8]}"
+    db = TestingSessionLocal()
+    db.add(User(
+        organization_id=org_id,
+        username=username,
+        password_hash=hash_password("ApproverMb06*"),
+        role="admin",
+    ))
+    db.commit()
+    db.close()
+    login = client.post("/api/auth/login", json={"username": username, "password": "ApproverMb06*"})
+    assert login.status_code == 200
+    return login.json()["access_token"]
+
+
+def test_approval_list_and_segregation(client, token):
+    emp_id = _create_ready_employee(client, token, risk_level="CRITICAL")
+    client.post(f"/api/agent-factory/employees/{emp_id}/test", headers=auth_header(token))
+    client.post(f"/api/agent-factory/employees/{emp_id}/certify", headers=auth_header(token))
+
+    req = client.post(
+        f"/api/agent-factory/employees/{emp_id}/request-approval",
+        headers=auth_header(token),
+        json={"kind": "PUBLISH", "reason": "Publicación producción", "target_version": 1},
+    )
+    assert req.status_code == 200
+    approval_request_id = req.json()["approval_request_id"]
+
+    listing = client.get(f"/api/agent-factory/employees/{emp_id}/approvals", headers=auth_header(token)).json()
+    assert len(listing) >= 1
+    row = next(r for r in listing if r["approval_request_id"] == approval_request_id)
+    assert row["status"] == "PENDING"
+    assert row["approval_kind"] == "PUBLISH"
+    assert row["requested_by_name"]
+    assert row["can_decide"] is False
+
+    pub_blocked = client.post(f"/api/agent-factory/employees/{emp_id}/publish", headers=auth_header(token))
+    assert pub_blocked.status_code == 403
+
+    self_decide = client.post(
+        f"/api/agent-factory/employees/{emp_id}/approvals/{approval_request_id}/decide",
+        headers=auth_header(token),
+        json={"decision": "approve"},
+    )
+    assert self_decide.status_code == 403
+
+    db = TestingSessionLocal()
+    org_id = db.query(Organization).first().id
+    db.close()
+    approver_token = _create_approver_user(client, org_id)
+
+    decide = client.post(
+        f"/api/agent-factory/employees/{emp_id}/approvals/{approval_request_id}/decide",
+        headers=auth_header(approver_token),
+        json={"decision": "approve", "comment": "Aprobado por segundo revisor"},
+    )
+    assert decide.status_code == 200
+    assert decide.json()["status"] == "APPROVED"
+
+    pub = client.post(f"/api/agent-factory/employees/{emp_id}/publish", headers=auth_header(token))
+    assert pub.status_code == 200
+
+
+def test_rejected_approval_blocks_publish(client, token):
+    emp_id = _create_ready_employee(client, token, risk_level="CRITICAL")
+    client.post(f"/api/agent-factory/employees/{emp_id}/test", headers=auth_header(token))
+    client.post(f"/api/agent-factory/employees/{emp_id}/certify", headers=auth_header(token))
+    req = client.post(
+        f"/api/agent-factory/employees/{emp_id}/request-approval",
+        headers=auth_header(token),
+        json={"kind": "PUBLISH", "reason": "Intento publicación", "target_version": 1},
+    ).json()
+    approval_request_id = req["approval_request_id"]
+
+    db = TestingSessionLocal()
+    org_id = db.query(Organization).first().id
+    db.close()
+    approver_token = _create_approver_user(client, org_id)
+
+    reject = client.post(
+        f"/api/agent-factory/employees/{emp_id}/approvals/{approval_request_id}/decide",
+        headers=auth_header(approver_token),
+        json={"decision": "reject", "comment": "No cumple política"},
+    )
+    assert reject.status_code == 200
+    assert reject.json()["status"] == "REJECTED"
+
+    pub = client.post(f"/api/agent-factory/employees/{emp_id}/publish", headers=auth_header(token))
+    assert pub.status_code == 403
+
+
+def test_create_employee_does_not_auto_approve(client, token):
+    emp_id = _create_ready_employee(client, token, risk_level="CRITICAL")
+    listing = client.get(f"/api/agent-factory/employees/{emp_id}/approvals", headers=auth_header(token)).json()
+    assert listing == []
