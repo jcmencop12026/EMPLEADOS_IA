@@ -14,9 +14,10 @@
 | Seguridad | `489bea1` (`72e6b0e` en rama) | cherry-pick | 0 |
 | Interfaz | `f4499b54bf1ca0941b1de35bf1e85d1b42b08ea1` | cherry-pick | 0 |
 
-**HEAD final:** `460405ff42b1a7c0504b6ca25c33a85249d54ca1` (`460405f`)
+**HEAD final:** `307ddce0ba8f...` (`307ddce` — incluye informe de integración)
 
 ```
+307ddce docs: integración fixes pre-release seguridad e interfaz en candidata final
 460405f fix(ui): descarga autenticada de conocimiento y español pre-release
 72e6b0e fix(security): require bootstrap password in Docker and harden prod config validation
 ```
