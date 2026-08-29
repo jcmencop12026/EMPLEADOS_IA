@@ -340,7 +340,22 @@ def ejecutar_operacion_fabrica(
     if not op:
         return {"error": "Operación de fábrica no especificada"}
 
+    trace.factory_operation = op
     nav = resolve_factory_navigation(trace.recommendation) or {}
+    if operation:
+        op_permissions = {
+            "capacitar": "employee.train",
+            "probar": "employee.test",
+            "publicar": "employee.publish",
+            "rollback": "employee.rollback",
+            "retirar": "employee.retire",
+            "pausar": "employee.pause",
+            "solicitar_aprobacion": "employee.edit",
+            "crear_version": "employee.edit",
+            "configurar": "employee.edit",
+            "actualizar_conocimiento": "employee.edit",
+        }
+        nav = {"permission": op_permissions.get(op, nav.get("permission", "employee.edit"))}
     permission = nav.get("permission")
     if permission:
         denied = _require_factory_permission(user, permission, db)
@@ -485,9 +500,10 @@ def ejecutar_operacion_fabrica(
 
     finding = _get_finding(db, org_id, trace.finding_id)
     if finding and finding.status == "ABIERTO" and op in ("capacitar", "probar", "publicar"):
+        prior_evidence = _json_loads(finding.evidence_json) or {}
         finding.status = "CERRADO"
         finding.evidence_json = _json_dumps({
-            **_json_loads(finding.evidence_json) or {},
+            **prior_evidence,
             "closed_by_trace": trace.id,
             "factory_operation": op,
         })

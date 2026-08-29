@@ -11,9 +11,14 @@ from app.employee_audit_models import EmployeeAuditFinding, EmployeeImprovementT
 from app.models import Organization, User
 from app.orchestration_models import AIEmployee, EmployeeLimits, WorkPlan
 from app.security import hash_password
+from app.config import settings
 from conftest import TestingSessionLocal, auth_header
 
 pytestmark = [pytest.mark.auth, pytest.mark.tenant, pytest.mark.operations]
+
+
+def _admin_user(db):
+    return db.query(User).filter(User.username == settings.bootstrap_admin_username).first()
 
 
 def _employee_with_failures(db, org_id: str, user_id: str, code: str) -> str:
@@ -71,7 +76,7 @@ def _open_finding(db, org_id: str, emp_id: str) -> EmployeeAuditFinding:
 def test_auditor_recommends_without_executing(client: TestClient, token: str):
     db = TestingSessionLocal()
     try:
-        admin = db.query(User).filter(User.role == "admin").first()
+        admin = _admin_user(db)
         emp_id = _employee_with_failures(db, admin.organization_id, admin.id, f"rec-{uuid.uuid4().hex[:4]}")
         before_version = db.query(AIEmployee).filter(AIEmployee.id == emp_id).first().version
     finally:
@@ -89,7 +94,7 @@ def test_auditor_recommends_without_executing(client: TestClient, token: str):
 def test_trabajo_shows_revisar_fabrica(client: TestClient, token: str):
     db = TestingSessionLocal()
     try:
-        admin = db.query(User).filter(User.role == "admin").first()
+        admin = _admin_user(db)
         emp_id = _employee_with_failures(db, admin.organization_id, admin.id, f"tr-{uuid.uuid4().hex[:4]}")
     finally:
         db.close()
@@ -104,7 +109,7 @@ def test_trabajo_shows_revisar_fabrica(client: TestClient, token: str):
 def test_iniciar_mejora_blocks_auto_execution(client: TestClient, token: str):
     db = TestingSessionLocal()
     try:
-        admin = db.query(User).filter(User.role == "admin").first()
+        admin = _admin_user(db)
         emp_id = _employee_with_failures(db, admin.organization_id, admin.id, f"ini-{uuid.uuid4().hex[:4]}")
         org_id = admin.organization_id
     finally:
@@ -133,7 +138,7 @@ def test_iniciar_mejora_blocks_auto_execution(client: TestClient, token: str):
 def test_viewer_cannot_execute_factory_action(client: TestClient, token: str):
     db = TestingSessionLocal()
     try:
-        admin = db.query(User).filter(User.role == "admin").first()
+        admin = _admin_user(db)
         emp_id = _employee_with_failures(db, admin.organization_id, admin.id, f"den-{uuid.uuid4().hex[:4]}")
         finding = None
         _run_audit(client, token, emp_id)
@@ -168,7 +173,7 @@ def test_viewer_cannot_execute_factory_action(client: TestClient, token: str):
 def test_authorized_train_and_traceability(client: TestClient, token: str):
     db = TestingSessionLocal()
     try:
-        admin = db.query(User).filter(User.role == "admin").first()
+        admin = _admin_user(db)
         emp_id = _employee_with_failures(db, admin.organization_id, admin.id, f"ok-{uuid.uuid4().hex[:4]}")
         org_id = admin.organization_id
     finally:
@@ -226,7 +231,7 @@ def test_authorized_train_and_traceability(client: TestClient, token: str):
 def test_idempotency_iniciar_mejora(client: TestClient, token: str):
     db = TestingSessionLocal()
     try:
-        admin = db.query(User).filter(User.role == "admin").first()
+        admin = _admin_user(db)
         emp_id = _employee_with_failures(db, admin.organization_id, admin.id, f"idem-{uuid.uuid4().hex[:4]}")
         org_id = admin.organization_id
     finally:
@@ -256,7 +261,7 @@ def test_idempotency_iniciar_mejora(client: TestClient, token: str):
 def test_tenant_isolation_trace(client: TestClient, token: str):
     db = TestingSessionLocal()
     try:
-        admin = db.query(User).filter(User.role == "admin").first()
+        admin = _admin_user(db)
         emp_id = _employee_with_failures(db, admin.organization_id, admin.id, f"iso-{uuid.uuid4().hex[:4]}")
         org_id = admin.organization_id
         other = Organization(name=f"OrgB {uuid.uuid4().hex[:6]}", slug=f"orgb-{uuid.uuid4().hex[:6]}")
@@ -289,7 +294,7 @@ def test_tenant_isolation_trace(client: TestClient, token: str):
 def test_reauditoria_and_before_after(client: TestClient, token: str):
     db = TestingSessionLocal()
     try:
-        admin = db.query(User).filter(User.role == "admin").first()
+        admin = _admin_user(db)
         emp_id = _employee_with_failures(db, admin.organization_id, admin.id, f"rea-{uuid.uuid4().hex[:4]}")
         org_id = admin.organization_id
     finally:
