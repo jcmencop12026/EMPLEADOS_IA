@@ -30,9 +30,9 @@ def _cap_meta(code: str) -> dict:
     }
 
 
-def bootstrap_orchestration(db: Session, organization_id: str) -> None:
+def bootstrap_orchestration(db: Session, organization_id: str, *, commit: bool = True) -> None:
     if db.query(Capability).filter(Capability.organization_id == organization_id).first():
-        _upgrade_existing(db, organization_id)
+        _upgrade_existing(db, organization_id, commit=commit)
         return
 
     cap_docint = Capability(
@@ -110,7 +110,8 @@ def bootstrap_orchestration(db: Session, organization_id: str) -> None:
         ))
 
     _seed_templates(db, organization_id)
-    db.commit()
+    if commit:
+        db.commit()
 
 
 def _make_employee(
@@ -166,7 +167,7 @@ def _seed_templates(db: Session, organization_id: str) -> None:
         ))
 
 
-def _upgrade_existing(db: Session, organization_id: str) -> None:
+def _upgrade_existing(db: Session, organization_id: str, *, commit: bool = True) -> None:
     """Migra empleados CURSOR-801 a representación Agent Factory."""
     for cap in db.query(Capability).filter(Capability.organization_id == organization_id).all():
         meta = _cap_meta(cap.code)
@@ -205,7 +206,8 @@ def _upgrade_existing(db: Session, organization_id: str) -> None:
 
     _seed_templates(db, organization_id)
     _ensure_baseline_employees(db, organization_id)
-    db.commit()
+    if commit:
+        db.commit()
 
 
 def _ensure_baseline_employees(db: Session, organization_id: str) -> None:

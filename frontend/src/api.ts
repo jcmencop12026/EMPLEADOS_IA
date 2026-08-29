@@ -114,10 +114,29 @@ export type UserMe = {
 export type Organization = {
   id: string;
   name: string;
+  slug?: string;
   status?: string;
   timezone?: string;
   created_at: string;
   updated_at?: string | null;
+};
+
+export type PlatformOrganization = {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  timezone: string;
+  created_at: string;
+  updated_at?: string | null;
+  users_count: number;
+};
+
+export type PlatformOrganizationCreateResponse = {
+  organization: PlatformOrganization;
+  admin_user_id: string;
+  admin_username: string;
+  temporary_password?: string | null;
 };
 
 export type AdminUser = {
@@ -562,6 +581,32 @@ export async function fetchSecuritySummary(): Promise<SecuritySummary> {
   return api<SecuritySummary>("/api/admin/security");
 }
 
+export async function fetchPlatformOrganizations(): Promise<PlatformOrganization[]> {
+  return api<PlatformOrganization[]>("/api/platform/organizations");
+}
+
+export async function createPlatformOrganization(data: {
+  name: string;
+  slug: string;
+  timezone?: string;
+  admin_username: string;
+  admin_password?: string;
+  admin_email?: string;
+  admin_full_name?: string;
+}): Promise<PlatformOrganizationCreateResponse> {
+  return api<PlatformOrganizationCreateResponse>("/api/platform/organizations", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function setPlatformOrganizationStatus(orgId: string, status: "ACTIVE" | "INACTIVE"): Promise<PlatformOrganization> {
+  return api<PlatformOrganization>(`/api/platform/organizations/${orgId}/status`, {
+    method: "POST",
+    body: JSON.stringify({ status }),
+  });
+}
+
 export async function fetchMe(): Promise<UserMe> {
   return api<UserMe>("/api/auth/me");
 }
@@ -730,17 +775,106 @@ export type FinOpsConsumption = {
   category?: string;
   provider?: string;
   model_name?: string;
+  employee_id?: string | null;
+  work_plan_id?: string | null;
+  opportunity_id?: string | null;
+  tokens_in?: number | null;
+  tokens_out?: number | null;
   cost_label: string;
   currency?: string;
   created_at: string;
 };
 
-export async function fetchFinOpsDashboard(): Promise<FinOpsDashboard> {
-  return api<FinOpsDashboard>("/api/finops/dashboard");
+export type FinOpsBudget = {
+  id: string;
+  name?: string | null;
+  scope_type: string;
+  amount_limit: string;
+  currency: string;
+  policy: string;
+  alert_threshold_pct: number;
+  spent: string;
+  balance: string;
+  state: string;
+  blocks_execution: boolean;
+  period_start: string;
+  period_end: string;
+  active: boolean;
+};
+
+export type FinOpsRate = {
+  id: string;
+  provider?: string | null;
+  model_service?: string | null;
+  category: string;
+  price_input?: string | null;
+  price_output?: string | null;
+  currency: string;
+  active: boolean;
+};
+
+export type FinOpsOpportunityEconomics = {
+  opportunity_id: string;
+  opportunity_codigo: string;
+  total_cost_label: string;
+  valor_potencial?: string | null;
+  valor_materializado?: string | null;
+  consumption_count: number;
+  consumptions: FinOpsConsumption[];
+  finops_reference?: string | null;
+  atribucion_nivel?: string | null;
+};
+
+export async function fetchFinOpsDashboard(params?: {
+  period_start?: string;
+  period_end?: string;
+}): Promise<FinOpsDashboard> {
+  const qs = new URLSearchParams();
+  if (params?.period_start) qs.set("period_start", params.period_start);
+  if (params?.period_end) qs.set("period_end", params.period_end);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return api<FinOpsDashboard>(`/api/finops/dashboard${suffix}`);
 }
 
-export async function fetchFinOpsConsumptions(): Promise<FinOpsConsumption[]> {
-  return api<FinOpsConsumption[]>("/api/finops/consumptions");
+export async function fetchFinOpsConsumptions(params?: {
+  employee_id?: string;
+  opportunity_id?: string;
+  provider?: string;
+  model_name?: string;
+  category?: string;
+  period_start?: string;
+  period_end?: string;
+}): Promise<FinOpsConsumption[]> {
+  const qs = new URLSearchParams();
+  if (params?.employee_id) qs.set("employee_id", params.employee_id);
+  if (params?.opportunity_id) qs.set("opportunity_id", params.opportunity_id);
+  if (params?.provider) qs.set("provider", params.provider);
+  if (params?.model_name) qs.set("model_name", params.model_name);
+  if (params?.category) qs.set("category", params.category);
+  if (params?.period_start) qs.set("period_start", params.period_start);
+  if (params?.period_end) qs.set("period_end", params.period_end);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return api<FinOpsConsumption[]>(`/api/finops/consumptions${suffix}`);
+}
+
+export async function fetchFinOpsBudgets(): Promise<FinOpsBudget[]> {
+  return api<FinOpsBudget[]>("/api/finops/budgets");
+}
+
+export async function createFinOpsBudget(data: Record<string, unknown>): Promise<FinOpsBudget> {
+  return api<FinOpsBudget>("/api/finops/budgets", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchFinOpsRates(): Promise<FinOpsRate[]> {
+  return api<FinOpsRate[]>("/api/finops/rates");
+}
+
+export async function createFinOpsRate(data: Record<string, unknown>): Promise<FinOpsRate> {
+  return api<FinOpsRate>("/api/finops/rates", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchOpportunityEconomics(opportunityId: string): Promise<FinOpsOpportunityEconomics> {
+  return api<FinOpsOpportunityEconomics>(`/api/finops/opportunities/${opportunityId}/economics`);
 }
 
 export type OperationSummary = {
@@ -997,4 +1131,47 @@ export async function fetchOpportunityTrace(id: string): Promise<Record<string, 
 
 export async function prioritizeOpportunities(): Promise<Record<string, unknown>> {
   return api("/api/oportunidades/priorizar", { method: "POST", body: JSON.stringify({}) });
+}
+
+export type LlmProvider = {
+  id: string;
+  organization_id: string;
+  name: string;
+  provider_type: string;
+  model_default: string | null;
+  endpoint: string | null;
+  timeout_seconds: number;
+  priority: number;
+  is_enabled: boolean;
+  is_fallback: boolean;
+  secret_ref: string | null;
+  secret_configured: boolean;
+  secret_masked: string | null;
+  config_json: Record<string, unknown> | null;
+};
+
+export type LlmTestResult = {
+  success: boolean;
+  status: string;
+  message: string;
+  provider?: string;
+  model?: string;
+  latency_ms?: number;
+  error_category?: string;
+};
+
+export async function fetchLlmProviders(): Promise<LlmProvider[]> {
+  return api("/api/llm/providers");
+}
+
+export async function createLlmProvider(data: Record<string, unknown>): Promise<LlmProvider> {
+  return api("/api/llm/providers", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateLlmProvider(id: string, data: Record<string, unknown>): Promise<LlmProvider> {
+  return api(`/api/llm/providers/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function testLlmProvider(id: string): Promise<LlmTestResult> {
+  return api(`/api/llm/providers/${id}/test`, { method: "POST", body: JSON.stringify({}) });
 }

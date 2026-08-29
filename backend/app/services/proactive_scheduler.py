@@ -114,8 +114,15 @@ def start_proactive_scheduler() -> None:
 
 
 def stop_proactive_scheduler() -> None:
+    global _thread
     _stop.set()
+    if _thread:
+        _thread.join(timeout=5)
     logger.info("Proactive scheduler stopped")
+
+
+def is_scheduler_running() -> bool:
+    return _thread is not None and _thread.is_alive()
 
 
 def run_proactive_tick_once(db=None) -> list[dict]:

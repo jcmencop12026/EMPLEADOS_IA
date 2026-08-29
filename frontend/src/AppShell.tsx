@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { fetchUnreadCount } from "./api";
+import { filterMenuByPermissions } from "./auth/permissions";
 import { getCachedUser, logout } from "./auth/session";
 
 type NavItem = { to: string; label: string; end?: boolean };
@@ -53,10 +54,12 @@ const MENU: NavSection[] = [
     id: "admin",
     label: "Administración",
     items: [
+      { to: "/administracion/empresas", label: "Empresas" },
       { to: "/administracion/usuarios", label: "Usuarios" },
       { to: "/administracion/roles", label: "Roles y permisos" },
       { to: "/administracion/organizacion", label: "Organización" },
       { to: "/administracion/configuracion", label: "Configuración" },
+      { to: "/administracion/proveedores-ia", label: "Proveedores IA" },
       { to: "/administracion/seguridad", label: "Seguridad" },
     ],
   },
@@ -78,6 +81,19 @@ export function AppShell() {
   const [sections, setSections] = useState<Record<string, boolean>>(loadSections);
   const [unread, setUnread] = useState(0);
   const user = getCachedUser();
+  const permissionSet = useMemo(
+    () => new Set(user?.permissions ?? []),
+    [user?.permissions],
+  );
+
+  const visibleMenu = useMemo(
+    () =>
+      MENU.map((section) => ({
+        ...section,
+        items: filterMenuByPermissions(section.items, permissionSet),
+      })).filter((section) => section.items.length > 0),
+    [permissionSet],
+  );
 
   useEffect(() => {
     localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0");
@@ -159,7 +175,7 @@ export function AppShell() {
           </button>
         </div>
         <nav className="nav-hierarchical">
-          {MENU.map(renderSection)}
+          {visibleMenu.map(renderSection)}
         </nav>
         <div className="sidebar-footer">
           {user && (

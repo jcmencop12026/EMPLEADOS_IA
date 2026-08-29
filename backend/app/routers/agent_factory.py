@@ -19,6 +19,9 @@ def coordinator_route(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    check_permission(user, "operations.execute", db)
+    if body.auto_execute:
+        check_permission(user, "operations.manage", db)
     result = route_task(
         db,
         organization_id=user.organization_id,
