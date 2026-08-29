@@ -89,6 +89,18 @@ def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
 
     if not user.is_active or user.status != "ACTIVE":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario inactivo o bloqueado")
+
+    from app.services import sso_login_service as sso_svc
+    local_ok, local_msg = sso_svc.is_local_login_allowed(db, user)
+    if not local_ok:
+        record_login_attempt(db, username=body.username, ip_address=ip, success=False)
+        log_security_event(
+            db, organization_id=user.organization_id, user_id=user.id,
+            event_type="LOGIN_LOCAL_BLOQUEADO", ip_address=ip, detail="solo_sso",
+        )
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=local_msg)
+
     org = db.query(Organization).filter(Organization.id == user.organization_id).first()
     if not org or org.status != "ACTIVE":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="La empresa está inactiva o no está disponible")
@@ -242,6 +254,18 @@ def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserMe)
 def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     org = db.query(Organization).filter(Organization.id == user.organization_id).first()
+    auth_via_sso = False
+    idp_name = None
+    from app.identity_models import UserExternalIdentity, IdentityProvider
+    link = (
+        db.query(UserExternalIdentity, IdentityProvider)
+        .join(IdentityProvider, IdentityProvider.id == UserExternalIdentity.provider_id)
+        .filter(UserExternalIdentity.user_id == user.id)
+        .first()
+    )
+    if link:
+        auth_via_sso = True
+        idp_name = link[1].name
     return UserMe(
         id=user.id,
         username=user.username,
@@ -252,4 +276,6 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         full_name=user.full_name,
         status=user.status,
         permissions=sorted(user_permissions(user, db)),
+        auth_via_sso=auth_via_sso,
+        identity_provider_name=idp_name,
     )

@@ -79,6 +79,8 @@ class UserSession(Base):
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     revoke_reason: Mapped[str | None] = mapped_column(String(120), nullable=True)
     mfa_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    auth_method: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    identity_provider_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
 
 
 class SecurityEvent(Base):
