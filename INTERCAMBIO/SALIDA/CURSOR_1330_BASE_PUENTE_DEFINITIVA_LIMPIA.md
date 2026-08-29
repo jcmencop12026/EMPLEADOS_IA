@@ -278,7 +278,7 @@ RAMA:
 cursor/1330-base-puente-definitiva-limpia
 
 HEAD:
-<ver commit documentación tras push>
+eaff3e56b1885164a33d42a5929718eb5805f610
 
 COMMIT FUNCIONAL PORTÁTIL:
 4f802c44070d20e502f139e5313b9da5ff285452
