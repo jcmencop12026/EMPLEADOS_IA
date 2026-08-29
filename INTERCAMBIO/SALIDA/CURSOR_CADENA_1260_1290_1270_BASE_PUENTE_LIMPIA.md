@@ -63,9 +63,9 @@ Cuando Fase 1 esté auditada, la primera migración portada deberá re-parentars
 | PORT-1290 | `03427289c06ee0f7a992d63def699844c18e7534` | cherry-pick `fa6db17` (feat, no tip docs `7141b43`) |
 | PORT-1270 | `2e8dcb236702027d00e5aeb716527fc76284682e` | cherry-pick `cd13421` (feat, no tip docs `f89639a`) |
 | AJUSTE+PRUEBAS | `aad23271d18e9589de037c877a3cfcb662150675` | reanclaje Alembic, fixes observabilidad/CC, prueba focal |
-| DOC | `3a64d98` | entregable `CURSOR_CADENA_1260_1290_1270_BASE_PUENTE_LIMPIA.md` |
+| DOC | `060d896c8fbb7604c8dd22acaae5df789f7c4183` | entregable sincronizado |
 
-**HEAD rama portátil:** `3a64d98` (incluye entregable documental)
+**HEAD rama portátil:** `060d896c8fbb7604c8dd22acaae5df789f7c4183`
 
 ---
 
