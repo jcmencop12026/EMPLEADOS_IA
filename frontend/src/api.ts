@@ -109,6 +109,8 @@ export type UserMe = {
   full_name?: string | null;
   status?: string;
   permissions: string[];
+  auth_via_sso?: boolean;
+  identity_provider_name?: string | null;
 };
 
 export type Organization = {
@@ -579,6 +581,254 @@ export async function updateOrgConfig(data: Partial<OrgConfig>): Promise<OrgConf
 
 export async function fetchSecuritySummary(): Promise<SecuritySummary> {
   return api<SecuritySummary>("/api/admin/security");
+}
+
+export type MfaStatus = {
+  enabled: boolean;
+  confirmed_at?: string | null;
+  recovery_codes_remaining: number;
+  enrollment_pending: boolean;
+  mfa_required_by_policy: boolean;
+};
+
+export type UserSession = {
+  id: string;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  created_at: string;
+  last_activity_at: string;
+  expires_at: string;
+  mfa_verified: boolean;
+  current: boolean;
+};
+
+export type SecurityPolicy = {
+  mfa_mode: string;
+  mfa_required_roles: string[];
+  session_duration_minutes: number;
+  max_active_sessions: number;
+  login_max_attempts: number;
+  lockout_minutes: number;
+  revoke_sessions_on_password_change: boolean;
+  excess_session_policy: string;
+};
+
+export type SecurityEvent = {
+  id: string;
+  event_type: string;
+  user_id?: string | null;
+  detail?: string | null;
+  ip_address?: string | null;
+  created_at: string;
+};
+
+export async function fetchMfaStatus(): Promise<MfaStatus> {
+  return api<MfaStatus>("/api/security/mfa/status");
+}
+
+export async function startMfaEnrollment(): Promise<{ secret: string; provisioning_uri: string; qr_data_url: string }> {
+  return api("/api/security/mfa/enroll/start", { method: "POST" });
+}
+
+export async function confirmMfaEnrollment(code: string): Promise<{ recovery_codes: string[] }> {
+  return api("/api/security/mfa/enroll/confirm", { method: "POST", body: JSON.stringify({ code }) });
+}
+
+export async function disableMfa(password: string): Promise<void> {
+  await api("/api/security/mfa/disable", { method: "POST", body: JSON.stringify({ password }) });
+}
+
+export async function regenerateMfaRecovery(password: string): Promise<{ recovery_codes: string[] }> {
+  return api("/api/security/mfa/recovery/regenerate", { method: "POST", body: JSON.stringify({ password }) });
+}
+
+export async function fetchMySessions(): Promise<UserSession[]> {
+  return api<UserSession[]>("/api/security/sessions");
+}
+
+export async function revokeMySession(sessionId: string): Promise<void> {
+  await api(`/api/security/sessions/${sessionId}`, { method: "DELETE" });
+}
+
+export async function revokeOtherSessions(): Promise<void> {
+  await api("/api/security/sessions/revoke-others", { method: "POST" });
+}
+
+export async function changePassword(current: string, newPassword: string, revokeOthers = true): Promise<void> {
+  await api("/api/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({
+      current_password: current,
+      new_password: newPassword,
+      revoke_other_sessions: revokeOthers,
+    }),
+  });
+}
+
+export async function verifyMfaLogin(code: string, mfaToken: string): Promise<{ access_token: string }> {
+  return api("/api/auth/mfa/verify", {
+    method: "POST",
+    body: JSON.stringify({ code, mfa_token: mfaToken }),
+  });
+}
+
+export async function fetchSecurityPolicy(): Promise<SecurityPolicy> {
+  return api<SecurityPolicy>("/api/security/policy");
+}
+
+export async function updateSecurityPolicy(data: Partial<SecurityPolicy>): Promise<SecurityPolicy> {
+  return api<SecurityPolicy>("/api/security/policy", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function fetchSecurityEvents(limit = 50): Promise<SecurityEvent[]> {
+  return api<SecurityEvent[]>(`/api/security/events?limit=${limit}`);
+}
+
+export async function fetchAdminSessions(): Promise<UserSession[]> {
+  return api<UserSession[]>("/api/security/admin/sessions");
+}
+
+export async function revokeAdminSession(sessionId: string): Promise<void> {
+  await api(`/api/security/admin/sessions/${sessionId}`, { method: "DELETE" });
+}
+
+export type IdentityPolicy = {
+  auth_mode: string;
+  mfa_sso_mode: string;
+  auto_provision_enabled: boolean;
+  default_role_on_provision: string;
+  allowed_domains: string[];
+  org_discovery_code: string | null;
+  attribute_mapping: Record<string, unknown>;
+  break_glass_enabled: boolean;
+  break_glass_configured: boolean;
+  scim_prepared: boolean;
+  scim_enabled?: boolean;
+};
+
+export type ScimStatus = {
+  scim_enabled: boolean;
+  scim_base_url: string;
+  metrics: Record<string, number>;
+  tokens: {
+    id: string;
+    name: string;
+    token_prefix: string;
+    masked: string;
+    active: boolean;
+    expires_at: string | null;
+    last_used_at: string | null;
+    created_at: string;
+  }[];
+  conflicts_pending: number;
+  recent_events: { action: string; result: string; detail: string | null; created_at: string }[];
+};
+
+export type ScimRoleMapping = { id: string; external_group: string; role_code: string };
+
+export type ScimConflict = {
+  id: string;
+  conflict_type: string;
+  external_id: string | null;
+  detail: string | null;
+  created_at: string;
+};
+
+export type IdentityProvider = {
+  id: string;
+  code: string;
+  name: string;
+  provider_type: string;
+  vendor_hint: string | null;
+  status: string;
+  is_default: boolean;
+  secret_configured: boolean;
+  config: Record<string, unknown>;
+  health: Record<string, string | null>;
+};
+
+export type IdentityLoginEvent = {
+  id: string;
+  login_method: string;
+  result: string;
+  detail: string | null;
+  created_at: string;
+};
+
+export async function fetchIdentityPolicy(): Promise<IdentityPolicy> {
+  return api<IdentityPolicy>("/api/identidad/politica");
+}
+
+export async function updateIdentityPolicy(data: Partial<IdentityPolicy>): Promise<IdentityPolicy> {
+  return api<IdentityPolicy>("/api/identidad/politica", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function fetchIdentityProviders(): Promise<IdentityProvider[]> {
+  return api<IdentityProvider[]>("/api/identidad/proveedores");
+}
+
+export async function createIdentityProvider(data: Record<string, unknown>): Promise<IdentityProvider> {
+  return api<IdentityProvider>("/api/identidad/proveedores", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function testIdentityProvider(id: string): Promise<{ resultado: string; mensaje: string }> {
+  return api(`/api/identidad/proveedores/${id}/probar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function activateIdentityProvider(id: string): Promise<IdentityProvider> {
+  return api<IdentityProvider>(`/api/identidad/proveedores/${id}/activar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function upsertGroupRoleMapping(providerId: string, data: { external_group: string; role_code: string }) {
+  return api(`/api/identidad/proveedores/${providerId}/mapeos-roles`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchIdentityEvents(limit = 50): Promise<IdentityLoginEvent[]> {
+  return api<IdentityLoginEvent[]>(`/api/identidad/eventos?limit=${limit}`);
+}
+
+export async function discoverLogin(orgCode: string): Promise<{ auth_mode: string | null; providers: { id: string; name: string; provider_type: string }[] }> {
+  return api("/api/identidad/descubrir", { method: "POST", body: JSON.stringify({ org_code: orgCode }) });
+}
+
+export async function beginPublicOidc(providerId: string, orgCode: string): Promise<{ authorization_url: string; state: string }> {
+  return api(`/api/identidad/public/oidc/${providerId}/iniciar`, { method: "POST", body: JSON.stringify({ org_code: orgCode }) });
+}
+
+export async function completeOidcCallback(state: string, code: string): Promise<{ access_token: string }> {
+  return api("/api/identidad/oidc/callback", { method: "POST", body: JSON.stringify({ state, code }) });
+}
+
+export async function fetchScimStatus(): Promise<ScimStatus> {
+  return api<ScimStatus>("/api/identidad/scim/estado");
+}
+
+export async function configureScim(data: { scim_enabled: boolean }): Promise<{ scim_enabled: boolean; message: string }> {
+  return api("/api/identidad/scim/configuracion", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function createScimToken(data?: { name?: string; expires_days?: number }): Promise<{ id: string; token: string; message: string }> {
+  return api("/api/identidad/scim/tokens", { method: "POST", body: JSON.stringify(data ?? {}) });
+}
+
+export async function rotateScimToken(tokenId: string): Promise<{ id: string; token: string; message: string }> {
+  return api(`/api/identidad/scim/tokens/${tokenId}/rotar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function revokeScimToken(tokenId: string): Promise<{ message: string }> {
+  return api(`/api/identidad/scim/tokens/${tokenId}/revocar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchScimRoleMappings(): Promise<ScimRoleMapping[]> {
+  return api<ScimRoleMapping[]>("/api/identidad/scim/mapeos-roles");
+}
+
+export async function upsertScimRoleMapping(data: { external_group: string; role_code: string }): Promise<ScimRoleMapping> {
+  return api<ScimRoleMapping>("/api/identidad/scim/mapeos-roles", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchScimConflicts(): Promise<ScimConflict[]> {
+  return api<ScimConflict[]>("/api/identidad/scim/conflictos");
 }
 
 export async function fetchPlatformOrganizations(): Promise<PlatformOrganization[]> {
@@ -1728,4 +1978,138 @@ export type CentroControlResumen = {
 
 export async function fetchCentroControlResumen(periodo = "mtd"): Promise<CentroControlResumen> {
   return api(`/api/centro-control/resumen-ejecutivo?periodo=${encodeURIComponent(periodo)}`);
+}
+
+export type ContinuidadServicio = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  tipo: string;
+  criticidad: string;
+  rto_valor: number | null;
+  rto_unidad: string | null;
+  rpo_valor: number | null;
+  rpo_unidad: string | null;
+  estado_operacional: string;
+  proveedor_ref?: string | null;
+};
+
+export type ContinuidadTablero = {
+  servicios_criticos: ContinuidadServicio[];
+  servicios_degradados: ContinuidadServicio[];
+  incidentes_abiertos: number;
+  backups_recientes: Array<{ recurso: string; resultado: string; estado_registro: string }>;
+  backups_fallidos: number;
+  restauraciones_verificadas: number;
+  acciones_pendientes: number;
+  alertas: Array<{ tipo: string; mensaje: string }>;
+  centro_control_adapter?: Record<string, unknown>;
+  integracion_1330_prep?: Record<string, unknown>;
+  integracion_1260_prep?: Record<string, unknown>;
+};
+
+export async function fetchContinuidadTablero(): Promise<ContinuidadTablero> {
+  return api("/api/continuidad/tablero");
+}
+
+// --- Gobierno de datos (1350) ---
+
+export type GovDashboard = {
+  fuentes_catalogadas: number;
+  sin_clasificar: number;
+  riesgo_alto: number;
+  retencion_vencida: number;
+  exportaciones: number;
+  solicitudes_abiertas: number;
+  hallazgos_abiertos: number;
+  acciones_pendientes: number;
+};
+
+export type GovClassification = {
+  id: string;
+  code: string;
+  name: string;
+  sensitivity_rank: number;
+};
+
+export type GovDataCategory = {
+  id: string;
+  code: string;
+  name: string;
+};
+
+export type GovCatalogEntry = {
+  id: string;
+  name: string;
+  classification_name?: string | null;
+  classification_level_id?: string | null;
+  data_environment: string;
+  status: string;
+  functional_owner?: string | null;
+  secret_status?: string | null;
+};
+
+export type GovRetentionPolicy = {
+  id: string;
+  name: string;
+  scope_type: string;
+  duration_unit: string;
+  duration_value?: number | null;
+  disposition: string;
+};
+
+export type GovSubjectRequest = {
+  id: string;
+  request_type: string;
+  status: string;
+  subject_ref?: string | null;
+  created_at?: string | null;
+};
+
+export type GovFinding = {
+  id: string;
+  finding_type: string;
+  severity: string;
+  description: string;
+  status: string;
+};
+
+export async function fetchGovDashboard(): Promise<GovDashboard> {
+  return api("/api/gobierno-datos/dashboard");
+}
+
+export async function fetchGovCatalog(): Promise<GovCatalogEntry[]> {
+  return api("/api/gobierno-datos/catalogo");
+}
+
+export async function createGovCatalogEntry(data: Record<string, unknown>): Promise<GovCatalogEntry> {
+  return api("/api/gobierno-datos/catalogo", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchGovClassifications(): Promise<GovClassification[]> {
+  return api("/api/gobierno-datos/clasificaciones");
+}
+
+export async function fetchGovCategories(): Promise<GovDataCategory[]> {
+  return api("/api/gobierno-datos/categorias");
+}
+
+export async function fetchGovRetentionPolicies(): Promise<GovRetentionPolicy[]> {
+  return api("/api/gobierno-datos/retencion");
+}
+
+export async function fetchGovAccessLogs(): Promise<Array<Record<string, unknown>>> {
+  return api("/api/gobierno-datos/accesos");
+}
+
+export async function fetchGovSubjectRequests(): Promise<GovSubjectRequest[]> {
+  return api("/api/gobierno-datos/solicitudes");
+}
+
+export async function fetchGovFindings(): Promise<GovFinding[]> {
+  return api("/api/gobierno-datos/hallazgos");
+}
+
+export async function scanGovFindings(): Promise<GovFinding[]> {
+  return api("/api/gobierno-datos/hallazgos/escanear", { method: "POST", body: JSON.stringify({}) });
 }
