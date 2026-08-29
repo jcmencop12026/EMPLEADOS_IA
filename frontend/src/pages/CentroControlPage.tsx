@@ -119,12 +119,15 @@ export function CentroControlPage() {
               {!data.oportunidades?.disponible ? (
                 <p className="muted">{data.oportunidades?.estado ?? "Sin información disponible"}</p>
               ) : (
-                <dl className="detail-grid">
-                  <dt>Detectadas</dt><dd>{data.oportunidades.resumen?.oportunidades_detectadas ?? "—"}</dd>
-                  <dt>Materializadas</dt><dd>{data.oportunidades.resumen?.materializadas ?? "—"}</dd>
-                  <dt>Valor potencial</dt><dd>{data.oportunidades.resumen?.valor_potencial_total ?? "—"}</dd>
-                  <dt>Pend. aprobación</dt><dd>{data.oportunidades.resumen?.pendientes_aprobacion ?? "—"}</dd>
-                </dl>
+                <>
+                  <dl className="detail-grid">
+                    <dt>Detectadas</dt><dd>{data.oportunidades.resumen?.oportunidades_detectadas ?? "—"}</dd>
+                    <dt>En seguimiento</dt><dd>{data.oportunidades.estados_operativos?.seguimiento ?? "—"}</dd>
+                    <dt>Materializadas</dt><dd>{data.oportunidades.resumen?.materializadas ?? "—"}</dd>
+                    <dt>Valor potencial</dt><dd>{data.oportunidades.resumen?.valor_potencial_total ?? "—"}</dd>
+                    <dt>Pend. aprobación</dt><dd>{data.oportunidades.resumen?.pendientes_aprobacion ?? "—"}</dd>
+                  </dl>
+                </>
               )}
               <p><Link to="/oportunidades">Ir al centro de oportunidades</Link></p>
             </section>
@@ -133,10 +136,18 @@ export function CentroControlPage() {
           <div className="cc-grid-2">
             <section className="panel compact-panel">
               <h2 className="section-title">Impacto (línea base)</h2>
-              <p className="muted">{data.impacto?.estado ?? "Sin información disponible"}</p>
-              {data.impacto?.disponible && (
-                <p>Líneas base activas: {data.impacto.lineas_base_activas ?? "—"}</p>
+              {!data.impacto?.disponible ? (
+                <p className="muted">{data.impacto?.estado ?? "Sin información disponible"}</p>
+              ) : (
+                <dl className="detail-grid">
+                  <dt>Líneas base activas</dt><dd>{data.impacto.lineas_base_activas ?? "—"}</dd>
+                  <dt>Mediciones</dt><dd>{data.impacto.mediciones ?? "—"}</dd>
+                  <dt>Impactos reales</dt><dd>{data.impacto.impactos_reales ?? "—"}</dd>
+                  <dt>Pend. validación</dt><dd>{data.impacto.mediciones_pendientes_validacion ?? "—"}</dd>
+                  <dt>Con atribución</dt><dd>{data.impacto.impactos_con_atribucion ?? "—"}</dd>
+                </dl>
               )}
+              <p><Link to="/lineas-base">Ver líneas base</Link></p>
             </section>
 
             <section className="panel compact-panel">
@@ -158,11 +169,32 @@ export function CentroControlPage() {
           <div className="cc-grid-2">
             <section className="panel compact-panel">
               <h2 className="section-title">Valor y retorno</h2>
-              <p className="muted">{data.valor_retorno?.estado ?? "Sin información disponible"}</p>
+              {!data.valor_retorno?.disponible ? (
+                <p className="muted">{data.valor_retorno?.estado ?? "Sin información disponible"}</p>
+              ) : (
+                <dl className="detail-grid">
+                  <dt>Valor esperado</dt><dd>{data.valor_retorno.valor_esperado ?? "—"}</dd>
+                  <dt>Valor materializado</dt><dd>{data.valor_retorno.valor_materializado ?? "—"}</dd>
+                  <dt>Valor atribuible</dt><dd>{data.valor_retorno.valor_atribuible ?? "—"}</dd>
+                  <dt>Beneficio neto</dt><dd>{data.valor_retorno.beneficio_neto ?? "—"}</dd>
+                  <dt>Retorno</dt><dd>{data.valor_retorno.retorno_porcentaje != null ? `${data.valor_retorno.retorno_porcentaje}%` : "—"}</dd>
+                </dl>
+              )}
+              <p><Link to="/costos-valor">Ver valoración</Link></p>
             </section>
             <section className="panel compact-panel">
               <h2 className="section-title">Diagnóstico</h2>
-              <p className="muted">{data.diagnostico?.estado ?? "Sin información disponible"}</p>
+              {!data.diagnostico?.disponible ? (
+                <p className="muted">{data.diagnostico?.estado ?? "Sin información disponible"}</p>
+              ) : (
+                <dl className="detail-grid">
+                  <dt>Diagnósticos activos</dt><dd>{data.diagnostico.diagnosticos_activos ?? "—"}</dd>
+                  <dt>Hallazgos</dt><dd>{data.diagnostico.hallazgos ?? "—"}</dd>
+                  <dt>Riesgos</dt><dd>{data.diagnostico.riesgos ?? "—"}</dd>
+                  <dt>Oportunidades generadas</dt><dd>{data.diagnostico.oportunidades_generadas ?? "—"}</dd>
+                </dl>
+              )}
+              <p><Link to="/diagnosticos">Ver diagnósticos</Link></p>
             </section>
           </div>
 
@@ -171,13 +203,43 @@ export function CentroControlPage() {
             {!data.senales ? (
               <p className="muted">Sin información disponible</p>
             ) : (
-              <dl className="detail-grid">
-                <dt>Total señales</dt><dd>{data.senales.total ?? "—"}</dd>
-                <dt>Sin procesar</dt><dd>{data.senales.sin_procesar ?? "—"}</dd>
-                <dt>Procesadas</dt><dd>{data.senales.procesadas ?? "—"}</dd>
-              </dl>
+              <>
+                <dl className="detail-grid">
+                  <dt>Total señales</dt><dd>{data.senales.total ?? "—"}</dd>
+                  <dt>Sin procesar</dt><dd>{data.senales.sin_procesar ?? "—"}</dd>
+                  <dt>Procesadas</dt><dd>{data.senales.procesadas ?? "—"}</dd>
+                  <dt>Errores ingesta</dt><dd>{data.senales.errores_ingesta ?? "—"}</dd>
+                  <dt>REAL</dt><dd>{data.senales.por_modo_ingesta?.REAL ?? "—"}</dd>
+                  <dt>SINTÉTICO</dt><dd>{data.senales.por_modo_ingesta?.SINTETICO ?? "—"}</dd>
+                  <dt>PRUEBA</dt><dd>{data.senales.por_modo_ingesta?.PRUEBA ?? "—"}</dd>
+                </dl>
+                <p><Link to="/senales">Ver señales</Link></p>
+              </>
             )}
           </section>
+
+          {data.cadena_ejecutiva && data.cadena_ejecutiva.length > 0 && (
+            <section className="panel compact-panel">
+              <h2 className="section-title">Cadena ejecutiva</h2>
+              <table className="data-table compact-table">
+                <thead><tr><th>Oportunidad</th><th>Etapas</th></tr></thead>
+                <tbody>
+                  {data.cadena_ejecutiva.map((cadena) => (
+                    <tr key={cadena.oportunidad_id as string}>
+                      <td><Link to={`/oportunidades/${cadena.oportunidad_id}`}>{String(cadena.titulo)}</Link></td>
+                      <td>
+                        {(cadena.etapas as Array<{ etapa: string; enlace: string }>).map((e) => (
+                          <Link key={`${cadena.oportunidad_id}-${e.etapa}`} to={e.enlace} className="cc-chain-link">
+                            {e.etapa}
+                          </Link>
+                        ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          )}
 
           <section className="panel compact-panel">
             <h2 className="section-title">Salud de la plataforma</h2>

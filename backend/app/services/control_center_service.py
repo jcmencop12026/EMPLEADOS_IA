@@ -229,6 +229,80 @@ def _atencion_requerida(db: Session, org_id: str, permissions: set[str]) -> list
                     "origen": "finops",
                 })
 
+    if _has(permissions, "linea_base.view"):
+        from app.baseline_models import LineaBaseMedicion
+
+        pendientes_impacto = (
+            db.query(LineaBaseMedicion)
+            .filter(
+                LineaBaseMedicion.organization_id == org_id,
+                LineaBaseMedicion.estado == "REGISTRADA",
+            )
+            .order_by(LineaBaseMedicion.created_at.desc())
+            .limit(5)
+            .all()
+        )
+        for med in pendientes_impacto:
+            prio += 1
+            items.append({
+                "prioridad": prio,
+                "tipo": "impacto_pendiente_validacion",
+                "titulo": f"Medición pendiente de validación ({med.id[:8]})",
+                "fecha": med.created_at.isoformat() if med.created_at else None,
+                "enlace": f"/lineas-base/{med.linea_base_id}",
+                "origen": "impacto",
+            })
+
+    if _has(permissions, "diagnosticos.view"):
+        from app.diagnostic_models import Diagnostic
+
+        diag_prio = (
+            db.query(Diagnostic)
+            .filter(
+                Diagnostic.organization_id == org_id,
+                Diagnostic.estado.in_(["GENERADO", "VALIDADO"]),
+            )
+            .order_by(Diagnostic.prioridad_score.desc().nullslast())
+            .limit(5)
+            .all()
+        )
+        for d in diag_prio:
+            if d.prioridad_score and float(d.prioridad_score) >= 0.7:
+                prio += 1
+                items.append({
+                    "prioridad": prio,
+                    "tipo": "diagnostico_prioritario",
+                    "titulo": d.resumen or d.codigo,
+                    "fecha": d.created_at.isoformat() if d.created_at else None,
+                    "enlace": f"/diagnosticos/{d.id}",
+                    "origen": "diagnostico",
+                })
+
+    if _has(permissions, "oportunidades.view"):
+        from app.opportunity_models import ProactiveSignal
+
+        errores_senal = (
+            db.query(ProactiveSignal)
+            .filter(
+                ProactiveSignal.organization_id == org_id,
+                ProactiveSignal.estado_procesamiento.in_(["RECHAZADA", "DUPLICADA"]),
+            )
+            .order_by(ProactiveSignal.created_at.desc())
+            .limit(3)
+            .all()
+        )
+        for sig in errores_senal:
+            prio += 1
+            items.append({
+                "prioridad": prio,
+                "tipo": "senal_ingesta",
+                "titulo": f"Señal {sig.estado_procesamiento.lower()}: {sig.tipo}",
+                "detalle": sig.rejection_reason,
+                "fecha": sig.created_at.isoformat() if sig.created_at else None,
+                "enlace": f"/senales/{sig.id}",
+                "origen": "senales",
+            })
+
     if _has(permissions, "notification.view"):
         alerts = (
             db.query(Notification)
@@ -330,6 +404,74 @@ def _audit_section(db: Session, org_id: str, limit: int = 8) -> list[dict[str, A
         }
         for r in rows
     ]
+
+
+def _cadena_ejecutiva(db: Session, org_id: str, permissions: set[str], *, period_start: datetime | None) -> list[dict[str, Any]]:
+    """Representación conceptual de la cadena ejecutiva con enlaces a módulos origen."""
+    if not _has(permissions, "oportunidades.view"):
+        return []
+    from app.baseline_models import LineaBase
+    from app.diagnostic_models import DiagnosticOpportunityLink
+    from app.opportunity_models import Opportunity, ProactiveSignal
+    from app.valuation_models import OpportunityValuation
+
+    opp_q = db.query(Opportunity).filter(
+        Opportunity.organization_id == org_id,
+        Opportunity.estado.in_(["EN_SEGUIMIENTO", "MATERIALIZADA", "EN_EJECUCION", "CERRADA"]),
+    )
+    if period_start:
+        opp_q = opp_q.filter(Opportunity.updated_at >= period_start)
+    opportunities = opp_q.order_by(Opportunity.updated_at.desc().nullslast()).limit(5).all()
+    chains: list[dict[str, Any]] = []
+    for opp in opportunities:
+        etapas: list[dict[str, Any]] = []
+        if opp.signal_id and _has(permissions, "oportunidades.view"):
+            sig = db.query(ProactiveSignal).filter(ProactiveSignal.id == opp.signal_id).first()
+            if sig:
+                etapas.append({"etapa": "SEÑAL", "id": sig.id, "enlace": f"/senales/{sig.id}"})
+        if _has(permissions, "diagnosticos.view"):
+            link = (
+                db.query(DiagnosticOpportunityLink)
+                .filter(
+                    DiagnosticOpportunityLink.organization_id == org_id,
+                    DiagnosticOpportunityLink.opportunity_id == opp.id,
+                )
+                .first()
+            )
+            if link:
+                etapas.append({"etapa": "DIAGNÓSTICO", "id": link.diagnostic_id, "enlace": f"/diagnosticos/{link.diagnostic_id}"})
+        etapas.append({"etapa": "OPORTUNIDAD", "id": opp.id, "enlace": f"/oportunidades/{opp.id}"})
+        if opp.work_plan_id and _has(permissions, "operations.view"):
+            etapas.append({"etapa": "EJECUCIÓN", "id": opp.work_plan_id, "enlace": f"/ejecuciones/{opp.work_plan_id}"})
+        if opp.estado in ("MATERIALIZADA", "CERRADA"):
+            etapas.append({"etapa": "RESULTADO", "id": opp.id, "enlace": f"/oportunidades/{opp.id}"})
+        if _has(permissions, "linea_base.view"):
+            lb = (
+                db.query(LineaBase)
+                .filter(LineaBase.organization_id == org_id, LineaBase.opportunity_id == opp.id)
+                .first()
+            )
+            if lb:
+                etapas.append({"etapa": "MEDICIÓN", "id": lb.id, "enlace": f"/lineas-base/{lb.id}"})
+                etapas.append({"etapa": "IMPACTO", "id": lb.id, "enlace": f"/lineas-base/{lb.id}"})
+        if _has(permissions, "valoracion.view"):
+            val = (
+                db.query(OpportunityValuation)
+                .filter(OpportunityValuation.organization_id == org_id, OpportunityValuation.opportunity_id == opp.id)
+                .first()
+            )
+            if val:
+                etapas.append({"etapa": "VALOR", "id": val.id, "enlace": f"/oportunidades/{opp.id}"})
+        if _has(permissions, "finops.view") and opp.id:
+            etapas.append({"etapa": "COSTO", "id": opp.id, "enlace": "/costos-valor"})
+        if len(etapas) >= 2:
+            chains.append({
+                "oportunidad_id": opp.id,
+                "titulo": opp.titulo,
+                "estado": opp.estado,
+                "etapas": etapas,
+            })
+    return chains
 
 
 def _build_indicators(ctx: dict[str, Any], permissions: set[str]) -> list[dict[str, Any]]:
@@ -444,7 +586,10 @@ def get_executive_summary(
         adapters.DiagnosticoAdapter(),
         adapters.SenalesAdapter(),
     ]
-    modulos = {a.modulo: a.fetch(db, org_id, permissions=permissions) for a in adapter_instances}
+    modulos = {
+        a.modulo: a.fetch(db, org_id, permissions=permissions, period_start=period_start)
+        for a in adapter_instances
+    }
 
     return {
         "generated_at": _utcnow().isoformat(),
@@ -468,17 +613,18 @@ def get_executive_summary(
         "valor_retorno": modulos.get("valor_retorno"),
         "diagnostico": modulos.get("diagnostico"),
         "senales": modulos.get("senales"),
+        "cadena_ejecutiva": _cadena_ejecutiva(db, org_id, permissions, period_start=period_start),
         "salud_plataforma": build_health_report(include_schedulers=True) if _has(permissions, "control_center.view") else None,
         "auditoria_reciente": _audit_section(db, org_id) if _has(permissions, "audit.view") else None,
         "llm": _llm_section(db, org_id) if _has(permissions, "llm.view") else None,
         "actividad_reciente": recent_events,
         "integraciones_futuras": {
-            "1100": "UI oportunidades — rama cursor/1100-cierre-operativo-oportunidades",
-            "1110": "FinOps extendido — integrar endpoints bloque 1110",
-            "1120": "Señales/ingesta — completar con bloque 1120",
-            "1200": "Línea base/impacto — rama cursor/1200-linea-base-impacto",
-            "1210": "Valor/retorno — motor económico bloque 1210",
-            "1220": "Diagnóstico ejecutivo — bloque 1220",
+            "1100": "Integrado — estados operativos oportunidades",
+            "1110": "Integrado — FinOps extendido",
+            "1120": "Integrado — señales e ingesta",
+            "1200": "Integrado — línea base e impacto",
+            "1210": "Integrado — valoración y retorno",
+            "1220": "Integrado — diagnóstico transversal",
         },
     }
 
