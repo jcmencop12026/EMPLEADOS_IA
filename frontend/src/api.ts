@@ -1252,6 +1252,8 @@ export type LlmProvider = {
   organization_id: string;
   name: string;
   provider_type: string;
+  provider_label?: string | null;
+  adapter_mode?: string | null;
   model_default: string | null;
   endpoint: string | null;
   timeout_seconds: number;
@@ -1261,7 +1263,55 @@ export type LlmProvider = {
   secret_ref: string | null;
   secret_configured: boolean;
   secret_masked: string | null;
+  health_status?: string | null;
+  health_detail?: string | null;
   config_json: Record<string, unknown> | null;
+};
+
+export type LlmProviderHealth = {
+  provider_id: string;
+  provider_type: string;
+  nombre: string;
+  etiqueta: string;
+  modo?: string | null;
+  estado: string;
+  detalle: string;
+  habilitado: boolean;
+  configurado: boolean;
+  es_fallback: boolean;
+  prioridad: number;
+};
+
+export type LlmObservabilitySummary = {
+  periodo?: string | null;
+  total_inferencias: number;
+  exitosas: number;
+  errores: number;
+  tasa_exito: number | null;
+  latencia_promedio_ms: number | null;
+  tokens_total: number | null;
+  costo_total: number | null;
+  fallbacks: number;
+  por_proveedor: Record<string, number>;
+  errores_por_categoria: Record<string, number>;
+};
+
+export type LlmRoutingPolicy = {
+  id: string;
+  name: string;
+  preferred_provider: string | null;
+  preferred_model: string | null;
+  required_capability: string | null;
+  fallback_allowed: boolean;
+  max_cost_per_1k_tokens: number | null;
+  credential_scope: string;
+  priority: number;
+  is_active: boolean;
+};
+
+export type LlmRoutingExplain = {
+  seleccionado: Record<string, unknown> | null;
+  razones: string[];
 };
 
 export type LlmTestResult = {
@@ -1288,4 +1338,25 @@ export async function updateLlmProvider(id: string, data: Record<string, unknown
 
 export async function testLlmProvider(id: string): Promise<LlmTestResult> {
   return api(`/api/llm/providers/${id}/test`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchLlmObservability(periodo = "mtd"): Promise<LlmObservabilitySummary> {
+  return api(`/api/llm/observability?periodo=${encodeURIComponent(periodo)}`);
+}
+
+export async function fetchLlmProvidersHealth(): Promise<LlmProviderHealth[]> {
+  return api("/api/llm/health");
+}
+
+export async function fetchLlmRoutingPolicies(): Promise<LlmRoutingPolicy[]> {
+  return api("/api/llm/routing/policies");
+}
+
+export async function createLlmRoutingPolicy(data: Record<string, unknown>): Promise<LlmRoutingPolicy> {
+  return api("/api/llm/routing/policies", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchLlmRoutingExplain(preferredProvider?: string): Promise<LlmRoutingExplain> {
+  const q = preferredProvider ? `?preferred_provider=${encodeURIComponent(preferredProvider)}` : "";
+  return api(`/api/llm/routing/explain${q}`);
 }

@@ -2,15 +2,36 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ApiError,
   createLlmProvider,
+  createLlmRoutingPolicy,
+  fetchLlmObservability,
   fetchLlmProviders,
+  fetchLlmProvidersHealth,
+  fetchLlmRoutingExplain,
+  fetchLlmRoutingPolicies,
   testLlmProvider,
   updateLlmProvider,
+  type LlmObservabilitySummary,
   type LlmProvider,
+  type LlmProviderHealth,
+  type LlmRoutingPolicy,
 } from "../../api";
 import { ErrorState, LoadingState } from "../../components/AsyncState";
 
+const PROVIDER_OPTIONS = [
+  { value: "openai", label: "OpenAI (operativo)" },
+  { value: "ollama", label: "Ollama (opcional)" },
+  { value: "anthropic", label: "Anthropic (preparado)" },
+  { value: "gemini", label: "Gemini (preparado)" },
+  { value: "azure-openai", label: "Azure OpenAI (preparado)" },
+];
+
 export function AdminLlmProvidersPage() {
+  const [tab, setTab] = useState<"proveedores" | "salud" | "observabilidad" | "enrutamiento">("proveedores");
   const [providers, setProviders] = useState<LlmProvider[]>([]);
+  const [health, setHealth] = useState<LlmProviderHealth[]>([]);
+  const [observability, setObservability] = useState<LlmObservabilitySummary | null>(null);
+  const [policies, setPolicies] = useState<LlmRoutingPolicy[]>([]);
+  const [routingExplain, setRoutingExplain] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [testingId, setTestingId] = useState<string | null>(null);
@@ -30,9 +51,20 @@ export function AdminLlmProvidersPage() {
 
   const load = useCallback(() => {
     setLoading(true);
-    fetchLlmProviders()
-      .then(setProviders)
-      .catch((e) => setError(e instanceof ApiError ? e.message : "Error al cargar proveedores"))
+    setError(null);
+    Promise.all([
+      fetchLlmProviders(),
+      fetchLlmProvidersHealth(),
+      fetchLlmObservability("7d"),
+      fetchLlmRoutingPolicies(),
+    ])
+      .then(([p, h, o, pol]) => {
+        setProviders(p);
+        setHealth(h);
+        setObservability(o);
+        setPolicies(pol);
+      })
+      .catch((e) => setError(e instanceof ApiError ? e.message : "Error al cargar"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -83,105 +115,159 @@ export function AdminLlmProvidersPage() {
     }
   }
 
+  async function explainRouting() {
+    try {
+      const res = await fetchLlmRoutingExplain("openai");
+      setRoutingExplain(res.razones.join(" · "));
+    } catch {
+      setRoutingExplain("No se pudo explicar el enrutamiento.");
+    }
+  }
+
+  async function addDefaultPolicy() {
+    try {
+      await createLlmRoutingPolicy({
+        name: "Preferir OpenAI",
+        preferred_provider: "openai",
+        fallback_allowed: true,
+      });
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "No se pudo crear política");
+    }
+  }
+
   if (loading) return <LoadingState message="Cargando proveedores IA…" />;
   if (error && providers.length === 0) return <ErrorState message={error} onRetry={load} />;
 
   return (
     <div className="ops-page">
-      <header className="page-header">
+      <header className="page-header compact">
         <h1>Proveedores de inferencia IA</h1>
-        <p className="muted">Configuración de OpenAI, Ollama y futuros proveedores</p>
+        <p className="muted">Multiproveedor, enrutamiento, observabilidad y salud</p>
+        <div className="toolbar compact-toolbar">
+          {(["proveedores", "salud", "observabilidad", "enrutamiento"] as const).map((t) => (
+            <button key={t} type="button" className={tab === t ? "btn primary small" : "btn small"} onClick={() => setTab(t)}>
+              {t === "proveedores" ? "Proveedores" : t === "salud" ? "Salud" : t === "observabilidad" ? "Consumo" : "Enrutamiento"}
+            </button>
+          ))}
+        </div>
       </header>
 
-      <div className="ops-actions" style={{ marginBottom: "1rem" }}>
-        <button type="button" className="btn primary" onClick={() => setShowForm(!showForm)}>
-          {showForm ? "Cancelar" : "Nuevo proveedor"}
-        </button>
-      </div>
-
-      {showForm && (
-        <form className="panel" onSubmit={handleCreate} style={{ marginBottom: "1rem" }}>
-          <label>Nombre
-            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-          </label>
-          <label>Tipo
-            <select value={form.provider_type} onChange={(e) => setForm({ ...form, provider_type: e.target.value })}>
-              <option value="openai">OpenAI</option>
-              <option value="ollama">Ollama</option>
-            </select>
-          </label>
-          <label>Modelo por defecto
-            <input value={form.model_default} onChange={(e) => setForm({ ...form, model_default: e.target.value })} />
-          </label>
-          <label>Endpoint (opcional)
-            <input value={form.endpoint} onChange={(e) => setForm({ ...form, endpoint: e.target.value })} />
-          </label>
-          <label>Variable de entorno del secreto
-            <input
-              value={form.secret_env_var}
-              onChange={(e) => setForm({ ...form, secret_env_var: e.target.value })}
-              placeholder="OPENAI_API_KEY"
-            />
-          </label>
-          <label>Prioridad
-            <input
-              type="number"
-              value={form.priority}
-              onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })}
-            />
-          </label>
-          <label>
-            <input type="checkbox" checked={form.is_fallback} onChange={(e) => setForm({ ...form, is_fallback: e.target.checked })} />
-            Usar como fallback
-          </label>
-          <button type="submit" className="btn primary">Crear</button>
-        </form>
+      {tab === "proveedores" && (
+        <>
+          <div className="ops-actions" style={{ marginBottom: "1rem" }}>
+            <button type="button" className="btn primary" onClick={() => setShowForm(!showForm)}>
+              {showForm ? "Cancelar" : "Nuevo proveedor"}
+            </button>
+          </div>
+          {showForm && (
+            <form className="panel compact-panel" onSubmit={handleCreate} style={{ marginBottom: "1rem" }}>
+              <label>Nombre
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              </label>
+              <label>Tipo
+                <select value={form.provider_type} onChange={(e) => setForm({ ...form, provider_type: e.target.value })}>
+                  {PROVIDER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </label>
+              <label>Modelo por defecto
+                <input value={form.model_default} onChange={(e) => setForm({ ...form, model_default: e.target.value })} />
+              </label>
+              <label>Endpoint (opcional)
+                <input value={form.endpoint} onChange={(e) => setForm({ ...form, endpoint: e.target.value })} />
+              </label>
+              <label>Variable de entorno del secreto
+                <input value={form.secret_env_var} onChange={(e) => setForm({ ...form, secret_env_var: e.target.value })} placeholder="OPENAI_API_KEY" />
+              </label>
+              <button type="submit" className="btn primary">Crear</button>
+            </form>
+          )}
+          {testResult && <p className="muted">{testResult}</p>}
+          <div className="panel compact-panel">
+            <table className="data-table compact-table">
+              <thead>
+                <tr><th>Nombre</th><th>Tipo</th><th>Modelo</th><th>Estado salud</th><th>Secreto</th><th></th></tr>
+              </thead>
+              <tbody>
+                {providers.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.name}{p.is_fallback ? " (fallback)" : ""}</td>
+                    <td>{p.provider_label || p.provider_type}</td>
+                    <td>{p.model_default || "—"}</td>
+                    <td>{p.health_status || "—"}</td>
+                    <td>{p.secret_configured ? p.secret_masked || "Configurado" : "No configurado"}</td>
+                    <td className="ops-actions">
+                      <button type="button" className="btn small" onClick={() => toggleEnabled(p)}>
+                        {p.is_enabled ? "Deshabilitar" : "Habilitar"}
+                      </button>
+                      <button type="button" className="btn small" disabled={testingId === p.id} onClick={() => handleTest(p.id)}>
+                        {testingId === p.id ? "Probando…" : "Probar"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
-      {testResult && <p className="muted">{testResult}</p>}
-      {error && <p className="error">{error}</p>}
+      {tab === "salud" && (
+        <div className="panel compact-panel">
+          <table className="data-table compact-table">
+            <thead><tr><th>Proveedor</th><th>Estado</th><th>Detalle</th><th>Modo</th></tr></thead>
+            <tbody>
+              {health.map((h) => (
+                <tr key={h.provider_id}>
+                  <td>{h.etiqueta}</td>
+                  <td>{h.estado}</td>
+                  <td>{h.detalle}</td>
+                  <td>{h.modo || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      <div className="panel">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Tipo</th>
-              <th>Modelo</th>
-              <th>Prioridad</th>
-              <th>Estado</th>
-              <th>Secreto</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {providers.map((p) => (
-              <tr key={p.id}>
-                <td>{p.name}{p.is_fallback ? " (fallback)" : ""}</td>
-                <td>{p.provider_type}</td>
-                <td>{p.model_default || "—"}</td>
-                <td>{p.priority}</td>
-                <td>{p.is_enabled ? "Habilitado" : "Deshabilitado"}</td>
-                <td>{p.secret_configured ? p.secret_masked || "Configurado" : "No configurado"}</td>
-                <td className="ops-actions">
-                  <button type="button" className="btn small" onClick={() => toggleEnabled(p)}>
-                    {p.is_enabled ? "Deshabilitar" : "Habilitar"}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn small"
-                    disabled={testingId === p.id}
-                    onClick={() => handleTest(p.id)}
-                  >
-                    {testingId === p.id ? "Probando…" : "Probar"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {providers.length === 0 && <p className="muted">No hay proveedores configurados.</p>}
-      </div>
+      {tab === "observabilidad" && observability && (
+        <div className="panel compact-panel">
+          <dl className="detail-grid">
+            <dt>Inferencias (periodo)</dt><dd>{observability.total_inferencias}</dd>
+            <dt>Tasa de éxito</dt><dd>{observability.tasa_exito != null ? `${observability.tasa_exito}%` : "Sin información"}</dd>
+            <dt>Latencia promedio</dt><dd>{observability.latencia_promedio_ms ?? "Sin información"}</dd>
+            <dt>Tokens</dt><dd>{observability.tokens_total ?? "Sin información"}</dd>
+            <dt>Costo</dt><dd>{observability.costo_total ?? "Sin información"}</dd>
+            <dt>Fallbacks</dt><dd>{observability.fallbacks}</dd>
+            <dt>Errores</dt><dd>{observability.errores}</dd>
+          </dl>
+        </div>
+      )}
+
+      {tab === "enrutamiento" && (
+        <div className="panel compact-panel">
+          <p><button type="button" className="btn small" onClick={explainRouting}>Explicar selección OpenAI</button></p>
+          {routingExplain && <p className="muted">{routingExplain}</p>}
+          <table className="data-table compact-table">
+            <thead><tr><th>Política</th><th>Preferido</th><th>Modelo</th><th>Fallback</th><th>Activa</th></tr></thead>
+            <tbody>
+              {policies.map((p) => (
+                <tr key={p.id}>
+                  <td>{p.name}</td>
+                  <td>{p.preferred_provider || "—"}</td>
+                  <td>{p.preferred_model || "—"}</td>
+                  <td>{p.fallback_allowed ? "Sí" : "No"}</td>
+                  <td>{p.is_active ? "Sí" : "No"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p><button type="button" className="btn small" onClick={addDefaultPolicy}>Agregar política OpenAI</button></p>
+        </div>
+      )}
+
+      {error && <p className="error">{error}</p>}
     </div>
   );
 }
