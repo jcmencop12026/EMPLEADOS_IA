@@ -30,6 +30,7 @@ from app import llm_models  # noqa: F401 — LLM Gateway V1
 from app import security_models  # noqa: F401 — seguridad avanzada 1300
 from app import identity_models  # noqa: F401 — identidad empresarial 1370
 from app import scim_models  # noqa: F401 — SCIM 1380
+from app import support_models  # noqa: F401 — mesa de ayuda MB-12
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
@@ -67,6 +68,7 @@ from app.routers import (
     tco,
     implementacion,
     segmentacion,
+    soporte,
     test_lab,
     tools,
     trabajo,
@@ -178,6 +180,7 @@ app.include_router(implementacion.router)
 app.include_router(segmentacion.router)
 app.include_router(llm_providers.router)
 app.include_router(trabajo.router)
+app.include_router(soporte.router)
 
 
 @app.get("/health")

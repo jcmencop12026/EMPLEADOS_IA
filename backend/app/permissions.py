@@ -276,6 +276,16 @@ BACKUPS_PERMISSIONS = {
     "backups.verify",
 }
 
+SUPPORT_PERMISSIONS = {
+    "support.view",
+    "support.create",
+    "support.assign",
+    "support.update",
+    "support.resolve",
+    "support.close",
+    "support.admin",
+}
+
 ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "employee.view": ("Empleados IA", "Ver directorio de empleados"),
     "employee.create": ("Empleados IA", "Crear empleados"),
@@ -433,6 +443,13 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "backups.view": ("Respaldos", "Consultar políticas y ejecuciones de respaldo"),
     "backups.manage": ("Respaldos", "Administrar políticas y registrar ejecuciones"),
     "backups.verify": ("Respaldos", "Verificar integridad de respaldos"),
+    "support.view": ("Soporte", "Ver casos de mesa de ayuda"),
+    "support.create": ("Soporte", "Crear casos de soporte"),
+    "support.assign": ("Soporte", "Asignar casos de soporte"),
+    "support.update": ("Soporte", "Actualizar casos de soporte"),
+    "support.resolve": ("Soporte", "Resolver casos de soporte"),
+    "support.close": ("Soporte", "Cerrar casos de soporte"),
+    "support.admin": ("Soporte", "Administrar mesa de ayuda y SLA"),
 }
 
 SYSTEM_ROLE_CODES = {"admin", "operator", "viewer", "superadmin"}
@@ -464,6 +481,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | CONTINUIDAD_PERMISSIONS
         | INCIDENTES_PERMISSIONS
         | BACKUPS_PERMISSIONS
+        | SUPPORT_PERMISSIONS
         | DATOS_PERMISSIONS
         | INTEGRATION_PERMISSIONS
         | APRENDIZAJE_PERMISSIONS
@@ -498,6 +516,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | CONTINUIDAD_PERMISSIONS
         | INCIDENTES_PERMISSIONS
         | BACKUPS_PERMISSIONS
+        | SUPPORT_PERMISSIONS
         | DATOS_PERMISSIONS
         | INTEGRATION_PERMISSIONS
         | APRENDIZAJE_PERMISSIONS
@@ -618,6 +637,12 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "planes.view",
         "planes.manage",
         "planes.recommend",
+        "support.view",
+        "support.create",
+        "support.assign",
+        "support.update",
+        "support.resolve",
+        "support.close",
     },
     "viewer": {
         "employee.view",
@@ -658,6 +683,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "exito_cliente.view",
         "segmentacion.view",
         "planes.view",
+        "support.view",
     },
 }
 
