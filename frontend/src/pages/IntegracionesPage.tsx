@@ -218,7 +218,7 @@ export function IntegracionesPage() {
                     )}
                     {visibleCols.has("salud") && (
                       <td>
-                        {c.health.circuit_open ? "Circuit abierto" : INTEGRATION_STATUS_LABELS[c.status] ?? c.status}
+                        {c.health.circuit_open ? "Cortacircuitos abierto" : INTEGRATION_STATUS_LABELS[c.status] ?? c.status}
                         {c.health.consecutive_failures > 0 ? ` (${c.health.consecutive_failures} fallos)` : ""}
                       </td>
                     )}

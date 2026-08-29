@@ -186,7 +186,7 @@ export function IntegracionDetailPage() {
               ) : (
                 <p className="muted">Sin política resuelta.</p>
               )}
-              <h3>Preflight (simulación)</h3>
+              <h3>Validación previa (simulación)</h3>
               {wiring.preflight ? (
                 <dl className="kv-list">
                   <dt>Decisión</dt><dd>{wiring.preflight.decision}</dd>
@@ -194,7 +194,7 @@ export function IntegracionDetailPage() {
                   <dt>Motivos</dt><dd>{wiring.preflight.reasons.join("; ") || "—"}</dd>
                 </dl>
               ) : (
-                <p className="muted">Preflight no aplicable sin catálogo.</p>
+                <p className="muted">Validación previa no aplicable sin catálogo.</p>
               )}
             </div>
             <div>
@@ -314,7 +314,7 @@ export function IntegracionDetailPage() {
           <h2>Salud del conector</h2>
           <dl className="detail-grid">
             <dt>Estado</dt><dd>{INTEGRATION_STATUS_LABELS[wiring.health.status] ?? wiring.health.status}</dd>
-            <dt>Circuit breaker</dt><dd>{wiring.health.circuit_open ? "Abierto" : "Cerrado"}</dd>
+            <dt>Cortacircuitos</dt><dd>{wiring.health.circuit_open ? "Abierto" : "Cerrado"}</dd>
             <dt>Fallos consecutivos</dt><dd>{wiring.health.consecutive_failures}</dd>
             <dt>Último éxito</dt><dd>{formatTs(wiring.health.last_success_at)}</dd>
             <dt>Último error</dt><dd>{formatTs(wiring.health.last_error_at)}</dd>
