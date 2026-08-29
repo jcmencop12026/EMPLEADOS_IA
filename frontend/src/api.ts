@@ -1089,6 +1089,67 @@ export async function fetchSignalTrace(signalId: string): Promise<Record<string,
   return api(`/api/senales/${signalId}/trazabilidad`);
 }
 
+// --- Inteligencia externa (1240) ---
+
+export type ExternalSourceItem = {
+  id: string;
+  code: string;
+  name: string;
+  source_type: string;
+  ingestion_channel: string;
+  url_reference?: string | null;
+  sector?: string | null;
+  pais_region?: string | null;
+  confiabilidad: number;
+  is_active: boolean;
+  ultima_actualizacion?: string | null;
+};
+
+export type ExternalSignalItem = {
+  signal: SignalItem;
+  external: {
+    classification: string;
+    relevance: string;
+    freshness_status: string;
+    hecho_observado?: string;
+    interpretacion?: string;
+    hipotesis?: string;
+    is_risk: boolean;
+    confidence_level: number;
+    validated_at?: string | null;
+  };
+  source?: ExternalSourceItem | null;
+};
+
+export async function fetchExternalSources(): Promise<ExternalSourceItem[]> {
+  return api("/api/inteligencia-externa/fuentes");
+}
+
+export async function fetchExternalSignals(params?: {
+  classification?: string;
+  relevance?: string;
+  source_type?: string;
+}): Promise<{ items: ExternalSignalItem[]; message?: string }> {
+  const qs = new URLSearchParams();
+  if (params?.classification) qs.set("classification", params.classification);
+  if (params?.relevance) qs.set("relevance", params.relevance);
+  if (params?.source_type) qs.set("source_type", params.source_type);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return api(`/api/inteligencia-externa/senales${suffix}`);
+}
+
+export async function fetchExternalSignalDetail(signalId: string): Promise<Record<string, unknown>> {
+  return api(`/api/inteligencia-externa/senales/${signalId}`);
+}
+
+export async function createExternalSource(data: Record<string, unknown>): Promise<ExternalSourceItem> {
+  return api("/api/inteligencia-externa/fuentes", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function ingestExternalSignal(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return api("/api/inteligencia-externa/ingesta", { method: "POST", body: JSON.stringify(data) });
+}
+
 export type LlmProvider = {
   id: string;
   organization_id: string;
