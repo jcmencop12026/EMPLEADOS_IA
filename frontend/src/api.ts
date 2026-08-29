@@ -178,6 +178,108 @@ export type SecuritySummary = {
   users_blocked: number;
   roles_total: number;
   recent_events: Array<{ action: string; detail: string | null; created_at: string }>;
+  mfa_enabled_count?: number;
+  scim_metrics?: {
+    users_provisioned: number;
+    users_active: number;
+    users_deactivated: number;
+    errors_count: number;
+    conflicts_count: number;
+    rate_limited_count: number;
+    requests_total: number;
+    last_sync_at: string | null;
+    last_latency_ms: number | null;
+  } | null;
+  scim_rate_limit_note?: string | null;
+};
+
+export type AdminUserMfaOverview = {
+  enabled: boolean;
+  enrollment_pending: boolean;
+  confirmed_at?: string | null;
+  updated_at?: string | null;
+  mfa_required_by_policy: boolean;
+  policy_mfa_mode?: string | null;
+  allowed_method: string;
+};
+
+export type AdminUserIdentityOrigin = {
+  source: string;
+  provider_code?: string | null;
+  provider_name?: string | null;
+  external_subject_ref?: string | null;
+};
+
+export type AdminUserProvisionOverview = {
+  status: string;
+  external_id?: string | null;
+  scim_resource_id?: string | null;
+  updated_at?: string | null;
+};
+
+export type AdminUserOverview = {
+  id: string;
+  username: string;
+  email: string | null;
+  full_name: string | null;
+  role: string;
+  role_name?: string | null;
+  status: string;
+  is_active: boolean;
+  organization_id: string;
+  organization_name?: string | null;
+  last_login_at: string | null;
+  created_at: string;
+  updated_at: string | null;
+  mfa: AdminUserMfaOverview;
+  identity_origin: AdminUserIdentityOrigin;
+  provisioning: AdminUserProvisionOverview;
+};
+
+export type AdminUserPermissionEffective = {
+  code: string;
+  source: string;
+  role_code?: string | null;
+  organization_id: string;
+};
+
+export type AdminUserAuditEntry = {
+  stream: string;
+  action: string;
+  result?: string | null;
+  actor_id?: string | null;
+  organization_id?: string | null;
+  detail?: string | null;
+  correlation_id?: string | null;
+  created_at: string;
+};
+
+export type AdminUserIdentityDetail = {
+  user: AdminUser;
+  organization_name?: string | null;
+  role_name?: string | null;
+  mfa: AdminUserMfaOverview;
+  identity_origin: AdminUserIdentityOrigin;
+  provisioning: AdminUserProvisionOverview;
+  permissions_effective: AdminUserPermissionEffective[];
+  sessions: Array<{
+    id: string;
+    ip_address?: string | null;
+    user_agent?: string | null;
+    created_at: string;
+    last_activity_at: string;
+    expires_at: string;
+    mfa_verified: boolean;
+    auth_method?: string | null;
+  }>;
+  audit_entries: AdminUserAuditEntry[];
+  scim_user_events: Array<{
+    action: string;
+    result: string;
+    detail?: string | null;
+    correlation_id?: string | null;
+    created_at: string;
+  }>;
 };
 
 export type AuditLog = {
@@ -520,6 +622,21 @@ export async function fetchAdminUsers(q?: string, status?: string): Promise<Admi
   return api<AdminUser[]>(`/api/admin/users${qs ? `?${qs}` : ""}`);
 }
 
+export async function fetchAdminUsersOverview(q?: string, status?: string): Promise<AdminUserOverview[]> {
+  const params = new URLSearchParams({ vista: "operativa" });
+  if (q) params.set("q", q);
+  if (status) params.set("status", status);
+  return api<AdminUserOverview[]>(`/api/admin/users?${params}`);
+}
+
+export async function fetchAdminUser(id: string): Promise<AdminUser> {
+  return api<AdminUser>(`/api/admin/users/${id}`);
+}
+
+export async function fetchAdminUserIdentityDetail(id: string): Promise<AdminUserIdentityDetail> {
+  return api<AdminUserIdentityDetail>(`/api/admin/users/${id}/identidad`);
+}
+
 export async function createAdminUser(data: Record<string, unknown>): Promise<AdminUser> {
   return api<AdminUser>("/api/admin/users", { method: "POST", body: JSON.stringify(data) });
 }
@@ -600,6 +717,9 @@ export type UserSession = {
   expires_at: string;
   mfa_verified: boolean;
   current: boolean;
+  user_id?: string | null;
+  username?: string | null;
+  auth_method?: string | null;
 };
 
 export type SecurityPolicy = {
