@@ -178,6 +178,15 @@ TCO_PERMISSIONS = {
     "alianzas.manage",
 }
 
+IMPLEMENTACION_PERMISSIONS = {
+    "implementacion.view",
+    "implementacion.manage",
+    "implementacion.approve_go_live",
+    "exito_cliente.view",
+    "exito_cliente.manage",
+    "exito_cliente.review",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -287,6 +296,12 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "proveedores.manage": ("Proveedores", "Administrar proveedores, tarifas y contratos"),
     "alianzas.view": ("Alianzas", "Consultar alianzas estratégicas"),
     "alianzas.manage": ("Alianzas", "Gestionar alianzas estratégicas"),
+    "implementacion.view": ("Implementación", "Consultar proyectos de implementación"),
+    "implementacion.manage": ("Implementación", "Gestionar implementación y pilotos"),
+    "implementacion.approve_go_live": ("Implementación", "Aprobar salida a producción"),
+    "exito_cliente.view": ("Éxito del cliente", "Consultar planes de éxito y salud"),
+    "exito_cliente.manage": ("Éxito del cliente", "Gestionar adopción y objetivos"),
+    "exito_cliente.review": ("Éxito del cliente", "Realizar revisiones periódicas"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -321,6 +336,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | CONTROL_CENTER_PERMISSIONS
         | COMMERCIAL_PERMISSIONS
         | TCO_PERMISSIONS
+        | IMPLEMENTACION_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -344,6 +360,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | CONTROL_CENTER_PERMISSIONS
         | COMMERCIAL_PERMISSIONS
         | TCO_PERMISSIONS
+        | IMPLEMENTACION_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -417,6 +434,10 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "proveedores.view",
         "proveedores.manage",
         "alianzas.view",
+        "implementacion.view",
+        "implementacion.manage",
+        "exito_cliente.view",
+        "exito_cliente.manage",
     },
     "viewer": {
         "employee.view",
@@ -446,6 +467,8 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "tco.simulate",
         "proveedores.view",
         "alianzas.view",
+        "implementacion.view",
+        "exito_cliente.view",
     },
 }
 
