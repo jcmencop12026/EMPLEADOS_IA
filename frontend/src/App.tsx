@@ -21,6 +21,10 @@ import { LineasBasePage } from "./pages/LineasBasePage";
 import { LineaBaseDetailPage } from "./pages/LineaBaseDetailPage";
 import { OportunidadesPage } from "./pages/OportunidadesPage";
 import { OportunidadDetailPage } from "./pages/OportunidadDetailPage";
+import { SenalesPage } from "./pages/SenalesPage";
+import { SenalDetailPage } from "./pages/SenalDetailPage";
+import { DiagnosticosPage } from "./pages/DiagnosticosPage";
+import { DiagnosticoDetailPage } from "./pages/DiagnosticoDetailPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
@@ -74,6 +78,10 @@ export default function App() {
           <Route path="lineas-base/:lineaBaseId" element={<LineaBaseDetailPage />} />
           <Route path="oportunidades" element={<OportunidadesPage />} />
           <Route path="oportunidades/:opportunityId" element={<OportunidadDetailPage />} />
+          <Route path="senales" element={<SenalesPage />} />
+          <Route path="senales/:signalId" element={<SenalDetailPage />} />
+          <Route path="diagnosticos" element={<DiagnosticosPage />} />
+          <Route path="diagnosticos/:diagnosticId" element={<DiagnosticoDetailPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
           <Route element={<RequirePermission anyOf={["platform.organization.view"]} />}>
             <Route path="administracion/empresas" element={<AdminCompaniesPage />} />
