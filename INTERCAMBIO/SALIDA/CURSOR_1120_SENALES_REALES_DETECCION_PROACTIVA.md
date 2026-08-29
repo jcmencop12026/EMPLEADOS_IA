@@ -3,7 +3,7 @@
 
 **Rama:** `cursor/1120-senales-reales-deteccion`  
 **Base:** `4c03cbe`  
-**HEAD:** _(ver commit final)_
+**HEAD:** `ed8dcf97b3c92d4c2d862a1644ec1c80022d8c18`
 
 ---
 
