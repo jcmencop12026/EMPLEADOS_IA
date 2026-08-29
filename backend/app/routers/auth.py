@@ -33,6 +33,9 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales incorrectas")
     if not user.is_active or user.status != "ACTIVE":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario inactivo o bloqueado")
+    org = db.query(Organization).filter(Organization.id == user.organization_id).first()
+    if not org or org.status != "ACTIVE":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="La empresa está inactiva o no está disponible")
     token = create_access_token(user.id, {"role": user.role, "org": user.organization_id})
     user.last_login_at = datetime.now(timezone.utc)
     db.commit()
