@@ -44,6 +44,7 @@ const MENU: NavSection[] = [
     id: "analisis",
     label: "Análisis y control",
     items: [
+      { to: "/lineas-base", label: "Líneas base e impacto" },
       { to: "/oportunidades", label: "Centro de oportunidades" },
       { to: "/senales", label: "Señales y fuentes" },
       { to: "/costos-valor", label: "Costos y valor" },
