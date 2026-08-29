@@ -135,6 +135,7 @@ else:
     from app.seed_permissions import bootstrap_permissions
 
     bootstrap_permissions(_bootstrap_db)
+    _bootstrap_db.commit()
     _bootstrap_db.close()
 
 
@@ -188,7 +189,12 @@ else:
 
 @pytest.fixture
 def token(client: TestClient) -> str:
-    res = client.post("/api/auth/login", json={"username": "admin", "password": "Admin2026*"})
+    from app.config import settings
+
+    res = client.post(
+        "/api/auth/login",
+        json={"username": settings.bootstrap_admin_username, "password": settings.bootstrap_admin_password},
+    )
     assert res.status_code == 200
     return res.json()["access_token"]
 
