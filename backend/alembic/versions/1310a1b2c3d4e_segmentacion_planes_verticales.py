@@ -160,7 +160,7 @@ def upgrade() -> None:
     op.add_column("commercial_plans", sa.Column("lifecycle_status", sa.String(20), nullable=False, server_default="ACTIVO"))
     op.add_column("commercial_plans", sa.Column("segment_id", sa.String(36), nullable=True))
     op.add_column("commercial_plans", sa.Column("sector_id", sa.String(36), nullable=True))
-    op.add_column("commercial_plans", sa.Column("base_plan_id", sa.String(36), sa.ForeignKey("commercial_plans.id"), nullable=True))
+    op.add_column("commercial_plans", sa.Column("base_plan_id", sa.String(36), nullable=True))
     op.add_column("commercial_plans", sa.Column("version_number", sa.Integer(), nullable=False, server_default="1"))
     op.add_column("commercial_plans", sa.Column("is_custom", sa.Boolean(), nullable=False, server_default=sa.false()))
 
