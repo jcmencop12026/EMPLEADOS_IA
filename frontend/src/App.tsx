@@ -23,6 +23,8 @@ import { OportunidadDetailPage } from "./pages/OportunidadDetailPage";
 import { ComercialPage } from "./pages/ComercialPage";
 import { ComercialPropuestaDetailPage } from "./pages/ComercialPropuestaDetailPage";
 import { TcoPage } from "./pages/TcoPage";
+import { ImplementacionPage } from "./pages/ImplementacionPage";
+import { ImplementacionDetailPage } from "./pages/ImplementacionDetailPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
@@ -76,6 +78,8 @@ export default function App() {
           <Route path="comercial" element={<ComercialPage />} />
           <Route path="comercial/propuestas/:proposalId" element={<ComercialPropuestaDetailPage />} />
           <Route path="tco" element={<TcoPage />} />
+          <Route path="implementacion" element={<ImplementacionPage />} />
+          <Route path="implementacion/:proyectoId" element={<ImplementacionDetailPage />} />
           <Route path="oportunidades" element={<OportunidadesPage />} />
           <Route path="oportunidades/:opportunityId" element={<OportunidadDetailPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />

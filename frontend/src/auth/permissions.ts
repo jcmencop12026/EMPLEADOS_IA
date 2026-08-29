@@ -16,6 +16,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/lineas-base": ["linea_base.view"],
   "/comercial": ["comercial.view"],
   "/tco": ["tco.view"],
+  "/implementacion": ["implementacion.view"],
   "/oportunidades": ["oportunidades.view"],
   "/costos-valor": ["finops.view"],
   "/notificaciones": ["notification.view"],
