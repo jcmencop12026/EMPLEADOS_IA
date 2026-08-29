@@ -19,6 +19,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/diagnosticos": ["diagnosticos.view"],
   "/inteligencia-externa": ["inteligencia_externa.view"],
   "/costos-valor": ["finops.view"],
+  "/gobernanza-datos": ["datos.view"],
   "/notificaciones": ["notification.view"],
   "/auditoria": ["audit.view"],
   "/administracion/empresas": ["platform.organization.view"],
