@@ -8,6 +8,7 @@ import {
   detectCommercialDoubleCount,
   fetchCommercialProposal,
   setCommercialFinalPrice,
+  simulateCommercialProposal,
   suggestCommercialPrice,
   type CommercialProposalDetail,
 } from "../api";
@@ -20,6 +21,7 @@ export function ComercialPropuestaDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [precioFinal, setPrecioFinal] = useState("");
   const [justificacion, setJustificacion] = useState("");
+  const [simResult, setSimResult] = useState<Record<string, unknown> | null>(null);
 
   function reload() {
     if (!proposalId) return;
@@ -95,6 +97,18 @@ export function ComercialPropuestaDetailPage() {
     reload();
   }
 
+  async function onSimulateProposal() {
+    if (!proposalId) return;
+    const before = detail?.precio_sugerido;
+    const result = await simulateCommercialProposal(proposalId, { atribucion_pct: 50, valor_bruto: 120000, fraccion_valor: 0.3 });
+    setSimResult(result);
+    const refreshed = await fetchCommercialProposal(proposalId);
+    setDetail(refreshed);
+    if (before !== undefined && before === refreshed.precio_sugerido) {
+      setSimResult({ ...result, _nota: "La simulación no modificó el precio sugerido guardado" });
+    }
+  }
+
   if (!detail) return <p>Cargando propuesta…</p>;
 
   return (
@@ -116,10 +130,11 @@ export function ComercialPropuestaDetailPage() {
         <div><strong>Payback (meses)</strong><span>{detail.payback_meses ?? "—"}</span></div>
         <div><strong>Margen %</strong><span>{detail.margen_pct ?? "—"}</span></div>
         <div><strong>% valor conservado cliente</strong><span>{detail.pct_valor_conservado_cliente ?? "—"}</span></div>
+        <div><strong>% valor capturado EMPLEADOS_IA</strong><span>{detail.pct_valor_capturado_empleados_ia ?? "—"}</span></div>
       </section>
 
       <section className="panel">
-        <h2>Escenarios</h2>
+        <h2>Comparación de escenarios</h2>
         <table className="data-table">
           <thead><tr><th>Tipo</th><th>Valor esperado</th><th>Valor atribuible</th><th>Prob.</th><th>Recomendado</th></tr></thead>
           <tbody>
@@ -141,7 +156,7 @@ export function ComercialPropuestaDetailPage() {
         <h2>Componentes de valor</h2>
         <ul>
           {detail.valores.map((v) => (
-            <li key={v.id}>{v.categoria} ({v.naturaleza}): bruto {v.valor_bruto} → atribuible {v.valor_atribuible} ({v.atribucion_pct}%)</li>
+            <li key={v.id}>{v.categoria} ({v.naturaleza}, {v.alcance ?? "INTERNO"}): bruto {v.valor_bruto} → atribuible {v.valor_atribuible} ({v.atribucion_pct}%)</li>
           ))}
         </ul>
         {has("comercial.create") && <button onClick={onAddValue}>Agregar valor ejemplo</button>}
@@ -166,8 +181,21 @@ export function ComercialPropuestaDetailPage() {
 
       <section className="panel actions-row">
         {has("comercial.simulate") && <button onClick={onSuggest}>Calcular precio sugerido</button>}
+        {has("comercial.simulate") && <button onClick={onSimulateProposal}>Simular sin guardar</button>}
         {has("comercial.view") && <button onClick={onDetectDouble}>Detectar doble conteo</button>}
       </section>
+
+      {simResult && (
+        <section className="panel">
+          <h2>Resultado simulación</h2>
+          <div className="metrics-grid">
+            <div><strong>Precio sugerido simulado</strong><span>{String(simResult.precio_sugerido)}</span></div>
+            <div><strong>Beneficio neto</strong><span>{String(simResult.beneficio_neto_cliente)}</span></div>
+            <div><strong>ROI %</strong><span>{String(simResult.roi_pct ?? "—")}</span></div>
+            <div><strong>Payback</strong><span>{String(simResult.payback_meses ?? "—")}</span></div>
+          </div>
+        </section>
+      )}
 
       {has("comercial.approve") && (
         <section className="panel">

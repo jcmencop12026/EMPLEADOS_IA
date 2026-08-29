@@ -22,6 +22,7 @@ from app.commercial_enums import (
     ScenarioType,
     ValueCategory,
     ValueNature,
+    ValueScope,
 )
 from app.commercial_models import (
     CommercialDoubleCountAlert,
@@ -82,6 +83,81 @@ def _ensure_org_active(db: Session, organization_id: str) -> Organization:
 def _next_codigo(db: Session, org_id: str) -> str:
     count = db.query(func.count(CommercialProposal.id)).filter(CommercialProposal.organization_id == org_id).scalar() or 0
     return f"PROP-{count + 1:05d}"
+
+
+def _infer_scope(categoria: str, explicit: str | None = None) -> str:
+    if explicit and explicit in ValueScope.ALL:
+        return explicit
+    if categoria in ValueCategory.EXTERNO:
+        return ValueScope.EXTERNO
+    return ValueScope.INTERNO
+
+
+def _compute_excedente_cost(plan: CommercialPlan | None, tokens_usados: int | None) -> dict[str, Any]:
+    if not plan or not tokens_usados or not plan.consumo_ia_incluido_tokens:
+        return {"excedente_tokens": 0, "costo_excedente": 0.0, "alerta": False, "bloqueado": False}
+    incluido = plan.consumo_ia_incluido_tokens
+    excedente = max(0, tokens_usados - incluido)
+    costo = Decimal("0")
+    if excedente > 0 and plan.excedente_ia_por_millon:
+        costo = (Decimal(excedente) / Decimal("1000000") * plan.excedente_ia_por_millon).quantize(Decimal("0.0001"))
+    pct_uso = (Decimal(tokens_usados) / Decimal(incluido) * 100) if incluido else Decimal("0")
+    alerta = bool(plan.alerta_consumo_pct and pct_uso >= plan.alerta_consumo_pct)
+    bloqueado = bool(plan.bloqueo_excedente and excedente > 0)
+    return {
+        "excedente_tokens": excedente,
+        "costo_excedente": float(costo),
+        "pct_consumo": float(pct_uso.quantize(Decimal("0.01"))),
+        "alerta": alerta,
+        "bloqueado": bloqueado,
+        "consumo_ia_incluido_tokens": incluido,
+    }
+
+
+def _compute_economics(
+    *,
+    valor_atribuible: Decimal,
+    costo_total: Decimal,
+    fraccion: Decimal,
+    margen_min: Decimal,
+    precio_base: Decimal = Decimal("0"),
+    precio_minimo: Decimal | None = None,
+    precio_maximo: Decimal | None = None,
+) -> dict[str, Any]:
+    precio_por_valor = (valor_atribuible * fraccion).quantize(Decimal("0.0001"))
+    piso_costos = (costo_total * (Decimal("1") + margen_min)).quantize(Decimal("0.0001"))
+    precio_sugerido = max(precio_por_valor, piso_costos, precio_base)
+    advertencias: list[str] = []
+    if precio_minimo and precio_sugerido < precio_minimo:
+        precio_sugerido = precio_minimo
+        advertencias.append("Precio ajustado al mínimo del plan")
+    if precio_maximo and precio_sugerido > precio_maximo:
+        advertencias.append("Precio sugerido supera el máximo del plan — requiere revisión comercial")
+    if valor_atribuible > 0 and precio_sugerido > valor_atribuible:
+        advertencias.append("Precio sugerido supera el valor atribuible capturable — revisar supuestos")
+    if precio_sugerido < piso_costos:
+        advertencias.append("Precio sugerido por debajo del piso de costos + margen mínimo")
+    beneficio_neto = (valor_atribuible - precio_sugerido).quantize(Decimal("0.0001"))
+    roi = ((beneficio_neto / precio_sugerido) * 100).quantize(Decimal("0.01")) if precio_sugerido > 0 else None
+    payback = (precio_sugerido / (valor_atribuible / Decimal("12"))).quantize(Decimal("0.01")) if valor_atribuible > 0 else None
+    pct_conservado = ((beneficio_neto / valor_atribuible) * 100).quantize(Decimal("0.01")) if valor_atribuible > 0 else None
+    pct_capturado = ((precio_sugerido / valor_atribuible) * 100).quantize(Decimal("0.01")) if valor_atribuible > 0 else None
+    margen = ((precio_sugerido - costo_total) / precio_sugerido * 100).quantize(Decimal("0.01")) if precio_sugerido > 0 else None
+    return {
+        "valor_atribuible": float(valor_atribuible),
+        "costo_total": float(costo_total),
+        "precio_sugerido": float(precio_sugerido),
+        "piso_costos": float(piso_costos),
+        "fraccion_aplicada": float(fraccion),
+        "margen_minimo_pct": float(margen_min),
+        "beneficio_neto_cliente": float(beneficio_neto),
+        "roi_pct": float(roi) if roi is not None else None,
+        "payback_meses": float(payback) if payback is not None else None,
+        "pct_valor_conservado_cliente": float(pct_conservado) if pct_conservado is not None else None,
+        "pct_valor_capturado_empleados_ia": float(pct_capturado) if pct_capturado is not None else None,
+        "margen_pct": float(margen) if margen is not None else None,
+        "advertencias": advertencias,
+    }
 
 
 def _compute_attributable(gross: Decimal, pct: Decimal) -> Decimal:
@@ -213,6 +289,7 @@ def add_value_component(
     opp_id = data.get("opportunity_id")
     if opp_id:
         _validate_opportunity(db, organization_id, opp_id)
+    alcance = _infer_scope(cat, data.get("alcance"))
     dedupe_key = data.get("dedupe_key") or _value_dedupe_key(organization_id, proposal_id, cat, opp_id, gross)
     row = CommercialProposalValue(
         proposal_id=proposal.id,
@@ -221,7 +298,9 @@ def add_value_component(
         valuation_id=data.get("valuation_id"),
         linea_base_id=data.get("linea_base_id"),
         categoria=cat,
+        alcance=alcance,
         naturaleza=nat,
+        external_intelligence_ref=data.get("external_intelligence_ref"),
         valor_bruto=gross,
         atribucion_pct=pct,
         valor_atribuible=attributable,
@@ -375,6 +454,20 @@ def detect_double_count(db: Session, organization_id: str, proposal_id: str) -> 
     return alerts
 
 
+def get_plan(db: Session, organization_id: str, plan_id: str) -> CommercialPlan:
+    row = (
+        db.query(CommercialPlan)
+        .filter(
+            CommercialPlan.id == plan_id,
+            (CommercialPlan.organization_id == organization_id) | (CommercialPlan.organization_id.is_(None)),
+        )
+        .first()
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Plan no encontrado")
+    return row
+
+
 def suggest_price(
     db: Session,
     organization_id: str,
@@ -406,56 +499,37 @@ def suggest_price(
     margen_min = plan.margen_minimo_pct if plan else Decimal("0.15")
     precio_base = plan.precio_base_mensual if plan and plan.precio_base_mensual else Decimal("0")
 
-    precio_por_valor = (valor_atribuible * fraccion).quantize(Decimal("0.0001"))
-    piso_costos = (costo_total * (Decimal("1") + margen_min)).quantize(Decimal("0.0001"))
-    precio_sugerido = max(precio_por_valor, piso_costos, precio_base)
-
-    advertencias: list[str] = []
-    if plan and plan.precio_minimo and precio_sugerido < plan.precio_minimo:
-        precio_sugerido = plan.precio_minimo
-        advertencias.append("Precio ajustado al mínimo del plan")
-    if plan and plan.precio_maximo and precio_sugerido > plan.precio_maximo:
-        advertencias.append("Precio sugerido supera el máximo del plan — requiere revisión comercial")
-    if valor_atribuible > 0 and precio_sugerido > valor_atribuible:
-        advertencias.append("Precio sugerido supera el valor atribuible capturable — revisar supuestos")
-
-    beneficio_bruto = valor_atribuible
-    beneficio_neto = (beneficio_bruto - precio_sugerido).quantize(Decimal("0.0001"))
-    roi = ((beneficio_neto / precio_sugerido) * 100).quantize(Decimal("0.01")) if precio_sugerido > 0 else None
-    payback = (precio_sugerido / (beneficio_bruto / Decimal("12"))).quantize(Decimal("0.01")) if beneficio_bruto > 0 else None
-    pct_conservado = ((beneficio_neto / beneficio_bruto) * 100).quantize(Decimal("0.01")) if beneficio_bruto > 0 else None
-    margen = ((precio_sugerido - costo_total) / precio_sugerido * 100).quantize(Decimal("0.01")) if precio_sugerido > 0 else None
+    result = _compute_economics(
+        valor_atribuible=valor_atribuible,
+        costo_total=costo_total,
+        fraccion=fraccion,
+        margen_min=margen_min,
+        precio_base=precio_base,
+        precio_minimo=plan.precio_minimo if plan else None,
+        precio_maximo=plan.precio_maximo if plan else None,
+    )
+    precio_sugerido = Decimal(str(result["precio_sugerido"]))
 
     proposal.valor_total_esperado = sum((v.valor_bruto for v in values), Decimal("0")) or None
     proposal.valor_atribuible_total = valor_atribuible or None
     proposal.costo_total = costo_total or None
     proposal.precio_sugerido = precio_sugerido
-    proposal.beneficio_neto_cliente = beneficio_neto
-    proposal.roi_pct = roi
-    proposal.payback_meses = payback
-    proposal.pct_valor_conservado_cliente = pct_conservado
-    proposal.margen_pct = margen
+    proposal.beneficio_neto_cliente = Decimal(str(result["beneficio_neto_cliente"]))
+    proposal.roi_pct = Decimal(str(result["roi_pct"])) if result["roi_pct"] is not None else None
+    proposal.payback_meses = Decimal(str(result["payback_meses"])) if result["payback_meses"] is not None else None
+    proposal.pct_valor_conservado_cliente = Decimal(str(result["pct_valor_conservado_cliente"])) if result["pct_valor_conservado_cliente"] is not None else None
+    proposal.pct_valor_capturado_empleados_ia = Decimal(str(result["pct_valor_capturado_empleados_ia"])) if result["pct_valor_capturado_empleados_ia"] is not None else None
+    proposal.margen_pct = Decimal(str(result["margen_pct"])) if result["margen_pct"] is not None else None
     proposal.escenario_recomendado = scenario_type
 
     db.flush()
     write_audit(db, action="comercial.precio.sugerido", organization_id=organization_id, user_id=None,
                 detail=_json({"proposal_id": proposal_id, "precio_sugerido": float(precio_sugerido)}), commit=False)
 
-    return {
-        "valor_atribuible": float(valor_atribuible),
-        "costo_total": float(costo_total),
-        "precio_sugerido": float(precio_sugerido),
-        "piso_costos": float(piso_costos),
-        "fraccion_aplicada": float(fraccion),
-        "margen_minimo_pct": float(margen_min),
-        "beneficio_neto_cliente": float(beneficio_neto),
-        "roi_pct": float(roi) if roi is not None else None,
-        "payback_meses": float(payback) if payback is not None else None,
-        "pct_valor_conservado_cliente": float(pct_conservado) if pct_conservado is not None else None,
-        "margen_pct": float(margen) if margen is not None else None,
-        "advertencias": advertencias,
-        "escenario": scenario_type,
-    }
+    result["escenario"] = scenario_type
+    if plan:
+        result["consumo_ia"] = _compute_excedente_cost(plan, None)
+    return result
 
 
 def set_final_price(
@@ -487,6 +561,10 @@ def set_final_price(
         proposal.beneficio_neto_cliente = (proposal.valor_atribuible_total - precio).quantize(Decimal("0.0001"))
         if precio > 0:
             proposal.roi_pct = ((proposal.beneficio_neto_cliente / precio) * 100).quantize(Decimal("0.01"))
+            proposal.pct_valor_capturado_empleados_ia = ((precio / proposal.valor_atribuible_total) * 100).quantize(Decimal("0.01"))
+            proposal.pct_valor_conservado_cliente = (
+                (proposal.beneficio_neto_cliente / proposal.valor_atribuible_total) * 100
+            ).quantize(Decimal("0.01"))
     db.flush()
     write_audit(db, action="comercial.precio.modificado", organization_id=organization_id, user_id=user_id,
                 detail=_json({"proposal_id": proposal_id, "precio_final": float(precio)}), commit=False)
@@ -559,9 +637,13 @@ def build_traceability(db: Session, organization_id: str, proposal_id: str) -> d
         "oportunidades": list({v.opportunity_id for v in values if v.opportunity_id}),
         "valoraciones_1210": list({v.valuation_id for v in values if v.valuation_id}),
         "lineas_base_1200": list({v.linea_base_id for v in values if v.linea_base_id}),
+        "inteligencia_externa_1240": list({v.external_intelligence_ref for v in values if v.external_intelligence_ref}),
         "finops_refs": list({c.finops_record_id for c in costs if c.finops_record_id}),
+        "valor_interno_atribuible": float(sum((v.valor_atribuible for v in values if v.alcance == ValueScope.INTERNO), Decimal("0"))),
+        "valor_externo_atribuible": float(sum((v.valor_atribuible for v in values if v.alcance == ValueScope.EXTERNO), Decimal("0"))),
         "supuestos": _parse_json(proposal.supuestos_json),
         "riesgos": _parse_json(proposal.riesgos_json),
+        "precio_sugerido_formula": "max(valor_atribuible × fracción, costo × (1 + margen_mínimo), precio_base_plan)",
     }
     proposal.traceability_json = _json(trace)
     db.flush()
@@ -604,13 +686,16 @@ def proposal_to_detail(db: Session, organization_id: str, proposal_id: str) -> d
         "roi_pct": float(proposal.roi_pct) if proposal.roi_pct else None,
         "payback_meses": float(proposal.payback_meses) if proposal.payback_meses else None,
         "pct_valor_conservado_cliente": float(proposal.pct_valor_conservado_cliente) if proposal.pct_valor_conservado_cliente else None,
+        "pct_valor_capturado_empleados_ia": float(proposal.pct_valor_capturado_empleados_ia) if proposal.pct_valor_capturado_empleados_ia else None,
         "margen_pct": float(proposal.margen_pct) if proposal.margen_pct else None,
         "vigencia_hasta": proposal.vigencia_hasta.isoformat() if proposal.vigencia_hasta else None,
         "valores": [
             {
                 "id": v.id,
                 "categoria": v.categoria,
+                "alcance": v.alcance,
                 "naturaleza": v.naturaleza,
+                "external_intelligence_ref": v.external_intelligence_ref,
                 "valor_bruto": float(v.valor_bruto),
                 "atribucion_pct": float(v.atribucion_pct),
                 "valor_atribuible": float(v.valor_atribuible),
@@ -696,15 +781,77 @@ def simulate_value(db: Session, organization_id: str, data: dict[str, Any]) -> d
     costo = _decimal(data.get("costo_total")) or Decimal("0")
     fraccion = _decimal(data.get("fraccion_valor"), Decimal("0.25")) or Decimal("0.25")
     margen = _decimal(data.get("margen_minimo_pct"), Decimal("0.15")) or Decimal("0.15")
-    precio_valor = (attributable * fraccion).quantize(Decimal("0.0001"))
-    piso = (costo * (Decimal("1") + margen)).quantize(Decimal("0.0001"))
-    precio = max(precio_valor, piso)
-    beneficio_neto = attributable - precio
-    return {
-        "valor_atribuible": float(attributable),
-        "precio_sugerido": float(precio),
-        "piso_costos": float(piso),
-        "beneficio_neto_cliente": float(beneficio_neto),
-        "roi_pct": float((beneficio_neto / precio) * 100) if precio > 0 else None,
-        "payback_meses": float(precio / (attributable / Decimal("12"))) if attributable > 0 else None,
-    }
+    result = _compute_economics(
+        valor_atribuible=attributable,
+        costo_total=costo,
+        fraccion=fraccion,
+        margen_min=margen,
+    )
+    if data.get("tokens_usados") and data.get("plan_id"):
+        plan = get_plan(db, organization_id, data["plan_id"])
+        result["consumo_ia"] = _compute_excedente_cost(plan, int(data["tokens_usados"]))
+    return result
+
+
+def simulate_proposal(
+    db: Session,
+    organization_id: str,
+    proposal_id: str,
+    overrides: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Simula sobre una propuesta existente sin modificar datos definitivos."""
+    proposal = _get_proposal(db, organization_id, proposal_id)
+    overrides = overrides or {}
+    values = db.query(CommercialProposalValue).filter(CommercialProposalValue.proposal_id == proposal.id).all()
+    costs = db.query(CommercialProposalCost).filter(CommercialProposalCost.proposal_id == proposal.id).all()
+    plan = db.query(CommercialPlan).filter(CommercialPlan.id == proposal.plan_id).first() if proposal.plan_id else None
+    scenario_type = overrides.get("scenario_type", proposal.escenario_recomendado or ScenarioType.BASE)
+    scenario = (
+        db.query(CommercialProposalScenario)
+        .filter(CommercialProposalScenario.proposal_id == proposal.id, CommercialProposalScenario.scenario_type == scenario_type)
+        .first()
+    )
+
+    valor_atribuible = _decimal(overrides.get("valor_atribuible"))
+    if valor_atribuible is None:
+        valor_atribuible = sum((v.valor_atribuible for v in values), Decimal("0"))
+        if scenario and scenario.valor_atribuible:
+            valor_atribuible = scenario.valor_atribuible
+        elif scenario and scenario.valor_esperado and scenario.probabilidad:
+            valor_atribuible = (scenario.valor_esperado * scenario.probabilidad).quantize(Decimal("0.0001"))
+    if overrides.get("atribucion_pct") is not None and overrides.get("valor_bruto"):
+        valor_atribuible = _compute_attributable(
+            _decimal(overrides["valor_bruto"]) or Decimal("0"),
+            _decimal(overrides["atribucion_pct"]) or Decimal("0"),
+        )
+
+    costo_total = _decimal(overrides.get("costo_total"))
+    if costo_total is None:
+        costo_total = sum((c.monto for c in costs), Decimal("0"))
+        if scenario and scenario.costo:
+            costo_total = max(costo_total, scenario.costo)
+
+    fraccion = _decimal(overrides.get("fraccion_valor"))
+    if fraccion is None:
+        fraccion = plan.fraccion_valor_sugerida if plan and plan.fraccion_valor_sugerida else Decimal("0.25")
+    margen_min = _decimal(overrides.get("margen_minimo_pct"))
+    if margen_min is None:
+        margen_min = plan.margen_minimo_pct if plan else Decimal("0.15")
+    precio_base = plan.precio_base_mensual if plan and plan.precio_base_mensual else Decimal("0")
+
+    result = _compute_economics(
+        valor_atribuible=valor_atribuible,
+        costo_total=costo_total,
+        fraccion=fraccion,
+        margen_min=margen_min,
+        precio_base=precio_base,
+        precio_minimo=plan.precio_minimo if plan else None,
+        precio_maximo=plan.precio_maximo if plan else None,
+    )
+    result["escenario"] = scenario_type
+    result["simulacion"] = True
+    result["propuesta_id"] = proposal_id
+    result["precio_sugerido_actual"] = float(proposal.precio_sugerido) if proposal.precio_sugerido else None
+    if plan and overrides.get("tokens_usados"):
+        result["consumo_ia"] = _compute_excedente_cost(plan, int(overrides["tokens_usados"]))
+    return result

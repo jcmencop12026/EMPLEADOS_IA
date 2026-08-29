@@ -29,7 +29,7 @@ def test_single_alembic_head():
 
 def test_migration_ledger_protects_consolidated_revisions():
     report = validate_migration_ledger()
-    assert report["head"] == "1280a1b2c3d4e"
+    assert report["head"] == "1280b2c3d4e5f"
     assert report["protected_count"] >= 26
 
 

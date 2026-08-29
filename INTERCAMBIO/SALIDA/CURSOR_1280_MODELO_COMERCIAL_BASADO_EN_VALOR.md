@@ -3,7 +3,7 @@
 **Fecha:** 2026-08-29  
 **Rama:** `cursor/1280-modelo-comercial-valor-85e4`  
 **Base:** `076bca62d3a53022599edded638749845d7bdc29` (1210 FinOps+valoración) integrado con `0278177b434de7f04c4727f796e8e3e4006aadfd` (1200 línea base) en merge `0dd9cf7`  
-**HEAD:** `64fb7d9`  
+**HEAD:** `64fb7d91790f5b68e50dc718dd7d33f2147f22b0`  
 **Estado:** **BLOQUE 1280 TERMINADO**  
 **NO MERGE**
 
@@ -247,7 +247,7 @@ EMPLEADOS IA — BLOQUE 1280 TERMINADO
 
 RAMA: cursor/1280-modelo-comercial-valor-85e4
 BASE: 076bca62d3a53022599edded638749845d7bdc29 (+ merge 1200 0dd9cf7)
-HEAD: 64fb7d92a3a1967a1b45e0dd762c28aa2b0441ed
+HEAD: 64fb7d91790f5b68e50dc718dd7d33f2147f22b0
 
 VALOR ATRIBUIBLE: PASS
 VALOR VERIFICADO/ESTIMADO/POTENCIAL: PASS

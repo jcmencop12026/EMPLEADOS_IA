@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.commercial_enums import ProposalStatus, ValueCategory, ValueNature
+from app.commercial_enums import ProposalStatus, ValueCategory, ValueNature, ValueScope
 from app.models import AuditLog, Organization, User
 from app.opportunity_models import Opportunity
 from app.security import hash_password
@@ -286,6 +286,124 @@ def test_audit_on_proposal_create(client: TestClient):
         assert "comercial.propuesta.creada" in actions
     finally:
         db.close()
+
+
+def test_value_scope_interno_externo(client: TestClient):
+    db = TestingSessionLocal()
+    _, _, password, username = _create_tenant(db, "1280 Scope")
+    db.close()
+    headers = auth_header(_token(client, username, password))
+    prop = _create_proposal(client, headers)
+    res_int = client.post(
+        f"/api/comercial/propuestas/{prop['id']}/valores",
+        headers=headers,
+        json={"categoria": ValueCategory.AHORRO, "naturaleza": "VERIFICADO", "valor_bruto": 50000, "atribucion_pct": 30, "criterio_atribucion": "Interno"},
+    )
+    assert res_int.status_code == 201
+    res_ext = client.post(
+        f"/api/comercial/propuestas/{prop['id']}/valores",
+        headers=headers,
+        json={
+            "categoria": ValueCategory.NUEVO_INGRESO,
+            "naturaleza": "POTENCIAL",
+            "valor_bruto": 80000,
+            "atribucion_pct": 25,
+            "criterio_atribucion": "Mercado",
+            "external_intelligence_ref": "ext-signal-001",
+        },
+    )
+    assert res_ext.status_code == 201
+    detail = client.get(f"/api/comercial/propuestas/{prop['id']}", headers=headers).json()
+    alcances = {v["alcance"] for v in detail["valores"]}
+    assert ValueScope.INTERNO in alcances
+    assert ValueScope.EXTERNO in alcances
+    trace = client.get(f"/api/comercial/propuestas/{prop['id']}/trazabilidad", headers=headers).json()
+    assert trace["valor_interno_atribuible"] == 15000.0
+    assert trace["valor_externo_atribuible"] == 20000.0
+    assert "ext-signal-001" in trace["inteligencia_externa_1240"]
+
+
+def test_simulation_does_not_modify_proposal(client: TestClient):
+    db = TestingSessionLocal()
+    _, _, password, username = _create_tenant(db, "1280 SimProp")
+    db.close()
+    headers = auth_header(_token(client, username, password))
+    prop = _create_proposal(client, headers)
+    client.post(
+        f"/api/comercial/propuestas/{prop['id']}/valores",
+        headers=headers,
+        json={"categoria": "AHORRO", "naturaleza": "ESTIMADO", "valor_bruto": 100000, "atribucion_pct": 40, "criterio_atribucion": "X"},
+    )
+    before = client.get(f"/api/comercial/propuestas/{prop['id']}", headers=headers).json()
+    sim = client.post(
+        f"/api/comercial/propuestas/{prop['id']}/simular",
+        headers=headers,
+        json={"valor_bruto": 200000, "atribucion_pct": 50, "fraccion_valor": 0.5},
+    )
+    assert sim.status_code == 200
+    assert sim.json()["simulacion"] is True
+    assert sim.json()["valor_atribuible"] == 100000.0
+    after = client.get(f"/api/comercial/propuestas/{prop['id']}", headers=headers).json()
+    assert after["valor_atribuible_total"] == before["valor_atribuible_total"]
+    assert after["precio_sugerido"] == before["precio_sugerido"]
+
+
+def test_excedentes_ia(client: TestClient):
+    db = TestingSessionLocal()
+    _, _, password, username = _create_tenant(db, "1280 Exced")
+    db.close()
+    headers = auth_header(_token(client, username, password))
+    plan = client.post(
+        "/api/comercial/planes",
+        headers=headers,
+        json={
+            "code": f"exc-{uuid.uuid4().hex[:4]}",
+            "name": "Plan excedentes",
+            "consumo_ia_incluido_tokens": 1_000_000,
+            "excedente_ia_por_millon": 12.5,
+            "alerta_consumo_pct": 80,
+        },
+    ).json()
+    sim = client.post(
+        "/api/comercial/simular",
+        headers=headers,
+        json={"valor_bruto": 100000, "atribucion_pct": 40, "costo_total": 10000, "plan_id": plan["id"], "tokens_usados": 1_500_000},
+    )
+    assert sim.status_code == 200
+    consumo = sim.json()["consumo_ia"]
+    assert consumo["excedente_tokens"] == 500_000
+    assert consumo["costo_excedente"] == 6.25
+    assert consumo["alerta"] is True
+
+
+def test_roi_payback_numeric_deterministic(client: TestClient):
+    db = TestingSessionLocal()
+    _, _, password, username = _create_tenant(db, "1280 ROI")
+    db.close()
+    headers = auth_header(_token(client, username, password))
+    sim = client.post(
+        "/api/comercial/simular",
+        headers=headers,
+        json={"valor_bruto": 120000, "atribucion_pct": 50, "costo_total": 10000, "fraccion_valor": 0.25, "margen_minimo_pct": 0.2},
+    ).json()
+    assert sim["valor_atribuible"] == 60000.0
+    assert sim["precio_sugerido"] == 15000.0
+    assert sim["beneficio_neto_cliente"] == 45000.0
+    assert sim["roi_pct"] == 300.0
+    assert sim["payback_meses"] == 3.0
+    assert sim["pct_valor_capturado_empleados_ia"] == 25.0
+    assert sim["pct_valor_conservado_cliente"] == 75.0
+
+
+def test_plan_detail_endpoint(client: TestClient):
+    db = TestingSessionLocal()
+    _, _, password, username = _create_tenant(db, "1280 PlanDet")
+    db.close()
+    headers = auth_header(_token(client, username, password))
+    plan = _create_plan(client, headers)
+    detail = client.get(f"/api/comercial/planes/{plan['id']}", headers=headers)
+    assert detail.status_code == 200
+    assert detail.json()["code"] == plan["code"]
 
 
 def test_traceability_endpoint(client: TestClient):

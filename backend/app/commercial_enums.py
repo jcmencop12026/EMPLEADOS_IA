@@ -10,6 +10,14 @@ class ValueNature:
     ALL = frozenset({VERIFICADO, ESTIMADO, POTENCIAL})
 
 
+class ValueScope:
+    """Ámbito del valor — alineado con valoración 1210 e integración futura 1240."""
+
+    INTERNO = "INTERNO"
+    EXTERNO = "EXTERNO"
+    ALL = frozenset({INTERNO, EXTERNO})
+
+
 class ValueCategory:
     AHORRO = "AHORRO"
     PERDIDA_EVITADA = "PERDIDA_EVITADA"
@@ -25,6 +33,11 @@ class ValueCategory:
         REDUCCION_ERRORES, REDUCCION_TIEMPOS, MITIGACION_RIESGO, NUEVO_INGRESO,
         OPORTUNIDAD_CAPTURADA,
     })
+    INTERNO = frozenset({
+        AHORRO, PERDIDA_EVITADA, INGRESO_RECUPERADO, PRODUCTIVIDAD_LIBERADA,
+        REDUCCION_ERRORES, REDUCCION_TIEMPOS, MITIGACION_RIESGO,
+    })
+    EXTERNO = frozenset({NUEVO_INGRESO, OPORTUNIDAD_CAPTURADA})
 
 
 class ScenarioType:

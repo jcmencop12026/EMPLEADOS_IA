@@ -42,6 +42,7 @@ class ProposalCreate(BaseModel):
 class ValueComponentCreate(BaseModel):
     categoria: str
     naturaleza: str = "ESTIMADO"
+    alcance: str | None = None
     valor_bruto: float
     atribucion_pct: float = 0
     criterio_atribucion: str | None = None
@@ -50,6 +51,7 @@ class ValueComponentCreate(BaseModel):
     opportunity_id: str | None = None
     valuation_id: str | None = None
     linea_base_id: str | None = None
+    external_intelligence_ref: str | None = None
 
 
 class ScenarioCreate(BaseModel):
@@ -81,6 +83,19 @@ class SimulateRequest(BaseModel):
     costo_total: float = 0
     fraccion_valor: float = 0.25
     margen_minimo_pct: float = 0.15
+    plan_id: str | None = None
+    tokens_usados: int | None = None
+
+
+class ProposalSimulateRequest(BaseModel):
+    scenario_type: str | None = None
+    valor_bruto: float | None = None
+    atribucion_pct: float | None = None
+    valor_atribuible: float | None = None
+    costo_total: float | None = None
+    fraccion_valor: float | None = None
+    margen_minimo_pct: float | None = None
+    tokens_usados: int | None = None
 
 
 class PriceSuggestRequest(BaseModel):

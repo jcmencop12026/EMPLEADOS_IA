@@ -16,6 +16,7 @@ from app.schemas_commercial import (
     PlanCreate,
     PriceSuggestRequest,
     ProposalCreate,
+    ProposalSimulateRequest,
     ScenarioCreate,
     SimulateRequest,
     ValueComponentCreate,
@@ -46,6 +47,12 @@ def create_plan(body: PlanCreate, user: User = Depends(get_current_user), db: Se
     except svc.CommercialValidationError as exc:
         db.rollback()
         raise _handle_validation(exc) from exc
+
+
+@router.get("/planes/{plan_id}")
+def get_plan_detail(plan_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "comercial.view", db)
+    return svc.plan_to_dict(svc.get_plan(db, user.organization_id, plan_id))
 
 
 @router.get("/propuestas")
@@ -164,6 +171,12 @@ def import_valuation(proposal_id: str, body: ImportValuationRequest, user: User 
 def get_traceability(proposal_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     check_permission(user, "comercial.view", db)
     return svc.build_traceability(db, user.organization_id, proposal_id)
+
+
+@router.post("/propuestas/{proposal_id}/simular")
+def simulate_proposal(proposal_id: str, body: ProposalSimulateRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "comercial.simulate", db)
+    return svc.simulate_proposal(db, user.organization_id, proposal_id, body.model_dump(exclude_none=True))
 
 
 @router.post("/simular")

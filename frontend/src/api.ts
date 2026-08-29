@@ -1424,13 +1424,16 @@ export type CommercialProposalDetail = CommercialProposalSummary & {
   payback_meses?: number | null;
   margen_pct?: number | null;
   pct_valor_conservado_cliente?: number | null;
+  pct_valor_capturado_empleados_ia?: number | null;
   valores: Array<{
     id: string;
     categoria: string;
+    alcance?: string;
     naturaleza: string;
     valor_bruto: number;
     atribucion_pct: number;
     valor_atribuible: number;
+    external_intelligence_ref?: string | null;
   }>;
   escenarios: Array<{
     scenario_type: string;
@@ -1493,6 +1496,14 @@ export async function approveCommercialProposal(proposalId: string) {
 
 export async function detectCommercialDoubleCount(proposalId: string) {
   return api(`/api/comercial/propuestas/${proposalId}/detectar-doble-conteo`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchCommercialPlan(id: string): Promise<CommercialPlanItem> {
+  return api(`/api/comercial/planes/${id}`);
+}
+
+export async function simulateCommercialProposal(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/simular`, { method: "POST", body: JSON.stringify(data) });
 }
 
 export async function simulateCommercialValue(data: Record<string, unknown>) {
