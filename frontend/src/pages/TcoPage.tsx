@@ -16,6 +16,7 @@ import {
   type TcoTablero,
 } from "../api";
 import { usePermissions } from "../hooks/usePermissions";
+import { TCO_CATEGORY_LABELS } from "../lib/comercialLabels";
 
 type Tab = "tablero" | "proveedores" | "rentabilidad" | "simulador" | "alianzas";
 
@@ -147,7 +148,7 @@ export function TcoPage() {
                 <ul>
                   {Object.entries(tablero.desglose).map(([k, v]) => (
                     <li key={k}>
-                      {k}: {(v as number).toLocaleString("es-CO")}
+                      {(TCO_CATEGORY_LABELS[k] ?? k)}: {(v as number).toLocaleString("es-CO")}
                     </li>
                   ))}
                 </ul>
