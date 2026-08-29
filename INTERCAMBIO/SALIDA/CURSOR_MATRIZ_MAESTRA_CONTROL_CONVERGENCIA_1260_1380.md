@@ -25,7 +25,7 @@
 | Fase | Alcance | Responsable |
 |------|---------|-------------|
 | **BASE** | Puente certificada (1100–1250 + V1) | Fijada |
-| **FASE 1** | 1360 → 1350 → merge Alembic → 1300 → 1370 → 1380 | **D** (en curso) |
+| **FASE 1** | 1360 → 1350 → merge Alembic → 1300 → 1370 → 1380 | **D** — auditada `041209f4` (veredicto B) |
 | **FASE 2** | 1260, 1270, 1290, 1330, cadena comercial | Posterior |
 | **FINAL** | Convergencia integral 1260–1380 + matriz 94 | Objetivo |
 
@@ -293,16 +293,16 @@ Referencias de rama/commit (no re-auditados funcionalmente).
 | Empleados IA 802 | plat. | `agent_factory.py` | 14 ep. | wizard | 8 | — | `test_agent_factory_e2e` | PRESENTE | PRESENTE | PRESENTE | PRESENTE | OK |
 | Migración control | 1250 | `migration_control.py` | — | — | — | ledger | `test_migration_control` | PRESENTE | PRESENTE | PRESENTE | PRESENTE | OK |
 
-### 3.2 Matriz — incorporación FASE 1 (D en curso)
+### 3.2 Matriz — incorporación FASE 1 (auditada 2026-08-29)
 
 | CAPACIDAD | BLOQUE | BACKEND | API | FRONTEND | PERMISO | MIGRACIÓN | TEST | BASE | FASE 1 | FASE 2 | FINAL | ESTADO |
 |-----------|--------|---------|-----|----------|---------|-----------|------|------|--------|--------|-------|--------|
-| Continuidad / resiliencia | 1360 | `continuidad.py` | 31 ep. | `ContinuidadPage` | 10 | `1360a1` | `test_continuidad_1360` | — | A INCORPORAR | — | PRESENTE | PENDIENTE |
-| Gobierno de datos | 1350 | `governance.py` | 41 ep. | `GobernanzaDatosPage` | 7 | `1350a1` | `test_governance_1350` | — | A INCORPORAR | — | PRESENTE | PENDIENTE |
-| Merge Alembic 1350∥1360 | 1250+ | — | — | — | — | merge rev. | `assert_single_head` | — | A INCORPORAR | — | 1 cabeza | PENDIENTE |
-| Seguridad avanzada MFA | 1300 | `security.py` | 14 ep. | `MiSeguridadPage` | 4 | `1300a1`* | `test_bloque_1300_*` | — | A INCORPORAR | — | PRESENTE | PENDIENTE |
-| Identidad empresarial SSO | 1370 | `identidad.py` | 19 ep. | `AdminIdentidadPage` | 5 | `1370a1` | `test_identidad_1370` | — | A INCORPORAR | — | PRESENTE | PENDIENTE |
-| Aprovisionamiento SCIM | 1380 | `scim.py` | 23 ep. | mod. Identidad | — | `1380a1` | `test_scim_1380` | — | A INCORPORAR | — | PRESENTE | PENDIENTE |
+| Continuidad / resiliencia | 1360 | `continuidad.py` | 31 ep. | `ContinuidadPage` | 10 | `1360a1` | `test_continuidad_1360` | — | PRESENTE | — | PRESENTE | OK |
+| Gobierno de datos | 1350 | `governance.py` | 41 ep. | `GobernanzaDatosPage` | 7 | `1350a1` | `test_governance_1350` | — | PRESENTE | — | PRESENTE | OK |
+| Merge Alembic 1350∥1360 | 1250+ | — | — | — | — | `1365a1` | `assert_single_head` | — | PRESENTE | — | 1 cabeza | OK |
+| Seguridad avanzada MFA | 1300 | `security.py` | 14 ep. | `MiSeguridadPage` | 4 | `1300a1`* | `test_bloque_1300_*` | — | PRESENTE | — | PRESENTE | OK |
+| Identidad empresarial SSO | 1370 | `identidad.py` | 19 ep. | `AdminIdentidadPage` | 5 | `1370a1` | `test_identidad_1370` | — | PRESENTE | — | PRESENTE | OK |
+| Aprovisionamiento SCIM | 1380 | `scim.py` | 23 ep. | mod. Identidad | — | `1380a1` | `test_scim_1380` | — | PRESENTE | — | PRESENTE | OK |
 
 > *`1300a1` en rama fuente apunta a `1250a`; en convergencia debe re-anclarse a `1250f` o HEAD vigente post-merge 1350∥1360.
 
@@ -373,16 +373,16 @@ Cadena: … → 1250a → 1250b → 1250f
 schema_repair.HEAD_REVISION = "1250f1a2b3c4d"
 ```
 
-### 5.2 FASE 1 (D — en curso)
+### 5.2 FASE 1 (D — auditada, HEAD `041209f4`)
 
 | Paso | Revisión(es) | down_revision esperado (rama fuente) | down_revision en convergencia | Cabeza tras paso |
 |------|-------------|-------------------------------------|-------------------------------|------------------|
-| 1. 1360 | `1360a1b2c3d4e` | `1250f1a2b3c4d` | `1250f1a2b3c4d` | `1360a1` |
-| 2. 1350 | `1350a1b2c3d4e` | `1250a1b2c3d4e` *(fuente)* | `1250f1a2b3c4d` o HEAD vigente | 2 heads: `1360a1`, `1350a1` |
-| 3. Merge 1350∥1360 | `1390m1` *(propuesto)* | — | `(1360a1, 1350a1)` | 1 cabeza merge |
-| 4. 1300 | `1300a1b2c3d4e` | `1250a1` *(fuente)* | HEAD post-merge | +1 cadena |
-| 5. 1370 | `1370a1b2c3d4e` | `1300a1` | HEAD vigente | +1 |
-| 6. 1380 | `1380a1b2c3d4e` | `1370a1` | HEAD vigente | **1 cabeza** (cierre Fase 1) |
+| 1. 1360 | `1360a1b2c3d4e` | `1250f1a2b3c4d` | `1250f1a2b3c4d` ✓ | `1360a1` |
+| 2. 1350 | `1350a1b2c3d4e` | `1250a1b2c3d4e` *(fuente)* | `1250f1a2b3c4d` ✓ | 2 heads: `1360a1`, `1350a1` |
+| 3. Merge 1350∥1360 | `1365a1b2c3d4e` *(real D)* | — | `(1360a1, 1350a1)` ✓ | 1 cabeza merge |
+| 4. 1300 | `1300a1b2c3d4e` | `1250a1` *(fuente)* | `1365a1b2c3d4e` ✓ | +1 cadena |
+| 5. 1370 | `1370a1b2c3d4e` | `1300a1` | `1300a1` ✓ | +1 |
+| 6. 1380 | `1380a1b2c3d4e` | `1370a1` | `1370a1` ✓ | **1 cabeza** (cierre Fase 1) |
 
 ### 5.3 Fases posteriores
 
