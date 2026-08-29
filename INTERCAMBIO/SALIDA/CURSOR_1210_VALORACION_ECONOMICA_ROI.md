@@ -3,7 +3,7 @@
 **Fecha:** 2026-08-29  
 **Rama:** `cursor/1210-valoracion-economica-roi-85e4`  
 **Base:** `6234638` (bloque 1110)  
-**HEAD:** `8f8e57f`  
+**HEAD:** `5b7bca5`  
 **Estado:** **BLOQUE 1210 TERMINADO**  
 **NO MERGE**
 
