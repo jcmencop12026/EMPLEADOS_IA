@@ -2416,6 +2416,59 @@ export async function calcularImplSalud(proyectoId: string) {
   return api(`/api/implementacion/proyectos/${proyectoId}/salud`, { method: "POST", body: JSON.stringify({}) });
 }
 
+// --- Segmentación y planes verticales (1310) ---
+
+export type PackageItem = {
+  id: string;
+  code: string;
+  name: string;
+  empleados_ia_incluidos?: number | null;
+  usuarios_incluidos?: number | null;
+  precio_estimado?: number | null;
+  is_custom?: boolean;
+  capabilities?: Record<string, unknown>;
+};
+
+export type RecommendationResult = {
+  plan_sugerido?: { id: string; code: string; name: string } | null;
+  paquete_sugerido?: { id: string; code: string; name: string } | null;
+  nivel_ajuste: string;
+  razones: string[];
+  advertencias: string[];
+  alternativas?: unknown[];
+  plan_personalizado_recomendado?: boolean;
+};
+
+export async function fetchSectors() {
+  return api("/api/segmentacion/sectores");
+}
+
+export async function fetchSegments() {
+  return api("/api/segmentacion/segmentos");
+}
+
+export async function fetchCommercialProfile() {
+  return api("/api/segmentacion/perfil");
+}
+
+export async function upsertCommercialProfile(data: Record<string, unknown>) {
+  return api("/api/segmentacion/perfil", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function fetchPackages(): Promise<PackageItem[]> {
+  return api("/api/segmentacion/paquetes");
+}
+
+export async function createPackage(data: Record<string, unknown>): Promise<PackageItem> {
+  return api("/api/segmentacion/paquetes", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchRecommendation(): Promise<RecommendationResult> {
+  return api("/api/segmentacion/recomendar");
+}
+
+export async function comparePackages(package_ids: string[]) {
+
 export type ContinuidadServicio = {
   id: string;
   codigo: string;
