@@ -36,6 +36,7 @@ def _reset_admin_security_state():
                 "excess_session_policy": "REVOCAR_MAS_ANTIGUA",
             },
         )
+        user.password_hash = hash_password(settings.bootstrap_admin_password)
         db.commit()
     finally:
         db.close()
