@@ -1572,6 +1572,7 @@ export async function testLlmProvider(id: string): Promise<LlmTestResult> {
   return api(`/api/llm/providers/${id}/test`, { method: "POST", body: JSON.stringify({}) });
 }
 
+
 // --- Línea base e impacto (1200) ---
 
 export type LineaBaseItem = {
@@ -1728,4 +1729,111 @@ export type CentroControlResumen = {
 
 export async function fetchCentroControlResumen(periodo = "mtd"): Promise<CentroControlResumen> {
   return api(`/api/centro-control/resumen-ejecutivo?periodo=${encodeURIComponent(periodo)}`);
+}
+
+// --- Integraciones reales y conectores (1330) ---
+
+export type IntegrationCatalogItem = {
+  type: string;
+  name: string;
+  descripcion: string;
+};
+
+export type IntegrationConnector = {
+  id: string;
+  code: string;
+  name: string;
+  descripcion: string | null;
+  connector_type: string;
+  status: string;
+  auth_type: string;
+  secret_configured: boolean;
+  config: Record<string, unknown> | null;
+  mapping: unknown[] | null;
+  schema: Record<string, unknown> | null;
+  destination_type: string | null;
+  signal_source_code: string | null;
+  trigger_mode: string;
+  health: {
+    last_success_at: string | null;
+    last_error_at: string | null;
+    last_error_message: string | null;
+    last_latency_ms: number | null;
+    consecutive_failures: number;
+    circuit_open: boolean;
+  };
+  webhook_token?: string;
+  webhook_url_hint?: string;
+  created_at: string | null;
+};
+
+export type IntegrationExecution = {
+  id: string;
+  status: string;
+  started_at: string | null;
+  latency_ms: number | null;
+  records_processed: number;
+  records_valid: number;
+  records_rejected: number;
+  error_category: string | null;
+  error_message: string | null;
+};
+
+export type IntegrationHealth = {
+  connector_id: string;
+  status: string;
+  circuit_open: boolean;
+  consecutive_failures: number;
+  last_success_at: string | null;
+  last_error_at: string | null;
+  last_latency_ms: number | null;
+  total_executions: number;
+  success_rate: number | null;
+};
+
+export async function fetchIntegrationCatalog(): Promise<IntegrationCatalogItem[]> {
+  return api("/api/integraciones/catalogo");
+}
+
+export async function fetchIntegrationConnectors(): Promise<IntegrationConnector[]> {
+  return api("/api/integraciones/conectores");
+}
+
+export async function fetchIntegrationConnector(id: string): Promise<IntegrationConnector> {
+  return api(`/api/integraciones/conectores/${id}`);
+}
+
+export async function createIntegrationConnector(data: Record<string, unknown>): Promise<IntegrationConnector> {
+  return api("/api/integraciones/conectores", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateIntegrationConnector(id: string, data: Record<string, unknown>): Promise<IntegrationConnector> {
+  return api(`/api/integraciones/conectores/${id}`, { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function testIntegrationConnector(id: string): Promise<{ resultado: string; mensaje: string; latencia_ms?: number }> {
+  return api(`/api/integraciones/conectores/${id}/probar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function executeIntegrationConnector(
+  id: string,
+  data: { idempotency_key?: string; payload?: Record<string, unknown> },
+): Promise<{
+  execution_id?: string;
+  status: string;
+  records_processed: number;
+  records_valid: number;
+  records_rejected: number;
+  signals_created?: number;
+  idempotent?: boolean;
+}> {
+  return api(`/api/integraciones/conectores/${id}/ejecutar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchIntegrationExecutions(id: string): Promise<IntegrationExecution[]> {
+  return api(`/api/integraciones/conectores/${id}/ejecuciones`);
+}
+
+export async function fetchIntegrationHealth(id: string): Promise<IntegrationHealth> {
+  return api(`/api/integraciones/conectores/${id}/salud`);
 }
