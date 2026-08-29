@@ -17,6 +17,7 @@ from app.orchestration_models import AIEmployee, ApprovalRequest, WorkEvent, Wor
 from app.permissions import check_permission, user_permissions
 from app.services import control_center_adapters as adapters
 from app.services import finops_service, operations_center, proactive_service
+from app.services.semantic_contract import enrich_control_center_payload
 
 EXECUTIVE_INDICATOR_DEFS = [
     {"id": "employees_active", "label": "Empleados IA activos", "permiso": "employee.view", "enlace": "/directorio"},
@@ -731,7 +732,7 @@ def get_executive_summary(
     ctx["external_signals_pending"] = ie_mod.get("sin_validar") if ie_mod.get("disponible") else None
     ctx["external_risks_open"] = ie_mod.get("riesgos_abiertos") if ie_mod.get("disponible") else None
 
-    return {
+    return enrich_control_center_payload({
         "generated_at": _utcnow().isoformat(),
         "organization_id": org_id,
         "filtros": {
@@ -769,7 +770,7 @@ def get_executive_summary(
             "1220": "Integrado — diagnóstico transversal",
             "1240": "Integrado — inteligencia externa",
         },
-    }
+    })
 
 
 def resolve_organization_id(db: Session, user: User, requested_org_id: str | None) -> str:
