@@ -3,7 +3,7 @@
 
 **Rama:** `cursor/1250b-inteligencia-externa-diagnostico-85e4`  
 **Base:** `166a04fa228433073936ea5d7dc2702f1a8324ae` (1220)  
-**HEAD:** ver commit final tras push  
+**HEAD:** `3c0206ee48d34255b2ffa6ba79ba977c2d7b1a24`  
 **Fecha:** 2026-08-29
 
 ---
@@ -127,7 +127,7 @@ BASE:
 166a04fa228433073936ea5d7dc2702f1a8324ae
 
 HEAD:
-<SHA post-commit>
+3c0206e
 
 1120: PASS
 1220: PASS
