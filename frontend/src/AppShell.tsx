@@ -50,6 +50,7 @@ const MENU: NavSection[] = [
       { to: "/senales", label: "Señales y fuentes" },
       { to: "/diagnosticos", label: "Diagnósticos" },
       { to: "/inteligencia-externa", label: "Inteligencia externa" },
+      { to: "/aprendizaje", label: "Aprendizaje" },
       { to: "/costos-valor", label: "Costos y valor" },
       { to: "/notificaciones", label: "Notificaciones" },
       { to: "/auditoria", label: "Auditoría" },

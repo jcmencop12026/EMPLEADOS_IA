@@ -1729,3 +1729,107 @@ export type CentroControlResumen = {
 export async function fetchCentroControlResumen(periodo = "mtd"): Promise<CentroControlResumen> {
   return api(`/api/centro-control/resumen-ejecutivo?periodo=${encodeURIComponent(periodo)}`);
 }
+
+// —— Aprendizaje y repriorización (1260) ——
+
+export type CicloAprendizajeItem = {
+  id: string;
+  opportunity_id: string;
+  estado: string;
+  impacto_esperado?: number | null;
+  valor_esperado?: number | null;
+  costo_esperado?: number | null;
+  tiempo_esperado_dias?: number | null;
+  impacto_real?: number | null;
+  valor_real?: number | null;
+  costo_real?: number | null;
+  tiempo_real_dias?: number | null;
+  desviaciones?: Record<string, unknown> | null;
+  calidad_recomendacion?: string | null;
+  prioridad_anterior?: number | null;
+  prioridad_propuesta?: number | null;
+  explicacion_prioridad?: Record<string, unknown> | null;
+  created_at?: string | null;
+};
+
+export type RecalibracionItem = {
+  id: string;
+  ciclo_id: string;
+  opportunity_id: string;
+  estado: string;
+  campo: string;
+  valor_anterior?: string | null;
+  valor_nuevo?: string | null;
+  justificacion: string;
+  factores?: Record<string, unknown> | null;
+  motivo_rechazo?: string | null;
+};
+
+export type PatronAprendizajeItem = {
+  id: string;
+  tipo_patron: string;
+  clave_patron: string;
+  dominio?: string | null;
+  tipo_oportunidad?: string | null;
+  ocurrencias: number;
+  resumen: string;
+};
+
+export async function fetchCiclosAprendizaje(opportunityId?: string): Promise<CicloAprendizajeItem[]> {
+  const params = opportunityId ? `?opportunity_id=${encodeURIComponent(opportunityId)}` : "";
+  return api(`/api/aprendizaje/ciclos${params}`);
+}
+
+export async function fetchCicloAprendizaje(id: string): Promise<CicloAprendizajeItem & { retroalimentaciones?: unknown[]; recalibraciones?: RecalibracionItem[] }> {
+  return api(`/api/aprendizaje/ciclos/${id}`);
+}
+
+export async function crearCicloAprendizaje(body: {
+  opportunity_id: string;
+  impacto_real?: number;
+  valor_real?: number;
+  costo_real?: number;
+  tiempo_real_dias?: number;
+}): Promise<CicloAprendizajeItem> {
+  return api("/api/aprendizaje/ciclos", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function evaluarCicloAprendizaje(
+  cicloId: string,
+  body: {
+    impacto_real?: number;
+    valor_real?: number;
+    costo_real?: number;
+    tiempo_real_dias?: number;
+    tipo_explicacion?: string;
+    notas?: string;
+  },
+): Promise<unknown> {
+  return api(`/api/aprendizaje/ciclos/${cicloId}/evaluar`, { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchRecalibraciones(cicloId?: string): Promise<RecalibracionItem[]> {
+  const params = cicloId ? `?ciclo_id=${encodeURIComponent(cicloId)}` : "";
+  return api(`/api/aprendizaje/recalibraciones${params}`);
+}
+
+export async function aprobarRecalibracion(id: string): Promise<RecalibracionItem> {
+  return api(`/api/aprendizaje/recalibraciones/${id}/aprobar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function rechazarRecalibracion(id: string, motivo: string): Promise<RecalibracionItem> {
+  return api(`/api/aprendizaje/recalibraciones/${id}/rechazar`, { method: "POST", body: JSON.stringify({ motivo }) });
+}
+
+export async function aplicarRecalibracion(id: string): Promise<RecalibracionItem> {
+  return api(`/api/aprendizaje/recalibraciones/${id}/aplicar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchPatronesAprendizaje(): Promise<PatronAprendizajeItem[]> {
+  return api("/api/aprendizaje/patrones");
+}
+
+export async function fetchHistorialAprendizaje(cicloId?: string): Promise<unknown[]> {
+  const params = cicloId ? `?ciclo_id=${encodeURIComponent(cicloId)}` : "";
+  return api(`/api/aprendizaje/historial${params}`);
+}

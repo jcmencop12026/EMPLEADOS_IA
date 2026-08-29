@@ -27,6 +27,8 @@ import { DiagnosticosPage } from "./pages/DiagnosticosPage";
 import { DiagnosticoDetailPage } from "./pages/DiagnosticoDetailPage";
 import { InteligenciaExternaPage } from "./pages/InteligenciaExternaPage";
 import { InteligenciaExternaDetailPage } from "./pages/InteligenciaExternaDetailPage";
+import { AprendizajePage } from "./pages/AprendizajePage";
+import { AprendizajeDetailPage } from "./pages/AprendizajeDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
@@ -87,6 +89,8 @@ export default function App() {
           <Route path="diagnosticos/:diagnosticId" element={<DiagnosticoDetailPage />} />
           <Route path="inteligencia-externa" element={<InteligenciaExternaPage />} />
           <Route path="inteligencia-externa/senales/:signalId" element={<InteligenciaExternaDetailPage />} />
+          <Route path="aprendizaje" element={<AprendizajePage />} />
+          <Route path="aprendizaje/:cicloId" element={<AprendizajeDetailPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
           <Route element={<RequirePermission anyOf={["platform.organization.view"]} />}>
             <Route path="administracion/empresas" element={<AdminCompaniesPage />} />
