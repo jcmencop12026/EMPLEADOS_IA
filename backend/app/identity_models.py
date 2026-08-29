@@ -36,6 +36,7 @@ class OrganizationIdentitySettings(Base):
     break_glass_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     break_glass_secret_ref: Mapped[str | None] = mapped_column(String(200), nullable=True)
     scim_prepared: Mapped[bool] = mapped_column(Boolean, default=False)
+    scim_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 

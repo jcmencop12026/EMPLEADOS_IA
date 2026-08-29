@@ -68,6 +68,7 @@ def identity_settings_to_dict(row: OrganizationIdentitySettings) -> dict[str, An
     "break_glass_enabled": row.break_glass_enabled,
     "break_glass_configured": secret_configured(row.break_glass_secret_ref),
     "scim_prepared": row.scim_prepared,
+    "scim_enabled": row.scim_enabled,
   }
 
 
