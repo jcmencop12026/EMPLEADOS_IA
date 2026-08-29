@@ -6,7 +6,9 @@ import {
   approveOpportunity,
   evaluateOpportunity,
   fetchOpportunity,
+  fetchOpportunityEconomics,
   fetchOpportunityTrace,
+  type FinOpsOpportunityEconomics,
 } from "../api";
 
 type Tab = "resumen" | "evidencia" | "contexto" | "accion" | "equipo" | "trazabilidad" | "finops";
@@ -25,14 +27,23 @@ export function OportunidadDetailPage() {
   const { opportunityId } = useParams<{ opportunityId: string }>();
   const [opp, setOpp] = useState<OpportunityItem & Record<string, unknown> | null>(null);
   const [trace, setTrace] = useState<Record<string, unknown> | null>(null);
+  const [economics, setEconomics] = useState<FinOpsOpportunityEconomics | null>(null);
   const [tab, setTab] = useState<Tab>("resumen");
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   function reload() {
     if (!opportunityId) return;
-    Promise.all([fetchOpportunity(opportunityId), fetchOpportunityTrace(opportunityId)])
-      .then(([o, t]) => { setOpp(o as OpportunityItem & Record<string, unknown>); setTrace(t); })
+    Promise.all([
+      fetchOpportunity(opportunityId),
+      fetchOpportunityTrace(opportunityId),
+      fetchOpportunityEconomics(opportunityId).catch(() => null),
+    ])
+      .then(([o, t, eco]) => {
+        setOpp(o as OpportunityItem & Record<string, unknown>);
+        setTrace(t);
+        setEconomics(eco);
+      })
       .catch((e) => setError(e instanceof Error ? e.message : "Error"));
   }
 
@@ -135,11 +146,37 @@ export function OportunidadDetailPage() {
           <pre>{JSON.stringify(trace, null, 2)}</pre>
         )}
         {tab === "finops" && (
-          <dl className="detail-grid">
-            <dt>Referencia FINOPS</dt><dd>{(opp.finops_reference as string) ?? "—"}</dd>
-            <dt>WorkPlan</dt><dd>{(opp.work_plan_id as string) ?? "—"}</dd>
-            <dt>Atribución</dt><dd>{(opp.atribucion_nivel as string) ?? "—"}</dd>
-          </dl>
+          <div>
+            <dl className="detail-grid">
+              <dt>Referencia FINOPS</dt><dd>{(opp.finops_reference as string) ?? "—"}</dd>
+              <dt>WorkPlan</dt><dd>{(opp.work_plan_id as string) ?? "—"}</dd>
+              <dt>Atribución</dt><dd>{(opp.atribucion_nivel as string) ?? "—"}</dd>
+              <dt>Costo IA acumulado</dt><dd>{economics?.total_cost_label ?? "—"}</dd>
+              <dt>Consumos vinculados</dt><dd>{economics?.consumption_count ?? 0}</dd>
+            </dl>
+            {economics && economics.consumptions.length > 0 && (
+              <table className="data-table" style={{ marginTop: "1rem" }}>
+                <thead>
+                  <tr>
+                    <th>Proveedor</th>
+                    <th>Modelo</th>
+                    <th>Costo</th>
+                    <th>Fecha</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {economics.consumptions.map((c) => (
+                    <tr key={c.id}>
+                      <td>{c.provider || "—"}</td>
+                      <td>{c.model_name || "—"}</td>
+                      <td>{c.cost_label}</td>
+                      <td className="mono">{c.created_at?.slice(0, 19)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         )}
       </div>
     </div>
