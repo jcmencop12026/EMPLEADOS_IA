@@ -23,7 +23,7 @@ HEAD ANTERIOR:
 36a7af6
 
 HEAD FINAL:
-eb7476d
+8268dfc
 
 CAUSA RAÍZ:
 Settings.model_validator solo consultaba os.environ para DATABASE_URL;
