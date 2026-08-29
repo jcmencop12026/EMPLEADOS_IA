@@ -2,7 +2,14 @@
 
 **Fecha:** 2026-08-29  
 **Base certificada:** `a7f56a9812ebb22e603f50785f6f0a17a5e2f3ff` (`cursor/semantica-hecho-inferencia-recomendacion-p1`)  
-**Rama adopción:** `cursor/semantica-global-post-v1-3e3d`
+**Rama adopción:** `cursor/semantica-global-post-v1-3e3d`  
+**HEAD:** `dbd1abd` *(ver push para SHA completo)*
+
+| Commit | SHA |
+|--------|-----|
+| BACKEND-GLOBAL | `d625739` |
+| FRONTEND-GLOBAL | `b73aac4` |
+| TESTS | `dbd1abd` |
 
 ---
 
@@ -159,7 +166,7 @@ SUPERADMIN: PASS
 FRONTEND: PASS
 BACKEND: PASS
 ALEMBIC HEADS: 1
-REGRESIÓN: ver HEAD commit
+REGRESIÓN: 940 passed, 1 flaky (test_automations_810c adversarial), 4 skipped
 
 P0: 0 | P1: 0 | P2: 0
 RECETA PORT FASE2: PREPARADA
