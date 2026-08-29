@@ -222,9 +222,16 @@ def test_07_prioritization_and_structured_items(client: TestClient, token: str):
     assert items[0]["responsable_propuesto"] is None
 
 
-def test_08_opportunity_and_deduplication(client: TestClient, token: str):
-    _setup_signals(client, token)
-    headers = auth_header(token)
+def test_08_opportunity_and_deduplication(client: TestClient):
+    """Oportunidades vinculadas y detalle — aislado por tenant (sin depender de tests previos)."""
+    db = TestingSessionLocal()
+    try:
+        _, user, password = _create_tenant_user(db, org_name="Tenant Diag 08")
+        user_token = _token(client, user.username, password)
+    finally:
+        db.close()
+    _setup_signals(client, user_token)
+    headers = auth_header(user_token)
     first = client.post("/api/diagnosticos/generar", headers=headers, json={})
     assert first.status_code == 201
     diag_id = first.json()["id"]
