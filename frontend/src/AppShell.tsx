@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { fetchUnreadCount } from "./api";
+import { filterMenuByPermissions } from "./auth/permissions";
 import { getCachedUser, logout } from "./auth/session";
 
 type NavItem = { to: string; label: string; end?: boolean };
@@ -10,13 +11,14 @@ const MENU: NavSection[] = [
   {
     id: "inicio",
     label: "Inicio",
-    items: [{ to: "/", label: "Panel de control", end: true }],
+    items: [{ to: "/", label: "Centro de Control", end: true }],
   },
   {
     id: "operaciones",
     label: "Operaciones",
     items: [
       { to: "/operaciones", label: "Centro de operaciones" },
+      { to: "/operaciones/solicitud", label: "Nueva solicitud" },
       { to: "/ejecuciones", label: "Ejecuciones" },
       { to: "/aprobaciones", label: "Aprobaciones" },
       { to: "/automatizaciones", label: "Automatizaciones" },
@@ -36,15 +38,22 @@ const MENU: NavSection[] = [
       { to: "/capacidades", label: "Capacidades" },
       { to: "/herramientas", label: "Herramientas" },
       { to: "/conocimiento", label: "Conocimiento" },
-      { to: "/test-lab", label: "Test Lab" },
+      { to: "/test-lab", label: "Laboratorio de pruebas" },
     ],
   },
   {
     id: "analisis",
     label: "Análisis y control",
     items: [
+      { to: "/lineas-base", label: "Líneas base e impacto" },
       { to: "/oportunidades", label: "Centro de oportunidades" },
+      { to: "/senales", label: "Señales y fuentes" },
+      { to: "/diagnosticos", label: "Diagnósticos" },
+      { to: "/inteligencia-externa", label: "Inteligencia externa" },
+      { to: "/continuidad", label: "Continuidad" },
       { to: "/costos-valor", label: "Costos y valor" },
+      { to: "/gobernanza-datos", label: "Gobierno de datos" },
+      { to: "/mi-seguridad", label: "Mi seguridad" },
       { to: "/notificaciones", label: "Notificaciones" },
       { to: "/auditoria", label: "Auditoría" },
     ],
@@ -53,11 +62,14 @@ const MENU: NavSection[] = [
     id: "admin",
     label: "Administración",
     items: [
+      { to: "/administracion/empresas", label: "Empresas" },
       { to: "/administracion/usuarios", label: "Usuarios" },
       { to: "/administracion/roles", label: "Roles y permisos" },
       { to: "/administracion/organizacion", label: "Organización" },
       { to: "/administracion/configuracion", label: "Configuración" },
+      { to: "/administracion/proveedores-ia", label: "Proveedores IA" },
       { to: "/administracion/seguridad", label: "Seguridad" },
+      { to: "/administracion/identidad", label: "Identidad empresarial" },
     ],
   },
 ];
@@ -78,6 +90,19 @@ export function AppShell() {
   const [sections, setSections] = useState<Record<string, boolean>>(loadSections);
   const [unread, setUnread] = useState(0);
   const user = getCachedUser();
+  const permissionSet = useMemo(
+    () => new Set(user?.permissions ?? []),
+    [user?.permissions],
+  );
+
+  const visibleMenu = useMemo(
+    () =>
+      MENU.map((section) => ({
+        ...section,
+        items: filterMenuByPermissions(section.items, permissionSet),
+      })).filter((section) => section.items.length > 0),
+    [permissionSet],
+  );
 
   useEffect(() => {
     localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0");
@@ -148,7 +173,7 @@ export function AppShell() {
     <div className={`layout ${collapsed ? "sidebar-collapsed" : ""}`}>
       <aside className="sidebar" title="Navegación principal">
         <div className="brand-row">
-          <div className="brand">Enterprise AI OS</div>
+          <div className="brand">Sistema empresarial de IA</div>
           <button
             type="button"
             className="btn-icon"
@@ -159,7 +184,7 @@ export function AppShell() {
           </button>
         </div>
         <nav className="nav-hierarchical">
-          {MENU.map(renderSection)}
+          {visibleMenu.map(renderSection)}
         </nav>
         <div className="sidebar-footer">
           {user && (
@@ -176,7 +201,7 @@ export function AppShell() {
       </aside>
       <div className="main">
         <header className="topbar">
-          <span>EMPLEADOS_IA · Orquestador E2E · Workspace Salud</span>
+          <span>EMPLEADOS_IA · Centro de operaciones · Módulo Salud</span>
           <NavLink className="notification-bell" to="/notificaciones" title="Centro de notificaciones">
             🔔{unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}
           </NavLink>
