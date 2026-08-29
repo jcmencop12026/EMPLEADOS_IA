@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { OptimizacionRecomendacion } from "../api";
-import { aprobarRecomendacionOptimizacion, fetchOptimizacionRecomendacion } from "../api";
+import {
+  aprobarRecomendacionOptimizacion,
+  confirmarEjecucionHumanaOptimizacion,
+  ejecutarRecomendacionOptimizacion,
+  fetchOptimizacionRecomendacion,
+} from "../api";
 
 export function OptimizacionDetailPage() {
   const { recId } = useParams<{ recId: string }>();
@@ -28,9 +33,37 @@ export function OptimizacionDetailPage() {
     }
   }
 
+  async function onEjecutar() {
+    if (!recId) return;
+    try {
+      await ejecutarRecomendacionOptimizacion(recId, "AUTOMATICA");
+      const updated = await fetchOptimizacionRecomendacion(recId);
+      setDetail(updated);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al ejecutar");
+    }
+  }
+
+  async function onConfirmarHumana() {
+    if (!recId) return;
+    const ref = window.prompt("Referencia externa de ejecución:");
+    if (!ref) return;
+    try {
+      await confirmarEjecucionHumanaOptimizacion(recId, ref);
+      const updated = await fetchOptimizacionRecomendacion(recId);
+      setDetail(updated);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al confirmar ejecución");
+    }
+  }
+
   if (!detail) {
     return <div className="page"><p className="muted">Cargando…</p></div>;
   }
+
+  const ejecEstado = detail.ejecucion?.estado;
+  const puedeEjecutar = detail.estado === "APROBADA" && detail.factible && !ejecEstado;
+  const pendienteHumana = ejecEstado === "PENDIENTE_EJECUCION_HUMANA";
 
   const seleccionados = (detail.items ?? []).filter((i) => i.seleccionado);
   const excluidos = (detail.items ?? []).filter((i) => !i.seleccionado);
@@ -40,7 +73,7 @@ export function OptimizacionDetailPage() {
       <header className="page-header">
         <p className="muted"><Link to="/optimizacion">← Optimización</Link></p>
         <h1>{detail.codigo}</h1>
-        <p className="muted">{detail.objetivo} — {detail.estado}</p>
+        <p className="muted">{detail.objetivo} — {detail.estado}{ejecEstado ? ` / ${ejecEstado}` : ""}</p>
       </header>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -61,6 +94,22 @@ export function OptimizacionDetailPage() {
           <button type="button" className="btn btn-primary" onClick={onAprobar}>
             Aprobar recomendación
           </button>
+        )}
+        {puedeEjecutar && (
+          <button type="button" className="btn btn-primary" onClick={onEjecutar} style={{ marginLeft: "0.5rem" }}>
+            Ejecutar recomendación
+          </button>
+        )}
+        {pendienteHumana && (
+          <button type="button" className="btn btn-secondary" onClick={onConfirmarHumana} style={{ marginLeft: "0.5rem" }}>
+            Confirmar ejecución humana
+          </button>
+        )}
+        {detail.estado === "FALLIDA" && (
+          <p className="alert alert-error">Ejecución fallida: {String(detail.ejecucion?.error ?? "Error desconocido")}</p>
+        )}
+        {detail.estado === "EJECUTADA" && detail.ejecucion?.execution_reference && (
+          <p className="muted">Referencia: {detail.ejecucion.execution_reference}</p>
         )}
       </section>
 
