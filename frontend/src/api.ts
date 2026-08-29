@@ -685,6 +685,44 @@ export async function requestEmployeeApproval(id: string, data: { kind: string; 
   return api(`/api/agent-factory/employees/${id}/request-approval`, { method: "POST", body: JSON.stringify(data) });
 }
 
+export type EmployeeApprovalRecord = {
+  factory_approval_id: string;
+  approval_request_id: string;
+  approval_kind: string;
+  status: string;
+  approval_status: string;
+  reason: string;
+  requested_by_id: string;
+  requested_by_name: string | null;
+  requester_id: string;
+  requester_name: string | null;
+  decided_by_id: string | null;
+  decided_by_name: string | null;
+  decision_comment: string | null;
+  target_version: number | null;
+  created_at: string;
+  requested_at: string;
+  decided_at: string | null;
+  can_decide: boolean;
+  work_plan_id: string;
+};
+
+export async function fetchEmployeeApprovals(id: string): Promise<EmployeeApprovalRecord[]> {
+  return api<EmployeeApprovalRecord[]>(`/api/agent-factory/employees/${id}/approvals`);
+}
+
+export async function decideEmployeeApproval(
+  employeeId: string,
+  approvalRequestId: string,
+  decision: "approve" | "reject",
+  comment?: string,
+): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${employeeId}/approvals/${approvalRequestId}/decide`, {
+    method: "POST",
+    body: JSON.stringify({ decision, comment }),
+  });
+}
+
 
 export type AutomationItem = {
   id: string;

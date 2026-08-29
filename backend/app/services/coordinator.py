@@ -854,6 +854,15 @@ def decide_approval(
     if approval.status != "PENDING":
         return {"error": "Aprobación ya decidida"}
 
+    from app.services.employee_lifecycle_service import (
+        assert_factory_approval_decision_allowed,
+        sync_factory_approval_on_decide,
+    )
+
+    seg_err = assert_factory_approval_decision_allowed(db, approval, user_id)
+    if seg_err:
+        return {"error": seg_err}
+
     plan = db.query(WorkPlan).filter(WorkPlan.id == approval.work_plan_id).first()
     task = db.query(EmployeeTask).filter(EmployeeTask.id == approval.task_id).first() if approval.task_id else None
     employee = db.query(AIEmployee).filter(AIEmployee.id == task.employee_id).first() if task and task.employee_id else None
@@ -918,6 +927,7 @@ def decide_approval(
                     plan_status=plan.status,
                     error=plan.error,
                 )
+                sync_factory_approval_on_decide(db, approval.id, decision)
                 publish(
                     EventMessage(
                         event_type=WorkEventType.APPROVAL_COMPLETED,
@@ -957,6 +967,7 @@ def decide_approval(
         if employee:
             employee.status = EmployeeStatus.DISPONIBLE
 
+    sync_factory_approval_on_decide(db, approval.id, decision)
     commit_gated(db)
     publish(
         EventMessage(

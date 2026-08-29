@@ -80,6 +80,28 @@ class EmployeeApprovalRequest(BaseModel):
     target_version: int | None = None
 
 
+class EmployeeApprovalOut(BaseModel):
+    factory_approval_id: str
+    approval_request_id: str
+    approval_kind: str
+    status: str
+    approval_status: str
+    reason: str
+    requested_by_id: str
+    requested_by_name: str | None = None
+    requester_id: str
+    requester_name: str | None = None
+    decided_by_id: str | None = None
+    decided_by_name: str | None = None
+    decision_comment: str | None = None
+    target_version: int | None = None
+    created_at: str
+    requested_at: str
+    decided_at: str | None = None
+    can_decide: bool = False
+    work_plan_id: str
+
+
 class EmployeeRollbackRequest(BaseModel):
     target_version: int = Field(ge=1)
     reason: str = Field(min_length=3, max_length=500)
