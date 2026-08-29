@@ -99,6 +99,9 @@ export default function App() {
                   "automation.view",
                   "linea_base.view",
                   "diagnosticos.view",
+                  "support.view",
+                  "support.create",
+                  "support.assign",
                 ]}
               />
             }
