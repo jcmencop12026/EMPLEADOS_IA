@@ -13,6 +13,7 @@ import {
   type UserSession,
 } from "../../api";
 import { ErrorState, LoadingState } from "../../components/AsyncState";
+import { SemanticBadge } from "../../components/SemanticBadge";
 import { formatAuditAction } from "../../lib/labels";
 
 export function AdminSecurityPage() {
@@ -153,11 +154,12 @@ export function AdminSecurityPage() {
       <section className="panel">
         <h2>Eventos de seguridad</h2>
         <table className="data-table">
-          <thead><tr><th>Fecha</th><th>Tipo</th><th>Detalle</th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Semántica</th><th>Tipo</th><th>Detalle</th></tr></thead>
           <tbody>
             {events.map((ev) => (
               <tr key={ev.id}>
                 <td className="mono">{new Date(ev.created_at).toLocaleString()}</td>
+                <td><SemanticBadge tipo={ev.tipo_semantico ?? "HECHO"} tooltip={ev.tooltip_semantico} /></td>
                 <td>{ev.event_type}</td>
                 <td className="cell-truncate">{ev.detail || "—"}</td>
               </tr>

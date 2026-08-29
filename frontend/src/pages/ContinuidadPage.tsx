@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ContinuidadTablero } from "../api";
 import { fetchContinuidadTablero } from "../api";
+import { SemanticBadge } from "../components/SemanticBadge";
 
 type TabId =
   | "tablero"
@@ -93,6 +94,7 @@ export function ContinuidadPage() {
                   <ul>
                     {data.alertas.map((a, i) => (
                       <li key={`${a.tipo}-${i}`}>
+                        <SemanticBadge tipo={a.tipo_semantico ?? "INFERENCIA"} subtipo={a.subtipo_semantico} tooltip={a.tooltip_semantico} />
                         <strong>{a.tipo}</strong>: {a.mensaje}
                       </li>
                     ))}

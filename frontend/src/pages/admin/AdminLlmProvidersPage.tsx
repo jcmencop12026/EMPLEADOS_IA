@@ -8,6 +8,7 @@ import {
   type LlmProvider,
 } from "../../api";
 import { ErrorState, LoadingState } from "../../components/AsyncState";
+import { SemanticBadge } from "../../components/SemanticBadge";
 
 export function AdminLlmProvidersPage() {
   const [providers, setProviders] = useState<LlmProvider[]>([]);
@@ -90,7 +91,7 @@ export function AdminLlmProvidersPage() {
     <div className="ops-page">
       <header className="page-header">
         <h1>Proveedores de inferencia IA</h1>
-        <p className="muted">Configuración de OpenAI, Ollama y futuros proveedores</p>
+        <p className="muted">Configuración de OpenAI, Ollama y futuros proveedores. Las salidas de inferencia se clasifican como <SemanticBadge tipo="INFERENCIA" />.</p>
       </header>
 
       <div className="ops-actions" style={{ marginBottom: "1rem" }}>

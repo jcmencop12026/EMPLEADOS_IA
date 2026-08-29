@@ -613,7 +613,14 @@ export type SecurityPolicy = {
   excess_session_policy: string;
 };
 
-export type SecurityEvent = {
+export type SemanticMeta = {
+  tipo_semantico?: string | null;
+  subtipo_semantico?: string | null;
+  etiqueta_visible?: string | null;
+  tooltip_semantico?: string | null;
+};
+
+export type SecurityEvent = SemanticMeta & {
   id: string;
   event_type: string;
   user_id?: string | null;
@@ -1796,7 +1803,7 @@ export type LlmProvider = {
   config_json: Record<string, unknown> | null;
 };
 
-export type LlmTestResult = {
+export type LlmTestResult = SemanticMeta & {
   success: boolean;
   status: string;
   message: string;
@@ -2110,11 +2117,12 @@ export type ContinuidadTablero = {
   servicios_criticos: ContinuidadServicio[];
   servicios_degradados: ContinuidadServicio[];
   incidentes_abiertos: number;
-  backups_recientes: Array<{ recurso: string; resultado: string; estado_registro: string }>;
+  backups_recientes: Array<SemanticMeta & { recurso: string; resultado: string; estado_registro: string }>;
   backups_fallidos: number;
   restauraciones_verificadas: number;
   acciones_pendientes: number;
-  alertas: Array<{ tipo: string; mensaje: string }>;
+  alertas: Array<SemanticMeta & { tipo: string; mensaje: string }>;
+  contrato_semantico?: { version: string; tipos: string[] };
   centro_control_adapter?: Record<string, unknown>;
   integracion_1330_prep?: Record<string, unknown>;
   integracion_1260_prep?: Record<string, unknown>;
@@ -2126,7 +2134,7 @@ export async function fetchContinuidadTablero(): Promise<ContinuidadTablero> {
 
 // --- Gobierno de datos (1350) ---
 
-export type GovDashboard = {
+export type GovDashboard = SemanticMeta & {
   fuentes_catalogadas: number;
   sin_clasificar: number;
   riesgo_alto: number;
@@ -2135,6 +2143,8 @@ export type GovDashboard = {
   solicitudes_abiertas: number;
   hallazgos_abiertos: number;
   acciones_pendientes: number;
+  contrato_semantico?: { version: string; tipos: string[] };
+  riesgo_alto_semantico?: SemanticMeta;
 };
 
 export type GovClassification = {
@@ -2178,7 +2188,7 @@ export type GovSubjectRequest = {
   created_at?: string | null;
 };
 
-export type GovFinding = {
+export type GovFinding = SemanticMeta & {
   id: string;
   finding_type: string;
   severity: string;
