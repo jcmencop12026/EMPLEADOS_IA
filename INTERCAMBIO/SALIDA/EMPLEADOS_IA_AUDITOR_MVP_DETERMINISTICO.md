@@ -174,7 +174,7 @@ Permisos: `auditor_empleados.view`, `auditor_empleados.execute`, `auditor_emplea
 | roundtrip SQLite | upgrade → downgrade -1 → upgrade **PASS** |
 | tests | `test_employee_auditor_mvp` 12 passed; `test_bandeja_trabajo_humano` 6 passed; `test_migration_control` 7 passed |
 | archivos tocados | migración renombrada; `migration_ledger.json`; `schema_repair.py` HEAD_REVISION |
-| commit corrección | `<SHA post-fix>` |
+| commit corrección | `1033fcd` |
 
 **Receta port para General:** conservar commits funcionales del Auditor; al portar sobre central, **reparentar** `1400a1b2c3d4e` al head central real del momento — no asumir `down_revision=1330b1b2c3d4f` si la cadena central divergió.
 
