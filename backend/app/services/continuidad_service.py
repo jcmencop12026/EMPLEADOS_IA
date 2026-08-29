@@ -559,7 +559,7 @@ def create_accion_correctiva(db: Session, org_id: str, data: dict[str, Any], use
     return row
 
 
-# --- Tablero / Centro control adapter ---
+from app.services.semantic_enrichment_post_v1 import enrich_continuidad_payload
 
 def tablero(db: Session, org_id: str) -> dict[str, Any]:
     servicios = list_servicios(db, org_id)
@@ -583,7 +583,7 @@ def tablero(db: Session, org_id: str) -> dict[str, Any]:
         ContinuidadAccionCorrectiva.estado == "PENDIENTE",
     ).count()
     degradados = [s for s in servicios if s.get("estado_operacional") == EstadoOperacional.DEGRADADO]
-    return {
+    return enrich_continuidad_payload({
         "servicios_criticos": servicios,
         "servicios_degradados": degradados,
         "incidentes_abiertos": incidentes_abiertos,
@@ -598,15 +598,15 @@ def tablero(db: Session, org_id: str) -> dict[str, Any]:
         },
         "integracion_1330_prep": {"reportar_salud": "/api/continuidad/servicios/{id}/estado"},
         "integracion_1260_prep": {"aprendizaje_desde_incidentes": True},
-    }
+    })
 
 
 def centro_control_resumen(db: Session, org_id: str) -> dict[str, Any]:
     t = tablero(db, org_id)
-    return {
+    return enrich_continuidad_payload({
         "disponibilidad": [s for s in t["servicios_criticos"] if s.get("estado_operacional") == "DISPONIBLE"],
         "degradados": t["servicios_degradados"],
         "incidentes_abiertos": t["incidentes_abiertos"],
         "backups_fallidos": t["backups_fallidos"],
         "alertas": t["alertas"][:5],
-    }
+    })

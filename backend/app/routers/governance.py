@@ -50,6 +50,13 @@ from app.schemas_governance import (
 )
 from app.services import governance_service as svc
 from app.services.governance_adapters import GovernanceConnectorAdapter, GovernanceProviderAdapter
+from app.services.semantic_enrichment_post_v1 import (
+    enrich_governance_payload,
+    enrich_integracion_payload,
+    enrich_list_semantic,
+    from_governance_corrective_action,
+    from_governance_finding,
+)
 
 router = APIRouter(prefix="/api/gobierno-datos", tags=["gobierno-datos"])
 
@@ -65,7 +72,7 @@ def _value(exc: ValueError) -> HTTPException:
 @router.get("/dashboard", response_model=DashboardOut)
 def dashboard(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     check_permission(user, "datos.view", db)
-    return svc.dashboard_summary(db, user.organization_id)
+    return enrich_governance_payload(svc.dashboard_summary(db, user.organization_id))
 
 
 @router.get("/clasificaciones", response_model=list[ClassificationLevelOut])
@@ -293,12 +300,12 @@ def adapter_1270_evaluate(
         category_id=body.category_id,
         provider=body.provider,
     )
-    return {
+    return enrich_governance_payload({
         "result": decision.result,
         "reasons": decision.reasons,
         "minimization_action": decision.minimization_action,
         "policy_id": decision.policy_id,
-    }
+    })
 
 
 @router.get("/adaptador-1330/catalogo/{entry_id}")
@@ -308,7 +315,8 @@ def adapter_1330_policy(entry_id: str, db: Session = Depends(get_db), user: User
     view = adapter.get_resource_policy(user.organization_id, entry_id)
     if view is None:
         raise HTTPException(status_code=404, detail="Recurso no encontrado.")
-    return {
+    return enrich_integracion_payload({
+        "tipo": "POLITICA",
         "classification_code": view.classification_code,
         "classification_name": view.classification_name,
         "provider_decision": view.provider_decision,
@@ -317,7 +325,7 @@ def adapter_1330_policy(entry_id: str, db: Session = Depends(get_db), user: User
         "purpose_code": view.purpose_code,
         "restrictions": view.restrictions,
         "metadata": view.metadata,
-    }
+    })
 
 
 @router.get("/accesos", response_model=list[AccessLogOut])
@@ -479,19 +487,22 @@ def list_findings(
     user: User = Depends(get_current_user),
 ):
     check_permission(user, "datos.audit", db)
-    return svc.list_findings(db, user.organization_id, status=status_filter)
+    rows = enrich_list_semantic(svc.list_findings(db, user.organization_id, status=status_filter), from_governance_finding)
+    return [FindingOut(**row) for row in rows]
 
 
 @router.post("/hallazgos/escanear", response_model=list[FindingOut])
 def scan_findings_endpoint(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     check_permission(user, "datos.audit", db)
-    return svc.scan_findings(db, user.organization_id, user.id)
+    rows = enrich_list_semantic(svc.scan_findings(db, user.organization_id, user.id), from_governance_finding)
+    return [FindingOut(**row) for row in rows]
 
 
 @router.get("/acciones", response_model=list[CorrectiveActionOut])
 def list_actions(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     check_permission(user, "datos.audit", db)
-    return svc.list_corrective_actions(db, user.organization_id)
+    rows = enrich_list_semantic(svc.list_corrective_actions(db, user.organization_id), from_governance_corrective_action)
+    return [CorrectiveActionOut(**row) for row in rows]
 
 
 @router.post("/acciones", response_model=CorrectiveActionOut, status_code=status.HTTP_201_CREATED)

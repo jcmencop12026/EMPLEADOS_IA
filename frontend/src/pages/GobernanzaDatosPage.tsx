@@ -20,6 +20,7 @@ import {
   fetchGovSubjectRequests,
   scanGovFindings,
 } from "../api";
+import { SemanticBadge } from "../components/SemanticBadge";
 
 type Tab = "tablero" | "catalogo" | "clasificacion" | "politicas" | "retencion" | "accesos" | "solicitudes" | "hallazgos";
 
@@ -102,7 +103,7 @@ export function GobernanzaDatosPage() {
         <section className="card-grid">
           <div className="card"><h3>Fuentes catalogadas</h3><p className="metric">{dashboard.fuentes_catalogadas}</p></div>
           <div className="card"><h3>Sin clasificar</h3><p className="metric">{dashboard.sin_clasificar}</p></div>
-          <div className="card"><h3>Riesgo alto</h3><p className="metric">{dashboard.riesgo_alto}</p></div>
+          <div className="card"><h3>Riesgo alto</h3><p className="metric">{dashboard.riesgo_alto}</p><SemanticBadge tipo={dashboard.riesgo_alto_semantico?.tipo_semantico ?? "INFERENCIA"} tooltip={dashboard.riesgo_alto_semantico?.tooltip_semantico} /></div>
           <div className="card"><h3>Retención vencida</h3><p className="metric">{dashboard.retencion_vencida}</p></div>
           <div className="card"><h3>Exportaciones</h3><p className="metric">{dashboard.exportaciones}</p></div>
           <div className="card"><h3>Solicitudes abiertas</h3><p className="metric">{dashboard.solicitudes_abiertas}</p></div>
@@ -257,6 +258,7 @@ export function GobernanzaDatosPage() {
           <table className="data-table">
             <thead>
               <tr>
+                <th>Semántica</th>
                 <th>Tipo</th>
                 <th>Severidad</th>
                 <th>Descripción</th>
@@ -266,6 +268,7 @@ export function GobernanzaDatosPage() {
             <tbody>
               {findings.map((f) => (
                 <tr key={f.id}>
+                  <td><SemanticBadge tipo={f.tipo_semantico ?? "INFERENCIA"} subtipo={f.subtipo_semantico} tooltip={f.tooltip_semantico} /></td>
                   <td>{f.finding_type}</td>
                   <td>{f.severity}</td>
                   <td>{f.description}</td>

@@ -6,6 +6,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.schemas_semantic import SemanticMetaFields
+
 
 class ClassificationLevelOut(BaseModel):
     id: str
@@ -209,7 +211,7 @@ class ProviderExportEvalIn(BaseModel):
     provider: str | None = None
 
 
-class ProviderExportEvalOut(BaseModel):
+class ProviderExportEvalOut(SemanticMetaFields):
     result: str
     reasons: list[str] = Field(default_factory=list)
     minimization_action: str | None = None
@@ -334,7 +336,7 @@ class GlobalPolicyIn(BaseModel):
     is_mandatory: bool = True
 
 
-class FindingOut(BaseModel):
+class FindingOut(SemanticMetaFields):
     id: str
     finding_type: str
     severity: str
@@ -352,7 +354,7 @@ class CorrectiveActionIn(BaseModel):
     status: str = "PENDIENTE"
 
 
-class CorrectiveActionOut(BaseModel):
+class CorrectiveActionOut(SemanticMetaFields):
     id: str
     finding_id: str
     responsible_user_id: str | None = None
@@ -361,7 +363,7 @@ class CorrectiveActionOut(BaseModel):
     outcome: str | None = None
 
 
-class RiskOut(BaseModel):
+class RiskOut(SemanticMetaFields):
     catalog_entry_id: str
     risk_level: str
     score: int
@@ -378,7 +380,7 @@ class MaskOut(BaseModel):
     masked: str
 
 
-class DashboardOut(BaseModel):
+class DashboardOut(SemanticMetaFields):
     fuentes_catalogadas: int
     sin_clasificar: int
     riesgo_alto: int
@@ -387,3 +389,5 @@ class DashboardOut(BaseModel):
     solicitudes_abiertas: int
     hallazgos_abiertos: int
     acciones_pendientes: int
+    contrato_semantico: dict | None = None
+    riesgo_alto_semantico: dict | None = None
