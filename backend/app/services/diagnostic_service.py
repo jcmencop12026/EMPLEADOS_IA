@@ -32,7 +32,9 @@ from app.diagnostic_models import (
 )
 from app.models import Organization
 from app.opportunity_models import Opportunity, ProactiveSignal
+from app.external_models import ExternalEvidence, ExternalSignalExtension, ExternalSource
 from app.services import proactive_service as proactive_svc
+from app.services.external_intelligence_service import EXTERNAL_ORIGIN_PREFIX
 from app.tenant_scope import ORG_STATUS_ACTIVE
 
 _CORRELATION_NOTE = "Correlación observada; no implica causalidad demostrada"
@@ -244,6 +246,7 @@ def indicator_value_to_dict(row: DiagnosticIndicatorValue) -> dict[str, Any]:
 
 
 def finding_to_dict(row: DiagnosticFinding) -> dict[str, Any]:
+    evidencia = _parse_json(row.evidencia_json) or {}
     return {
         "id": row.id,
         "codigo": row.codigo,
@@ -256,10 +259,13 @@ def finding_to_dict(row: DiagnosticFinding) -> dict[str, Any]:
         "confianza": float(row.confianza),
         "dominio": row.dominio,
         "proceso": row.proceso,
-        "evidencia": _parse_json(row.evidencia_json),
+        "evidencia": evidencia,
         "indicadores": _parse_json(row.indicadores_json),
         "signal_ids": _parse_json(row.signal_ids_json),
         "estado": row.estado,
+        "origen_ambito": evidencia.get("ambito"),
+        "external_source_id": evidencia.get("external_source_id"),
+        "is_risk": evidencia.get("is_risk", False),
     }
 
 
@@ -436,6 +442,213 @@ def detect_findings_from_indicators(
     return findings
 
 
+def _is_external_signal(signal: ProactiveSignal) -> bool:
+    return (signal.origen or "").startswith(EXTERNAL_ORIGIN_PREFIX)
+
+
+def _external_domain(signal: ProactiveSignal, ext: ExternalSignalExtension) -> str:
+    dom = _normalize_domain(signal.dominio or "OTRO")
+    if dom.startswith("EXTERNO_"):
+        return dom
+    source_type = None
+    if ext.external_source_id:
+        return dom
+    mapping = {
+        "competencia": "EXTERNO_MERCADO",
+        "mercado": "EXTERNO_MERCADO",
+        "regulacion": "EXTERNO_REGULACION",
+        "tecnologia": "EXTERNO_TECNOLOGIA",
+        "demanda": "EXTERNO_DEMANDA",
+    }
+    key = (signal.dominio or signal.tipo or "").lower()
+    for fragment, domain in mapping.items():
+        if fragment in key:
+            return domain
+    return "EXTERNO_MERCADO"
+
+
+def _build_external_evidence(
+    ext: ExternalSignalExtension,
+    signal: ProactiveSignal,
+    source: ExternalSource | None,
+    evidence_rows: list[ExternalEvidence],
+) -> dict[str, Any]:
+    return {
+        "ambito": "EXTERNO",
+        "origen": signal.origen,
+        "modo_ingesta": signal.modo_ingesta,
+        "external_source_id": ext.external_source_id,
+        "external_source_code": source.code if source else None,
+        "external_source_name": source.name if source else None,
+        "classification": ext.classification,
+        "relevance": ext.relevance,
+        "freshness_status": ext.freshness_status,
+        "hecho_observado": ext.hecho_observado,
+        "interpretacion": ext.interpretacion,
+        "hipotesis": ext.hipotesis,
+        "is_risk": ext.is_risk,
+        "risk_type": ext.risk_type,
+        "confidence_level": float(ext.confidence_level),
+        "published_at": ext.published_at.isoformat() if ext.published_at else None,
+        "captured_at": ext.captured_at.isoformat() if ext.captured_at else None,
+        "evidencias": [
+            {
+                "id": ev.id,
+                "reference_url": ev.reference_url,
+                "summary": ev.summary,
+                "published_at": ev.published_at.isoformat() if ev.published_at else None,
+            }
+            for ev in evidence_rows
+        ],
+        "nota": "Hipótesis e interpretaciones externas requieren validación; correlación no implica causalidad",
+    }
+
+
+def detect_findings_from_external_signals(
+    db: Session,
+    organization_id: str,
+    *,
+    periodo_inicio: datetime | None,
+    periodo_fin: datetime | None,
+    skip_signal_ids: set[str] | None = None,
+) -> list[DiagnosticFinding]:
+    """Genera hallazgos desde extensiones 1240 — respeta hecho/interpretación/hipótesis."""
+    skip_signal_ids = skip_signal_ids or set()
+    query = (
+        db.query(ExternalSignalExtension, ProactiveSignal)
+        .join(ProactiveSignal, ProactiveSignal.id == ExternalSignalExtension.signal_id)
+        .filter(ExternalSignalExtension.organization_id == organization_id)
+    )
+    if periodo_inicio:
+        query = query.filter(
+            (ExternalSignalExtension.captured_at >= periodo_inicio)
+            | (ProactiveSignal.signal_at >= periodo_inicio)
+            | (ProactiveSignal.created_at >= periodo_inicio)
+        )
+    if periodo_fin:
+        query = query.filter(
+            (ExternalSignalExtension.captured_at <= periodo_fin)
+            | (ProactiveSignal.signal_at <= periodo_fin)
+            | (ProactiveSignal.created_at <= periodo_fin)
+        )
+
+    findings: list[DiagnosticFinding] = []
+    for ext, signal in query.all():
+        if signal.id in skip_signal_ids:
+            continue
+        if ext.relevance == "NO_RELEVANTE":
+            continue
+
+        source = (
+            db.query(ExternalSource)
+            .filter(ExternalSource.id == ext.external_source_id)
+            .first()
+            if ext.external_source_id
+            else None
+        )
+        evidence_rows = (
+            db.query(ExternalEvidence)
+            .filter(ExternalEvidence.signal_id == signal.id)
+            .all()
+        )
+        dominio = _external_domain(signal, ext)
+        evidencia = _build_external_evidence(ext, signal, source, evidence_rows)
+        severidad = signal.severidad or ("ALTA" if ext.is_risk else "MEDIA")
+
+        hecho_finding = DiagnosticFinding(
+            organization_id=organization_id,
+            codigo=_next_codigo(db, organization_id, "HAL"),
+            tipo_contenido="HECHO",
+            que_ocurre=ext.hecho_observado or signal.evidencia_resumen or "Hallazgo externo registrado",
+            donde=source.name if source else (signal.dimension or dominio),
+            desde_cuando=ext.published_at or ext.captured_at or signal.signal_at or signal.created_at,
+            magnitud=_parse_numeric(signal.valor_metrica),
+            severidad=severidad,
+            confianza=float(ext.confidence_level or signal.confianza or 0.6),
+            dominio=dominio,
+            proceso=signal.proceso,
+            evidencia_json=_json(evidencia),
+            indicadores_json=_json([]),
+            signal_ids_json=_json([signal.id]),
+            source_id=signal.source_id,
+        )
+        db.add(hecho_finding)
+        db.flush()
+        findings.append(hecho_finding)
+        write_audit(
+            db,
+            action="diagnostic.finding.created",
+            organization_id=organization_id,
+            user_id=None,
+            detail=_json({"finding_id": hecho_finding.id, "tipo": "HECHO", "ambito": "EXTERNO"}),
+            commit=False,
+        )
+
+        if ext.interpretacion:
+            interp = DiagnosticFinding(
+                organization_id=organization_id,
+                codigo=_next_codigo(db, organization_id, "HAL"),
+                tipo_contenido="INTERPRETACION",
+                que_ocurre=ext.interpretacion,
+                donde=source.name if source else dominio,
+                desde_cuando=ext.captured_at or signal.signal_at,
+                magnitud=None,
+                severidad="MEDIA",
+                confianza=min(0.65, float(ext.confidence_level or 0.5)),
+                dominio=dominio,
+                proceso=signal.proceso,
+                evidencia_json=_json({**evidencia, "derivado_de": hecho_finding.id}),
+                indicadores_json=_json([]),
+                signal_ids_json=_json([signal.id]),
+                source_id=signal.source_id,
+            )
+            db.add(interp)
+            db.flush()
+            findings.append(interp)
+            write_audit(
+                db,
+                action="diagnostic.finding.created",
+                organization_id=organization_id,
+                user_id=None,
+                detail=_json({"finding_id": interp.id, "tipo": "INTERPRETACION", "ambito": "EXTERNO"}),
+                commit=False,
+            )
+
+    return findings
+
+
+def _external_extension_for_signal(
+    db: Session,
+    organization_id: str,
+    signal_id: str | None,
+) -> ExternalSignalExtension | None:
+    if not signal_id:
+        return None
+    return (
+        db.query(ExternalSignalExtension)
+        .filter(
+            ExternalSignalExtension.organization_id == organization_id,
+            ExternalSignalExtension.signal_id == signal_id,
+        )
+        .first()
+    )
+
+
+def _should_skip_opportunity_for_finding(
+    db: Session,
+    organization_id: str,
+    finding: DiagnosticFinding,
+) -> bool:
+    signal_ids = _parse_json(finding.signal_ids_json) or []
+    if not signal_ids:
+        return False
+    ext = _external_extension_for_signal(db, organization_id, signal_ids[0])
+    if ext and (ext.is_risk or ext.classification == "RIESGO"):
+        return True
+    evidencia = _parse_json(finding.evidencia_json) or {}
+    return bool(evidencia.get("is_risk"))
+
+
 def _find_metric_values(
     indicators: list[DiagnosticIndicatorValue],
     category: str,
@@ -564,6 +777,23 @@ def infer_probable_causes(
             )
             db.add(cause)
             causes.append(cause)
+            signal_ids = _parse_json(finding.signal_ids_json) or []
+            if signal_ids:
+                ext = _external_extension_for_signal(db, organization_id, signal_ids[0])
+                if ext and ext.hipotesis:
+                    hypo = DiagnosticProbableCause(
+                        organization_id=organization_id,
+                        finding_id=finding.id,
+                        diagnostic_id=diagnostic_id,
+                        tipo="HIPOTESIS",
+                        descripcion=ext.hipotesis[:500],
+                        justificacion="Hipótesis externa — no convertida automáticamente en hecho",
+                        evidencia_json=finding.evidencia_json,
+                        confianza=min(0.5, float(ext.confidence_level or 0.4)),
+                        fuentes_json=_json({"signal_ids": signal_ids, "ambito": "EXTERNO"}),
+                    )
+                    db.add(hypo)
+                    causes.append(hypo)
         elif finding.tipo_contenido == "INTERPRETACION":
             cause = DiagnosticProbableCause(
                 organization_id=organization_id,
@@ -804,6 +1034,17 @@ def generate_diagnostic(
     signals_by_id = {s.id: s for s in signals}
 
     findings = detect_findings_from_indicators(db, organization_id, indicators, signals_by_id)
+    covered_signal_ids = {
+        sid for f in findings for sid in (_parse_json(f.signal_ids_json) or [])
+    }
+    external_findings = detect_findings_from_external_signals(
+        db,
+        organization_id,
+        periodo_inicio=periodo_inicio,
+        periodo_fin=periodo_fin,
+        skip_signal_ids=covered_signal_ids,
+    )
+    findings.extend(external_findings)
     correlations = detect_correlations(db, organization_id, indicators, findings)
 
     corr_id = _new_correlation()
@@ -859,11 +1100,12 @@ def generate_diagnostic(
         items.append(item)
 
         if finding.tipo_contenido == "HECHO" and finding.severidad in ("ALTA", "MEDIA"):
-            opp_id = _create_opportunity_from_finding(
-                db, organization_id, diagnostic, finding, cause, user_id
-            )
-            if opp_id and opp_id not in opportunity_ids:
-                opportunity_ids.append(opp_id)
+            if not _should_skip_opportunity_for_finding(db, organization_id, finding):
+                opp_id = _create_opportunity_from_finding(
+                    db, organization_id, diagnostic, finding, cause, user_id
+                )
+                if opp_id and opp_id not in opportunity_ids:
+                    opportunity_ids.append(opp_id)
 
     db.flush()
     items.sort(key=lambda x: float(x.prioridad_score or 0), reverse=True)
@@ -1056,16 +1298,47 @@ def diagnostic_to_detail(db: Session, organization_id: str, diagnostic_id: str) 
 def get_diagnostic_trace(db: Session, organization_id: str, diagnostic_id: str) -> dict[str, Any]:
     detail = diagnostic_to_detail(db, organization_id, diagnostic_id)
     traces = []
+    external_chains: list[dict[str, Any]] = []
     for opp in detail.get("oportunidades", []):
         if opp.get("opportunity_id"):
             trace = proactive_svc.get_full_trace(db, opp["opportunity_id"], organization_id)
             if trace:
                 traces.append(trace)
+    for hallazgo in detail.get("hallazgos", []):
+        evidencia = hallazgo.get("evidencia") or {}
+        if evidencia.get("ambito") != "EXTERNO":
+            continue
+        signal_ids = hallazgo.get("signal_ids") or []
+        if not signal_ids:
+            continue
+        ext = _external_extension_for_signal(db, organization_id, signal_ids[0])
+        if not ext:
+            continue
+        source = (
+            db.query(ExternalSource)
+            .filter(ExternalSource.id == ext.external_source_id)
+            .first()
+            if ext.external_source_id
+            else None
+        )
+        evidence = db.query(ExternalEvidence).filter(ExternalEvidence.signal_id == signal_ids[0]).all()
+        external_chains.append({
+            "fuente_externa": source.code if source else None,
+            "evidencias": [ev.id for ev in evidence],
+            "senal_id": signal_ids[0],
+            "hallazgo_id": hallazgo.get("id"),
+            "hallazgo_codigo": hallazgo.get("codigo"),
+            "diagnostico_id": diagnostic_id,
+            "classification": ext.classification,
+            "freshness_status": ext.freshness_status,
+            "is_risk": ext.is_risk,
+        })
     return {
         "diagnostic_id": diagnostic_id,
         "correlation_id": detail.get("correlation_id"),
-        "cadena": "SEÑAL → INDICADOR → HALLAZGO → DIAGNÓSTICO → OPORTUNIDAD",
+        "cadena": "FUENTE EXTERNA/INTERNA → SEÑAL → INDICADOR → HALLAZGO → DIAGNÓSTICO → OPORTUNIDAD/RIESGO",
         "oportunidades_trazas": traces,
+        "cadenas_externas": external_chains,
         "hallazgos": detail.get("hallazgos"),
         "oportunidades": detail.get("oportunidades"),
     }
