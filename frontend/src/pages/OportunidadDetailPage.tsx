@@ -34,7 +34,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "resultado", label: "Resultado" },
   { id: "ejecucion", label: "Ejecución" },
   { id: "trazabilidad", label: "Trazabilidad" },
-  { id: "finops", label: "FinOps" },
+  { id: "finops", label: "Costos y consumo" },
   { id: "valoracion", label: "Valoración" },
 ];
 
@@ -214,7 +214,7 @@ export function OportunidadDetailPage() {
     if (!opportunityId) return;
     try {
       await activateOpportunity(opportunityId, autoExecute);
-      setMsg(autoExecute ? "Oportunidad activada y ejecución iniciada" : "Oportunidad activada — plan creado");
+      setMsg(autoExecute ? "Oportunidad activada y ejecución iniciada" : "Oportunidad activada — plan de trabajo creado");
       await reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al activar");
@@ -638,7 +638,7 @@ export function OportunidadDetailPage() {
         {tab === "finops" && (
           <div>
             <dl className="detail-grid">
-              <dt>Referencia FINOPS</dt><dd>{opp.finops_reference ?? "—"}</dd>
+              <dt>Referencia de costos</dt><dd>{opp.finops_reference ?? "—"}</dd>
               <dt>Plan de trabajo</dt>
               <dd>{opp.work_plan_id ? <Link to={`/operaciones/${opp.work_plan_id}`}>{opp.work_plan_id}</Link> : "—"}</dd>
               <dt>Atribución</dt><dd>{opp.atribucion_nivel ?? "—"}</dd>

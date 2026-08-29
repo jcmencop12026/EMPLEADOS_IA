@@ -134,7 +134,7 @@ export function CostosValorPage() {
             <strong>{summary.net_benefit ?? "—"}</strong>
           </div>
           <div className="metric-card">
-            <span className="metric-label">ROI</span>
+            <span className="metric-label">Retorno de inversión</span>
             <strong>{summary.roi_label}</strong>
           </div>
           <div className="metric-card">

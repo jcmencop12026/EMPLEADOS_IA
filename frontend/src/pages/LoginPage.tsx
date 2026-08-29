@@ -54,7 +54,7 @@ export function LoginPage() {
   return (
     <div className="login-wrap">
       <form className="login-card" onSubmit={onSubmit}>
-        <h1>Enterprise AI OS</h1>
+        <h1>Sistema empresarial de IA</h1>
         <p className="muted">Inicio de sesión · EMPLEADOS IA</p>
         <label>
           Usuario
