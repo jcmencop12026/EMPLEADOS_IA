@@ -703,6 +703,35 @@ export type IdentityPolicy = {
   break_glass_enabled: boolean;
   break_glass_configured: boolean;
   scim_prepared: boolean;
+  scim_enabled?: boolean;
+};
+
+export type ScimStatus = {
+  scim_enabled: boolean;
+  scim_base_url: string;
+  metrics: Record<string, number>;
+  tokens: {
+    id: string;
+    name: string;
+    token_prefix: string;
+    masked: string;
+    active: boolean;
+    expires_at: string | null;
+    last_used_at: string | null;
+    created_at: string;
+  }[];
+  conflicts_pending: number;
+  recent_events: { action: string; result: string; detail: string | null; created_at: string }[];
+};
+
+export type ScimRoleMapping = { id: string; external_group: string; role_code: string };
+
+export type ScimConflict = {
+  id: string;
+  conflict_type: string;
+  external_id: string | null;
+  detail: string | null;
+  created_at: string;
 };
 
 export type IdentityProvider = {
@@ -768,6 +797,38 @@ export async function beginPublicOidc(providerId: string, orgCode: string): Prom
 
 export async function completeOidcCallback(state: string, code: string): Promise<{ access_token: string }> {
   return api("/api/identidad/oidc/callback", { method: "POST", body: JSON.stringify({ state, code }) });
+}
+
+export async function fetchScimStatus(): Promise<ScimStatus> {
+  return api<ScimStatus>("/api/identidad/scim/estado");
+}
+
+export async function configureScim(data: { scim_enabled: boolean }): Promise<{ scim_enabled: boolean; message: string }> {
+  return api("/api/identidad/scim/configuracion", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function createScimToken(data?: { name?: string; expires_days?: number }): Promise<{ id: string; token: string; message: string }> {
+  return api("/api/identidad/scim/tokens", { method: "POST", body: JSON.stringify(data ?? {}) });
+}
+
+export async function rotateScimToken(tokenId: string): Promise<{ id: string; token: string; message: string }> {
+  return api(`/api/identidad/scim/tokens/${tokenId}/rotar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function revokeScimToken(tokenId: string): Promise<{ message: string }> {
+  return api(`/api/identidad/scim/tokens/${tokenId}/revocar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchScimRoleMappings(): Promise<ScimRoleMapping[]> {
+  return api<ScimRoleMapping[]>("/api/identidad/scim/mapeos-roles");
+}
+
+export async function upsertScimRoleMapping(data: { external_group: string; role_code: string }): Promise<ScimRoleMapping> {
+  return api<ScimRoleMapping>("/api/identidad/scim/mapeos-roles", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchScimConflicts(): Promise<ScimConflict[]> {
+  return api<ScimConflict[]>("/api/identidad/scim/conflictos");
 }
 
 export async function fetchPlatformOrganizations(): Promise<PlatformOrganization[]> {

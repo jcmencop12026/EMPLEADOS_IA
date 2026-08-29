@@ -1,16 +1,27 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   activateIdentityProvider,
+  configureScim,
   createIdentityProvider,
+  createScimToken,
   fetchIdentityEvents,
   fetchIdentityPolicy,
   fetchIdentityProviders,
+  fetchScimConflicts,
+  fetchScimRoleMappings,
+  fetchScimStatus,
+  revokeScimToken,
+  rotateScimToken,
   testIdentityProvider,
   updateIdentityPolicy,
   upsertGroupRoleMapping,
+  upsertScimRoleMapping,
   type IdentityLoginEvent,
   type IdentityPolicy,
   type IdentityProvider,
+  type ScimConflict,
+  type ScimRoleMapping,
+  type ScimStatus,
 } from "../../api";
 import { ErrorState, LoadingState } from "../../components/AsyncState";
 
@@ -39,14 +50,30 @@ export function AdminIdentidadPage() {
   const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("OIDC");
+  const [scim, setScim] = useState<ScimStatus | null>(null);
+  const [scimMappings, setScimMappings] = useState<ScimRoleMapping[]>([]);
+  const [scimConflicts, setScimConflicts] = useState<ScimConflict[]>([]);
+  const [newScimToken, setNewScimToken] = useState<string | null>(null);
+  const [scimGroup, setScimGroup] = useState("");
+  const [scimRole, setScimRole] = useState("viewer");
 
   const load = useCallback(() => {
     setLoading(true);
-    Promise.all([fetchIdentityPolicy(), fetchIdentityProviders(), fetchIdentityEvents(30)])
-      .then(([pol, prov, ev]) => {
+    Promise.all([
+      fetchIdentityPolicy(),
+      fetchIdentityProviders(),
+      fetchIdentityEvents(30),
+      fetchScimStatus().catch(() => null),
+      fetchScimRoleMappings().catch(() => []),
+      fetchScimConflicts().catch(() => []),
+    ])
+      .then(([pol, prov, ev, scimData, mappings, conflicts]) => {
         setPolicy(pol);
         setProviders(prov);
         setEvents(ev);
+        setScim(scimData);
+        setScimMappings(mappings);
+        setScimConflicts(conflicts);
         setError(null);
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Error al cargar identidad"))
@@ -86,6 +113,65 @@ export function AdminIdentidadPage() {
       setMessage("Proveedor creado en borrador.");
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "No se pudo crear el proveedor.");
+    }
+  }
+
+  async function onToggleScim(enabled: boolean) {
+    setMessage(null);
+    try {
+      await configureScim({ scim_enabled: enabled });
+      load();
+      setMessage(enabled ? "SCIM activado." : "SCIM desactivado.");
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "No se pudo actualizar SCIM.");
+    }
+  }
+
+  async function onCreateScimToken() {
+    setMessage(null);
+    try {
+      const res = await createScimToken({ name: "Token SCIM" });
+      setNewScimToken(res.token);
+      load();
+      setMessage(res.message);
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "No se pudo generar el token.");
+    }
+  }
+
+  async function onRotateScimToken(tokenId: string) {
+    setMessage(null);
+    try {
+      const res = await rotateScimToken(tokenId);
+      setNewScimToken(res.token);
+      load();
+      setMessage(res.message);
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "No se pudo rotar el token.");
+    }
+  }
+
+  async function onRevokeScimToken(tokenId: string) {
+    setMessage(null);
+    try {
+      await revokeScimToken(tokenId);
+      load();
+      setMessage("Token revocado.");
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "No se pudo revocar el token.");
+    }
+  }
+
+  async function onSaveScimMapping() {
+    if (!scimGroup.trim()) return;
+    setMessage(null);
+    try {
+      await upsertScimRoleMapping({ external_group: scimGroup.trim(), role_code: scimRole });
+      setScimGroup("");
+      load();
+      setMessage("Mapeo grupo → rol guardado.");
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "Mapeo no permitido.");
     }
   }
 
@@ -173,6 +259,105 @@ export function AdminIdentidadPage() {
             ))}
           </tbody>
         </table>
+      </section>
+
+      <section className="panel">
+        <h2>Aprovisionamiento SCIM</h2>
+        <p className="muted">
+          SCIM permite que el proveedor de identidad de su organización cree, actualice y desactive usuarios automáticamente.
+          Configure la URL base y un token Bearer para su IdP. Los grupos externos se mapean a roles internos mediante una lista permitida.
+          Al desaprovisionar (<code>active=false</code>), el acceso se bloquea sin borrar el historial.
+        </p>
+        {scim && (
+          <div className="form-stack">
+            <label>
+              <input
+                type="checkbox"
+                checked={scim.scim_enabled}
+                onChange={(e) => onToggleScim(e.target.checked)}
+              />
+              {" "}Activar SCIM para esta organización
+            </label>
+            <p><strong>URL base SCIM:</strong> <code>{window.location.origin}{scim.scim_base_url}</code></p>
+            <p className="muted">
+              Usuarios activos: {scim.metrics.users_active ?? 0} · Desactivados: {scim.metrics.users_deactivated ?? 0} ·
+              Conflictos pendientes: {scim.conflicts_pending}
+            </p>
+            {newScimToken && (
+              <p role="status" className="panel">
+                <strong>Token (cópielo ahora):</strong> <code>{newScimToken}</code>
+              </p>
+            )}
+            <button type="button" onClick={onCreateScimToken}>Generar token</button>
+            <table className="data-table">
+              <thead><tr><th>Nombre</th><th>Prefijo</th><th>Estado</th><th>Último uso</th><th>Acciones</th></tr></thead>
+              <tbody>
+                {scim.tokens.map((t) => (
+                  <tr key={t.id}>
+                    <td>{t.name}</td>
+                    <td>{t.masked}</td>
+                    <td>{t.active ? "Activo" : "Inactivo"}</td>
+                    <td>{t.last_used_at ? new Date(t.last_used_at).toLocaleString("es-CO") : "—"}</td>
+                    <td className="button-row">
+                      <button type="button" onClick={() => onRotateScimToken(t.id)}>Rotar</button>
+                      <button type="button" onClick={() => onRevokeScimToken(t.id)}>Revocar</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <h3>Mapeo grupos → roles</h3>
+            <div className="form-stack" style={{ marginBottom: "0.5rem" }}>
+              <input placeholder="Grupo externo (displayName)" value={scimGroup} onChange={(e) => setScimGroup(e.target.value)} />
+              <select value={scimRole} onChange={(e) => setScimRole(e.target.value)}>
+                <option value="viewer">viewer</option>
+                <option value="operator">operator</option>
+              </select>
+              <button type="button" onClick={onSaveScimMapping}>Guardar mapeo</button>
+            </div>
+            {scimMappings.length > 0 && (
+              <ul>
+                {scimMappings.map((m) => (
+                  <li key={m.id}>{m.external_group} → {m.role_code}</li>
+                ))}
+              </ul>
+            )}
+            {scimConflicts.length > 0 && (
+              <>
+                <h3>Conflictos recientes</h3>
+                <table className="data-table">
+                  <thead><tr><th>Tipo</th><th>Detalle</th><th>Fecha</th></tr></thead>
+                  <tbody>
+                    {scimConflicts.map((c) => (
+                      <tr key={c.id}>
+                        <td>{c.conflict_type}</td>
+                        <td className="cell-truncate">{c.detail || "—"}</td>
+                        <td>{new Date(c.created_at).toLocaleString("es-CO")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+            {scim.recent_events.length > 0 && (
+              <>
+                <h3>Eventos SCIM recientes</h3>
+                <table className="data-table">
+                  <thead><tr><th>Acción</th><th>Resultado</th><th>Fecha</th></tr></thead>
+                  <tbody>
+                    {scim.recent_events.map((ev, i) => (
+                      <tr key={`${ev.action}-${i}`}>
+                        <td>{ev.action}</td>
+                        <td>{ev.result}</td>
+                        <td>{new Date(ev.created_at).toLocaleString("es-CO")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+          </div>
+        )}
       </section>
 
       <section className="panel">
