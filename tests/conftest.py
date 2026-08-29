@@ -31,6 +31,10 @@ from app import diagnostic_models  # noqa: F401, E402
 from app import external_models  # noqa: F401, E402
 from app import continuidad_models  # noqa: F401, E402
 from app import governance_models  # noqa: F401, E402
+from app import commercial_models  # noqa: F401, E402
+from app import tco_models  # noqa: F401, E402
+from app import implementacion_models  # noqa: F401, E402
+from app import segmentation_models  # noqa: F401, E402
 from app import llm_models  # noqa: F401, E402
 from app import security_models  # noqa: F401, E402
 from app import identity_models  # noqa: F401, E402

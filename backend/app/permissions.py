@@ -185,6 +185,42 @@ DATOS_PERMISSIONS = {
     "datos.retention",
 }
 
+COMMERCIAL_PERMISSIONS = {
+    "comercial.view",
+    "comercial.simulate",
+    "comercial.create",
+    "comercial.approve",
+    "comercial.manage_plans",
+}
+
+TCO_PERMISSIONS = {
+    "tco.view",
+    "tco.manage",
+    "tco.simulate",
+    "proveedores.view",
+    "proveedores.manage",
+    "alianzas.view",
+    "alianzas.manage",
+}
+
+IMPLEMENTACION_PERMISSIONS = {
+    "implementacion.view",
+    "implementacion.manage",
+    "implementacion.approve_go_live",
+    "exito_cliente.view",
+    "exito_cliente.manage",
+    "exito_cliente.review",
+}
+
+SEGMENTATION_PERMISSIONS = {
+    "segmentacion.view",
+    "segmentacion.manage",
+    "planes.view",
+    "planes.manage",
+    "planes.recommend",
+    "planes.approve_discount",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -317,6 +353,30 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "datos.audit": ("Gobierno de datos", "Auditar accesos y hallazgos"),
     "datos.requests": ("Gobierno de datos", "Gestionar solicitudes sobre datos"),
     "datos.retention": ("Gobierno de datos", "Gestionar retención y legal hold"),
+    "comercial.view": ("Comercial", "Consultar propuestas y planes comerciales"),
+    "comercial.simulate": ("Comercial", "Simular valor y precio"),
+    "comercial.create": ("Comercial", "Crear y editar propuestas comerciales"),
+    "comercial.approve": ("Comercial", "Aprobar precio final y propuestas"),
+    "comercial.manage_plans": ("Comercial", "Administrar planes comerciales"),
+    "tco.view": ("TCO", "Consultar costo total y tablero"),
+    "tco.manage": ("TCO", "Gestionar costos y distribuciones"),
+    "tco.simulate": ("TCO", "Simular escenarios de costo"),
+    "proveedores.view": ("Proveedores", "Consultar proveedores y aliados"),
+    "proveedores.manage": ("Proveedores", "Administrar proveedores, tarifas y contratos"),
+    "alianzas.view": ("Alianzas", "Consultar alianzas estratégicas"),
+    "alianzas.manage": ("Alianzas", "Gestionar alianzas estratégicas"),
+    "implementacion.view": ("Implementación", "Consultar proyectos de implementación"),
+    "implementacion.manage": ("Implementación", "Gestionar implementación y pilotos"),
+    "implementacion.approve_go_live": ("Implementación", "Aprobar salida a producción"),
+    "exito_cliente.view": ("Éxito del cliente", "Consultar planes de éxito y salud"),
+    "exito_cliente.manage": ("Éxito del cliente", "Gestionar adopción y objetivos"),
+    "exito_cliente.review": ("Éxito del cliente", "Realizar revisiones periódicas"),
+    "segmentacion.view": ("Segmentación", "Consultar segmentos y perfiles comerciales"),
+    "segmentacion.manage": ("Segmentación", "Administrar segmentación y perfiles"),
+    "planes.view": ("Planes", "Consultar catálogo de planes y paquetes"),
+    "planes.manage": ("Planes", "Administrar planes, paquetes y versiones"),
+    "planes.recommend": ("Planes", "Generar recomendaciones de plan"),
+    "planes.approve_discount": ("Planes", "Aprobar descuentos comerciales"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -365,6 +425,10 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | DATOS_PERMISSIONS
         | SECURITY_PERMISSIONS
         | IDENTITY_PERMISSIONS
+        | COMMERCIAL_PERMISSIONS
+        | TCO_PERMISSIONS
+        | IMPLEMENTACION_PERMISSIONS
+        | SEGMENTATION_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -390,6 +454,10 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | INCIDENTES_PERMISSIONS
         | BACKUPS_PERMISSIONS
         | DATOS_PERMISSIONS
+        | COMMERCIAL_PERMISSIONS
+        | TCO_PERMISSIONS
+        | IMPLEMENTACION_PERMISSIONS
+        | SEGMENTATION_PERMISSIONS
         | PLATFORM_PERMISSIONS
         | SECURITY_PERMISSIONS
         | IDENTITY_PERMISSIONS
@@ -473,6 +541,24 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "datos.audit",
         "datos.requests",
         "datos.retention",
+        "comercial.view",
+        "comercial.simulate",
+        "comercial.create",
+        "tco.view",
+        "tco.manage",
+        "tco.simulate",
+        "proveedores.view",
+        "proveedores.manage",
+        "alianzas.view",
+        "implementacion.view",
+        "implementacion.manage",
+        "exito_cliente.view",
+        "exito_cliente.manage",
+        "segmentacion.view",
+        "segmentacion.manage",
+        "planes.view",
+        "planes.manage",
+        "planes.recommend",
     },
     "viewer": {
         "employee.view",
@@ -500,6 +586,16 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "incidentes.view",
         "backups.view",
         "datos.view",
+        "comercial.view",
+        "comercial.simulate",
+        "tco.view",
+        "tco.simulate",
+        "proveedores.view",
+        "alianzas.view",
+        "implementacion.view",
+        "exito_cliente.view",
+        "segmentacion.view",
+        "planes.view",
     },
 }
 

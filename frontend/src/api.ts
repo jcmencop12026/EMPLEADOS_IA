@@ -1980,6 +1980,350 @@ export async function fetchCentroControlResumen(periodo = "mtd"): Promise<Centro
   return api(`/api/centro-control/resumen-ejecutivo?periodo=${encodeURIComponent(periodo)}`);
 }
 
+// --- Modelo comercial (1280) ---
+
+export type CommercialPlanItem = {
+  id: string;
+  code: string;
+  name: string;
+  margen_minimo_pct: number;
+  consumo_ia_incluido_tokens?: number | null;
+  presupuesto_ia_incluido?: number | null;
+  credential_mode: string;
+};
+
+export type CommercialProposalSummary = {
+  id: string;
+  codigo: string;
+  titulo: string;
+  estado: string;
+  valor_atribuible_total?: number | null;
+  precio_sugerido?: number | null;
+  precio_final?: number | null;
+};
+
+export type CommercialProposalDetail = CommercialProposalSummary & {
+  escenario_recomendado: string;
+  costo_total?: number | null;
+  beneficio_neto_cliente?: number | null;
+  roi_pct?: number | null;
+  payback_meses?: number | null;
+  margen_pct?: number | null;
+  pct_valor_conservado_cliente?: number | null;
+  pct_valor_capturado_empleados_ia?: number | null;
+  valores: Array<{
+    id: string;
+    categoria: string;
+    alcance?: string;
+    naturaleza: string;
+    valor_bruto: number;
+    atribucion_pct: number;
+    valor_atribuible: number;
+    external_intelligence_ref?: string | null;
+  }>;
+  escenarios: Array<{
+    scenario_type: string;
+    valor_esperado?: number | null;
+    valor_atribuible?: number | null;
+    probabilidad?: number | null;
+    es_recomendado: boolean;
+  }>;
+  costos: Array<{ id: string; categoria: string; clase_costo: string; monto: number }>;
+  alertas_doble_conteo: Array<{ id: string; severidad: string; mensaje: string }>;
+  trazabilidad: Record<string, unknown>;
+};
+
+export async function fetchCommercialPlans(): Promise<CommercialPlanItem[]> {
+  return api("/api/comercial/planes");
+}
+
+export async function createCommercialPlan(data: Record<string, unknown>): Promise<CommercialPlanItem> {
+  return api("/api/comercial/planes", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchCommercialProposals(): Promise<CommercialProposalSummary[]> {
+  return api("/api/comercial/propuestas");
+}
+
+export async function createCommercialProposal(data: Record<string, unknown>): Promise<CommercialProposalDetail> {
+  return api("/api/comercial/propuestas", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchCommercialProposal(id: string): Promise<CommercialProposalDetail> {
+  return api(`/api/comercial/propuestas/${id}`);
+}
+
+export async function addCommercialValue(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/valores`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function addCommercialScenario(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/escenarios`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function addCommercialCost(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/costos`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function suggestCommercialPrice(proposalId: string, scenario_type = "BASE") {
+  return api(`/api/comercial/propuestas/${proposalId}/precio-sugerido`, {
+    method: "POST",
+    body: JSON.stringify({ scenario_type }),
+  });
+}
+
+export async function setCommercialFinalPrice(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/precio-final`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function approveCommercialProposal(proposalId: string) {
+  return api(`/api/comercial/propuestas/${proposalId}/aprobar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function detectCommercialDoubleCount(proposalId: string) {
+  return api(`/api/comercial/propuestas/${proposalId}/detectar-doble-conteo`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchCommercialPlan(id: string): Promise<CommercialPlanItem> {
+  return api(`/api/comercial/planes/${id}`);
+}
+
+export async function simulateCommercialValue(data: Record<string, unknown>) {
+  return api("/api/comercial/simular", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function simulateCommercialProposal(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/simular`, { method: "POST", body: JSON.stringify(data) });
+}
+
+// --- TCO y ecosistema de aliados (1320) ---
+
+export type TcoProveedorItem = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  tipo: string;
+  riesgo_nivel: string;
+  estado: string;
+};
+
+export type TcoTablero = {
+  tco_total: number;
+  desglose: Record<string, number>;
+  margen_pct?: number | null;
+  desviacion?: { estimado: number; real: number; desviacion_pct: number };
+  proveedores_criticos?: Array<{ nombre: string; pct: number }>;
+  concentracion?: { max_proveedor_pct: number; advertencia: boolean };
+  alertas?: Array<{ tipo: string; mensaje: string; severidad: string }>;
+};
+
+export async function fetchTcoCategorias(): Promise<Array<Record<string, unknown>>> {
+  return api("/api/tco/categorias");
+}
+
+export async function fetchTcoProveedores(): Promise<TcoProveedorItem[]> {
+  return api("/api/tco/proveedores");
+}
+
+export async function createTcoProveedor(data: Record<string, unknown>): Promise<TcoProveedorItem> {
+  return api("/api/tco/proveedores", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchTcoCostos(): Promise<Array<Record<string, unknown>>> {
+  return api("/api/tco/costos");
+}
+
+export async function createTcoCosto(data: Record<string, unknown>) {
+  return api("/api/tco/costos", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function calcularTco(data: Record<string, unknown>) {
+  return api("/api/tco/calcular", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchTcoTablero(): Promise<TcoTablero> {
+  return api("/api/tco/tablero");
+}
+
+export async function fetchTcoRentabilidad(data: Record<string, unknown>) {
+  return api("/api/tco/rentabilidad", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function simularTco(data: { tipo: string; parametros?: Record<string, unknown> }) {
+  return api("/api/tco/simular", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function simularMakeOrBuy(data: Record<string, unknown>) {
+  return api("/api/tco/simular/make-or-buy", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function compararProveedoresTco(data: { proveedor_ids: string[]; unidades?: number }) {
+  return api("/api/tco/comparar-proveedores", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchTcoAlianzas(): Promise<Array<Record<string, unknown>>> {
+  return api("/api/tco/alianzas");
+}
+
+export async function createTcoAlianza(data: Record<string, unknown>) {
+  return api("/api/tco/alianzas", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchTcoHistorial() {
+  return api("/api/tco/historial");
+}
+
+// --- Implementación y éxito del cliente (1340) ---
+
+export type ImplProyectoSummary = {
+  id: string;
+  codigo: string;
+  titulo: string;
+  estado: string;
+  avance_pct: number;
+  valor_compromiso?: Record<string, unknown> | null;
+};
+
+export type ImplTablero = {
+  proyecto?: ImplProyectoSummary;
+  fase_actual?: string | null;
+  avance_pct?: number;
+  salud?: { resultado: string; puntuacion: number };
+  tco?: { total: number; margen_pct?: number };
+  bloqueadores?: Array<{ descripcion: string }>;
+  trazabilidad?: Record<string, unknown>;
+};
+
+export type ImplProyectoDetalle = ImplProyectoSummary & {
+  hitos?: Array<{ id: string; nombre: string; estado: string }>;
+  tareas?: Array<Record<string, unknown>>;
+  requisitos?: Array<Record<string, unknown>>;
+  tablero?: ImplTablero;
+};
+
+export async function fetchImplProyectos(): Promise<ImplProyectoSummary[]> {
+  return api("/api/implementacion/proyectos");
+}
+
+export async function createImplProyecto(data: Record<string, unknown>): Promise<ImplProyectoSummary> {
+  return api("/api/implementacion/proyectos", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchImplProyectoDetalle(id: string): Promise<ImplProyectoDetalle> {
+  return api(`/api/implementacion/proyectos/${id}`);
+}
+
+export async function fetchImplTablero(id: string): Promise<ImplTablero> {
+  return api(`/api/implementacion/proyectos/${id}/tablero`);
+}
+
+export async function createImplHito(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/hitos`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function completarImplHito(hitoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/hitos/${hitoId}/completar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function createImplRequisito(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/requisitos`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function evaluarImplReadiness(proyectoId: string, dimensiones: Record<string, number>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/readiness`, { method: "POST", body: JSON.stringify({ dimensiones }) });
+}
+
+export async function createImplBloqueador(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/bloqueadores`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function createImplPiloto(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/pilotos`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function registrarImplPilotoResultado(pilotoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/pilotos/${pilotoId}/resultado`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function aprobarImplPiloto(pilotoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/pilotos/${pilotoId}/aprobar-produccion`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function aprobarImplGoLive(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/go-live`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function registrarImplAdopcion(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/adopcion`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function createImplExitoPlan(data: Record<string, unknown>) {
+  return api("/api/implementacion/exito/planes", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function medirImplObjetivo(objetivoId: string, valor_medido: number) {
+  return api(`/api/implementacion/exito/objetivos/${objetivoId}/medir`, { method: "POST", body: JSON.stringify({ valor_medido }) });
+}
+
+export async function calcularImplSalud(proyectoId: string) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/salud`, { method: "POST", body: JSON.stringify({}) });
+}
+
+// --- Segmentación y planes verticales (1310) ---
+
+export type PackageItem = {
+  id: string;
+  code: string;
+  name: string;
+  empleados_ia_incluidos?: number | null;
+  usuarios_incluidos?: number | null;
+  precio_estimado?: number | null;
+  is_custom?: boolean;
+  capabilities?: Record<string, unknown>;
+};
+
+export type RecommendationResult = {
+  plan_sugerido?: { id: string; code: string; name: string } | null;
+  paquete_sugerido?: { id: string; code: string; name: string } | null;
+  nivel_ajuste: string;
+  razones: string[];
+  advertencias: string[];
+  alternativas?: unknown[];
+  plan_personalizado_recomendado?: boolean;
+};
+
+export async function fetchSectors() {
+  return api("/api/segmentacion/sectores");
+}
+
+export async function fetchSegments() {
+  return api("/api/segmentacion/segmentos");
+}
+
+export async function fetchCommercialProfile() {
+  return api("/api/segmentacion/perfil");
+}
+
+export async function upsertCommercialProfile(data: Record<string, unknown>) {
+  return api("/api/segmentacion/perfil", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function fetchPackages(): Promise<PackageItem[]> {
+  return api("/api/segmentacion/paquetes");
+}
+
+export async function createPackage(data: Record<string, unknown>): Promise<PackageItem> {
+  return api("/api/segmentacion/paquetes", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchRecommendation(): Promise<RecommendationResult> {
+  return api("/api/segmentacion/recomendar");
+}
+
+export async function comparePackages(package_ids: string[]) {
+  return api("/api/segmentacion/comparar", { method: "POST", body: JSON.stringify({ package_ids }) });
+}
+
 export type ContinuidadServicio = {
   id: string;
   codigo: string;
