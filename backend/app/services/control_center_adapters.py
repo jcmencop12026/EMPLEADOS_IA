@@ -21,6 +21,8 @@ class ModuloAdapter(Protocol):
         *,
         permissions: set[str],
         period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
     ) -> dict[str, Any]:
         ...
 
@@ -54,6 +56,8 @@ class OportunidadesAdapter:
         *,
         permissions: set[str],
         period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
     ) -> dict[str, Any]:
         if "oportunidades.view" not in permissions:
             return {**_no_disponible(self.modulo, self.bloque, "Requiere permiso oportunidades.view"), "restringido": True}
@@ -79,6 +83,8 @@ class OportunidadesAdapter:
             Opportunity.estado.in_(["PENDIENTE_APROBACION", "EN_EJECUCION", "EN_SEGUIMIENTO"]),
             Opportunity.urgencia.in_(["ALTA", "CRITICA"]),
         )
+        if estado:
+            crit_query = crit_query.filter(Opportunity.estado == estado.upper())
         crit_query = _period_filter(crit_query, Opportunity.fecha_deteccion, period_start)
         criticas = crit_query.order_by(Opportunity.prioridad_score.desc().nullslast()).limit(5).all()
         return {
@@ -116,6 +122,8 @@ class ImpactoAdapter:
         *,
         permissions: set[str],
         period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
     ) -> dict[str, Any]:
         if "linea_base.view" not in permissions:
             return {**_no_disponible(self.modulo, self.bloque, "Requiere permiso linea_base.view"), "restringido": True}
@@ -217,6 +225,8 @@ class FinOpsExtendidoAdapter:
         *,
         permissions: set[str],
         period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
     ) -> dict[str, Any]:
         if "finops.view" not in permissions:
             return {**_no_disponible(self.modulo, self.bloque, "Requiere finops.view"), "restringido": True}
@@ -299,6 +309,8 @@ class ValorRetornoAdapter:
         *,
         permissions: set[str],
         period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
     ) -> dict[str, Any]:
         if "valoracion.view" not in permissions:
             return {**_no_disponible(self.modulo, self.bloque, "Requiere valoracion.view"), "restringido": True}
@@ -395,6 +407,8 @@ class DiagnosticoAdapter:
         *,
         permissions: set[str],
         period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
     ) -> dict[str, Any]:
         if "diagnosticos.view" not in permissions:
             return {**_no_disponible(self.modulo, self.bloque, "Requiere diagnosticos.view"), "restringido": True}
@@ -407,6 +421,8 @@ class DiagnosticoAdapter:
         )
         if period_start:
             diag_q = diag_q.filter(Diagnostic.created_at >= period_start)
+        if estado:
+            diag_q = diag_q.filter(Diagnostic.estado == estado.upper())
         diagnosticos = diag_q.order_by(Diagnostic.prioridad_score.desc().nullslast(), Diagnostic.created_at.desc()).limit(10).all()
 
         if not diagnosticos:
@@ -468,6 +484,39 @@ class DiagnosticoAdapter:
         }
 
 
+class DiagnosticoExplicacionAdapter:
+    """Bloque 1220 — explicaciones ejecutivas QUÉ → POR QUÉ → evidencia → certeza."""
+
+    modulo = "explicacion"
+    bloque = "1220"
+
+    def fetch(
+        self,
+        db: Session,
+        organization_id: str,
+        *,
+        permissions: set[str],
+        period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
+    ) -> dict[str, Any]:
+        if "diagnosticos.view" not in permissions:
+            return {
+                **_no_disponible(self.modulo, self.bloque, "Requiere diagnosticos.view"),
+                "restringido": True,
+                "elementos": [],
+            }
+        from app.services import diagnostic_service as dsvc
+
+        return dsvc.build_executive_explanations(
+            db,
+            organization_id,
+            period_start=period_start,
+            proceso=proceso,
+            estado=estado,
+        )
+
+
 class SenalesAdapter:
     """Bloque 1120 — señales reales, procesadas y errores de ingesta."""
 
@@ -481,6 +530,8 @@ class SenalesAdapter:
         *,
         permissions: set[str],
         period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
     ) -> dict[str, Any]:
         if "oportunidades.view" not in permissions:
             return {**_no_disponible(self.modulo, self.bloque, "Requiere oportunidades.view"), "restringido": True}
@@ -490,6 +541,10 @@ class SenalesAdapter:
         base_q = db.query(ProactiveSignal).filter(ProactiveSignal.organization_id == organization_id)
         if period_start:
             base_q = base_q.filter(ProactiveSignal.created_at >= period_start)
+        if proceso:
+            base_q = base_q.filter(ProactiveSignal.proceso == proceso)
+        if estado:
+            base_q = base_q.filter(ProactiveSignal.estado_procesamiento == estado.upper())
 
         total = base_q.count()
         fuentes = len(sigsvc.list_sources(db, organization_id))
@@ -563,6 +618,8 @@ class InteligenciaExternaAdapter:
         *,
         permissions: set[str],
         period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
     ) -> dict[str, Any]:
         if "inteligencia_externa.view" not in permissions:
             return {

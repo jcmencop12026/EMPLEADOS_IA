@@ -1136,3 +1136,40 @@ body {
   gap: 10px;
   margin-bottom: 10px;
 }
+
+.cc-explicacion-nota {
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.cc-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  margin-bottom: 0.25rem;
+}
+
+.cc-tag-hecho {
+  color: #1a5c2e;
+  background: #e8f5ec;
+}
+
+.cc-tag-inferencia {
+  color: #5c4a1a;
+  background: #f5f0e8;
+}
+
+.cc-tag-recomendacion {
+  color: #1a3d5c;
+  background: #e8f0f5;
+}
+
+.cc-tag-certeza {
+  color: #3d3d3d;
+  background: #f0f0f0;
+  border-color: #999;
+}

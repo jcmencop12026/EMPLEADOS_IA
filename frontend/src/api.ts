@@ -2042,6 +2042,38 @@ export type CentroControlResumen = {
   }>;
   cadena_ejecutiva?: Array<Record<string, unknown>> | null;
   salud_plataforma?: Record<string, unknown> | null;
+  explicacion?: {
+    disponible: boolean;
+    estado?: string;
+    nota_causalidad?: string;
+    enlace?: string;
+    elementos?: Array<{
+      id: string;
+      tipo_entrada: string;
+      situacion?: string | null;
+      indicador_origen?: string | null;
+      causa?: string | null;
+      certeza?: string | null;
+      certeza_codigo?: string | null;
+      tipo_contenido: string;
+      confianza?: number | null;
+      evidencia?: {
+        fuente?: string | null;
+        identificador?: string | null;
+        correlation_id?: string | null;
+        periodo?: { inicio?: string | null; fin?: string | null } | null;
+        valor?: unknown;
+        comparacion?: unknown;
+        resumen?: string | null;
+      } | null;
+      fuente_ambito?: string | null;
+      correlation_id?: string | null;
+      magnitud?: number | null;
+      impacto?: Record<string, unknown> | null;
+      enlace?: string | null;
+      nota?: string | null;
+    }>;
+  } | null;
 };
 
 export async function fetchCentroControlResumen(periodo = "mtd"): Promise<CentroControlResumen> {
