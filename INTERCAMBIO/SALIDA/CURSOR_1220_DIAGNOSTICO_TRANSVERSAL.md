@@ -3,7 +3,7 @@
 
 **Rama:** `cursor/1220-diagnostico-transversal`  
 **Base:** `5eaad7e4e605465a6ba4145b03c7ec043a5f62b4` (1120 APTO)  
-**HEAD:** _(ver commit final)_
+**HEAD:** `ac1668f91979b97e5e19ed7266e6bc7c99d3a581`
 
 ---
 
