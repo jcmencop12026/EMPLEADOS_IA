@@ -813,6 +813,11 @@ def activate_opportunity(
         wp = db.query(WorkPlan).filter(WorkPlan.id == opportunity.work_plan_id).first()
         return {"work_plan_id": opportunity.work_plan_id, "idempotent": True, "work_plan": wp}
 
+    from app.services import baseline_service as bsvc
+
+    if opportunity.estado == "APROBADA":
+        bsvc.ensure_linea_base_for_opportunity(db, opportunity, user_id=user_id)
+
     accion = _parse_json(opportunity.siguiente_accion_json) or {}
     prioridad = "ALTA" if opportunity.urgencia in ("ALTA", "CRITICA") else "MEDIA"
     corr = opportunity.correlation_id or _new_correlation()
@@ -886,8 +891,35 @@ def approve_opportunity(
         raise ValueError(f"No se puede aprobar desde estado {opportunity.estado}")
     if aprobado:
         transition_state(db, opportunity, "APROBADA", actor_id=user_id, motivo=motivo or "Aprobada")
+        from app.services import baseline_service as bsvc
+
+        lb, creada = bsvc.ensure_linea_base_for_opportunity(db, opportunity, user_id=user_id)
+        add_trace(
+            db,
+            organization_id=opportunity.organization_id,
+            correlation_id=opportunity.correlation_id or _new_correlation(),
+            etapa="LINEA_BASE_VINCULADA",
+            opportunity_id=opportunity.id,
+            detalle={
+                "linea_base_id": lb.id,
+                "creada": creada,
+                "reutilizada": not creada,
+            },
+        )
     else:
         transition_state(db, opportunity, "DESCARTADA", actor_id=user_id, motivo=motivo or "Rechazada")
+        add_trace(
+            db,
+            organization_id=opportunity.organization_id,
+            correlation_id=opportunity.correlation_id or _new_correlation(),
+            etapa="OPORTUNIDAD_DESCARTADA",
+            opportunity_id=opportunity.id,
+            detalle={
+                "motivo": motivo or "Rechazada",
+                "sin_beneficio_realizado": True,
+                "valor_clasificacion": "POTENCIAL",
+            },
+        )
     return opportunity
 
 
@@ -903,23 +935,77 @@ def register_result(
     evidencia: dict | None = None,
     estado_resultado: str = "EXITO",
 ) -> dict[str, Any]:
-    valor_esp = valor_esperado or float(opportunity.valor_potencial or 0)
+    from app.services import baseline_service as bsvc
+    from app.valuation_enums import RealValueNature
+
+    existing = _parse_json(opportunity.resultado_json) or {}
+    if existing.get("linea_base") and opportunity.estado == "MATERIALIZADA":
+        return existing
+
+    valor_esp = valor_esperado if valor_esperado is not None else float(opportunity.valor_potencial or 0)
     valor_mat = valor_real
     diferencia = (valor_mat - valor_esp) if valor_mat is not None and valor_esp else None
+
+    valor_clasificacion = bsvc.resolve_valor_clasificacion(
+        valor_real=valor_mat,
+        evidencia=evidencia,
+        certidumbre_origen=opportunity.valor_potencial_certidumbre or "ESTIMADO",
+    )
+
+    atribucion = _compute_attribution(opportunity, {
+        "valor_real": valor_mat,
+        "evidencia": evidencia,
+    })
+    opportunity.atribucion_nivel = atribucion["nivel"]
+    opportunity.atribucion_razon = atribucion["razon"]
+
+    cierre_lb = bsvc.close_opportunity_with_baseline(
+        db,
+        opportunity,
+        user_id=user_id,
+        valor_esperado=valor_esp,
+        valor_medido=valor_mat,
+        evidencia=evidencia,
+        valor_clasificacion=valor_clasificacion,
+        atribucion_nivel=atribucion["nivel"],
+        correlation_id=opportunity.correlation_id,
+    )
 
     resultado = {
         "valor_esperado": valor_esp,
         "valor_real": valor_mat,
+        "valor_medido": valor_mat,
         "diferencia": diferencia,
         "evidencia": evidencia,
         "estado": estado_resultado,
         "fecha": _utcnow().isoformat(),
         "confianza": 0.8 if evidencia else 0.5,
+        "valor_clasificacion": cierre_lb["valor_clasificacion"],
+        "tipo_valor": cierre_lb["tipo_valor"],
+        "valor_atribuible": cierre_lb.get("valor_atribuible"),
+        "atribucion_tipo": cierre_lb.get("atribucion_tipo"),
+        "resultado_tipo": cierre_lb.get("resultado_tipo"),
+        "verificacion_pendiente": cierre_lb.get("verificacion_pendiente", False),
+        "linea_base": cierre_lb["linea_base"],
+        "medicion_id": cierre_lb["medicion_id"],
+        "impacto_id": cierre_lb["impacto_id"],
+        "comparacion": cierre_lb["comparacion"],
+        "periodo": cierre_lb["periodo"],
+        "learning_refs": cierre_lb["learning_refs"],
+        "correlation_id": cierre_lb["correlation_id"],
+        "cerrado_por": user_id,
+        "idempotente": True,
     }
     opportunity.resultado_json = _json(resultado)
-    if valor_mat is not None:
+
+    if valor_mat is not None and valor_clasificacion in (
+        RealValueNature.VERIFICADO,
+        RealValueNature.ESTIMADO,
+    ):
         opportunity.valor_materializado = Decimal(str(round(valor_mat, 2)))
         from app.services.finops_service import registrar_valor
+
+        certainty = "Real" if valor_clasificacion == RealValueNature.VERIFICADO else "Estimado"
         registrar_valor(
             db,
             organization_id=opportunity.organization_id,
@@ -927,7 +1013,7 @@ def register_result(
             work_plan_id=opportunity.work_plan_id,
             opportunity_id=opportunity.id,
             value_type="valor_materializado",
-            certainty="Real",
+            certainty=certainty,
             amount=Decimal(str(round(valor_mat, 2))),
             currency="COP",
             methodology="Valor materializado post-ejecución",
@@ -935,15 +1021,29 @@ def register_result(
             notes=opportunity.codigo,
         )
 
-    atribucion = _compute_attribution(opportunity, resultado)
-    opportunity.atribucion_nivel = atribucion["nivel"]
-    opportunity.atribucion_razon = atribucion["razon"]
-
     transition_state(db, opportunity, "MATERIALIZADA", actor_id=user_id, motivo="Resultado registrado")
     register_opportunity_learning(db, opportunity, user_id=user_id, resultado=resultado)
-    add_trace(db, organization_id=opportunity.organization_id,
-              correlation_id=opportunity.correlation_id or _new_correlation(),
-              etapa="RESULTADO", opportunity_id=opportunity.id, detalle=resultado)
+    add_trace(
+        db,
+        organization_id=opportunity.organization_id,
+        correlation_id=opportunity.correlation_id or _new_correlation(),
+        etapa="RESULTADO",
+        opportunity_id=opportunity.id,
+        detalle=resultado,
+    )
+    add_trace(
+        db,
+        organization_id=opportunity.organization_id,
+        correlation_id=opportunity.correlation_id or _new_correlation(),
+        etapa="CIERRE_LINEA_BASE",
+        opportunity_id=opportunity.id,
+        detalle={
+            "linea_base_id": cierre_lb["linea_base"]["id"],
+            "medicion_id": cierre_lb["medicion_id"],
+            "valor_clasificacion": cierre_lb["valor_clasificacion"],
+            "learning_refs": cierre_lb["learning_refs"],
+        },
+    )
     return resultado
 
 
@@ -1058,10 +1158,25 @@ def get_full_trace(db: Session, opportunity_id: str, organization_id: str) -> di
         .order_by(OpportunityTracking.created_at)
         .all()
     )
+    from app.baseline_models import LineaBase
+    from app.services import baseline_service as bsvc
+
+    lineas_base = (
+        db.query(LineaBase)
+        .filter(
+            LineaBase.organization_id == organization_id,
+            LineaBase.opportunity_id == opportunity_id,
+        )
+        .all()
+    )
+    resultado = _parse_json(opp.resultado_json)
     return {
         "opportunity_id": opportunity_id,
         "correlation_id": opp.correlation_id,
         "estado": opp.estado,
+        "lineas_base": [bsvc.linea_base_to_dict(lb) for lb in lineas_base],
+        "cierre_linea_base": resultado.get("linea_base") if isinstance(resultado, dict) else None,
+        "learning_refs": resultado.get("learning_refs") if isinstance(resultado, dict) else None,
         "trazas": [{"etapa": t.etapa, "detalle": _parse_json(t.detalle_json), "fecha": t.created_at.isoformat()} for t in traces],
         "transiciones": [
             {
