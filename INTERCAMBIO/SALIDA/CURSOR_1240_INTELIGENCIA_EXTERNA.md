@@ -3,7 +3,7 @@
 **Fecha:** 2026-08-29  
 **Rama:** `cursor/1240-inteligencia-externa-85e4`  
 **Base:** `5eaad7e` (bloque 1120)  
-**HEAD:** _pendiente commit_  
+**HEAD:** `0947480`  
 **Estado:** **BLOQUE 1240 TERMINADO**  
 **NO MERGE**
 
