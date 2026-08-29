@@ -13,6 +13,8 @@ class LlmProviderOut(BaseModel):
     organization_id: str
     name: str
     provider_type: str
+    provider_label: str | None = None
+    adapter_mode: str | None = None
     model_default: str | None = None
     endpoint: str | None = None
     timeout_seconds: int = 60
@@ -22,6 +24,8 @@ class LlmProviderOut(BaseModel):
     secret_ref: str | None = None
     secret_configured: bool = False
     secret_masked: str | None = None
+    health_status: str | None = None
+    health_detail: str | None = None
     config_json: dict[str, Any] | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -114,3 +118,101 @@ class LlmCompleteResponse(BaseModel):
     trace_id: str | None = None
     fallback_used: bool = False
     error: dict[str, Any] | None = None
+
+
+class LlmObservabilitySummary(BaseModel):
+    periodo: str | None = None
+    total_inferencias: int = 0
+    exitosas: int = 0
+    errores: int = 0
+    tasa_exito: float | None = None
+    latencia_promedio_ms: float | None = None
+    tokens_total: int | None = None
+    costo_total: float | None = None
+    fallbacks: int = 0
+    por_proveedor: dict[str, int] = Field(default_factory=dict)
+    errores_por_categoria: dict[str, int] = Field(default_factory=dict)
+
+
+class LlmProviderHealthOut(BaseModel):
+    provider_id: str
+    provider_type: str
+    nombre: str
+    etiqueta: str
+    modo: str | None = None
+    estado: str
+    detalle: str
+    habilitado: bool
+    configurado: bool
+    es_fallback: bool = False
+    prioridad: int = 100
+    latencia_ms: int | None = None
+
+
+class LlmRoutingExplainOut(BaseModel):
+    seleccionado: dict[str, Any] | None = None
+    razones: list[str] = Field(default_factory=list)
+
+
+class LlmModelCatalogCreate(BaseModel):
+    provider_type: str
+    model_id: str
+    display_name: str
+    estado: str = "HABILITADO"
+    capabilities: dict[str, Any] | None = None
+    context_window: int | None = None
+    modalities: list[str] | None = None
+    cost_hint: dict[str, Any] | None = None
+    priority: int = 100
+    is_enabled: bool = True
+
+
+class LlmModelCatalogOut(BaseModel):
+    id: str
+    provider_type: str
+    model_id: str
+    display_name: str
+    estado: str
+    capabilities: dict[str, Any] = Field(default_factory=dict)
+    context_window: int | None = None
+    modalities: list[str] = Field(default_factory=list)
+    cost_hint: dict[str, Any] | None = None
+    priority: int = 100
+    is_enabled: bool = True
+
+
+class LlmRoutingPolicyCreate(BaseModel):
+    name: str
+    preferred_provider: str | None = None
+    preferred_model: str | None = None
+    required_capability: str | None = None
+    fallback_allowed: bool = True
+    max_cost_per_1k_tokens: float | None = None
+    credential_scope: str = "ORGANIZACION"
+    priority: int = 100
+    is_active: bool = True
+
+
+class LlmRoutingPolicyUpdate(BaseModel):
+    name: str | None = None
+    preferred_provider: str | None = None
+    preferred_model: str | None = None
+    required_capability: str | None = None
+    fallback_allowed: bool | None = None
+    max_cost_per_1k_tokens: float | None = None
+    credential_scope: str | None = None
+    priority: int | None = None
+    is_active: bool | None = None
+
+
+class LlmRoutingPolicyOut(BaseModel):
+    id: str
+    name: str
+    preferred_provider: str | None = None
+    preferred_model: str | None = None
+    required_capability: str | None = None
+    fallback_allowed: bool = True
+    max_cost_per_1k_tokens: float | None = None
+    credential_scope: str = "ORGANIZACION"
+    priority: int = 100
+    is_active: bool = True
