@@ -3,7 +3,7 @@
 **Fecha:** 2026-08-29  
 **Rama:** `cursor/1110-finops-trazabilidad-economica`  
 **Base:** `4c03cbe`  
-**HEAD:** _(ver sección final tras push)_  
+**HEAD:** `bc7e53c`  
 **Estado:** **BLOQUE 1110 TERMINADO**  
 **NO MERGE**
 
@@ -121,7 +121,7 @@ EMPLEADOS_IA — BLOQUE 1110 TERMINADO
 
 RAMA: cursor/1110-finops-trazabilidad-economica
 BASE: 4c03cbe
-HEAD: <SHA tras commit>
+HEAD: b29e9bd
 
 COSTO↔OPORTUNIDAD: PASS
 PRESUPUESTOS: PASS
