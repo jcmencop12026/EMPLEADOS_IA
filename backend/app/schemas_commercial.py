@@ -31,6 +31,8 @@ class PlanCreate(BaseModel):
 class ProposalCreate(BaseModel):
     titulo: str
     plan_id: str | None = None
+    package_id: str | None = None
+    segment_id: str | None = None
     credential_mode: str = "IA_ADMINISTRADA"
     diagnostic_id: str | None = None
     currency: str = "USD"
