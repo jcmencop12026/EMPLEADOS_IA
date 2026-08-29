@@ -37,6 +37,14 @@ const TIPO_LABELS: Record<string, string> = {
   alerta_continuidad: "Alerta continuidad",
   integracion_degradada: "Integración",
   presupuesto_ia: "Presupuesto IA",
+  soporte_caso: "Caso soporte",
+  soporte_asignacion: "Asignación soporte",
+  soporte_sla_riesgo: "SLA en riesgo",
+  soporte_sla_vencido: "SLA vencido",
+};
+
+const MODULO_LABELS: Record<string, string> = {
+  soporte: "Mesa de Ayuda",
 };
 
 const ESTADO_LABELS: Record<string, string> = {
@@ -209,7 +217,7 @@ export function TrabajoPage() {
         <select value={filtroModulo} onChange={(e) => setFiltroModulo(e.target.value)} aria-label="Módulo">
           <option value="">Módulo</option>
           {modulos.map((m) => (
-            <option key={m} value={m}>{m}</option>
+            <option key={m} value={m}>{MODULO_LABELS[m] ?? m}</option>
           ))}
         </select>
         <select value={filtroVencimiento} onChange={(e) => setFiltroVencimiento(e.target.value)} aria-label="Vencimiento">
@@ -276,6 +284,9 @@ export function TrabajoPage() {
                       if (col.key === "tipo") {
                         return <td key={col.key}>{TIPO_LABELS[row.tipo] ?? row.tipo}</td>;
                       }
+                      if (col.key === "modulo") {
+                        return <td key={col.key}>{MODULO_LABELS[row.modulo] ?? row.modulo}</td>;
+                      }
                       if (col.key === "estado_presentacion") {
                         return <td key={col.key}>{ESTADO_LABELS[row.estado_presentacion] ?? row.estado_presentacion}</td>;
                       }
@@ -338,7 +349,7 @@ export function TrabajoPage() {
                 <dt>Asunto</dt>
                 <dd>{selected.asunto}</dd>
                 <dt>Módulo</dt>
-                <dd>{selected.modulo}</dd>
+                <dd>{MODULO_LABELS[selected.modulo] ?? selected.modulo}</dd>
                 <dt>Estado dominio</dt>
                 <dd>{selected.estado_dominio}</dd>
                 <dt>Estado</dt>
