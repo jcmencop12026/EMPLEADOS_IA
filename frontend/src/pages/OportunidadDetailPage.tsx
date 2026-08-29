@@ -10,9 +10,11 @@ import {
   fetchExecution,
   fetchOperationApprovals,
   fetchOpportunity,
+  fetchOpportunityEconomics,
   fetchOpportunityTrace,
   registerOpportunityResult,
   runOperation,
+  type FinOpsOpportunityEconomics,
 } from "../api";
 import { usePermissions } from "../hooks/usePermissions";
 
@@ -73,6 +75,7 @@ export function OportunidadDetailPage() {
   const { has, loading: permsLoading } = usePermissions();
   const [opp, setOpp] = useState<OpportunityItem | null>(null);
   const [trace, setTrace] = useState<OpportunityTrace | null>(null);
+  const [economics, setEconomics] = useState<FinOpsOpportunityEconomics | null>(null);
   const [tab, setTab] = useState<Tab>("resumen");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -101,9 +104,14 @@ export function OportunidadDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [o, t] = await Promise.all([fetchOpportunity(opportunityId), fetchOpportunityTrace(opportunityId)]);
+      const [o, t, eco] = await Promise.all([
+        fetchOpportunity(opportunityId),
+        fetchOpportunityTrace(opportunityId),
+        fetchOpportunityEconomics(opportunityId).catch(() => null),
+      ]);
       setOpp(o);
       setTrace(t);
+      setEconomics(eco);
       if (o.work_plan_id) {
         const [approvals, execution] = await Promise.all([
           fetchOperationApprovals(o.work_plan_id).catch(() => []),
@@ -502,6 +510,7 @@ export function OportunidadDetailPage() {
         )}
 
         {tab === "finops" && (
+<<<<<<< HEAD
           <dl className="detail-grid">
             <dt>Referencia FINOPS</dt><dd>{opp.finops_reference ?? "—"}</dd>
             <dt>Plan de trabajo</dt>
@@ -510,6 +519,39 @@ export function OportunidadDetailPage() {
             <dt>Valor potencial</dt><dd>{formatMoney(opp.valor_potencial)}</dd>
             <dt>Valor materializado</dt><dd>{formatMoney(opp.valor_materializado)}</dd>
           </dl>
+=======
+          <div>
+            <dl className="detail-grid">
+              <dt>Referencia FINOPS</dt><dd>{(opp.finops_reference as string) ?? "—"}</dd>
+              <dt>WorkPlan</dt><dd>{(opp.work_plan_id as string) ?? "—"}</dd>
+              <dt>Atribución</dt><dd>{(opp.atribucion_nivel as string) ?? "—"}</dd>
+              <dt>Costo IA acumulado</dt><dd>{economics?.total_cost_label ?? "—"}</dd>
+              <dt>Consumos vinculados</dt><dd>{economics?.consumption_count ?? 0}</dd>
+            </dl>
+            {economics && economics.consumptions.length > 0 && (
+              <table className="data-table" style={{ marginTop: "1rem" }}>
+                <thead>
+                  <tr>
+                    <th>Proveedor</th>
+                    <th>Modelo</th>
+                    <th>Costo</th>
+                    <th>Fecha</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {economics.consumptions.map((c) => (
+                    <tr key={c.id}>
+                      <td>{c.provider || "—"}</td>
+                      <td>{c.model_name || "—"}</td>
+                      <td>{c.cost_label}</td>
+                      <td className="mono">{c.created_at?.slice(0, 19)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+>>>>>>> bc7e53c (feat(finops): trazabilidad costo-oportunidad y FinOps operativo (bloque 1110))
         )}
       </div>
     </div>

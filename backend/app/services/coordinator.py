@@ -464,6 +464,32 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
     try:
         if employee:
             limits = db.query(EmployeeLimits).filter(EmployeeLimits.employee_id == employee.id).first()
+            from app.services.finops_service import assert_budget_allows_consumption
+
+            try:
+                assert_budget_allows_consumption(
+                    db,
+                    plan.organization_id,
+                    employee_id=employee.id,
+                    category="Modelo IA",
+                )
+            except PermissionError as exc:
+                publish(
+                    EventMessage(
+                        event_type="FINOPS_LIMIT_REACHED",
+                        organization_id=plan.organization_id,
+                        work_plan_id=plan.id,
+                        task_id=task.id,
+                        user_id=user_id,
+                        payload={
+                            "employee_id": employee.id,
+                            "reason": str(exc),
+                            "policy": "Bloquear",
+                        },
+                    ),
+                    db,
+                )
+                raise
             spent_today = (
                 db.query(func.coalesce(func.sum(FinOpsRecord.cost), 0.0))
                 .filter(
@@ -636,11 +662,18 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
         )
 
         if output.get("source") != "llm":
+            from app.services.finops_service import resolve_opportunity_id
+
+            opp_id = resolve_opportunity_id(
+                db, plan.organization_id, work_plan_id=plan.id
+            )
             db.add(
                 FinOpsRecord(
                     organization_id=plan.organization_id,
                     work_plan_id=plan.id,
                     task_id=task.id,
+                    opportunity_id=opp_id,
+                    employee_id=employee.id if employee else None,
                     model_name=employee.model_name if employee else None,
                     provider=employee.model_provider if employee else "rule-engine",
                     duration_ms=duration_ms,
