@@ -154,6 +154,16 @@ COMMERCIAL_PERMISSIONS = {
     "comercial.manage_plans",
 }
 
+TCO_PERMISSIONS = {
+    "tco.view",
+    "tco.manage",
+    "tco.simulate",
+    "proveedores.view",
+    "proveedores.manage",
+    "alianzas.view",
+    "alianzas.manage",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -244,6 +254,13 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "comercial.create": ("Comercial", "Crear y editar propuestas comerciales"),
     "comercial.approve": ("Comercial", "Aprobar precio final y propuestas"),
     "comercial.manage_plans": ("Comercial", "Administrar planes comerciales"),
+    "tco.view": ("TCO", "Consultar costo total y tablero"),
+    "tco.manage": ("TCO", "Gestionar costos y distribuciones"),
+    "tco.simulate": ("TCO", "Simular escenarios de costo"),
+    "proveedores.view": ("Proveedores", "Consultar proveedores y aliados"),
+    "proveedores.manage": ("Proveedores", "Administrar proveedores, tarifas y contratos"),
+    "alianzas.view": ("Alianzas", "Consultar alianzas estratégicas"),
+    "alianzas.manage": ("Alianzas", "Gestionar alianzas estratégicas"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -273,6 +290,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | VALORACION_PERMISSIONS
         | LINEA_BASE_PERMISSIONS
         | COMMERCIAL_PERMISSIONS
+        | TCO_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -292,6 +310,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | VALORACION_PERMISSIONS
         | LINEA_BASE_PERMISSIONS
         | COMMERCIAL_PERMISSIONS
+        | TCO_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -351,6 +370,12 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "comercial.view",
         "comercial.simulate",
         "comercial.create",
+        "tco.view",
+        "tco.manage",
+        "tco.simulate",
+        "proveedores.view",
+        "proveedores.manage",
+        "alianzas.view",
     },
     "viewer": {
         "employee.view",
@@ -373,6 +398,10 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "linea_base.view",
         "comercial.view",
         "comercial.simulate",
+        "tco.view",
+        "tco.simulate",
+        "proveedores.view",
+        "alianzas.view",
     },
 }
 

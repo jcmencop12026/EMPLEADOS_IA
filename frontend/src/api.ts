@@ -1509,3 +1509,80 @@ export async function simulateCommercialProposal(proposalId: string, data: Recor
 export async function simulateCommercialValue(data: Record<string, unknown>) {
   return api("/api/comercial/simular", { method: "POST", body: JSON.stringify(data) });
 }
+
+// --- TCO y ecosistema de aliados (1320) ---
+
+export type TcoProveedorItem = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  tipo: string;
+  riesgo_nivel: string;
+  estado: string;
+};
+
+export type TcoTablero = {
+  tco_total: number;
+  desglose: Record<string, number>;
+  margen_pct?: number | null;
+  desviacion?: { estimado: number; real: number; desviacion_pct: number };
+  proveedores_criticos?: Array<{ nombre: string; pct: number }>;
+  concentracion?: { max_proveedor_pct: number; advertencia: boolean };
+  alertas?: Array<{ tipo: string; mensaje: string; severidad: string }>;
+};
+
+export async function fetchTcoCategorias(): Promise<Array<Record<string, unknown>>> {
+  return api("/api/tco/categorias");
+}
+
+export async function fetchTcoProveedores(): Promise<TcoProveedorItem[]> {
+  return api("/api/tco/proveedores");
+}
+
+export async function createTcoProveedor(data: Record<string, unknown>): Promise<TcoProveedorItem> {
+  return api("/api/tco/proveedores", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchTcoCostos(): Promise<Array<Record<string, unknown>>> {
+  return api("/api/tco/costos");
+}
+
+export async function createTcoCosto(data: Record<string, unknown>) {
+  return api("/api/tco/costos", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function calcularTco(data: Record<string, unknown>) {
+  return api("/api/tco/calcular", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchTcoTablero(): Promise<TcoTablero> {
+  return api("/api/tco/tablero");
+}
+
+export async function fetchTcoRentabilidad(data: Record<string, unknown>) {
+  return api("/api/tco/rentabilidad", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function simularTco(data: { tipo: string; parametros?: Record<string, unknown> }) {
+  return api("/api/tco/simular", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function simularMakeOrBuy(data: Record<string, unknown>) {
+  return api("/api/tco/simular/make-or-buy", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function compararProveedoresTco(data: { proveedor_ids: string[]; unidades?: number }) {
+  return api("/api/tco/comparar-proveedores", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchTcoAlianzas(): Promise<Array<Record<string, unknown>>> {
+  return api("/api/tco/alianzas");
+}
+
+export async function createTcoAlianza(data: Record<string, unknown>) {
+  return api("/api/tco/alianzas", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchTcoHistorial() {
+  return api("/api/tco/historial");
+}
