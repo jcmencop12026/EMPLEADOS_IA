@@ -1833,3 +1833,56 @@ export async function fetchHistorialAprendizaje(cicloId?: string): Promise<unkno
   const params = cicloId ? `?ciclo_id=${encodeURIComponent(cicloId)}` : "";
   return api(`/api/aprendizaje/historial${params}`);
 }
+
+// —— Optimización y recomendaciones (1290) ——
+
+export type OptimizacionRecomendacion = {
+  id: string;
+  codigo: string;
+  estado: string;
+  objetivo: string;
+  factible: boolean;
+  valor_esperado_total: number;
+  costo_esperado_total: number;
+  impacto_esperado_total: number;
+  roi_esperado?: number | null;
+  explicacion?: Record<string, unknown> | null;
+  conflictos?: string[] | null;
+  items?: OptimizacionItem[];
+};
+
+export type OptimizacionItem = {
+  opportunity_id: string;
+  seleccionado: boolean;
+  orden?: number | null;
+  puntuacion_total?: number | null;
+  factores?: Record<string, unknown> | null;
+  exclusion_razon?: string | null;
+};
+
+export async function fetchOptimizacionRecomendaciones(): Promise<OptimizacionRecomendacion[]> {
+  return api("/api/optimizacion/recomendaciones");
+}
+
+export async function fetchOptimizacionRecomendacion(id: string): Promise<OptimizacionRecomendacion> {
+  return api(`/api/optimizacion/recomendaciones/${id}`);
+}
+
+export async function simularOptimizacion(body: Record<string, unknown>): Promise<unknown> {
+  return api("/api/optimizacion/simular", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function crearRecomendacionOptimizacion(body: Record<string, unknown>): Promise<OptimizacionRecomendacion> {
+  return api("/api/optimizacion/recomendaciones", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function compararEscenariosOptimizacion(body: Record<string, unknown>): Promise<unknown> {
+  return api("/api/optimizacion/comparar", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function aprobarRecomendacionOptimizacion(id: string, justificacion: string): Promise<OptimizacionRecomendacion> {
+  return api(`/api/optimizacion/recomendaciones/${id}/aprobar`, {
+    method: "POST",
+    body: JSON.stringify({ justificacion }),
+  });
+}
