@@ -133,6 +133,7 @@ OPORTUNIDADES_PERMISSIONS = {
     "oportunidades.activate",
 }
 
+
 LINEA_BASE_PERMISSIONS = {
     "linea_base.view",
     "linea_base.manage",
@@ -158,6 +159,15 @@ INTELIGENCIA_EXTERNA_PERMISSIONS = {
     "inteligencia_externa.manage",
     "inteligencia_externa.ingest",
     "inteligencia_externa.validate",
+}
+
+INTEGRATION_PERMISSIONS = {
+    "integraciones.view",
+    "integraciones.create",
+    "integraciones.configure",
+    "integraciones.test",
+    "integraciones.execute",
+    "integraciones.manage_secrets",
 }
 
 PLATFORM_PERMISSIONS = {
@@ -257,6 +267,12 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
     "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
     "inteligencia_externa.validate": ("Inteligencia externa", "Validar análisis externo"),
+    "integraciones.view": ("Integraciones", "Consultar conectores e historial"),
+    "integraciones.create": ("Integraciones", "Crear conectores"),
+    "integraciones.configure": ("Integraciones", "Configurar conectores y mapeos"),
+    "integraciones.test": ("Integraciones", "Probar conexión de conectores"),
+    "integraciones.execute": ("Integraciones", "Ejecutar conectores"),
+    "integraciones.manage_secrets": ("Integraciones", "Gestionar referencias de credenciales"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -289,6 +305,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | DIAGNOSTICOS_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
+        | INTEGRATION_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -310,6 +327,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | DIAGNOSTICOS_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
+        | INTEGRATION_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -374,6 +392,11 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "inteligencia_externa.ingest",
         "inteligencia_externa.validate",
         "control_center.view",
+        "integraciones.view",
+        "integraciones.create",
+        "integraciones.configure",
+        "integraciones.test",
+        "integraciones.execute",
     },
     "viewer": {
         "employee.view",
@@ -397,6 +420,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "diagnosticos.view",
         "inteligencia_externa.view",
         "control_center.view",
+        "integraciones.view",
     },
 }
 
