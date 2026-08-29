@@ -207,6 +207,7 @@ OPTIMIZACION_PERMISSIONS = {
     "optimizacion.simulate",
     "optimizacion.create",
     "optimizacion.approve",
+    "optimizacion.execute",
     "optimizacion.configure",
 }
 
@@ -356,6 +357,7 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "optimizacion.simulate": ("Optimización", "Ejecutar simulaciones de portafolio"),
     "optimizacion.create": ("Optimización", "Crear y recalcular recomendaciones"),
     "optimizacion.approve": ("Optimización", "Aprobar o rechazar recomendaciones"),
+    "optimizacion.execute": ("Optimización", "Ejecutar recomendaciones aprobadas"),
     "optimizacion.configure": ("Optimización", "Configurar pesos y objetivos"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
