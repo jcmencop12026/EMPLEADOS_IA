@@ -22,6 +22,8 @@ import { SenalesPage } from "./pages/SenalesPage";
 import { SenalDetailPage } from "./pages/SenalDetailPage";
 import { DiagnosticosPage } from "./pages/DiagnosticosPage";
 import { DiagnosticoDetailPage } from "./pages/DiagnosticoDetailPage";
+import { InteligenciaExternaPage } from "./pages/InteligenciaExternaPage";
+import { InteligenciaExternaDetailPage } from "./pages/InteligenciaExternaDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
@@ -77,6 +79,8 @@ export default function App() {
           <Route path="senales/:signalId" element={<SenalDetailPage />} />
           <Route path="diagnosticos" element={<DiagnosticosPage />} />
           <Route path="diagnosticos/:diagnosticId" element={<DiagnosticoDetailPage />} />
+          <Route path="inteligencia-externa" element={<InteligenciaExternaPage />} />
+          <Route path="inteligencia-externa/senales/:signalId" element={<InteligenciaExternaDetailPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
           <Route element={<RequirePermission anyOf={["platform.organization.view"]} />}>
             <Route path="administracion/empresas" element={<AdminCompaniesPage />} />
