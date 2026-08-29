@@ -312,10 +312,15 @@ def test_1200_rbac_viewer(client: TestClient, lb_db):
 def test_1200_empresa_inactiva(client: TestClient, auth_headers, lb_db):
     org_id, _ = _admin(lb_db)
     org = lb_db.query(Organization).filter(Organization.id == org_id).first()
-    org.status = ORG_STATUS_INACTIVE
-    lb_db.commit()
-    res = client.get("/api/lineas-base", headers=auth_headers)
-    assert res.status_code == 403
+    prev_status = org.status
+    try:
+        org.status = ORG_STATUS_INACTIVE
+        lb_db.commit()
+        res = client.get("/api/lineas-base", headers=auth_headers)
+        assert res.status_code == 403
+    finally:
+        org.status = prev_status
+        lb_db.commit()
 
 
 def test_1200_auditoria(client: TestClient, auth_headers, lb_db):
