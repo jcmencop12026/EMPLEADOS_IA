@@ -31,6 +31,9 @@ EXECUTIVE_INDICATOR_DEFS = [
     {"id": "ai_consumption", "label": "Consumo IA (periodo)", "permiso": "finops.view", "enlace": "/costos-valor"},
     {"id": "ai_cost", "label": "Costo IA (periodo)", "permiso": "finops.view", "enlace": "/costos-valor"},
     {"id": "failed_executions", "label": "Ejecuciones fallidas", "permiso": "operations.view", "enlace": "/ejecuciones"},
+    {"id": "external_sources_active", "label": "Fuentes externas activas", "permiso": "inteligencia_externa.view", "enlace": "/inteligencia-externa"},
+    {"id": "external_signals_pending", "label": "Señales externas pendientes", "permiso": "inteligencia_externa.view", "enlace": "/inteligencia-externa"},
+    {"id": "external_risks_open", "label": "Riesgos externos abiertos", "permiso": "inteligencia_externa.view", "enlace": "/inteligencia-externa"},
 ]
 
 
@@ -303,6 +306,63 @@ def _atencion_requerida(db: Session, org_id: str, permissions: set[str]) -> list
                 "origen": "senales",
             })
 
+    if _has(permissions, "inteligencia_externa.view"):
+        from app.external_intelligence_enums import RelevanceLevel
+        from app.external_models import ExternalSignalExtension
+        from app.opportunity_models import ProactiveSignal
+
+        pendientes_ext = (
+            db.query(ExternalSignalExtension, ProactiveSignal)
+            .join(ProactiveSignal, ProactiveSignal.id == ExternalSignalExtension.signal_id)
+            .filter(
+                ExternalSignalExtension.organization_id == org_id,
+                ExternalSignalExtension.validated_at.is_(None),
+                ExternalSignalExtension.relevance.in_(
+                    (RelevanceLevel.RELEVANTE, RelevanceLevel.POSIBLEMENTE_RELEVANTE)
+                ),
+            )
+            .order_by(ExternalSignalExtension.captured_at.desc())
+            .limit(3)
+            .all()
+        )
+        for ext, sig in pendientes_ext:
+            prio += 1
+            items.append({
+                "prioridad": prio,
+                "tipo": "senal_externa_pendiente",
+                "severidad": "MEDIA",
+                "titulo": f"Señal externa sin validar: {sig.tipo or 'externa'}",
+                "detalle": ext.hecho_observado,
+                "fecha": ext.captured_at.isoformat() if ext.captured_at else None,
+                "enlace": f"/inteligencia-externa/senales/{ext.signal_id}",
+                "origen": "inteligencia_externa",
+            })
+
+        riesgos_ext = (
+            db.query(ExternalSignalExtension, ProactiveSignal)
+            .join(ProactiveSignal, ProactiveSignal.id == ExternalSignalExtension.signal_id)
+            .filter(
+                ExternalSignalExtension.organization_id == org_id,
+                ExternalSignalExtension.is_risk.is_(True),
+                ExternalSignalExtension.validated_at.is_(None),
+            )
+            .order_by(ExternalSignalExtension.captured_at.desc())
+            .limit(3)
+            .all()
+        )
+        for ext, sig in riesgos_ext:
+            prio += 1
+            items.append({
+                "prioridad": prio,
+                "tipo": "riesgo_externo",
+                "severidad": "ALTA",
+                "titulo": f"Riesgo externo: {ext.risk_type or sig.tipo or 'sin tipo'}",
+                "detalle": ext.hecho_observado,
+                "fecha": ext.captured_at.isoformat() if ext.captured_at else None,
+                "enlace": f"/inteligencia-externa/senales/{ext.signal_id}",
+                "origen": "inteligencia_externa",
+            })
+
     if _has(permissions, "notification.view"):
         alerts = (
             db.query(Notification)
@@ -373,17 +433,45 @@ def _llm_section(db: Session, org_id: str) -> dict[str, Any]:
         .all()
     )
     err_map = {p: c for p, c in errors}
+    latency_rows = (
+        db.query(LlmInferenceLog.provider, func.avg(LlmInferenceLog.latency_ms))
+        .filter(
+            LlmInferenceLog.organization_id == org_id,
+            LlmInferenceLog.created_at >= since,
+            LlmInferenceLog.latency_ms.isnot(None),
+        )
+        .group_by(LlmInferenceLog.provider)
+        .all()
+    )
+    lat_map = {p: int(row[1]) for p, row in latency_rows if row[1] is not None}
+    tokens_rows = (
+        db.query(LlmInferenceLog.provider, func.coalesce(func.sum(LlmInferenceLog.tokens_total), 0))
+        .filter(LlmInferenceLog.organization_id == org_id, LlmInferenceLog.created_at >= since)
+        .group_by(LlmInferenceLog.provider)
+        .all()
+    )
+    tok_map = {p: int(t or 0) for p, t in tokens_rows}
     items = []
     for p in providers:
         items.append({
             "id": p.id,
             "nombre": p.name,
             "proveedor": p.provider_type,
+            "modelo": p.model_default,
             "habilitado": p.is_enabled,
             "errores_24h": err_map.get(p.provider_type, 0),
+            "latencia_media_ms": lat_map.get(p.provider_type),
+            "tokens_24h": tok_map.get(p.provider_type, 0),
+            "estado": "DEGRADADO" if err_map.get(p.provider_type, 0) > 0 else ("ACTIVO" if p.is_enabled else "INACTIVO"),
             "enlace": "/administracion/proveedores-ia",
         })
-    return {"proveedores": items, "total": len(items), "degradados": sum(1 for i in items if i["errores_24h"] > 0)}
+    return {
+        "disponible": len(items) > 0,
+        "proveedores": items,
+        "total": len(items),
+        "degradados": sum(1 for i in items if i["errores_24h"] > 0),
+        "enlace": "/administracion/proveedores-ia",
+    }
 
 
 def _audit_section(db: Session, org_id: str, limit: int = 8) -> list[dict[str, Any]]:
@@ -394,16 +482,49 @@ def _audit_section(db: Session, org_id: str, limit: int = 8) -> list[dict[str, A
         .limit(limit)
         .all()
     )
+    user_ids = {r.user_id for r in rows if r.user_id}
+    actors: dict[str, str] = {}
+    if user_ids:
+        actors = {
+            u.id: u.username
+            for u in db.query(User).filter(User.id.in_(user_ids)).all()
+        }
     return [
         {
             "id": r.id,
             "accion": r.action,
             "detalle": r.detail,
+            "actor": actors.get(r.user_id) if r.user_id else None,
+            "modulo": r.action.split(".")[0] if r.action and "." in r.action else r.action,
             "fecha": r.created_at.isoformat() if r.created_at else None,
             "enlace": "/auditoria",
         }
         for r in rows
     ]
+
+
+def _fetch_module_adapters(
+    db: Session,
+    org_id: str,
+    *,
+    permissions: set[str],
+    period_start: datetime | None,
+    adapter_instances: list[Any],
+) -> dict[str, Any]:
+    modulos: dict[str, Any] = {}
+    for adapter in adapter_instances:
+        try:
+            modulos[adapter.modulo] = adapter.fetch(
+                db, org_id, permissions=permissions, period_start=period_start
+            )
+        except Exception:
+            modulos[adapter.modulo] = {
+                "disponible": False,
+                "estado": "NO DISPONIBLE",
+                "modulo": adapter.modulo,
+                "bloque": getattr(adapter, "bloque", ""),
+            }
+    return modulos
 
 
 def _cadena_ejecutiva(db: Session, org_id: str, permissions: set[str], *, period_start: datetime | None) -> list[dict[str, Any]]:
@@ -585,11 +706,16 @@ def get_executive_summary(
         adapters.ValorRetornoAdapter(),
         adapters.DiagnosticoAdapter(),
         adapters.SenalesAdapter(),
+        adapters.InteligenciaExternaAdapter(),
     ]
-    modulos = {
-        a.modulo: a.fetch(db, org_id, permissions=permissions, period_start=period_start)
-        for a in adapter_instances
-    }
+    modulos = _fetch_module_adapters(
+        db, org_id, permissions=permissions, period_start=period_start, adapter_instances=adapter_instances
+    )
+
+    ie_mod = modulos.get("inteligencia_externa") or {}
+    ctx["external_sources_active"] = ie_mod.get("fuentes_activas") if ie_mod.get("disponible") else None
+    ctx["external_signals_pending"] = ie_mod.get("sin_validar") if ie_mod.get("disponible") else None
+    ctx["external_risks_open"] = ie_mod.get("riesgos_abiertos") if ie_mod.get("disponible") else None
 
     return {
         "generated_at": _utcnow().isoformat(),
@@ -613,6 +739,7 @@ def get_executive_summary(
         "valor_retorno": modulos.get("valor_retorno"),
         "diagnostico": modulos.get("diagnostico"),
         "senales": modulos.get("senales"),
+        "inteligencia_externa": modulos.get("inteligencia_externa"),
         "cadena_ejecutiva": _cadena_ejecutiva(db, org_id, permissions, period_start=period_start),
         "salud_plataforma": build_health_report(include_schedulers=True) if _has(permissions, "control_center.view") else None,
         "auditoria_reciente": _audit_section(db, org_id) if _has(permissions, "audit.view") else None,
@@ -625,6 +752,7 @@ def get_executive_summary(
             "1200": "Integrado — línea base e impacto",
             "1210": "Integrado — valoración y retorno",
             "1220": "Integrado — diagnóstico transversal",
+            "1240": "Integrado — inteligencia externa",
         },
     }
 
