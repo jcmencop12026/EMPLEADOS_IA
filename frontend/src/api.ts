@@ -1898,6 +1898,14 @@ export type OptimizacionRecomendacion = {
   roi_esperado?: number | null;
   explicacion?: Record<string, unknown> | null;
   conflictos?: string[] | null;
+  ejecucion?: {
+    tipo?: string | null;
+    estado?: string | null;
+    correlation_id?: string | null;
+    execution_reference?: string | null;
+    idempotent?: boolean;
+    learning_refs?: Array<Record<string, unknown>>;
+  } | null;
   items?: OptimizacionItem[];
 };
 
@@ -1934,6 +1942,27 @@ export async function aprobarRecomendacionOptimizacion(id: string, justificacion
   return api(`/api/optimizacion/recomendaciones/${id}/aprobar`, {
     method: "POST",
     body: JSON.stringify({ justificacion }),
+  });
+}
+
+export async function ejecutarRecomendacionOptimizacion(
+  id: string,
+  tipoEjecucion: "AUTOMATICA" | "HUMANA_EXTERNA" = "AUTOMATICA",
+): Promise<OptimizacionRecomendacion> {
+  return api(`/api/optimizacion/recomendaciones/${id}/ejecutar`, {
+    method: "POST",
+    body: JSON.stringify({ tipo_ejecucion: tipoEjecucion }),
+  });
+}
+
+export async function confirmarEjecucionHumanaOptimizacion(
+  id: string,
+  referenciaExterna: string,
+  notas?: string,
+): Promise<OptimizacionRecomendacion> {
+  return api(`/api/optimizacion/recomendaciones/${id}/confirmar-ejecucion`, {
+    method: "POST",
+    body: JSON.stringify({ referencia_externa: referenciaExterna, notas }),
   });
 }
 
