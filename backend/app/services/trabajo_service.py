@@ -14,6 +14,7 @@ from app.continuidad_models import ContinuidadAlerta
 from app.finops_models import FinOpsBudget
 from app.models import Notification, Organization, User
 from app.opportunity_models import Opportunity
+from app.optimization_models import OptimizacionRecomendacion
 from app.orchestration_models import ApprovalRequest, WorkPlan
 from app.permissions import user_permissions
 from app.services import control_center_service as cc_svc
@@ -29,6 +30,7 @@ TRABAJO_VIEW_PERMISSIONS = frozenset(
         "integraciones.view",
         "finops.view",
         "automation.view",
+        "optimizacion.view",
         "linea_base.view",
         "diagnosticos.view",
     }
@@ -385,6 +387,72 @@ def collect_items(
                     "trazabilidad_enlace": _trazabilidad_link(opp.correlation_id, "oportunidades"),
                     "acciones": acciones,
                     "metadata": {"opportunity_id": opp.id, "codigo": opp.codigo},
+                }
+            )
+
+    if _has(permissions, "optimizacion.view"):
+        recs = (
+            db.query(OptimizacionRecomendacion)
+            .filter(
+                OptimizacionRecomendacion.organization_id == org_id,
+                OptimizacionRecomendacion.estado == "APROBADA",
+                OptimizacionRecomendacion.es_simulacion.is_(False),
+            )
+            .order_by(OptimizacionRecomendacion.updated_at.desc())
+            .limit(50)
+            .all()
+        )
+        for rec in recs:
+            try:
+                traz = json.loads(rec.trazabilidad_json) if rec.trazabilidad_json else {}
+            except json.JSONDecodeError:
+                traz = {}
+            ejec = traz.get("ejecucion") or {}
+            if ejec.get("execution_status") != "PENDIENTE_EJECUCION_HUMANA":
+                continue
+            corr = ejec.get("correlation_id")
+            prio_label, prio_order = _priority_label_and_order("ALTA")
+            items.append(
+                {
+                    "id": f"optimizacion_pendiente:{rec.id}",
+                    "source_id": rec.id,
+                    "tipo": "optimizacion_pendiente_humana",
+                    "asunto": f"Confirmar ejecución humana: {rec.codigo}",
+                    "modulo": "optimizacion",
+                    "organization_id": org_id,
+                    "organization_name": organization_name,
+                    "prioridad": prio_label,
+                    "prioridad_orden": prio_order,
+                    "estado_dominio": "PENDIENTE_EJECUCION_HUMANA",
+                    "estado_presentacion": "PENDIENTE",
+                    "responsable_id": ejec.get("requested_by"),
+                    "responsable_nombre": None,
+                    "created_at": rec.updated_at or rec.created_at,
+                    "fecha_limite": None,
+                    "antiguedad_horas": _age_hours(rec.updated_at or rec.created_at),
+                    "vencida": False,
+                    "correlation_id": corr,
+                    "requires_action": True,
+                    "informativa": False,
+                    "semantic_kind": "RECOMENDACION",
+                    "detalle": rec.justificacion_aprobacion,
+                    "enlace": f"/optimizacion/{rec.id}",
+                    "trazabilidad_enlace": _trazabilidad_link(corr, "integraciones"),
+                    "acciones": [
+                        _action(
+                            "ver",
+                            "Ver recomendación",
+                            "optimizacion.view",
+                            href=f"/optimizacion/{rec.id}",
+                        ),
+                        _action(
+                            "confirmar",
+                            "Confirmar ejecución",
+                            "optimizacion.execute",
+                            href=f"/optimizacion/{rec.id}",
+                        ),
+                    ],
+                    "metadata": {"recomendacion_id": rec.id, "codigo": rec.codigo},
                 }
             )
 

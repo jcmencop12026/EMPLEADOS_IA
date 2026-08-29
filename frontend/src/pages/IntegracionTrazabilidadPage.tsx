@@ -46,7 +46,7 @@ export function IntegracionTrazabilidadPage() {
         <div>
           <h1>Trazabilidad de integración</h1>
           <p className="muted">
-            Siga un correlation_id a través de identidad, catálogo, política, gobierno, preflight, ejecución, linaje, auditoría y continuidad.
+            Siga un correlation_id a través de identidad, catálogo, política, gobierno, validación previa, ejecución, linaje, auditoría y continuidad.
           </p>
         </div>
         <Link className="btn" to="/integraciones">Volver a integraciones</Link>

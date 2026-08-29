@@ -32,6 +32,18 @@ export const EVENT_HIGHLIGHT_TYPES = [
   "SERVICIO_DEGRADADO",
 ];
 
+export const WIRING_STAGE_LABELS: Record<string, string> = {
+  preflight: "Validación previa",
+  identidad: "Identidad",
+  catalogo: "Catálogo",
+  politica: "Política",
+  gobierno: "Gobierno",
+  ejecucion: "Ejecución",
+  linaje: "Linaje",
+  auditoria: "Auditoría",
+  continuidad: "Continuidad",
+};
+
 export function formatTs(value: string | null | undefined): string {
   if (!value) return "—";
   try {

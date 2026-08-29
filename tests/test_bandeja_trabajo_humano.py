@@ -99,6 +99,51 @@ def test_trabajo_deduplicacion_aprobacion_notificacion(client: TestClient, auth_
     assert len(notif_rows) == 0
 
 
+def test_trabajo_1290_pendiente_ejecucion_humana(client: TestClient, auth_headers):
+    import json
+    import uuid
+
+    from app.database import SessionLocal
+    from app.optimization_models import OptimizacionRecomendacion
+    from app.config import settings
+    from app.models import User
+
+    db = SessionLocal()
+    try:
+        admin = db.query(User).filter(User.username == settings.bootstrap_admin_username).first()
+        assert admin
+        rec = OptimizacionRecomendacion(
+            organization_id=admin.organization_id,
+            codigo=f"OPT-TRAB-{uuid.uuid4().hex[:6]}",
+            estado="APROBADA",
+            objetivo="MAXIMIZAR_VALOR",
+            es_simulacion=False,
+            trazabilidad_json=json.dumps(
+                {
+                    "ejecucion": {
+                        "execution_status": "PENDIENTE_EJECUCION_HUMANA",
+                        "execution_type": "HUMANA_EXTERNA",
+                        "correlation_id": "corr-opt-trabajo-test",
+                        "requested_by": admin.id,
+                    }
+                }
+            ),
+            created_by=admin.id,
+        )
+        db.add(rec)
+        db.commit()
+        rec_id = rec.id
+    finally:
+        db.close()
+
+    res = client.get("/api/trabajo/items", headers=auth_headers)
+    assert res.status_code == 200
+    rows = [i for i in res.json()["items"] if i["tipo"] == "optimizacion_pendiente_humana" and i["source_id"] == rec_id]
+    assert len(rows) == 1
+    assert rows[0]["enlace"] == f"/optimizacion/{rec_id}"
+    assert rows[0]["requires_action"] is True
+
+
 def test_trabajo_multiempresa_aislamiento(client: TestClient):
     import uuid
 
