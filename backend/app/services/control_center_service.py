@@ -41,6 +41,20 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _as_utc(dt: datetime | None) -> datetime | None:
+    """Normaliza a UTC aware — compatible con SQLite (naive) y PostgreSQL (aware)."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _max_utc(*values: datetime | None) -> datetime | None:
+    normalized = [_as_utc(v) for v in values if v is not None]
+    return max(normalized) if normalized else None
+
+
 def _period_start(periodo: str | None) -> datetime | None:
     now = _utcnow()
     if periodo == "7d":
@@ -84,7 +98,7 @@ def _employees_section(db: Session, org_id: str, *, employee_id: str | None = No
             .filter(LlmInferenceLog.organization_id == org_id, LlmInferenceLog.employee_id == emp.id)
             .scalar()
         )
-        last_activity = max(filter(None, [last_wp, last_llm, emp.updated_at]), default=None)
+        last_activity = _max_utc(last_wp, last_llm, emp.updated_at)
         running = (
             db.query(func.count(WorkPlan.id))
             .filter(WorkPlan.organization_id == org_id, WorkPlan.employee_id == emp.id, WorkPlan.status.in_(["RUNNING", "PLANNING", "PARTIAL"]))
@@ -162,13 +176,14 @@ def _atencion_requerida(db: Session, org_id: str, permissions: set[str]) -> list
         )
         now = _utcnow()
         for plan in overdue:
-            if plan.vencimiento and plan.vencimiento < now:
+            vencimiento = _as_utc(plan.vencimiento)
+            if vencimiento and vencimiento < now:
                 prio += 1
                 items.append({
                     "prioridad": prio,
                     "tipo": "tarea_vencida",
                     "titulo": plan.objective or "Plan vencido",
-                    "fecha": plan.vencimiento.isoformat(),
+                    "fecha": vencimiento.isoformat(),
                     "enlace": f"/operaciones/{plan.id}",
                     "origen": "operaciones",
                 })
