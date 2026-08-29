@@ -65,7 +65,7 @@ def list_proposals(user: User = Depends(get_current_user), db: Session = Depends
 def create_proposal(body: ProposalCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     check_permission(user, "comercial.create", db)
     try:
-        row = svc.create_proposal(db, user.organization_id, body.model_dump(), user.id)
+        row = svc.create_proposal(db, user.organization_id, body.model_dump(exclude_none=True), user.id)
         db.commit()
         return svc.proposal_to_detail(db, user.organization_id, row.id)
     except svc.CommercialValidationError as exc:
