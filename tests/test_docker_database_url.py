@@ -2,12 +2,31 @@
 from __future__ import annotations
 
 import os
+import tempfile
+from pathlib import Path
 
 import pytest
+from pydantic_settings import SettingsConfigDict
 from sqlalchemy.engine import make_url
 
-from app.config import Settings
+from app.config import Settings, default_sqlite_database_url
 from app.db_url import build_postgresql_url, parse_database_password, resolve_database_url_from_environ
+
+
+def _settings_from_env_file(env_content: str, monkeypatch: pytest.MonkeyPatch) -> Settings:
+    """Carga Settings desde un .env aislado sin contaminar os.environ."""
+    tmpdir = tempfile.mkdtemp()
+    env_path = Path(tmpdir) / ".env"
+    env_path.write_text(env_content, encoding="utf-8")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    for key in list(os.environ):
+        if key.startswith("POSTGRES_"):
+            monkeypatch.delenv(key, raising=False)
+
+    class IsolatedSettings(Settings):
+        model_config = SettingsConfigDict(env_file=str(env_path), extra="ignore")
+
+    return IsolatedSettings()
 
 
 @pytest.mark.parametrize(
@@ -101,13 +120,100 @@ def test_encoded_url_with_percent_safe_for_sqlalchemy_engine():
 
 
 def test_docker_compose_uses_postgres_components_not_interpolated_database_url():
-    from pathlib import Path
-
     content = Path(__file__).resolve().parents[1] / "docker-compose.yml"
     text = content.read_text(encoding="utf-8")
     assert "POSTGRES_HOST: ${POSTGRES_HOST:-postgres}" in text
     assert "POSTGRES_PASSWORD" in text
     assert "DATABASE_URL: postgresql" not in text
+
+
+def test_settings_database_url_from_os_environ(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg2://fromenv:pw@localhost:5432/fromenv_db")
+    monkeypatch.setenv("POSTGRES_USER", "empleados")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "ignored")
+    monkeypatch.setenv("POSTGRES_DB", "empleados_ia")
+
+    cfg = Settings()
+    parsed = make_url(cfg.database_url)
+    assert parsed.database == "fromenv_db"
+    assert parsed.username == "fromenv"
+
+
+def test_settings_database_url_from_env_file(monkeypatch):
+    cfg = _settings_from_env_file(
+        "DATABASE_URL=postgresql+psycopg2://fromfile:pw@localhost:5432/fromfile_db\n"
+        "POSTGRES_USER=empleados\n"
+        "POSTGRES_PASSWORD=ignored\n"
+        "POSTGRES_DB=empleados_ia\n",
+        monkeypatch,
+    )
+    parsed = make_url(cfg.database_url)
+    assert parsed.database == "fromfile_db"
+    assert parsed.username == "fromfile"
+
+
+def test_settings_sqlite_env_file_with_postgres_vars_not_overwritten(monkeypatch):
+    sqlite_url = "sqlite:///D:/EMPLEADOS_IA/data/test.db"
+    cfg = _settings_from_env_file(
+        f"DATABASE_URL={sqlite_url}\n"
+        "POSTGRES_USER=empleados\n"
+        "POSTGRES_PASSWORD=CAMBIAR_PASSWORD_EN_PROD\n"
+        "POSTGRES_DB=empleados_ia\n",
+        monkeypatch,
+    )
+    assert cfg.database_url == sqlite_url
+    assert cfg.database_url.startswith("sqlite")
+
+
+def test_settings_postgresql_env_file_with_postgres_vars_not_overwritten(monkeypatch):
+    pg_url = "postgresql+psycopg2://explicit:pw@localhost:5432/explicit_db"
+    cfg = _settings_from_env_file(
+        f"DATABASE_URL={pg_url}\n"
+        "POSTGRES_USER=empleados\n"
+        "POSTGRES_PASSWORD=otherpass\n"
+        "POSTGRES_DB=empleados_ia\n",
+        monkeypatch,
+    )
+    assert cfg.database_url == pg_url
+    assert make_url(cfg.database_url).database == "explicit_db"
+
+
+def test_settings_postgres_fallback_without_explicit_database_url(monkeypatch):
+    cfg = _settings_from_env_file(
+        "POSTGRES_USER=empleados\n"
+        "POSTGRES_PASSWORD=sec@ret#1\n"
+        "POSTGRES_DB=empleados_ia\n"
+        "POSTGRES_HOST=postgres\n",
+        monkeypatch,
+    )
+    parsed = make_url(cfg.database_url)
+    assert parsed.password == "sec@ret#1"
+    assert parsed.host == "postgres"
+
+
+def test_settings_incomplete_postgres_vars_falls_back_to_default_sqlite(monkeypatch):
+    cfg = _settings_from_env_file(
+        "POSTGRES_USER=empleados\n"
+        "POSTGRES_DB=empleados_ia\n",
+        monkeypatch,
+    )
+    assert cfg.database_url == default_sqlite_database_url()
+
+
+def test_alembic_resolution_equivalent_with_percent_password(monkeypatch):
+    """Alembic env.py usa create_engine(db_url) — misma ruta que esta prueba."""
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.setenv("POSTGRES_USER", "u")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "p%2")
+    monkeypatch.setenv("POSTGRES_DB", "db")
+
+    from sqlalchemy import create_engine, pool
+
+    db_url = resolve_database_url_from_environ()
+    assert db_url is not None
+    engine = create_engine(db_url, poolclass=pool.NullPool)
+    assert engine.url.password == "p%2"
+    engine.dispose()
 
 
 @pytest.mark.parametrize("char", ["@", "#"], ids=["at", "hash"])

@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Literal, Self
 
@@ -13,13 +12,17 @@ DATA_DIR = ROOT_DIR / "data"
 AppEnv = Literal["dev", "test", "prod"]
 
 
+def default_sqlite_database_url() -> str:
+    return f"sqlite:///{(DATA_DIR / 'enterprise_ai_os.db').as_posix()}"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=str(ROOT_DIR / ".env"), extra="ignore")
 
     app_name: str = "Enterprise AI OS"
     app_version: str = "0.2.0-b1"
     app_env: AppEnv = "dev"
-    database_url: str = f"sqlite:///{(DATA_DIR / 'enterprise_ai_os.db').as_posix()}"
+    database_url: str | None = None
     postgres_host: str | None = None
     postgres_port: int = 5432
     postgres_user: str | None = None
@@ -40,7 +43,7 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def assemble_database_url_from_postgres_components(self) -> Self:
-        if os.environ.get("DATABASE_URL", "").strip():
+        if self.database_url and self.database_url.strip():
             return self
         if self.postgres_user and self.postgres_password and self.postgres_db:
             built = build_postgresql_url(
@@ -51,6 +54,8 @@ class Settings(BaseSettings):
                 database=self.postgres_db,
             )
             object.__setattr__(self, "database_url", built)
+        else:
+            object.__setattr__(self, "database_url", default_sqlite_database_url())
         return self
 
     @computed_field  # type: ignore[prop-decorator]
