@@ -37,6 +37,13 @@ const TIPO_LABELS: Record<string, string> = {
   alerta_continuidad: "Alerta continuidad",
   integracion_degradada: "Integración",
   presupuesto_ia: "Presupuesto IA",
+  auditor_empleado_critico: "Auditor — crítico",
+  auditor_empleado_intervencion: "Auditor — intervención",
+  auditor_empleado_revision: "Auditor — revisión",
+};
+
+const MODULO_LABELS: Record<string, string> = {
+  auditor_empleados: "Auditor de Empleados IA",
 };
 
 const ESTADO_LABELS: Record<string, string> = {
@@ -209,7 +216,7 @@ export function TrabajoPage() {
         <select value={filtroModulo} onChange={(e) => setFiltroModulo(e.target.value)} aria-label="Módulo">
           <option value="">Módulo</option>
           {modulos.map((m) => (
-            <option key={m} value={m}>{m}</option>
+            <option key={m} value={m}>{MODULO_LABELS[m] ?? m}</option>
           ))}
         </select>
         <select value={filtroVencimiento} onChange={(e) => setFiltroVencimiento(e.target.value)} aria-label="Vencimiento">
@@ -338,7 +345,31 @@ export function TrabajoPage() {
                 <dt>Asunto</dt>
                 <dd>{selected.asunto}</dd>
                 <dt>Módulo</dt>
-                <dd>{selected.modulo}</dd>
+                <dd>{MODULO_LABELS[selected.modulo] ?? selected.modulo}</dd>
+                {selected.metadata?.employee_name && (
+                  <>
+                    <dt>Empleado</dt>
+                    <dd>{String(selected.metadata.employee_name)}</dd>
+                  </>
+                )}
+                {selected.metadata?.health_status && (
+                  <>
+                    <dt>Salud empleado</dt>
+                    <dd>{String(selected.metadata.health_status)}</dd>
+                  </>
+                )}
+                {selected.metadata?.severity && (
+                  <>
+                    <dt>Severidad hallazgo</dt>
+                    <dd>{String(selected.metadata.severity)}</dd>
+                  </>
+                )}
+                {selected.metadata?.recommended_action && (
+                  <>
+                    <dt>Recomendación</dt>
+                    <dd>{String(selected.metadata.recommended_action)}</dd>
+                  </>
+                )}
                 <dt>Estado dominio</dt>
                 <dd>{selected.estado_dominio}</dd>
                 <dt>Estado</dt>

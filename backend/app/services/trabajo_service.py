@@ -14,11 +14,12 @@ from app.continuidad_models import ContinuidadAlerta
 from app.finops_models import FinOpsBudget
 from app.models import Notification, Organization, User
 from app.opportunity_models import Opportunity
-from app.orchestration_models import ApprovalRequest, WorkPlan
+from app.orchestration_models import ApprovalRequest, WorkPlan, AIEmployee
 from app.permissions import user_permissions
 from app.services import control_center_service as cc_svc
 from app.services import finops_service
 from app.services import integration_service as integ_svc
+from app.services.employee_audit_service import iter_human_work_findings, _auditor_trabajo_tipo
 
 TRABAJO_VIEW_PERMISSIONS = frozenset(
     {
@@ -145,6 +146,14 @@ def can_access_trabajo(user: User, db: Session) -> bool:
     return any(p in perms for p in TRABAJO_VIEW_PERMISSIONS)
 
 
+def _auditor_severity_priority(severity: str, health: str | None) -> tuple[str, int]:
+    if severity == "CRITICO" or health == "CRITICO":
+        return "CRITICA", 4
+    if severity == "ADVERTENCIA" or health == "REQUIERE_INTERVENCION":
+        return "ALTA", 3
+    return "MEDIA", 2
+
+
 def collect_items(
     db: Session,
     user: User,
@@ -156,6 +165,10 @@ def collect_items(
     items: list[dict[str, Any]] = []
     pending_approval_ids: set[str] = set()
     pending_opp_ids: set[str] = set()
+    auditor_finding_ids: set[str] = set()
+    auditor_notification_ids: set[str] = set()
+    auditor_correlation_keys: set[str] = set()
+    auditor_employee_ids: set[str] = set()
     now = _utcnow()
 
     if _has(permissions, "operations.view"):
@@ -517,6 +530,88 @@ def collect_items(
                 }
             )
 
+    if _has(permissions, "auditor_empleados.view"):
+        human_findings = iter_human_work_findings(db, org_id)
+        employee_ids = {f.employee_id for f, _, _, _ in human_findings}
+        employees = (
+            db.query(AIEmployee).filter(AIEmployee.id.in_(employee_ids)).all() if employee_ids else []
+        )
+        emp_map = {e.id: e for e in employees}
+        for finding, assessment, health, _policy in human_findings:
+            auditor_finding_ids.add(finding.id)
+            auditor_employee_ids.add(finding.employee_id)
+            if finding.notification_id:
+                auditor_notification_ids.add(finding.notification_id)
+            auditor_correlation_keys.add(f"{finding.employee_id}:{finding.correlation_id}")
+            emp = emp_map.get(finding.employee_id)
+            emp_name = emp.name if emp else finding.employee_id[:8]
+            tipo = _auditor_trabajo_tipo(health, finding.severity)
+            prio_label, prio_order = _auditor_severity_priority(finding.severity, health)
+            audit_link = f"/empleados/auditoria?employee_id={finding.employee_id}&finding_id={finding.id}"
+            acciones = [
+                _action("ver_auditoria", "Ver auditoría", "auditor_empleados.view", href=audit_link),
+                _action("ver_empleado", "Ver empleado", "employee.view", href=f"/empleados/{finding.employee_id}"),
+            ]
+            if finding.run_id:
+                acciones.append(
+                    _action(
+                        "ver_auditoria_run",
+                        "Ver ejecución auditoría",
+                        "auditor_empleados.view",
+                        href=f"/empleados/auditoria?employee_id={finding.employee_id}",
+                    )
+                )
+            detalle_parts = []
+            if finding.detail:
+                detalle_parts.append(finding.detail)
+            if finding.recommended_action:
+                detalle_parts.append(f"Recomendación: {finding.recommended_action}")
+            items.append(
+                {
+                    "id": f"auditor_empleado:{finding.id}",
+                    "source_id": finding.id,
+                    "tipo": tipo,
+                    "asunto": f"{emp_name}: {finding.title}",
+                    "modulo": "auditor_empleados",
+                    "organization_id": org_id,
+                    "organization_name": organization_name,
+                    "prioridad": prio_label,
+                    "prioridad_orden": prio_order,
+                    "estado_dominio": health or finding.status,
+                    "estado_presentacion": _presentation_state(tipo, health or finding.status),
+                    "responsable_id": None,
+                    "responsable_nombre": None,
+                    "created_at": finding.created_at,
+                    "fecha_limite": None,
+                    "antiguedad_horas": _age_hours(finding.created_at),
+                    "vencida": False,
+                    "correlation_id": finding.correlation_id,
+                    "requires_action": True,
+                    "informativa": False,
+                    "semantic_kind": finding.semantic_kind if finding.semantic_kind in ("HECHO", "INFERENCIA", "RECOMENDACION") else None,
+                    "detalle": " · ".join(detalle_parts) if detalle_parts else None,
+                    "enlace": audit_link,
+                    "trazabilidad_enlace": _trazabilidad_link(finding.correlation_id, "auditor_empleados"),
+                    "acciones": acciones,
+                    "metadata": {
+                        "origen": "auditor_empleados",
+                        "employee_id": finding.employee_id,
+                        "employee_name": emp_name,
+                        "audit_run_id": finding.run_id,
+                        "finding_id": finding.id,
+                        "assessment_id": finding.assessment_id,
+                        "health_status": health,
+                        "severity": finding.severity,
+                        "rule_code": finding.rule_code,
+                        "metric_name": finding.metric_name,
+                        "observed_value": finding.observed_value,
+                        "threshold_value": finding.threshold_value,
+                        "recommended_action": finding.recommended_action,
+                        "semantic_kind_finding": finding.semantic_kind,
+                    },
+                }
+            )
+
     if _has(permissions, "notification.view"):
         notifications = (
             _notification_visible_query(db, user)
@@ -531,6 +626,22 @@ def collect_items(
             if n.type == "APPROVAL_REQUIRED" and approval_id and approval_id in pending_approval_ids:
                 continue
             if n.source_type == "opportunity" and n.source_id and n.source_id in pending_opp_ids:
+                continue
+            finding_id = str(meta.get("finding_id") or "")
+            if finding_id and finding_id in auditor_finding_ids:
+                continue
+            if n.id in auditor_notification_ids:
+                continue
+            if meta.get("employee_audit_guard"):
+                corr_key = f"{meta.get('employee_id')}:{meta.get('correlation_id')}"
+                if corr_key in auditor_correlation_keys:
+                    continue
+                if n.source_type == "employee_audit" and n.source_id in auditor_employee_ids:
+                    if finding_id and finding_id in auditor_finding_ids:
+                        continue
+                    if corr_key in auditor_correlation_keys:
+                        continue
+            if n.source_type == "employee_audit" and n.source_id and n.source_id in auditor_finding_ids:
                 continue
             requires = _notification_requires_action(n)
             prio_label, prio_order = _priority_label_and_order(n.severity)
@@ -607,6 +718,7 @@ def filter_items(
     tipo: str | None = None,
     modulo: str | None = None,
     responsable_id: str | None = None,
+    employee_id: str | None = None,
     vencimiento: str | None = None,
     requires_action: bool | None = None,
     sort: str = "prioridad",
@@ -619,6 +731,8 @@ def filter_items(
             r
             for r in rows
             if needle in f"{r.get('asunto', '')} {r.get('detalle', '')} {r.get('modulo', '')}".lower()
+            or needle in str((r.get("metadata") or {}).get("employee_id", "")).lower()
+            or needle in str((r.get("metadata") or {}).get("employee_name", "")).lower()
         ]
     if estado:
         rows = [r for r in rows if r.get("estado_presentacion") == estado.upper()]
@@ -630,6 +744,8 @@ def filter_items(
         rows = [r for r in rows if r.get("modulo") == modulo]
     if responsable_id:
         rows = [r for r in rows if r.get("responsable_id") == responsable_id]
+    if employee_id:
+        rows = [r for r in rows if (r.get("metadata") or {}).get("employee_id") == employee_id]
     if requires_action is not None:
         rows = [r for r in rows if r.get("requires_action") == requires_action]
     if vencimiento == "vencida":
@@ -674,6 +790,7 @@ def list_items(
     tipo: str | None = None,
     modulo: str | None = None,
     responsable_id: str | None = None,
+    employee_id: str | None = None,
     vencimiento: str | None = None,
     requires_action: bool | None = None,
     sort: str = "prioridad",
@@ -693,6 +810,7 @@ def list_items(
         tipo=tipo,
         modulo=modulo,
         responsable_id=responsable_id,
+        employee_id=employee_id,
         vencimiento=vencimiento,
         requires_action=requires_action,
         sort=sort,
@@ -709,6 +827,7 @@ def list_items(
             "tipo": tipo,
             "modulo": modulo,
             "responsable_id": responsable_id,
+            "employee_id": employee_id,
             "vencimiento": vencimiento,
             "requires_action": requires_action,
             "sort": sort,
