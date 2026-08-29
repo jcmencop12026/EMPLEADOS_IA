@@ -1534,6 +1534,8 @@ export type LlmProvider = {
   organization_id: string;
   name: string;
   provider_type: string;
+  provider_label?: string | null;
+  adapter_mode?: string | null;
   model_default: string | null;
   endpoint: string | null;
   timeout_seconds: number;
@@ -1543,7 +1545,55 @@ export type LlmProvider = {
   secret_ref: string | null;
   secret_configured: boolean;
   secret_masked: string | null;
+  health_status?: string | null;
+  health_detail?: string | null;
   config_json: Record<string, unknown> | null;
+};
+
+export type LlmProviderHealth = {
+  provider_id: string;
+  provider_type: string;
+  nombre: string;
+  etiqueta: string;
+  modo?: string | null;
+  estado: string;
+  detalle: string;
+  habilitado: boolean;
+  configurado: boolean;
+  es_fallback: boolean;
+  prioridad: number;
+};
+
+export type LlmObservabilitySummary = {
+  periodo?: string | null;
+  total_inferencias: number;
+  exitosas: number;
+  errores: number;
+  tasa_exito: number | null;
+  latencia_promedio_ms: number | null;
+  tokens_total: number | null;
+  costo_total: number | null;
+  fallbacks: number;
+  por_proveedor: Record<string, number>;
+  errores_por_categoria: Record<string, number>;
+};
+
+export type LlmRoutingPolicy = {
+  id: string;
+  name: string;
+  preferred_provider: string | null;
+  preferred_model: string | null;
+  required_capability: string | null;
+  fallback_allowed: boolean;
+  max_cost_per_1k_tokens: number | null;
+  credential_scope: string;
+  priority: number;
+  is_active: boolean;
+};
+
+export type LlmRoutingExplain = {
+  seleccionado: Record<string, unknown> | null;
+  razones: string[];
 };
 
 export type LlmTestResult = {
@@ -1728,4 +1778,182 @@ export type CentroControlResumen = {
 
 export async function fetchCentroControlResumen(periodo = "mtd"): Promise<CentroControlResumen> {
   return api(`/api/centro-control/resumen-ejecutivo?periodo=${encodeURIComponent(periodo)}`);
+}
+
+// —— Aprendizaje y repriorización (1260) ——
+
+export type CicloAprendizajeItem = {
+  id: string;
+  opportunity_id: string;
+  estado: string;
+  impacto_esperado?: number | null;
+  valor_esperado?: number | null;
+  costo_esperado?: number | null;
+  tiempo_esperado_dias?: number | null;
+  impacto_real?: number | null;
+  valor_real?: number | null;
+  costo_real?: number | null;
+  tiempo_real_dias?: number | null;
+  desviaciones?: Record<string, unknown> | null;
+  calidad_recomendacion?: string | null;
+  prioridad_anterior?: number | null;
+  prioridad_propuesta?: number | null;
+  explicacion_prioridad?: Record<string, unknown> | null;
+  created_at?: string | null;
+};
+
+export type RecalibracionItem = {
+  id: string;
+  ciclo_id: string;
+  opportunity_id: string;
+  estado: string;
+  campo: string;
+  valor_anterior?: string | null;
+  valor_nuevo?: string | null;
+  justificacion: string;
+  factores?: Record<string, unknown> | null;
+  motivo_rechazo?: string | null;
+};
+
+export type PatronAprendizajeItem = {
+  id: string;
+  tipo_patron: string;
+  clave_patron: string;
+  dominio?: string | null;
+  tipo_oportunidad?: string | null;
+  ocurrencias: number;
+  resumen: string;
+};
+
+export async function fetchCiclosAprendizaje(opportunityId?: string): Promise<CicloAprendizajeItem[]> {
+  const params = opportunityId ? `?opportunity_id=${encodeURIComponent(opportunityId)}` : "";
+  return api(`/api/aprendizaje/ciclos${params}`);
+}
+
+export async function fetchCicloAprendizaje(id: string): Promise<CicloAprendizajeItem & { retroalimentaciones?: unknown[]; recalibraciones?: RecalibracionItem[] }> {
+  return api(`/api/aprendizaje/ciclos/${id}`);
+}
+
+export async function crearCicloAprendizaje(body: {
+  opportunity_id: string;
+  impacto_real?: number;
+  valor_real?: number;
+  costo_real?: number;
+  tiempo_real_dias?: number;
+}): Promise<CicloAprendizajeItem> {
+  return api("/api/aprendizaje/ciclos", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function evaluarCicloAprendizaje(
+  cicloId: string,
+  body: {
+    impacto_real?: number;
+    valor_real?: number;
+    costo_real?: number;
+    tiempo_real_dias?: number;
+    tipo_explicacion?: string;
+    notas?: string;
+  },
+): Promise<unknown> {
+  return api(`/api/aprendizaje/ciclos/${cicloId}/evaluar`, { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchRecalibraciones(cicloId?: string): Promise<RecalibracionItem[]> {
+  const params = cicloId ? `?ciclo_id=${encodeURIComponent(cicloId)}` : "";
+  return api(`/api/aprendizaje/recalibraciones${params}`);
+}
+
+export async function aprobarRecalibracion(id: string): Promise<RecalibracionItem> {
+  return api(`/api/aprendizaje/recalibraciones/${id}/aprobar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function rechazarRecalibracion(id: string, motivo: string): Promise<RecalibracionItem> {
+  return api(`/api/aprendizaje/recalibraciones/${id}/rechazar`, { method: "POST", body: JSON.stringify({ motivo }) });
+}
+
+export async function aplicarRecalibracion(id: string): Promise<RecalibracionItem> {
+  return api(`/api/aprendizaje/recalibraciones/${id}/aplicar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchPatronesAprendizaje(): Promise<PatronAprendizajeItem[]> {
+  return api("/api/aprendizaje/patrones");
+}
+
+export async function fetchHistorialAprendizaje(cicloId?: string): Promise<unknown[]> {
+  const params = cicloId ? `?ciclo_id=${encodeURIComponent(cicloId)}` : "";
+  return api(`/api/aprendizaje/historial${params}`);
+}
+
+// —— Optimización y recomendaciones (1290) ——
+
+export type OptimizacionRecomendacion = {
+  id: string;
+  codigo: string;
+  estado: string;
+  objetivo: string;
+  factible: boolean;
+  valor_esperado_total: number;
+  costo_esperado_total: number;
+  impacto_esperado_total: number;
+  roi_esperado?: number | null;
+  explicacion?: Record<string, unknown> | null;
+  conflictos?: string[] | null;
+  items?: OptimizacionItem[];
+};
+
+export type OptimizacionItem = {
+  opportunity_id: string;
+  seleccionado: boolean;
+  orden?: number | null;
+  puntuacion_total?: number | null;
+  factores?: Record<string, unknown> | null;
+  exclusion_razon?: string | null;
+};
+
+export async function fetchOptimizacionRecomendaciones(): Promise<OptimizacionRecomendacion[]> {
+  return api("/api/optimizacion/recomendaciones");
+}
+
+export async function fetchOptimizacionRecomendacion(id: string): Promise<OptimizacionRecomendacion> {
+  return api(`/api/optimizacion/recomendaciones/${id}`);
+}
+
+export async function simularOptimizacion(body: Record<string, unknown>): Promise<unknown> {
+  return api("/api/optimizacion/simular", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function crearRecomendacionOptimizacion(body: Record<string, unknown>): Promise<OptimizacionRecomendacion> {
+  return api("/api/optimizacion/recomendaciones", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function compararEscenariosOptimizacion(body: Record<string, unknown>): Promise<unknown> {
+  return api("/api/optimizacion/comparar", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function aprobarRecomendacionOptimizacion(id: string, justificacion: string): Promise<OptimizacionRecomendacion> {
+  return api(`/api/optimizacion/recomendaciones/${id}/aprobar`, {
+    method: "POST",
+    body: JSON.stringify({ justificacion }),
+  });
+}
+
+export async function fetchLlmObservability(periodo = "mtd"): Promise<LlmObservabilitySummary> {
+  return api(`/api/llm/observability?periodo=${encodeURIComponent(periodo)}`);
+}
+
+export async function fetchLlmProvidersHealth(): Promise<LlmProviderHealth[]> {
+  return api("/api/llm/health");
+}
+
+export async function fetchLlmRoutingPolicies(): Promise<LlmRoutingPolicy[]> {
+  return api("/api/llm/routing/policies");
+}
+
+export async function createLlmRoutingPolicy(data: Record<string, unknown>): Promise<LlmRoutingPolicy> {
+  return api("/api/llm/routing/policies", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchLlmRoutingExplain(preferredProvider?: string): Promise<LlmRoutingExplain> {
+  const q = preferredProvider ? `?preferred_provider=${encodeURIComponent(preferredProvider)}` : "";
+  return api(`/api/llm/routing/explain${q}`);
 }

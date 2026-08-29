@@ -159,13 +159,16 @@ def _atencion_requerida(db: Session, org_id: str, permissions: set[str]) -> list
         )
         now = _utcnow()
         for plan in overdue:
-            if plan.vencimiento and plan.vencimiento < now:
+            vencimiento = plan.vencimiento
+            if vencimiento is not None and vencimiento.tzinfo is None:
+                vencimiento = vencimiento.replace(tzinfo=timezone.utc)
+            if vencimiento and vencimiento < now:
                 prio += 1
                 items.append({
                     "prioridad": prio,
                     "tipo": "tarea_vencida",
                     "titulo": plan.objective or "Plan vencido",
-                    "fecha": plan.vencimiento.isoformat(),
+                    "fecha": vencimiento.isoformat(),
                     "enlace": f"/operaciones/{plan.id}",
                     "origen": "operaciones",
                 })
