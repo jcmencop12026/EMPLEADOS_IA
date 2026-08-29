@@ -202,6 +202,14 @@ APRENDIZAJE_PERMISSIONS = {
     "aprendizaje.approve",
 }
 
+OPTIMIZACION_PERMISSIONS = {
+    "optimizacion.view",
+    "optimizacion.simulate",
+    "optimizacion.create",
+    "optimizacion.approve",
+    "optimizacion.configure",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -344,6 +352,11 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "aprendizaje.evaluate": ("Aprendizaje", "Evaluar ciclos y registrar retroalimentación"),
     "aprendizaje.recalibrate": ("Aprendizaje", "Aplicar recalibraciones aprobadas"),
     "aprendizaje.approve": ("Aprendizaje", "Aprobar o rechazar recalibraciones"),
+    "optimizacion.view": ("Optimización", "Consultar recomendaciones y simulaciones"),
+    "optimizacion.simulate": ("Optimización", "Ejecutar simulaciones de portafolio"),
+    "optimizacion.create": ("Optimización", "Crear y recalcular recomendaciones"),
+    "optimizacion.approve": ("Optimización", "Aprobar o rechazar recomendaciones"),
+    "optimizacion.configure": ("Optimización", "Configurar pesos y objetivos"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -392,6 +405,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | DATOS_PERMISSIONS
         | INTEGRATION_PERMISSIONS
         | APRENDIZAJE_PERMISSIONS
+        | OPTIMIZACION_PERMISSIONS
         | SECURITY_PERMISSIONS
         | IDENTITY_PERMISSIONS
     ),
@@ -421,6 +435,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | DATOS_PERMISSIONS
         | INTEGRATION_PERMISSIONS
         | APRENDIZAJE_PERMISSIONS
+        | OPTIMIZACION_PERMISSIONS
         | PLATFORM_PERMISSIONS
         | SECURITY_PERMISSIONS
         | IDENTITY_PERMISSIONS
@@ -512,6 +527,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "aprendizaje.view",
         "aprendizaje.evaluate",
         "aprendizaje.recalibrate",
+        "optimizacion.view",
+        "optimizacion.simulate",
+        "optimizacion.create",
     },
     "viewer": {
         "employee.view",
@@ -541,6 +559,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "datos.view",
         "integraciones.view",
         "aprendizaje.view",
+        "optimizacion.view",
     },
 }
 

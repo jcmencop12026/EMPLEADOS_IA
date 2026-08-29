@@ -35,6 +35,8 @@ import { IntegracionWizardPage } from "./pages/IntegracionWizardPage";
 import { IntegracionDetailPage } from "./pages/IntegracionDetailPage";
 import { AprendizajePage } from "./pages/AprendizajePage";
 import { AprendizajeDetailPage } from "./pages/AprendizajeDetailPage";
+import { OptimizacionPage } from "./pages/OptimizacionPage";
+import { OptimizacionDetailPage } from "./pages/OptimizacionDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
@@ -103,6 +105,8 @@ export default function App() {
           <Route path="integraciones/:connectorId" element={<IntegracionDetailPage />} />
           <Route path="aprendizaje" element={<AprendizajePage />} />
           <Route path="aprendizaje/:cicloId" element={<AprendizajeDetailPage />} />
+          <Route path="optimizacion" element={<OptimizacionPage />} />
+          <Route path="optimizacion/:recId" element={<OptimizacionDetailPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
           <Route element={<RequirePermission anyOf={["platform.organization.view"]} />}>
             <Route path="administracion/empresas" element={<AdminCompaniesPage />} />
