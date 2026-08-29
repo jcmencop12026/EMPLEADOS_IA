@@ -54,6 +54,9 @@ class IntegrationConnector(Base):
     last_error_message: Mapped[str | None] = mapped_column(String(500), nullable=True)
     last_latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     webhook_token_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    gov_catalog_entry_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("gov_catalog_entries.id"), nullable=True, index=True
+    )
     allow_internal_urls: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
