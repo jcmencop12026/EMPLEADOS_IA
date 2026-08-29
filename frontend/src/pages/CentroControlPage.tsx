@@ -162,7 +162,64 @@ export function CentroControlPage() {
                   <dt>ROI</dt><dd>{data.finops.dashboard?.roi_label ?? "—"}</dd>
                 </dl>
               )}
+              {data.finops_extendido?.disponible && (
+                <div className="cc-subsection">
+                  <h3 className="subsection-title">FinOps extendido</h3>
+                  <dl className="detail-grid">
+                    <dt>Consumos periodo</dt><dd>{data.finops_extendido.consumos_periodo ?? "—"}</dd>
+                    <dt>Costo periodo</dt><dd>{data.finops_extendido.costo_periodo ?? "—"}</dd>
+                    <dt>Alertas presupuesto</dt><dd>{data.finops_extendido.alertas_registradas ?? "—"}</dd>
+                    <dt>Presup. con bloqueo</dt><dd>{data.finops_extendido.presupuestos_con_bloqueo ?? "—"}</dd>
+                    <dt>Oport. con costo</dt><dd>{data.finops_extendido.oportunidades_con_costo ?? "—"}</dd>
+                  </dl>
+                </div>
+              )}
               <p><Link to="/costos-valor">Ver costos y valor</Link></p>
+            </section>
+          </div>
+
+          <div className="cc-grid-2">
+            <section className="panel compact-panel">
+              <h2 className="section-title">IA y proveedores</h2>
+              {!data.llm?.proveedores?.length ? (
+                <p className="muted">{data.llm?.disponible === false ? "Sin información disponible" : "Sin proveedores configurados"}</p>
+              ) : (
+                <table className="data-table compact-table">
+                  <thead><tr><th>Proveedor</th><th>Estado</th><th>Errores 24h</th><th>Latencia</th><th></th></tr></thead>
+                  <tbody>
+                    {data.llm.proveedores.slice(0, 5).map((p) => (
+                      <tr key={p.id}>
+                        <td>{p.nombre}</td>
+                        <td>{p.estado ?? (p.habilitado ? "ACTIVO" : "INACTIVO")}</td>
+                        <td>{p.errores_24h}</td>
+                        <td>{p.latencia_media_ms != null ? `${p.latencia_media_ms} ms` : "—"}</td>
+                        <td><Link to={p.enlace}>Ver</Link></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              <p><Link to="/administracion/proveedores-ia">Administrar proveedores IA</Link></p>
+            </section>
+
+            <section className="panel compact-panel">
+              <h2 className="section-title">Actividad reciente</h2>
+              {!data.actividad_reciente?.length ? (
+                <p className="muted">Sin actividad operativa reciente</p>
+              ) : (
+                <table className="data-table compact-table">
+                  <thead><tr><th>Evento</th><th>Fecha</th><th></th></tr></thead>
+                  <tbody>
+                    {data.actividad_reciente.slice(0, 8).map((ev) => (
+                      <tr key={ev.id}>
+                        <td>{ev.tipo}</td>
+                        <td>{ev.fecha ? new Date(ev.fecha).toLocaleString("es-CO") : "—"}</td>
+                        <td>{ev.enlace ? <Link to={ev.enlace}>Ver</Link> : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </section>
           </div>
 
@@ -198,25 +255,57 @@ export function CentroControlPage() {
             </section>
           </div>
 
-          <section className="panel compact-panel">
-            <h2 className="section-title">Señales</h2>
-            {!data.senales ? (
-              <p className="muted">Sin información disponible</p>
-            ) : (
-              <>
-                <dl className="detail-grid">
-                  <dt>Total señales</dt><dd>{data.senales.total ?? "—"}</dd>
-                  <dt>Sin procesar</dt><dd>{data.senales.sin_procesar ?? "—"}</dd>
-                  <dt>Procesadas</dt><dd>{data.senales.procesadas ?? "—"}</dd>
-                  <dt>Errores ingesta</dt><dd>{data.senales.errores_ingesta ?? "—"}</dd>
-                  <dt>REAL</dt><dd>{data.senales.por_modo_ingesta?.REAL ?? "—"}</dd>
-                  <dt>SINTÉTICO</dt><dd>{data.senales.por_modo_ingesta?.SINTETICO ?? "—"}</dd>
-                  <dt>PRUEBA</dt><dd>{data.senales.por_modo_ingesta?.PRUEBA ?? "—"}</dd>
-                </dl>
-                <p><Link to="/senales">Ver señales</Link></p>
-              </>
-            )}
-          </section>
+          <div className="cc-grid-2">
+            <section className="panel compact-panel">
+              <h2 className="section-title">Señales internas</h2>
+              {!data.senales ? (
+                <p className="muted">Sin información disponible</p>
+              ) : (
+                <>
+                  <dl className="detail-grid">
+                    <dt>Total señales</dt><dd>{data.senales.total ?? "—"}</dd>
+                    <dt>Sin procesar</dt><dd>{data.senales.sin_procesar ?? "—"}</dd>
+                    <dt>Procesadas</dt><dd>{data.senales.procesadas ?? "—"}</dd>
+                    <dt>Errores ingesta</dt><dd>{data.senales.errores_ingesta ?? "—"}</dd>
+                  </dl>
+                  <p><Link to="/senales">Ver señales</Link></p>
+                </>
+              )}
+            </section>
+
+            <section className="panel compact-panel">
+              <h2 className="section-title">Inteligencia externa</h2>
+              {!data.inteligencia_externa?.disponible ? (
+                <p className="muted">{data.inteligencia_externa?.estado ?? "Sin información disponible"}</p>
+              ) : (
+                <>
+                  <dl className="detail-grid">
+                    <dt>Fuentes activas</dt><dd>{data.inteligencia_externa.fuentes_activas ?? "—"}</dd>
+                    <dt>Señales externas</dt><dd>{data.inteligencia_externa.total_senales ?? "—"}</dd>
+                    <dt>Sin validar</dt><dd>{data.inteligencia_externa.sin_validar ?? "—"}</dd>
+                    <dt>Riesgos abiertos</dt><dd>{data.inteligencia_externa.riesgos_abiertos ?? "—"}</dd>
+                    <dt>Oportunidades</dt><dd>{data.inteligencia_externa.oportunidades_detectadas ?? "—"}</dd>
+                    <dt>Tendencias</dt><dd>{data.inteligencia_externa.tendencias ?? "—"}</dd>
+                  </dl>
+                  {data.inteligencia_externa.recientes && data.inteligencia_externa.recientes.length > 0 && (
+                    <table className="data-table compact-table">
+                      <thead><tr><th>Señal</th><th>Clasificación</th><th></th></tr></thead>
+                      <tbody>
+                        {data.inteligencia_externa.recientes.slice(0, 5).map((s) => (
+                          <tr key={s.id}>
+                            <td>{s.titulo}</td>
+                            <td>{s.clasificacion ?? "—"}</td>
+                            <td><Link to={s.enlace}>Ver</Link></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  <p><Link to="/inteligencia-externa">Ver inteligencia externa</Link></p>
+                </>
+              )}
+            </section>
+          </div>
 
           {data.cadena_ejecutiva && data.cadena_ejecutiva.length > 0 && (
             <section className="panel compact-panel">
@@ -240,6 +329,28 @@ export function CentroControlPage() {
               </table>
             </section>
           )}
+
+          <section className="panel compact-panel">
+            <h2 className="section-title">Auditoría reciente</h2>
+            {!data.auditoria_reciente?.length ? (
+              <p className="muted">Sin registros de auditoría recientes</p>
+            ) : (
+              <table className="data-table compact-table">
+                <thead><tr><th>Acción</th><th>Actor</th><th>Fecha</th><th></th></tr></thead>
+                <tbody>
+                  {data.auditoria_reciente.slice(0, 8).map((row) => (
+                    <tr key={row.id}>
+                      <td title={row.detalle ?? undefined}>{row.accion}</td>
+                      <td>{row.actor ?? "—"}</td>
+                      <td>{row.fecha ? new Date(row.fecha).toLocaleString("es-CO") : "—"}</td>
+                      <td><Link to={row.enlace}>Ver</Link></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <p><Link to="/auditoria">Ver auditoría completa</Link></p>
+          </section>
 
           <section className="panel compact-panel">
             <h2 className="section-title">Salud de la plataforma</h2>
