@@ -34,7 +34,7 @@ La cadena convive con **1360, 1350, 1300, 1370, 1380** preservando V1, 1100–12
 | Campo | Valor |
 |-------|-------|
 | Rama | `cursor/ensayo-comercial-implementacion-sobre-fase1` |
-| **HEAD** | `14a59e546aecf90e72ee80c22b103dbc8808c345` |
+| **HEAD** | `7657ea8371a2d8f2e5f54c9b060afccaa7769d1b` |
 | Base | `041209f4acabd595b5249c979a7e61031f598048` |
 
 ---
@@ -231,7 +231,7 @@ RAMA:
 cursor/ensayo-comercial-implementacion-sobre-fase1
 
 HEAD:
-14a59e546aecf90e72ee80c22b103dbc8808c345
+7657ea8371a2d8f2e5f54c9b060afccaa7769d1b
 
 PORT 1280:
 aa1f1b547b17a21414309e0644645df3e5525f70
