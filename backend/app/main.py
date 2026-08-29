@@ -19,6 +19,7 @@ from app import diagnostic_models  # noqa: F401 — diagnóstico transversal 122
 from app import llm_models  # noqa: F401 — LLM Gateway V1
 from app import security_models  # noqa: F401 — seguridad avanzada 1300
 from app import identity_models  # noqa: F401 — identidad empresarial 1370
+from app import scim_models  # noqa: F401 — SCIM 1380
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
@@ -44,6 +45,7 @@ from app.routers import (
     diagnosticos,
     security,
     identidad,
+    scim,
     test_lab,
     tools,
 )
@@ -115,6 +117,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(security.router)
 app.include_router(identidad.router)
+app.include_router(scim.router)
 app.include_router(organization.router)
 app.include_router(platform.router)
 app.include_router(admin.router)
