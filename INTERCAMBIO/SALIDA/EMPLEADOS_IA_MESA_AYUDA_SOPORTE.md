@@ -2,7 +2,7 @@
 
 **Rama:** `cursor/mesa-ayuda-soporte-empresarial`  
 **Base:** `cursor/fase2-central-integracion` @ `3049cc586d60fecfe18c035e94e5ea412b649270`  
-**HEAD:** `26d7656735464d6b1524e8f694057536aa641efc`  
+**HEAD:** `86c39192c76d8ce7d80e4d66301f73c47576efdc`  
 **Alcance:** Mesa de ayuda empresarial conectada al ecosistema existente (notificaciones 820, RBAC, multiempresa). Sin duplicar Centro de Control, Mi trabajo, auditoría ni automatizaciones.
 
 ---
