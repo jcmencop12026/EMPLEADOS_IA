@@ -24,7 +24,7 @@ def _token(client: TestClient, username: str, password: str) -> str:
     return res.json()["access_token"]
 
 
-def _create_tenant(db: Session, org_name: str, role: str = "admin") -> tuple[Organization, User, str]:
+def _create_tenant(db: Session, org_name: str, role: str = "admin") -> tuple[Organization, User, str, str]:
     from app.seed_orchestration import bootstrap_orchestration
     from app.seed_permissions import bootstrap_permissions
     from app.seed_salud import bootstrap_salud
@@ -46,7 +46,7 @@ def _create_tenant(db: Session, org_name: str, role: str = "admin") -> tuple[Org
     )
     db.add(user)
     db.commit()
-    return org, user, password
+    return org, user, password, user.username
 
 
 def _create_plan(client: TestClient, headers: dict) -> dict:
@@ -80,8 +80,7 @@ def _create_proposal(client: TestClient, headers: dict, plan_id: str | None = No
 
 def test_value_natures_and_attribution(client: TestClient):
     db = TestingSessionLocal()
-    _, user, password = _create_tenant(db, "1280 Valor")
-    username = user.username
+    _, user, password, username = _create_tenant(db, "1280 Valor")
     db.close()
     headers = auth_header(_token(client, username, password))
     prop = _create_proposal(client, headers)
@@ -105,8 +104,7 @@ def test_value_natures_and_attribution(client: TestClient):
 
 def test_attribution_requires_criteria(client: TestClient):
     db = TestingSessionLocal()
-    _, user, password = _create_tenant(db, "1280 Attr")
-    username = user.username
+    _, _, password, username = _create_tenant(db, "1280 Attr")
     db.close()
     headers = auth_header(_token(client, username, password))
     prop = _create_proposal(client, headers)
@@ -120,9 +118,9 @@ def test_attribution_requires_criteria(client: TestClient):
 
 def test_scenarios_conservador_base_alto(client: TestClient):
     db = TestingSessionLocal()
-    _, user, password = _create_tenant(db, "1280 Esc")
+    _, _, password, username = _create_tenant(db, "1280 Esc")
     db.close()
-    headers = auth_header(_token(client, user.username, password))
+    headers = auth_header(_token(client, username, password))
     prop = _create_proposal(client, headers)
     for st in ("CONSERVADOR", "BASE", "ALTO"):
         res = client.post(
@@ -145,9 +143,9 @@ def test_scenarios_conservador_base_alto(client: TestClient):
 
 def test_costs_and_margin_floor(client: TestClient):
     db = TestingSessionLocal()
-    _, user, password = _create_tenant(db, "1280 Costos")
+    _, _, password, username = _create_tenant(db, "1280 Costos")
     db.close()
-    headers = auth_header(_token(client, user.username, password))
+    headers = auth_header(_token(client, username, password))
     plan = _create_plan(client, headers)
     prop = _create_proposal(client, headers, plan["id"])
     client.post(
@@ -181,9 +179,9 @@ def test_costs_and_margin_floor(client: TestClient):
 
 def test_value_based_price_suggestion(client: TestClient):
     db = TestingSessionLocal()
-    _, user, password = _create_tenant(db, "1280 Precio")
+    _, _, password, username = _create_tenant(db, "1280 Precio")
     db.close()
-    headers = auth_header(_token(client, user.username, password))
+    headers = auth_header(_token(client, username, password))
     sim = client.post(
         "/api/comercial/simular",
         headers=headers,
@@ -195,9 +193,9 @@ def test_value_based_price_suggestion(client: TestClient):
 
 def test_human_approval_not_automatic(client: TestClient):
     db = TestingSessionLocal()
-    _, user, password = _create_tenant(db, "1280 Aprob")
+    _, _, password, username = _create_tenant(db, "1280 Aprob")
     db.close()
-    headers = auth_header(_token(client, user.username, password))
+    headers = auth_header(_token(client, username, password))
     prop = _create_proposal(client, headers)
     client.post(
         f"/api/comercial/propuestas/{prop['id']}/valores",
@@ -221,13 +219,13 @@ def test_human_approval_not_automatic(client: TestClient):
 
 def test_double_count_detection(client: TestClient):
     db = TestingSessionLocal()
-    org, user, password = _create_tenant(db, "1280 Dedup")
+    org, _, password, username = _create_tenant(db, "1280 Dedup")
     opp = Opportunity(organization_id=org.id, codigo="OPP-X", tipo="T", dominio="d", titulo="t", estado="DETECTADA")
     db.add(opp)
     db.commit()
     opp_id = opp.id
     db.close()
-    headers = auth_header(_token(client, user.username, password))
+    headers = auth_header(_token(client, username, password))
     prop = _create_proposal(client, headers)
     for cat in (ValueCategory.AHORRO, ValueCategory.PERDIDA_EVITADA):
         client.post(
@@ -242,9 +240,9 @@ def test_double_count_detection(client: TestClient):
 
 def test_credential_modes_in_plan(client: TestClient):
     db = TestingSessionLocal()
-    _, user, password = _create_tenant(db, "1280 Cred")
+    _, _, password, username = _create_tenant(db, "1280 Cred")
     db.close()
-    headers = auth_header(_token(client, user.username, password))
+    headers = auth_header(_token(client, username, password))
     res = client.post(
         "/api/comercial/planes",
         headers=headers,
@@ -256,30 +254,30 @@ def test_credential_modes_in_plan(client: TestClient):
 
 def test_tenant_isolation(client: TestClient):
     db = TestingSessionLocal()
-    _, user_a, pass_a = _create_tenant(db, "1280 Tenant A")
-    _, user_b, pass_b = _create_tenant(db, "1280 Tenant B")
+    _, _, pass_a, user_a = _create_tenant(db, "1280 Tenant A")
+    _, _, pass_b, user_b = _create_tenant(db, "1280 Tenant B")
     db.close()
-    headers_a = auth_header(_token(client, user_a.username, pass_a))
+    headers_a = auth_header(_token(client, user_a, pass_a))
     prop = _create_proposal(client, headers_a)
-    headers_b = auth_header(_token(client, user_b.username, pass_b))
+    headers_b = auth_header(_token(client, user_b, pass_b))
     assert client.get(f"/api/comercial/propuestas/{prop['id']}", headers=headers_b).status_code == 404
 
 
 def test_rbac_viewer_cannot_approve(client: TestClient):
     db = TestingSessionLocal()
-    _, user, password = _create_tenant(db, "1280 RBAC", role="viewer")
+    _, _, password, username = _create_tenant(db, "1280 RBAC", role="viewer")
     db.close()
-    headers = auth_header(_token(client, user.username, password))
+    headers = auth_header(_token(client, username, password))
     assert client.get("/api/comercial/propuestas", headers=headers).status_code == 200
     assert client.post("/api/comercial/propuestas", headers=headers, json={"titulo": "x"}).status_code == 403
 
 
 def test_audit_on_proposal_create(client: TestClient):
     db = TestingSessionLocal()
-    org, user, password = _create_tenant(db, "1280 Audit")
+    org, _, password, username = _create_tenant(db, "1280 Audit")
     org_id = org.id
     db.close()
-    headers = auth_header(_token(client, user.username, password))
+    headers = auth_header(_token(client, username, password))
     prop = _create_proposal(client, headers)
     db = TestingSessionLocal()
     try:
@@ -292,9 +290,9 @@ def test_audit_on_proposal_create(client: TestClient):
 
 def test_traceability_endpoint(client: TestClient):
     db = TestingSessionLocal()
-    _, user, password = _create_tenant(db, "1280 Trace")
+    _, _, password, username = _create_tenant(db, "1280 Trace")
     db.close()
-    headers = auth_header(_token(client, user.username, password))
+    headers = auth_header(_token(client, username, password))
     prop = _create_proposal(client, headers)
     trace = client.get(f"/api/comercial/propuestas/{prop['id']}/trazabilidad", headers=headers)
     assert trace.status_code == 200
