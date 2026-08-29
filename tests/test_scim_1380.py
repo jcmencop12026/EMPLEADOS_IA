@@ -477,6 +477,7 @@ class TestScimRateLimit:
 
 class TestScimMigration:
     def test_migration_head(self):
+        from scripts.migration_control import assert_single_head
         from scripts.schema_repair import HEAD_REVISION
 
-        assert HEAD_REVISION == "1380a1b2c3d4e"
+        assert assert_single_head() == HEAD_REVISION
