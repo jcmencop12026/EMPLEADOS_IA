@@ -133,6 +133,13 @@ OPORTUNIDADES_PERMISSIONS = {
     "oportunidades.activate",
 }
 
+DIAGNOSTICOS_PERMISSIONS = {
+    "diagnosticos.view",
+    "diagnosticos.generate",
+    "diagnosticos.validate",
+    "diagnosticos.manage",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -211,6 +218,10 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "oportunidades.evaluate": ("Oportunidades", "Evaluar y priorizar oportunidades"),
     "oportunidades.approve": ("Oportunidades", "Aprobar oportunidades"),
     "oportunidades.activate": ("Oportunidades", "Activar oportunidades"),
+    "diagnosticos.view": ("Diagnósticos", "Consultar diagnósticos transversales"),
+    "diagnosticos.generate": ("Diagnósticos", "Generar diagnósticos"),
+    "diagnosticos.validate": ("Diagnósticos", "Validar diagnósticos"),
+    "diagnosticos.manage": ("Diagnósticos", "Administrar configuración de diagnóstico"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -237,6 +248,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | LLM_PERMISSIONS
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
+        | DIAGNOSTICOS_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -253,6 +265,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | LLM_PERMISSIONS
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
+        | DIAGNOSTICOS_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -302,6 +315,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "oportunidades.evaluate",
         "oportunidades.approve",
         "oportunidades.activate",
+        "diagnosticos.view",
+        "diagnosticos.generate",
+        "diagnosticos.validate",
     },
     "viewer": {
         "employee.view",
@@ -319,6 +335,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "finops.view",
         "salud.consultar_diagnostico",
         "oportunidades.view",
+        "diagnosticos.view",
     },
 }
 
