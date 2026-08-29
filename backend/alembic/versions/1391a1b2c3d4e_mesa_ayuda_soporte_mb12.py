@@ -1,9 +1,9 @@
-"""Alembic — Mesa de Ayuda y Soporte (MB-12 / 1390)."""
+"""Alembic — Mesa de Ayuda y Soporte (MB-12)."""
 
 from alembic import op
 import sqlalchemy as sa
 
-revision = "1390a1b2c3d4e"
+revision = "1391a1b2c3d4e"
 down_revision = "1330b1b2c3d4f"
 branch_labels = None
 depends_on = None
