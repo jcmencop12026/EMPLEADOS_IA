@@ -137,7 +137,7 @@ RAMA:
 cursor/auditor-integracion-mi-trabajo
 
 HEAD:
-<SHA post-push>
+599d69b
 
 FUENTE AUDITOR:
 PASS
