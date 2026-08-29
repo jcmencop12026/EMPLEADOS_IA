@@ -877,6 +877,120 @@ export async function fetchOpportunityEconomics(opportunityId: string): Promise<
   return api<FinOpsOpportunityEconomics>(`/api/finops/opportunities/${opportunityId}/economics`);
 }
 
+export type ValuationSummary = {
+  has_valuation: boolean;
+  opportunity_id: string;
+  valuation?: {
+    id: string;
+    value_type: string;
+    scope: string;
+    currency: string;
+    status: string;
+    version: number;
+  };
+  expected?: {
+    gross_value?: string | null;
+    probability?: string | null;
+    adjusted_expected?: string | null;
+    execution_cost_expected?: string | null;
+    period_days?: number | null;
+    value_nature?: string;
+    assumptions?: string | null;
+    source?: string | null;
+    evidence?: string | null;
+  };
+  scenarios?: Array<{
+    scenario_type: string;
+    value_amount?: string | null;
+    probability?: string | null;
+    cost?: string | null;
+    period_days?: number | null;
+    adjusted_value?: string | null;
+    assumptions?: string | null;
+  }>;
+  real?: {
+    materialized_value?: string | null;
+    attributable_value?: string | null;
+    value_nature?: string;
+    attribution_level?: string;
+    attribution_pct?: string | null;
+    source?: string | null;
+    evidence?: string | null;
+    justification?: string | null;
+  };
+  execution_costs?: Array<{ id: string; cost_type: string; amount: string; currency: string }>;
+  finops_ia_cost_label?: string;
+  total_execution_cost?: string | null;
+  gross_expected?: string | null;
+  adjusted_expected?: string | null;
+  materialized_value?: string | null;
+  attributable_value?: string | null;
+  net_benefit?: string | null;
+  return_label?: string;
+  payback_label?: string;
+  missing_for_calculation?: string[];
+  history?: Array<{ version: number; action: string; change_summary?: string; changed_at: string }>;
+};
+
+export async function fetchValuationSummary(opportunityId: string): Promise<ValuationSummary> {
+  return api<ValuationSummary>(`/api/valoracion/opportunities/${opportunityId}`);
+}
+
+export async function createValuation(
+  opportunityId: string,
+  data: { value_type: string; scope: string; currency?: string }
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateValuationExpected(
+  opportunityId: string,
+  data: Record<string, unknown>
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/expected`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateValuationScenario(
+  opportunityId: string,
+  scenarioType: string,
+  data: Record<string, unknown>
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/scenarios/${scenarioType}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function registerValuationReal(
+  opportunityId: string,
+  data: Record<string, unknown>
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/real`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function registerValuationCost(
+  opportunityId: string,
+  data: Record<string, unknown>
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/costs`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function validateValuation(opportunityId: string): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/validate`, { method: "POST" });
+}
+
 export type OperationSummary = {
   running: number;
   pending: number;
