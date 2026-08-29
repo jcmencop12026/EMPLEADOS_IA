@@ -1998,10 +1998,37 @@ export type CentroControlAtencion = {
   origen: string;
 };
 
+export type CentroControlValorConsolidado = {
+  verificado?: number | null;
+  estimado?: number | null;
+  potencial?: number | null;
+  realizado?: number | null;
+  materializado?: number | null;
+  roi_porcentaje?: number | null;
+  payback_meses?: number | null;
+  nota_potencial?: string;
+  semantica?: Record<string, string>;
+};
+
+export type CentroControlModuloResumen = {
+  disponible?: boolean;
+  estado?: string;
+  enlace?: string;
+  restringido?: boolean;
+  [key: string]: unknown;
+};
+
 export type CentroControlResumen = {
   generated_at: string;
   organization_id: string;
-  resumen_ejecutivo: { indicadores: CentroControlIndicador[]; operaciones?: Record<string, number> | null };
+  semantica?: Record<string, unknown>;
+  secciones?: Array<{ id: string; label: string }>;
+  resumen_ejecutivo: {
+    indicadores: CentroControlIndicador[];
+    operaciones?: Record<string, number> | null;
+    valor?: CentroControlValorConsolidado | null;
+  };
+  valor_consolidado?: CentroControlValorConsolidado | null;
   atencion_requerida: CentroControlAtencion[];
   empleados_ia?: {
     total: number;
@@ -2034,7 +2061,29 @@ export type CentroControlResumen = {
     oportunidades_con_costo?: number;
     enlace?: string;
   } | null;
-  valor_retorno?: Record<string, unknown> | null;
+  valor_retorno?: CentroControlModuloResumen | null;
+  comercial?: CentroControlModuloResumen | null;
+  tco?: CentroControlModuloResumen | null;
+  implementacion?: CentroControlModuloResumen | null;
+  aprendizaje?: CentroControlModuloResumen | null;
+  optimizacion?: CentroControlModuloResumen | null;
+  multiproveedor?: {
+    disponible?: boolean;
+    estado?: string;
+    proveedores_total?: number;
+    proveedores_degradados?: number;
+    observabilidad?: {
+      total_inferencias?: number;
+      tasa_exito?: number | null;
+    };
+    salud?: Array<{
+      provider_id: string;
+      nombre: string;
+      estado: string;
+      detalle?: string;
+    }>;
+    enlace?: string;
+  } | null;
   diagnostico?: Record<string, unknown> | null;
   senales?: Record<string, unknown> | null;
   inteligencia_externa?: {
@@ -2125,6 +2174,7 @@ export type CentroControlResumen = {
       nota?: string | null;
     }>;
   } | null;
+  integraciones_futuras?: Record<string, string>;
 };
 
 export async function fetchCentroControlResumen(periodo = "mtd"): Promise<CentroControlResumen> {
