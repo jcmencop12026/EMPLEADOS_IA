@@ -385,6 +385,7 @@ class FinOpsRecord(Base):
     employee_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("ai_employees.id"), nullable=True)
     work_plan_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("work_plans.id"), nullable=True)
     task_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("employee_tasks.id"), nullable=True)
+    opportunity_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("opportunities.id"), nullable=True, index=True)
     execution_ref: Mapped[str | None] = mapped_column(String(80), nullable=True)
     model_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     provider: Mapped[str | None] = mapped_column(String(80), nullable=True)

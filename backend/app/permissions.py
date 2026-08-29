@@ -133,10 +133,41 @@ OPORTUNIDADES_PERMISSIONS = {
     "oportunidades.activate",
 }
 
+LINEA_BASE_PERMISSIONS = {
+    "linea_base.view",
+    "linea_base.manage",
+    "linea_base.validate",
+}
+
+VALORACION_PERMISSIONS = {
+    "valoracion.view",
+    "valoracion.manage",
+    "valoracion.validate",
+    "valoracion.roi",
+}
+
+DIAGNOSTICOS_PERMISSIONS = {
+    "diagnosticos.view",
+    "diagnosticos.generate",
+    "diagnosticos.validate",
+    "diagnosticos.manage",
+}
+
+INTELIGENCIA_EXTERNA_PERMISSIONS = {
+    "inteligencia_externa.view",
+    "inteligencia_externa.manage",
+    "inteligencia_externa.ingest",
+    "inteligencia_externa.validate",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
     "platform.organization.manage",
+}
+
+CONTROL_CENTER_PERMISSIONS = {
+    "control_center.view",
 }
 
 ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
@@ -211,9 +242,25 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "oportunidades.evaluate": ("Oportunidades", "Evaluar y priorizar oportunidades"),
     "oportunidades.approve": ("Oportunidades", "Aprobar oportunidades"),
     "oportunidades.activate": ("Oportunidades", "Activar oportunidades"),
+    "linea_base.view": ("Línea base", "Consultar líneas base e impacto"),
+    "linea_base.manage": ("Línea base", "Crear línea base y registrar mediciones"),
+    "linea_base.validate": ("Línea base", "Validar impacto y atribución"),
+    "valoracion.view": ("Valoración económica", "Consultar valoración de oportunidades"),
+    "valoracion.manage": ("Valoración económica", "Crear y modificar valoraciones"),
+    "valoracion.validate": ("Valoración económica", "Validar valoraciones"),
+    "valoracion.roi": ("Valoración económica", "Consultar retorno y beneficio neto"),
+    "diagnosticos.view": ("Diagnósticos", "Consultar diagnósticos transversales"),
+    "diagnosticos.generate": ("Diagnósticos", "Generar diagnósticos"),
+    "diagnosticos.validate": ("Diagnósticos", "Validar diagnósticos"),
+    "diagnosticos.manage": ("Diagnósticos", "Administrar configuración de diagnóstico"),
+    "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
+    "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
+    "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
+    "inteligencia_externa.validate": ("Inteligencia externa", "Validar análisis externo"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
+    "control_center.view": ("Centro de Control", "Ver centro de control ejecutivo"),
 }
 
 SYSTEM_ROLE_CODES = {"admin", "operator", "viewer", "superadmin"}
@@ -237,6 +284,11 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | LLM_PERMISSIONS
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
+        | LINEA_BASE_PERMISSIONS
+        | VALORACION_PERMISSIONS
+        | DIAGNOSTICOS_PERMISSIONS
+        | INTELIGENCIA_EXTERNA_PERMISSIONS
+        | CONTROL_CENTER_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -253,6 +305,11 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | LLM_PERMISSIONS
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
+        | LINEA_BASE_PERMISSIONS
+        | VALORACION_PERMISSIONS
+        | DIAGNOSTICOS_PERMISSIONS
+        | INTELIGENCIA_EXTERNA_PERMISSIONS
+        | CONTROL_CENTER_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -302,6 +359,21 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "oportunidades.evaluate",
         "oportunidades.approve",
         "oportunidades.activate",
+        "linea_base.view",
+        "linea_base.manage",
+        "linea_base.validate",
+        "valoracion.view",
+        "valoracion.manage",
+        "valoracion.validate",
+        "valoracion.roi",
+        "diagnosticos.view",
+        "diagnosticos.generate",
+        "diagnosticos.validate",
+        "inteligencia_externa.view",
+        "inteligencia_externa.manage",
+        "inteligencia_externa.ingest",
+        "inteligencia_externa.validate",
+        "control_center.view",
     },
     "viewer": {
         "employee.view",
@@ -319,6 +391,12 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "finops.view",
         "salud.consultar_diagnostico",
         "oportunidades.view",
+        "linea_base.view",
+        "valoracion.view",
+        "valoracion.roi",
+        "diagnosticos.view",
+        "inteligencia_externa.view",
+        "control_center.view",
     },
 }
 

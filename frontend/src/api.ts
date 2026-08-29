@@ -775,17 +775,220 @@ export type FinOpsConsumption = {
   category?: string;
   provider?: string;
   model_name?: string;
+  employee_id?: string | null;
+  work_plan_id?: string | null;
+  opportunity_id?: string | null;
+  tokens_in?: number | null;
+  tokens_out?: number | null;
   cost_label: string;
   currency?: string;
   created_at: string;
 };
 
-export async function fetchFinOpsDashboard(): Promise<FinOpsDashboard> {
-  return api<FinOpsDashboard>("/api/finops/dashboard");
+export type FinOpsBudget = {
+  id: string;
+  name?: string | null;
+  scope_type: string;
+  amount_limit: string;
+  currency: string;
+  policy: string;
+  alert_threshold_pct: number;
+  spent: string;
+  balance: string;
+  state: string;
+  blocks_execution: boolean;
+  period_start: string;
+  period_end: string;
+  active: boolean;
+};
+
+export type FinOpsRate = {
+  id: string;
+  provider?: string | null;
+  model_service?: string | null;
+  category: string;
+  price_input?: string | null;
+  price_output?: string | null;
+  currency: string;
+  active: boolean;
+};
+
+export type FinOpsOpportunityEconomics = {
+  opportunity_id: string;
+  opportunity_codigo: string;
+  total_cost_label: string;
+  valor_potencial?: string | null;
+  valor_materializado?: string | null;
+  consumption_count: number;
+  consumptions: FinOpsConsumption[];
+  finops_reference?: string | null;
+  atribucion_nivel?: string | null;
+};
+
+export async function fetchFinOpsDashboard(params?: {
+  period_start?: string;
+  period_end?: string;
+}): Promise<FinOpsDashboard> {
+  const qs = new URLSearchParams();
+  if (params?.period_start) qs.set("period_start", params.period_start);
+  if (params?.period_end) qs.set("period_end", params.period_end);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return api<FinOpsDashboard>(`/api/finops/dashboard${suffix}`);
 }
 
-export async function fetchFinOpsConsumptions(): Promise<FinOpsConsumption[]> {
-  return api<FinOpsConsumption[]>("/api/finops/consumptions");
+export async function fetchFinOpsConsumptions(params?: {
+  employee_id?: string;
+  opportunity_id?: string;
+  provider?: string;
+  model_name?: string;
+  category?: string;
+  period_start?: string;
+  period_end?: string;
+}): Promise<FinOpsConsumption[]> {
+  const qs = new URLSearchParams();
+  if (params?.employee_id) qs.set("employee_id", params.employee_id);
+  if (params?.opportunity_id) qs.set("opportunity_id", params.opportunity_id);
+  if (params?.provider) qs.set("provider", params.provider);
+  if (params?.model_name) qs.set("model_name", params.model_name);
+  if (params?.category) qs.set("category", params.category);
+  if (params?.period_start) qs.set("period_start", params.period_start);
+  if (params?.period_end) qs.set("period_end", params.period_end);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return api<FinOpsConsumption[]>(`/api/finops/consumptions${suffix}`);
+}
+
+export async function fetchFinOpsBudgets(): Promise<FinOpsBudget[]> {
+  return api<FinOpsBudget[]>("/api/finops/budgets");
+}
+
+export async function createFinOpsBudget(data: Record<string, unknown>): Promise<FinOpsBudget> {
+  return api<FinOpsBudget>("/api/finops/budgets", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchFinOpsRates(): Promise<FinOpsRate[]> {
+  return api<FinOpsRate[]>("/api/finops/rates");
+}
+
+export async function createFinOpsRate(data: Record<string, unknown>): Promise<FinOpsRate> {
+  return api<FinOpsRate>("/api/finops/rates", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchOpportunityEconomics(opportunityId: string): Promise<FinOpsOpportunityEconomics> {
+  return api<FinOpsOpportunityEconomics>(`/api/finops/opportunities/${opportunityId}/economics`);
+}
+
+export type ValuationSummary = {
+  has_valuation: boolean;
+  opportunity_id: string;
+  valuation?: {
+    id: string;
+    value_type: string;
+    scope: string;
+    currency: string;
+    status: string;
+    version: number;
+  };
+  expected?: {
+    gross_value?: string | null;
+    probability?: string | null;
+    adjusted_expected?: string | null;
+    execution_cost_expected?: string | null;
+    period_days?: number | null;
+    value_nature?: string;
+    assumptions?: string | null;
+    source?: string | null;
+    evidence?: string | null;
+  };
+  scenarios?: Array<{
+    scenario_type: string;
+    value_amount?: string | null;
+    probability?: string | null;
+    cost?: string | null;
+    period_days?: number | null;
+    adjusted_value?: string | null;
+    assumptions?: string | null;
+  }>;
+  real?: {
+    materialized_value?: string | null;
+    attributable_value?: string | null;
+    value_nature?: string;
+    attribution_level?: string;
+    attribution_pct?: string | null;
+    source?: string | null;
+    evidence?: string | null;
+    justification?: string | null;
+  };
+  execution_costs?: Array<{ id: string; cost_type: string; amount: string; currency: string }>;
+  finops_ia_cost_label?: string;
+  total_execution_cost?: string | null;
+  gross_expected?: string | null;
+  adjusted_expected?: string | null;
+  materialized_value?: string | null;
+  attributable_value?: string | null;
+  net_benefit?: string | null;
+  return_label?: string;
+  payback_label?: string;
+  missing_for_calculation?: string[];
+  history?: Array<{ version: number; action: string; change_summary?: string; changed_at: string }>;
+};
+
+export async function fetchValuationSummary(opportunityId: string): Promise<ValuationSummary> {
+  return api<ValuationSummary>(`/api/valoracion/opportunities/${opportunityId}`);
+}
+
+export async function createValuation(
+  opportunityId: string,
+  data: { value_type: string; scope: string; currency?: string }
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateValuationExpected(
+  opportunityId: string,
+  data: Record<string, unknown>
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/expected`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateValuationScenario(
+  opportunityId: string,
+  scenarioType: string,
+  data: Record<string, unknown>
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/scenarios/${scenarioType}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function registerValuationReal(
+  opportunityId: string,
+  data: Record<string, unknown>
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/real`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function registerValuationCost(
+  opportunityId: string,
+  data: Record<string, unknown>
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/costs`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function validateValuation(opportunityId: string): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/validate`, { method: "POST" });
 }
 
 export type OperationSummary = {
@@ -985,18 +1188,47 @@ export type OpportunityItem = {
   tipo: string;
   dominio: string;
   titulo: string;
+  descripcion?: string | null;
   estado: string;
   urgencia: string;
+  riesgo?: string | null;
   impacto_estimado: number | null;
   valor_potencial: number | null;
   valor_potencial_certidumbre: string;
   valor_materializado: number | null;
   confianza: number;
   pertinencia: string | null;
+  pertinencia_razon?: string | null;
   momento: string | null;
   prioridad_score: number | null;
   siguiente_accion: Record<string, unknown> | null;
+  equipo?: Record<string, unknown> | null;
+  work_plan_id?: string | null;
+  finops_reference?: string | null;
+  atribucion_nivel?: string | null;
+  correlation_id?: string | null;
+  contexto?: Record<string, unknown> | null;
+  evidencia?: Record<string, unknown> | unknown[] | null;
+  resultado?: Record<string, unknown> | null;
   fecha_deteccion: string | null;
+};
+
+export type OpportunityTrackingItem = {
+  id?: string;
+  accion: string;
+  resultado?: string | null;
+  responsable_id?: string | null;
+  bloqueo?: string | null;
+  fecha?: string | null;
+};
+
+export type OpportunityTrace = {
+  opportunity_id: string;
+  correlation_id: string;
+  estado: string;
+  trazas: Array<{ etapa: string; detalle: unknown; fecha: string }>;
+  transiciones: Array<{ de: string; a: string; motivo?: string | null; actor_id?: string | null; fecha?: string | null }>;
+  seguimiento: OpportunityTrackingItem[];
 };
 
 export type OpportunitySummary = {
@@ -1032,16 +1264,226 @@ export async function approveOpportunity(id: string, aprobado = true, motivo?: s
   });
 }
 
-export async function activateOpportunity(id: string): Promise<Record<string, unknown>> {
-  return api(`/api/oportunidades/${id}/activar`, { method: "POST", body: JSON.stringify({}) });
+export async function activateOpportunity(
+  id: string,
+  autoExecute = false,
+): Promise<Record<string, unknown>> {
+  return api(`/api/oportunidades/${id}/activar`, {
+    method: "POST",
+    body: JSON.stringify({ auto_execute: autoExecute }),
+  });
 }
 
-export async function fetchOpportunityTrace(id: string): Promise<Record<string, unknown>> {
+export async function addOpportunityTracking(
+  id: string,
+  data: { accion: string; bloqueo?: string; kpi_inicial?: Record<string, unknown>; kpi_objetivo?: Record<string, unknown> },
+): Promise<{ tracking_id: string }> {
+  return api(`/api/oportunidades/${id}/seguimiento`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function registerOpportunityResult(
+  id: string,
+  data: {
+    valor_real?: number;
+    valor_esperado?: number;
+    evidencia?: Record<string, unknown>;
+    estado_resultado?: string;
+  },
+): Promise<{ resultado: Record<string, unknown>; oportunidad: OpportunityItem }> {
+  return api(`/api/oportunidades/${id}/resultado`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchOpportunityTrace(id: string): Promise<OpportunityTrace> {
   return api(`/api/oportunidades/${id}/trazabilidad`);
 }
 
 export async function prioritizeOpportunities(): Promise<Record<string, unknown>> {
   return api("/api/oportunidades/priorizar", { method: "POST", body: JSON.stringify({}) });
+}
+
+// --- Señales reales (1120) ---
+
+export type SignalSourceItem = {
+  id: string;
+  code: string;
+  name: string;
+  tipo_fuente: string;
+  descripcion: string | null;
+  is_active: boolean;
+  configuracion: Record<string, unknown> | null;
+  created_at: string | null;
+};
+
+export type SignalItem = {
+  id: string;
+  tipo: string;
+  dominio: string;
+  origen: string;
+  modo_ingesta: string;
+  proceso: string | null;
+  metrica: string | null;
+  valor_metrica: string | null;
+  unidad: string | null;
+  referencia: string | null;
+  evidencia_resumen: string | null;
+  estado_procesamiento: string;
+  procesada: boolean;
+  opportunity_id?: string | null;
+  signal_at: string | null;
+  created_at: string | null;
+};
+
+export async function fetchSignalSources(): Promise<SignalSourceItem[]> {
+  return api("/api/senales/fuentes");
+}
+
+export async function fetchRecentSignals(modo?: string): Promise<SignalItem[]> {
+  const q = modo ? `?modo=${encodeURIComponent(modo)}` : "";
+  return api(`/api/senales${q}`);
+}
+
+export async function fetchSignalTrace(signalId: string): Promise<Record<string, unknown>> {
+  return api(`/api/senales/${signalId}/trazabilidad`);
+}
+
+// --- Diagnósticos transversales (1220) ---
+
+export type DiagnosticSummary = {
+  id: string;
+  codigo: string;
+  version: number;
+  estado: string;
+  periodo_inicio: string | null;
+  periodo_fin: string | null;
+  dominios: string[] | null;
+  resumen: string | null;
+  prioridad_score: number | null;
+  created_at: string | null;
+  validated_at: string | null;
+};
+
+export type DiagnosticFinding = {
+  id: string;
+  codigo: string;
+  tipo_contenido: string;
+  que_ocurre: string;
+  dominio: string;
+  severidad: string;
+  confianza: number;
+  signal_ids?: string[] | null;
+};
+
+export type DiagnosticCause = {
+  id: string;
+  tipo: string;
+  descripcion: string;
+  justificacion: string | null;
+};
+
+export type DiagnosticDetail = DiagnosticSummary & {
+  procesos: string[] | null;
+  explicacion: {
+    que_esta_pasando?: string;
+    donde?: string;
+    desde_cuando?: string;
+    que_deberia_hacerse?: string;
+    nota_evidencia?: string;
+  } | null;
+  hallazgos: DiagnosticFinding[];
+  causas: DiagnosticCause[];
+  correlaciones: Array<{ id: string; titulo: string; nota_causalidad: string }>;
+  items_estructurados: Array<{
+    hallazgo: DiagnosticFinding | null;
+    prioridad: number | null;
+    accion_recomendada: { accion?: string } | null;
+    opportunity_id: string | null;
+  }>;
+  oportunidades: Array<{ opportunity_id: string; finding_id: string | null; signal_id: string | null }>;
+};
+
+export async function fetchDiagnostics(): Promise<DiagnosticSummary[]> {
+  return api("/api/diagnosticos");
+}
+
+export async function fetchDiagnostic(id: string): Promise<DiagnosticDetail> {
+  return api(`/api/diagnosticos/${id}`);
+}
+
+export async function generateDiagnostic(body: {
+  periodo_inicio?: string;
+  periodo_fin?: string;
+  dominios?: string[];
+}): Promise<DiagnosticDetail> {
+  return api("/api/diagnosticos/generar", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function validateDiagnostic(id: string): Promise<DiagnosticDetail> {
+  return api(`/api/diagnosticos/${id}/validar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchDiagnosticTrace(id: string): Promise<Record<string, unknown>> {
+  return api(`/api/diagnosticos/${id}/trazabilidad`);
+}
+
+// --- Inteligencia externa (1240) ---
+
+export type ExternalSourceItem = {
+  id: string;
+  code: string;
+  name: string;
+  source_type: string;
+  ingestion_channel: string;
+  url_reference?: string | null;
+  sector?: string | null;
+  pais_region?: string | null;
+  confiabilidad: number;
+  is_active: boolean;
+  ultima_actualizacion?: string | null;
+};
+
+export type ExternalSignalItem = {
+  signal: SignalItem;
+  external: {
+    classification: string;
+    relevance: string;
+    freshness_status: string;
+    hecho_observado?: string;
+    interpretacion?: string;
+    hipotesis?: string;
+    is_risk: boolean;
+    confidence_level: number;
+    validated_at?: string | null;
+  };
+  source?: ExternalSourceItem | null;
+};
+
+export async function fetchExternalSources(): Promise<ExternalSourceItem[]> {
+  return api("/api/inteligencia-externa/fuentes");
+}
+
+export async function fetchExternalSignals(params?: {
+  classification?: string;
+  relevance?: string;
+  source_type?: string;
+}): Promise<{ items: ExternalSignalItem[]; message?: string }> {
+  const qs = new URLSearchParams();
+  if (params?.classification) qs.set("classification", params.classification);
+  if (params?.relevance) qs.set("relevance", params.relevance);
+  if (params?.source_type) qs.set("source_type", params.source_type);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return api(`/api/inteligencia-externa/senales${suffix}`);
+}
+
+export async function fetchExternalSignalDetail(signalId: string): Promise<Record<string, unknown>> {
+  return api(`/api/inteligencia-externa/senales/${signalId}`);
+}
+
+export async function createExternalSource(data: Record<string, unknown>): Promise<ExternalSourceItem> {
+  return api("/api/inteligencia-externa/fuentes", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function ingestExternalSignal(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return api("/api/inteligencia-externa/ingesta", { method: "POST", body: JSON.stringify(data) });
 }
 
 export type LlmProvider = {
@@ -1085,4 +1527,162 @@ export async function updateLlmProvider(id: string, data: Record<string, unknown
 
 export async function testLlmProvider(id: string): Promise<LlmTestResult> {
   return api(`/api/llm/providers/${id}/test`, { method: "POST", body: JSON.stringify({}) });
+}
+
+// --- Línea base e impacto (1200) ---
+
+export type LineaBaseItem = {
+  id: string;
+  indicador: string;
+  descripcion?: string | null;
+  unidad: string;
+  valor_base: number;
+  fecha_inicio_base: string;
+  fecha_fin_base: string;
+  fuente: string;
+  metodo_calculo?: string | null;
+  evidencia?: Record<string, unknown> | null;
+  direccion_indicador: string;
+  impacto_esperado?: number | null;
+  estado: string;
+  responsable_id?: string | null;
+  proceso?: string | null;
+  opportunity_id?: string | null;
+  work_plan_id?: string | null;
+  employee_id?: string | null;
+  accion_referencia?: string | null;
+  valor_economico_tipo?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type LineaBaseImpacto = {
+  id: string;
+  medicion_id: string;
+  valor_base: number;
+  valor_posterior: number;
+  variacion_absoluta: number;
+  variacion_porcentual?: number | null;
+  evaluacion: string;
+  tipo_impacto: string;
+  atribucion_nivel: string;
+  atribucion_porcentaje?: number | null;
+  atribucion_justificacion?: string | null;
+  impacto_esperado?: number | null;
+  impacto_real?: number | null;
+  congelado: boolean;
+};
+
+export type LineaBaseMedicion = {
+  id: string;
+  valor_posterior: number;
+  periodo_inicio: string;
+  periodo_fin: string;
+  fuente: string;
+  evidencia?: Record<string, unknown> | null;
+  responsable_id?: string | null;
+  estado: string;
+  created_at?: string;
+  validated_at?: string | null;
+  impacto?: LineaBaseImpacto | null;
+};
+
+export type LineaBaseDetail = {
+  linea_base: LineaBaseItem;
+  mediciones: LineaBaseMedicion[];
+  evolucion: { linea_base_id: string; puntos: Array<{ fecha: string; valor: number; evaluacion?: string; estado: string }> };
+  historial: Array<{ id: string; accion: string; actor_id?: string; fecha?: string }>;
+};
+
+export async function fetchLineasBase(params = ""): Promise<{ items: LineaBaseItem[]; total: number }> {
+  return api(`/api/lineas-base${params ? `?${params}` : ""}`);
+}
+
+export async function fetchLineaBase(id: string): Promise<LineaBaseDetail> {
+  return api(`/api/lineas-base/${id}`);
+}
+
+export async function createLineaBase(data: Record<string, unknown>): Promise<LineaBaseItem> {
+  return api("/api/lineas-base", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateLineaBase(id: string, data: Record<string, unknown>): Promise<LineaBaseItem> {
+  return api(`/api/lineas-base/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function addLineaBaseMedicion(id: string, data: Record<string, unknown>): Promise<{ medicion: LineaBaseMedicion; comparacion: LineaBaseImpacto }> {
+  return api(`/api/lineas-base/${id}/mediciones`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function validateLineaBaseMedicion(lineaBaseId: string, medicionId: string): Promise<Record<string, unknown>> {
+  return api(`/api/lineas-base/${lineaBaseId}/mediciones/${medicionId}/validar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function updateLineaBaseAtribucion(
+  lineaBaseId: string,
+  medicionId: string,
+  data: Record<string, unknown>,
+): Promise<LineaBaseImpacto> {
+  return api(`/api/lineas-base/${lineaBaseId}/mediciones/${medicionId}/atribucion`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function fetchLineasBaseByOpportunity(opportunityId: string): Promise<{ items: LineaBaseItem[] }> {
+  return api(`/api/lineas-base/oportunidad/${opportunityId}`);
+}
+
+// --- Centro de Control ejecutivo (1230) ---
+
+export type CentroControlIndicador = {
+  id: string;
+  label: string;
+  valor: unknown;
+  disponible: boolean;
+  estado?: string | null;
+  enlace: string;
+};
+
+export type CentroControlAtencion = {
+  prioridad: number;
+  tipo: string;
+  titulo: string;
+  detalle?: string | null;
+  fecha?: string | null;
+  enlace: string;
+  origen: string;
+};
+
+export type CentroControlResumen = {
+  generated_at: string;
+  organization_id: string;
+  resumen_ejecutivo: { indicadores: CentroControlIndicador[]; operaciones?: Record<string, number> | null };
+  atencion_requerida: CentroControlAtencion[];
+  empleados_ia?: {
+    total: number;
+    activos: number;
+    items: Array<{
+      id: string;
+      nombre: string;
+      estado: string;
+      ultima_actividad?: string | null;
+      enlace: string;
+    }>;
+  } | null;
+  oportunidades?: Record<string, unknown> | null;
+  impacto?: Record<string, unknown> | null;
+  finops?: {
+    disponible: boolean;
+    dashboard?: Record<string, unknown>;
+    tokens_periodo?: number;
+  } | null;
+  valor_retorno?: Record<string, unknown> | null;
+  diagnostico?: Record<string, unknown> | null;
+  senales?: Record<string, unknown> | null;
+  salud_plataforma?: Record<string, unknown> | null;
+};
+
+export async function fetchCentroControlResumen(periodo = "mtd"): Promise<CentroControlResumen> {
+  return api(`/api/centro-control/resumen-ejecutivo?periodo=${encodeURIComponent(periodo)}`);
 }

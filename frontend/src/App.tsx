@@ -15,9 +15,18 @@ import { AdminSecurityPage } from "./pages/admin/AdminSecurityPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { AuditPage } from "./pages/AuditPage";
 import { CapabilitiesPage } from "./pages/CapabilitiesPage";
+import { CentroControlPage } from "./pages/CentroControlPage";
 import { CostosValorPage } from "./pages/CostosValorPage";
+import { LineasBasePage } from "./pages/LineasBasePage";
+import { LineaBaseDetailPage } from "./pages/LineaBaseDetailPage";
 import { OportunidadesPage } from "./pages/OportunidadesPage";
 import { OportunidadDetailPage } from "./pages/OportunidadDetailPage";
+import { SenalesPage } from "./pages/SenalesPage";
+import { SenalDetailPage } from "./pages/SenalDetailPage";
+import { DiagnosticosPage } from "./pages/DiagnosticosPage";
+import { DiagnosticoDetailPage } from "./pages/DiagnosticoDetailPage";
+import { InteligenciaExternaPage } from "./pages/InteligenciaExternaPage";
+import { InteligenciaExternaDetailPage } from "./pages/InteligenciaExternaDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
@@ -45,7 +54,8 @@ export default function App() {
       />
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route index element={<DashboardPage />} />
+          <Route index element={<CentroControlPage />} />
+          <Route path="panel" element={<Navigate to="/" replace />} />
           <Route path="operaciones" element={<OperationsHubPage />} />
           <Route path="operaciones/solicitud" element={<OperationsCenterPage />} />
           <Route path="operaciones/:operationId" element={<OperationDetailPage />} />
@@ -67,8 +77,16 @@ export default function App() {
           <Route path="herramientas" element={<ToolsPage />} />
           <Route path="test-lab" element={<TestLabPage />} />
           <Route path="costos-valor" element={<CostosValorPage />} />
+          <Route path="lineas-base" element={<LineasBasePage />} />
+          <Route path="lineas-base/:lineaBaseId" element={<LineaBaseDetailPage />} />
           <Route path="oportunidades" element={<OportunidadesPage />} />
           <Route path="oportunidades/:opportunityId" element={<OportunidadDetailPage />} />
+          <Route path="senales" element={<SenalesPage />} />
+          <Route path="senales/:signalId" element={<SenalDetailPage />} />
+          <Route path="diagnosticos" element={<DiagnosticosPage />} />
+          <Route path="diagnosticos/:diagnosticId" element={<DiagnosticoDetailPage />} />
+          <Route path="inteligencia-externa" element={<InteligenciaExternaPage />} />
+          <Route path="inteligencia-externa/senales/:signalId" element={<InteligenciaExternaDetailPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
           <Route element={<RequirePermission anyOf={["platform.organization.view"]} />}>
             <Route path="administracion/empresas" element={<AdminCompaniesPage />} />

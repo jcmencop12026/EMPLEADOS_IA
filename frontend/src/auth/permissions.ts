@@ -1,6 +1,6 @@
 /** Permisos mínimos por ruta de navegación — alineado con RBAC backend 840B. */
 export const ROUTE_PERMISSIONS: Record<string, string[]> = {
-  "/": [],
+  "/": ["control_center.view"],
   "/operaciones": ["operations.view"],
   "/operaciones/solicitud": ["operations.execute"],
   "/ejecuciones": ["operations.view"],
@@ -13,7 +13,11 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/herramientas": ["tool.view"],
   "/conocimiento": ["knowledge.view"],
   "/test-lab": ["test_lab.view"],
+  "/lineas-base": ["linea_base.view"],
   "/oportunidades": ["oportunidades.view"],
+  "/senales": ["oportunidades.view"],
+  "/diagnosticos": ["diagnosticos.view"],
+  "/inteligencia-externa": ["inteligencia_externa.view"],
   "/costos-valor": ["finops.view"],
   "/notificaciones": ["notification.view"],
   "/auditoria": ["audit.view"],
