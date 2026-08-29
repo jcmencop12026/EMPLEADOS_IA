@@ -408,6 +408,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | BACKUPS_PERMISSIONS
         | DATOS_PERMISSIONS
         | INTEGRATION_PERMISSIONS
+        | PLATFORM_PERMISSIONS
         | SECURITY_PERMISSIONS
         | IDENTITY_PERMISSIONS
     ),
@@ -472,6 +473,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "inteligencia_externa.manage",
         "inteligencia_externa.ingest",
         "inteligencia_externa.validate",
+        "control_center.view",
         "continuidad.view",
         "continuidad.manage",
         "continuidad.activate",
@@ -516,6 +518,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "valoracion.roi",
         "diagnosticos.view",
         "inteligencia_externa.view",
+        "control_center.view",
         "continuidad.view",
         "incidentes.view",
         "backups.view",
