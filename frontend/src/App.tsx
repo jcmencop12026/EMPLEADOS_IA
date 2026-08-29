@@ -58,6 +58,7 @@ import { KnowledgePage } from "./pages/KnowledgePage";
 import { LoginPage } from "./pages/LoginPage";
 import { MiSeguridadPage } from "./pages/MiSeguridadPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
+import { TrabajoPage } from "./pages/TrabajoPage";
 import { OperationDetailPage } from "./pages/OperationDetailPage";
 import { OperationsCenterPage } from "./pages/OperationsCenterPage";
 import { OperationsHubPage } from "./pages/OperationsHubPage";
@@ -83,6 +84,25 @@ export default function App() {
           <Route path="ejecuciones" element={<ExecutionsPage />} />
           <Route path="ejecuciones/:planId" element={<ExecutionDetailPage />} />
           <Route path="aprobaciones" element={<ApprovalsPage />} />
+          <Route
+            element={
+              <RequirePermission
+                anyOf={[
+                  "operations.view",
+                  "notification.view",
+                  "oportunidades.view",
+                  "continuidad.view",
+                  "integraciones.view",
+                  "finops.view",
+                  "automation.view",
+                  "linea_base.view",
+                  "diagnosticos.view",
+                ]}
+              />
+            }
+          >
+            <Route path="trabajo" element={<TrabajoPage />} />
+          </Route>
           <Route path="directorio" element={<DirectoryPage />} />
           <Route path="automatizaciones" element={<AutomationsPage />} />
           <Route path="automatizaciones/nueva" element={<AutomationWizardPage />} />

@@ -69,6 +69,7 @@ from app.routers import (
     segmentacion,
     test_lab,
     tools,
+    trabajo,
 )
 from app.seed import bootstrap
 from app.security_config import validate_security_settings
@@ -176,6 +177,7 @@ app.include_router(tco.router)
 app.include_router(implementacion.router)
 app.include_router(segmentacion.router)
 app.include_router(llm_providers.router)
+app.include_router(trabajo.router)
 
 
 @app.get("/health")
