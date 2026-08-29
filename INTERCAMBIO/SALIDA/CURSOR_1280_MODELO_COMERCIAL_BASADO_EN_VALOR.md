@@ -2,241 +2,218 @@
 
 **Fecha:** 2026-08-29  
 **Rama:** `cursor/1280-modelo-comercial-valor-85e4`  
-**Base:** `076bca62d3a53022599edded638749845d7bdc29` (1210 FinOps+valoración) integrado con `0278177b434de7f04c4727f796e8e3e4006aadfd` (1200 línea base) en merge `0dd9cf7`  
-**HEAD:** `64fb7d91790f5b68e50dc718dd7d33f2147f22b0`  
 **Estado:** **BLOQUE 1280 TERMINADO**  
 **NO MERGE**
 
 ---
 
-## Objetivo
+## Base de desarrollo
 
-Construir el módulo comercial operativo que convierte:
+| Campo | Valor |
+|-------|-------|
+| **Rama base** | `cursor/1210-valoracion-economica-roi-85e4` |
+| **SHA base (1210)** | `076bca62d3a53022599edded638749845d7bdc29` |
+| **Integración 1200** | `0278177b434de7f04c4727f796e8e3e4006aadfd` (merge `0dd9cf7`) |
+| **Razón técnica** | Única combinación POST-V1 con 1110+1210 sin convergencias 1250/V1; 1200 integrado por merge explícito sin arrastrar 1220/1240/1250 |
 
-**DIAGNÓSTICO → OPORTUNIDADES → LÍNEA BASE → IMPACTO ESPERADO → VALOR ECONÓMICO → COSTO IA / FINOPS → PROPUESTA → PLAN COMERCIAL → PRECIO → RETORNO DEL CLIENTE**
-
-Trazable al valor económico real (1110, 1200, 1210) sin calculadora aislada.
-
----
-
-## Rama base seleccionada
-
-| Criterio | Rama | SHA |
-|----------|------|-----|
-| 1110 FinOps | `cursor/1210-valoracion-economica-roi-85e4` | incluido |
-| 1210 Valoración / ROI | `cursor/1210-valoracion-economica-roi-85e4` | `076bca62d3a53022599edded638749845d7bdc29` |
-| 1200 Línea base / impacto | `cursor/1200-linea-base-impacto` | `0278177b434de7f04c4727f796e8e3e4006aadfd` |
-| Merge base 1280 | `cursor/1280-modelo-comercial-valor-85e4` | `0dd9cf7` |
-
-No se arrastraron convergencias 1250 ni V1.
+**Git root verificado:** `/workspace` (equivalente `D:\EMPLEADOS_IA`)
 
 ---
 
-## Arquitectura aplicada
+## HEAD final
+
+Ver `git rev-parse HEAD` en rama tras último commit.
+
+---
+
+## Arquitectura
 
 ```
-Diagnóstico / Oportunidades (1100/1220)
-        │
-        ▼
-Valoración 1210 ──► OpportunityValuation / Real
-Línea base 1200 ──► referencias en trazabilidad
-FinOps 1110     ──► costos IA / consumo
+Diagnóstico (1220) ──► diagnostic_id
+Oportunidades (1100) ──► opportunity_id
+Línea base (1200) ──► linea_base_id
+Valoración (1210) ──► valuation_id
+FinOps (1110) ──► finops_record_id
+Inteligencia externa (1240 prep) ──► external_intelligence_ref
         │
         ▼
 CommercialProposal
-  ├── CommercialProposalValue     (VERIFICADO / ESTIMADO / POTENCIAL + atribución)
-  ├── CommercialProposalScenario  (CONSERVADOR / BASE / ALTO)
-  ├── CommercialProposalCost      (proveedor / interno / precio / margen)
+  ├── CommercialProposalValue (naturaleza, alcance INTERNO/EXTERNO, atribución)
+  ├── CommercialProposalScenario (CONSERVADOR / BASE / ALTO)
+  ├── CommercialProposalCost (proveedor / interno / precio)
   ├── CommercialProposalPriceHistory (aprobación humana)
-  └── CommercialDoubleCountAlert  (doble conteo)
+  └── CommercialDoubleCountAlert
         │
         ▼
-CommercialPlan (parametrizable, multi-tenant)
-  ├── consumo IA incluido / presupuesto / excedentes / alertas
-  └── modo credenciales: ADMINISTRADA | PROPIA_INSTITUCION
+CommercialPlan (parametrizable, consumo IA, credenciales, excedentes)
 ```
 
-Motor determinístico en `commercial_service.py`. Sin PDF avanzado ni facturación electrónica.
+Flujo operativo: **DIAGNÓSTICO → OPORTUNIDADES → LÍNEA BASE → IMPACTO → VALOR ECONÓMICO → COSTO IA/FINOPS → PROPUESTA → PLAN → PRECIO → RETORNO**
 
 ---
 
-## Alcance implementado
+## Entidades principales
 
-### 1. Valor atribuible
+| Entidad | Descripción |
+|---------|-------------|
+| `CommercialPlan` | Plan configurable (empleados IA, usuarios, consumo IA, excedentes, credenciales, SLA, etc.) |
+| `CommercialProposal` | Propuesta comercial con estados BORRADOR…VENCIDA |
+| `CommercialProposalValue` | Componente de valor (VERIFICADO/ESTIMADO/POTENCIAL, INTERNO/EXTERNO, atribución) |
+| `CommercialProposalScenario` | Escenario conservador/base/alto |
+| `CommercialProposalCost` | Costo desglosado (proveedor IA, interno, precio cliente) |
+| `CommercialProposalPriceHistory` | Historial precio sugerido vs final |
+| `CommercialDoubleCountAlert` | Alerta doble conteo |
 
-- Naturalezas: `VERIFICADO`, `ESTIMADO`, `POTENCIAL`
-- Categorías: ahorros, pérdidas evitadas, ingresos recuperados, productividad, errores, tiempos, riesgos, nuevos ingresos, oportunidades capturadas
-- Validación de categorías incompatibles (no suma indiscriminada)
+---
 
-### 2. Atribución explícita
+## Valor interno y externo
 
-- `atribucion_pct`, `criterio_atribucion`, `justificacion_atribucion`, `evidencia_atribucion`, `responsable_atribucion`, `fecha_atribucion`
-- Rechaza 100% automático sin criterio
+| Ámbito | Categorías típicas |
+|--------|-------------------|
+| **INTERNO** | Ahorro, pérdida evitada, ingreso recuperado, productividad, errores, tiempos, riesgo |
+| **EXTERNO** | Nuevo ingreso, oportunidad capturada |
 
-### 3. Escenarios
+Campo `external_intelligence_ref` preparado para integración 1240 sin duplicar ese bloque.
 
-- `CONSERVADOR`, `BASE`, `ALTO`
-- Valor esperado, probabilidad/confianza, costo, tiempo, riesgo
-- Escenario recomendado explicable vía API
+---
 
-### 4. Costos totales EMPLEADOS_IA
-
-- Implementación, configuración, licencias, infraestructura, soporte, operación, consumo IA, integraciones, servicios adicionales
-- Clases: `COSTO_PROVEEDOR_IA`, `COSTO_INTERNO`, `PRECIO_CLIENTE`, referencia margen
-- Integración FinOps cuando hay `finops_ref`
-
-### 5. Consumo IA en planes
-
-- `consumo_ia_incluido`, `presupuesto_ia_incluido`, política excedentes, alertas, bloqueo opcional
-- Sin concepto de IA ilimitada
-
-### 6. Modos de credenciales
-
-- `ADMINISTRADA` (IA administrada por nosotros)
-- `PROPIA_INSTITUCION` (credenciales propias)
-- Impacta costos, precio y facturación simulada — sin almacenar claves
-
-### 7. Planes comerciales configurables
-
-- Parámetros: empleados IA, usuarios, automatizaciones, consumo IA, proveedores/modelos, almacenamiento, integraciones, auditoría, soporte, SLA, presupuesto, excedentes, capacidades
-- Planes globales (SuperAdmin) y por organización
-
-### 8–9. Precio basado en valor y regla económica
+## Cálculos económicos (determinísticos)
 
 ```
+valor_atribuible = valor_bruto × atribucion_pct / 100
+
 precio_sugerido = max(
   valor_atribuible × fracción_valor,
-  costo_total × (1 + margen_minimo),
+  costo_total × (1 + margen_mínimo),
   precio_base_plan
 )
+
+beneficio_neto_cliente = valor_atribuible − precio
+ROI % = beneficio_neto / precio × 100
+payback_meses = precio / (valor_atribuible / 12)
+% conservado cliente = beneficio_neto / valor_atribuible × 100
+% capturado EMPLEADOS_IA = precio / valor_atribuible × 100
+margen % = (precio − costo_total) / precio × 100
+
+excedente_tokens = max(0, tokens_usados − consumo_ia_incluido)
+costo_excedente = excedente_tokens / 1_000_000 × excedente_ia_por_millon
 ```
 
-- Respeta mínimo, máximo, piso de costos, margen mínimo
-- Advertencia si supera valor capturable razonable
-- Sugiere, no impone
-
-### 10. Beneficio neto del cliente
-
-- Beneficio bruto − inversión total = beneficio neto
-- ROI, payback, % valor conservado por el cliente
-
-### 11–12. Propuesta comercial y aprobación humana
-
-Estados: `BORRADOR`, `EN_REVISION`, `APROBADA`, `RECHAZADA`, `ENVIADA`, `ACEPTADA`, `VENCIDA`
-
-- `precio_sugerido` ≠ `precio_final` automático
-- Historial de precio con justificación, usuario y fecha
-
-### 13. Trazabilidad
-
-Endpoint `/api/comercial/propuestas/{id}/trazabilidad` enlaza diagnóstico, oportunidades, valoraciones 1210, líneas base 1200, referencias FinOps 1110 y supuestos.
-
-### 14. Doble conteo
-
-Alertas por oportunidad duplicada, categorías incompatibles y claves de deduplicación repetidas.
-
-### 15. API (`/api/comercial`)
-
-| Área | Rutas principales |
-|------|-------------------|
-| Planes | CRUD `/planes` |
-| Propuestas | CRUD `/propuestas`, valores, escenarios, costos |
-| Simulación | `POST /simular` |
-| Precio | `POST /propuestas/{id}/recalcular-precio` |
-| Aprobación | `POST /propuestas/{id}/aprobar`, historial precio |
-| Trazabilidad | `GET /propuestas/{id}/trazabilidad` |
-| Doble conteo | `GET /propuestas/{id}/alertas-doble-conteo` |
-
-### 16. RBAC
-
-| Permiso | Descripción |
-|---------|-------------|
-| `comercial.view` | Consultar planes y propuestas |
-| `comercial.simulate` | Simulador de valor |
-| `comercial.create` | Crear/editar propuestas |
-| `comercial.approve` | Aprobar precio final |
-| `comercial.manage_plans` | Administrar planes |
-
-### 17. Multiempresa
-
-Aislamiento estricto por `organization_id`. Planes globales vs por organización.
-
-### 18. Auditoría
-
-Eventos auditados: creación, recálculo, cambio supuesto/atribución/precio, aprobación, rechazo, envío, aceptación.
-
-### 19. UI (español)
-
-| Vista | Ruta |
-|-------|------|
-| Comercial (planes, propuestas, simulador) | `/comercial` |
-| Detalle propuesta | `/comercial/propuestas/:id` |
-
-Muestra: valor generado, atribuible, costo, precio sugerido/final, beneficio neto, ROI, payback, margen, consumo IA incluido.
-
----
-
-## Archivos principales
-
-| Archivo | Cambio |
-|---------|--------|
-| `backend/app/commercial_enums.py` | Enumeraciones comerciales |
-| `backend/app/commercial_models.py` | Modelos SQLAlchemy |
-| `backend/app/services/commercial_service.py` | Motor comercial |
-| `backend/app/schemas_commercial.py` | Schemas Pydantic |
-| `backend/app/routers/comercial.py` | API REST |
-| `backend/app/permissions.py` | Permisos comercial.* |
-| `backend/app/main.py` | Registro router/modelos |
-| `backend/alembic/versions/1200b1c2d3e4f_merge_1110_1200_1210.py` | Merge cabezas 1210+1200 |
-| `backend/alembic/versions/1280a1b2c3d4e_modelo_comercial_valor_1280.py` | Migración 1280 |
-| `frontend/src/pages/ComercialPage.tsx` | UI principal |
-| `frontend/src/pages/ComercialPropuestaDetailPage.tsx` | Detalle propuesta |
-| `frontend/src/App.tsx`, `AppShell.tsx`, `api.ts` | Rutas, menú, cliente API |
-| `tests/test_modelo_comercial_1280.py` | 12 pruebas focales |
+La plataforma **sugiere**, no impone. Precio final requiere aprobación humana.
 
 ---
 
 ## Migración Alembic
 
-- Merge: `1200b1c2d3e4f` (down: `1210b2c3d4e5f` + `1200a1b2c3d4e`)
-- Bloque 1280: `1280a1b2c3d4e` (down: `1200b1c2d3e4f`)
-- Cabeza única en esta rama
-- No se modificaron migraciones históricas
+| Revision | Archivo | Descripción |
+|----------|---------|-------------|
+| `1200b1c2d3e4f` | merge 1210 + 1200 | Cabeza convergente base |
+| `1280a1b2c3d4e` | modelo comercial | Tablas comerciales |
+| `1280b2c3d4e5f` | scope externo | `alcance`, `external_intelligence_ref`, `pct_valor_capturado_empleados_ia` |
+
+**ALEMBIC HEAD:** `1280b2c3d4e5f` (cabeza única)
 
 ---
 
-## Validación
+## API (`/api/comercial`)
 
-| Prueba | Resultado |
-|--------|-----------|
-| `pytest tests/test_modelo_comercial_1280.py` | 12/12 PASS |
-| `pytest tests/test_finops_1110.py` | PASS (regresión 1110) |
-| `pytest tests/test_valoracion_1210.py` | PASS (regresión 1210) |
-| `pytest tests/test_migration_control.py` | 7/7 PASS |
-| Regresión focal 1280+1110+1210+migraciones | **46 passed** |
-| `npm run build` | PASS |
+| Método | Ruta | Permiso |
+|--------|------|---------|
+| GET | `/planes` | comercial.view |
+| GET | `/planes/{id}` | comercial.view |
+| POST | `/planes` | comercial.manage_plans |
+| GET | `/propuestas` | comercial.view |
+| POST | `/propuestas` | comercial.create |
+| GET | `/propuestas/{id}` | comercial.view |
+| POST | `/propuestas/{id}/valores` | comercial.create |
+| POST | `/propuestas/{id}/escenarios` | comercial.create |
+| POST | `/propuestas/{id}/costos` | comercial.create |
+| POST | `/propuestas/{id}/precio-sugerido` | comercial.simulate |
+| POST | `/propuestas/{id}/precio-final` | comercial.approve |
+| POST | `/propuestas/{id}/aprobar` | comercial.approve |
+| POST | `/propuestas/{id}/simular` | comercial.simulate |
+| POST | `/propuestas/{id}/detectar-doble-conteo` | comercial.view |
+| POST | `/propuestas/{id}/importar-valoracion` | comercial.create |
+| GET | `/propuestas/{id}/trazabilidad` | comercial.view |
+| POST | `/simular` | comercial.simulate |
 
 ---
 
-## Restricciones respetadas
+## UI (español)
 
-- NO V1 / NO PR #32 / NO candidata V1
-- NO Docker / NO 1250 / NO 1260 / NO 1270
-- NO OpenAI real / NO Ollama / NO scraping
-- NO facturación electrónica / NO pagos / NO CRM completo
-- NO PDF comercial avanzado
-- NO `git add .` (archivos añadidos explícitamente)
+| Vista | Ruta |
+|-------|------|
+| Planes, simulador, propuestas | `/comercial` |
+| Detalle propuesta + comparación escenarios + simulación | `/comercial/propuestas/:id` |
+
+---
+
+## Permisos RBAC
+
+| Permiso | Descripción |
+|---------|-------------|
+| `comercial.view` | Consultar planes y propuestas |
+| `comercial.simulate` | Simulador y precio sugerido |
+| `comercial.create` | Crear/editar propuestas |
+| `comercial.approve` | Precio final y aprobación |
+| `comercial.manage_plans` | Administrar planes |
+
+---
+
+## Auditoría
+
+Eventos: `comercial.propuesta.creada`, `comercial.valor.agregado`, `comercial.escenario.agregado`, `comercial.costo.agregado`, `comercial.precio.sugerido`, `comercial.precio.modificado`, `comercial.propuesta.aprobada`, `comercial.plan.creado`
+
+---
+
+## Archivos modificados (bloque 1280)
+
+| Archivo | Cambio |
+|---------|--------|
+| `backend/app/commercial_enums.py` | ValueScope, categorías interno/externo |
+| `backend/app/commercial_models.py` | alcance, external_intelligence_ref, pct_capturado |
+| `backend/app/commercial_service.py` | Motor económico, simulación, excedentes, trazabilidad |
+| `backend/app/schemas_commercial.py` | Schemas ampliados |
+| `backend/app/routers/comercial.py` | API planes detalle, simular propuesta |
+| `backend/app/permissions.py` | Permisos comercial.* |
+| `backend/app/main.py` | Registro router/modelos |
+| `backend/alembic/versions/1280a1b2c3d4e_*.py` | Migración tablas |
+| `backend/alembic/versions/1280b2c3d4e5f_*.py` | Migración scope externo |
+| `frontend/src/pages/ComercialPage.tsx` | UI principal |
+| `frontend/src/pages/ComercialPropuestaDetailPage.tsx` | Detalle + escenarios + simulación |
+| `frontend/src/api.ts` | Cliente API |
+| `tests/test_modelo_comercial_1280.py` | 17 pruebas focales |
+
+---
+
+## Pruebas
+
+| Suite | Resultado |
+|-------|-----------|
+| `pytest tests/test_modelo_comercial_1280.py` | **17/17 PASS** |
+| Regresión focal 1110+1210+migraciones | **51 passed** |
+| `npm run build` | **PASS** |
+
+Cobertura: valor verificado/estimado/potencial, interno/externo, atribución, escenarios, costos, precio basado en valor, piso costos, margen, beneficio neto, ROI, payback, planes, consumo IA, excedentes, credenciales, doble conteo, simulación no destructiva, aprobación humana, RBAC, multiempresa, auditoría, trazabilidad.
+
+---
+
+## Hallazgos
+
+| ID | Severidad | Descripción | Estado |
+|----|-----------|-------------|--------|
+| — | — | Sin hallazgos P0/P1 en bloque 1280 | — |
+
+**P0:** 0 | **P1:** 0 | **P2:** 0
 
 ---
 
 ## Pendientes post-1280
 
-1. Integración UI directa con diagnóstico 1220 (campo `diagnostic_id` preparado)
-2. Comparación visual avanzada de escenarios (gráficos)
+1. Integración UI directa con diagnóstico 1220
+2. Enlace automático con señales 1240 vía `external_intelligence_ref`
 3. Motor documental/PDF comercial formal
-4. Sincronización automática de costos FinOps en recálculo periódico
-
-**P0:** 0 | **P1:** 0 | **P2:** 0
+4. Gráficos avanzados comparación escenarios
 
 ---
 
@@ -246,32 +223,41 @@ Muestra: valor generado, atribuible, costo, precio sugerido/final, beneficio net
 EMPLEADOS IA — BLOQUE 1280 TERMINADO
 
 RAMA: cursor/1280-modelo-comercial-valor-85e4
-BASE: 076bca62d3a53022599edded638749845d7bdc29 (+ merge 1200 0dd9cf7)
-HEAD: 64fb7d91790f5b68e50dc718dd7d33f2147f22b0
+BASE: cursor/1210-valoracion-economica-roi-85e4 @ 076bca62 (+ merge 1200 0dd9cf7)
+HEAD: <SHA final>
 
 VALOR ATRIBUIBLE: PASS
 VALOR VERIFICADO/ESTIMADO/POTENCIAL: PASS
+VALOR INTERNO: PASS
+VALOR EXTERNO PREPARADO: PASS
 ESCENARIOS: PASS
 COSTOS IA: PASS
+COSTOS TOTALES: PASS
 PLANES: PASS
 CONSUMO INCLUIDO: PASS
+EXCEDENTES: PASS
+MODALIDADES CREDENCIALES: PASS
 PRECIO BASADO EN VALOR: PASS
-PISO COSTOS: PASS
+PISO DE COSTOS: PASS
 MARGEN: PASS
 BENEFICIO NETO: PASS
 ROI: PASS
 PAYBACK: PASS
 PROPUESTAS: PASS
+SIMULADOR: PASS
 APROBACIÓN HUMANA: PASS
 DOBLE CONTEO: PASS
 TRAZABILIDAD: PASS
 RBAC: PASS
 MULTIEMPRESA: PASS
 AUDITORÍA: PASS
-UI: PASS
-ALEMBIC: PASS (1280a1b2c3d4e)
-TESTS: 46 passed (focal 1280+regresión)
+UI EN ESPAÑOL: PASS
+ALEMBIC: PASS
+ALEMBIC HEAD: 1280b2c3d4e5f
+TESTS: 51 passed (17×1280 + regresión focal)
 FRONTEND: PASS
+SECRETOS: PASS
+DIFF CONTROLADO: PASS
 
 P0: 0
 P1: 0
