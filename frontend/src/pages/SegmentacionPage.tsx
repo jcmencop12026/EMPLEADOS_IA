@@ -121,6 +121,26 @@ export function SegmentacionPage() {
         )}
       </section>
 
+      <section className="panel compact-panel">
+        <h2>Planes comerciales</h2>
+        <div className="notice-banner subtle">Sin IA ilimitada — consumo acotado por plan.</div>
+        <table className="data-table compact-table">
+          <thead>
+            <tr><th>Plan</th><th>Modalidad</th><th>Tokens incl.</th><th></th></tr>
+          </thead>
+          <tbody>
+            {plans.map((pl) => (
+              <tr key={pl.id}>
+                <td>{pl.name}</td>
+                <td>{pl.credential_mode === "CREDENCIALES_PROPIAS" ? "Credenciales propias" : "IA administrada"}</td>
+                <td>{pl.consumo_ia_incluido_tokens?.toLocaleString("es-CO") ?? "—"}</td>
+                <td><Link to={`/comercial/planes/${pl.id}`}>Detalle</Link></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
       <section className="panel">
         <h2>Paquetes comerciales</h2>
         <table className="data-table">
