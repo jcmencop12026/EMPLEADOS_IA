@@ -160,6 +160,14 @@ INTELIGENCIA_EXTERNA_PERMISSIONS = {
     "inteligencia_externa.validate",
 }
 
+COMMERCIAL_PERMISSIONS = {
+    "comercial.view",
+    "comercial.simulate",
+    "comercial.create",
+    "comercial.approve",
+    "comercial.manage_plans",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -257,6 +265,11 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
     "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
     "inteligencia_externa.validate": ("Inteligencia externa", "Validar análisis externo"),
+    "comercial.view": ("Comercial", "Consultar propuestas y planes comerciales"),
+    "comercial.simulate": ("Comercial", "Simular valor y precio"),
+    "comercial.create": ("Comercial", "Crear y editar propuestas comerciales"),
+    "comercial.approve": ("Comercial", "Aprobar precio final y propuestas"),
+    "comercial.manage_plans": ("Comercial", "Administrar planes comerciales"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -289,6 +302,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | DIAGNOSTICOS_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
+        | COMMERCIAL_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -310,6 +324,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | DIAGNOSTICOS_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
+        | COMMERCIAL_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -374,6 +389,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "inteligencia_externa.ingest",
         "inteligencia_externa.validate",
         "control_center.view",
+        "comercial.view",
+        "comercial.simulate",
+        "comercial.create",
     },
     "viewer": {
         "employee.view",
@@ -397,6 +415,8 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "diagnosticos.view",
         "inteligencia_externa.view",
         "control_center.view",
+        "comercial.view",
+        "comercial.simulate",
     },
 }
 

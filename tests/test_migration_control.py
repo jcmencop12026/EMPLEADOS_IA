@@ -30,7 +30,7 @@ def test_single_alembic_head():
 def test_migration_ledger_protects_consolidated_revisions():
     report = validate_migration_ledger()
     assert report["head"] == HEAD_REVISION
-    assert report["protected_count"] >= 28
+    assert report["protected_count"] >= 30
 
 
 def test_orphan_revision_aborts_preflight():
