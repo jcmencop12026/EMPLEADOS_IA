@@ -56,6 +56,7 @@ import { KnowledgePage } from "./pages/KnowledgePage";
 import { LoginPage } from "./pages/LoginPage";
 import { MiSeguridadPage } from "./pages/MiSeguridadPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
+import { ComunicacionesPage } from "./pages/ComunicacionesPage";
 import { OperationDetailPage } from "./pages/OperationDetailPage";
 import { OperationsCenterPage } from "./pages/OperationsCenterPage";
 import { OperationsHubPage } from "./pages/OperationsHubPage";
@@ -150,6 +151,9 @@ export default function App() {
             <Route path="auditoria" element={<AuditPage />} />
           </Route>
           <Route path="notificaciones" element={<NotificationsPage />} />
+          <Route element={<RequirePermission anyOf={["communications.view"]} />}>
+            <Route path="comunicaciones" element={<ComunicacionesPage />} />
+          </Route>
           <Route path="mi-seguridad" element={<MiSeguridadPage />} />
         </Route>
       </Route>

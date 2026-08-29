@@ -39,6 +39,16 @@ NOTIFICATION_PERMISSIONS = {
     "alert_rule.manage",
 }
 
+COMMUNICATIONS_PERMISSIONS = {
+    "communications.view",
+    "communications.send",
+    "communications.schedule",
+    "communications.template.manage",
+    "communications.rule.manage",
+    "communications.channel.manage",
+    "communications.history.view",
+}
+
 ADMIN_PERMISSIONS = {
     "admin.user.view",
     "admin.user.create",
@@ -290,6 +300,13 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "notification.acknowledge": ("Notificaciones", "Confirmar notificaciones"),
     "alert_rule.view": ("Alertas", "Ver reglas de alerta"),
     "alert_rule.manage": ("Alertas", "Gestionar reglas de alerta"),
+    "communications.view": ("Comunicaciones", "Ver centro de comunicaciones"),
+    "communications.send": ("Comunicaciones", "Enviar comunicaciones"),
+    "communications.schedule": ("Comunicaciones", "Programar y cancelar comunicaciones"),
+    "communications.template.manage": ("Comunicaciones", "Gestionar plantillas"),
+    "communications.rule.manage": ("Comunicaciones", "Gestionar reglas de comunicación"),
+    "communications.channel.manage": ("Comunicaciones", "Gestionar canales"),
+    "communications.history.view": ("Comunicaciones", "Ver historial detallado"),
     "operations.view": ("Operaciones", "Ver ejecuciones y operaciones"),
     "operations.execute": ("Operaciones", "Ejecutar solicitudes"),
     "operations.manage": ("Operaciones", "Gestionar operaciones"),
@@ -444,6 +461,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
     "admin": (
         EMPLOYEE_PERMISSIONS
         | NOTIFICATION_PERMISSIONS
+        | COMMUNICATIONS_PERMISSIONS
         | ADMIN_PERMISSIONS
         | OPERATIONS_PERMISSIONS
         | AUTOMATION_PERMISSIONS
@@ -478,6 +496,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
     "superadmin": (
         EMPLOYEE_PERMISSIONS
         | NOTIFICATION_PERMISSIONS
+        | COMMUNICATIONS_PERMISSIONS
         | ADMIN_PERMISSIONS
         | OPERATIONS_PERMISSIONS
         | AUTOMATION_PERMISSIONS
@@ -518,6 +537,10 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "notification.view",
         "notification.acknowledge",
         "alert_rule.view",
+        "communications.view",
+        "communications.send",
+        "communications.schedule",
+        "communications.history.view",
         "operations.view",
         "operations.execute",
         "operations.manage",
