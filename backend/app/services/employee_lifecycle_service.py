@@ -685,7 +685,7 @@ def decide_employee_approval(
         decision=decision,
         comment=comment,
     )
-    if result.get("error"):
+    if result.get("error") and "plan_id" not in result:
         return result
 
     db.refresh(factory)
