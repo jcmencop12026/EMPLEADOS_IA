@@ -2265,6 +2265,10 @@ export async function simulateCommercialValue(data: Record<string, unknown>) {
   return api("/api/comercial/simular", { method: "POST", body: JSON.stringify(data) });
 }
 
+export async function simulateCommercialProposal(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/simular`, { method: "POST", body: JSON.stringify(data) });
+}
+
 // --- TCO y ecosistema de aliados (1320) ---
 
 export type TcoProveedorItem = {
@@ -2491,6 +2495,8 @@ export async function fetchRecommendation(): Promise<RecommendationResult> {
 }
 
 export async function comparePackages(package_ids: string[]) {
+  return api("/api/segmentacion/comparar", { method: "POST", body: JSON.stringify({ package_ids }) });
+}
 
 export type ContinuidadServicio = {
   id: string;
