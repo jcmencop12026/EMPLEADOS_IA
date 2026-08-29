@@ -43,6 +43,7 @@
   - `GET /employees/{id}/inventory`, `/health`, `/validate`
   - `GET|POST /employees/{id}/versions`, `GET /versions/{n}`
   - `GET|POST /employees/{id}/test-cases`
+  - `GET|POST /employees/{id}/approvals`, `POST /approvals/{id}/decide`
   - `POST /request-approval`, `/rollback`, `/train`, `/retire`
   - `POST /publish` reforzado con validación + aprobación según riesgo
 - **Migración**: `6b06a1b2c3d4e` (HEAD único en rama).
@@ -55,7 +56,7 @@
 
 ### Tests
 
-- **`tests/test_employee_lifecycle_factory_mb06.py`**: 16 casos (ciclo, versionado, publicación bloqueada, aprobación CRITICAL, rollback, capacitación, RBAC, multiempresa, secretos, idempotencia).
+- **`tests/test_employee_lifecycle_factory_mb06.py`**: 19 casos (ciclo, versionado, publicación bloqueada, aprobación CRITICAL, segregación, rollback, capacitación, RBAC, multiempresa, secretos, idempotencia).
 
 ---
 
@@ -72,9 +73,9 @@
 ## CIERRE P1 Y CERTIFICACIÓN DIFERENCIAL
 
 **Fecha cierre:** 2026-08-29  
-**Commits P1:** `dccc40f` (UI aprobaciones + segregación), `<HEAD_FINAL>` (certificación diferencial + fixes)  
+**Commits P1:** `dccc40f` (UI aprobaciones + segregación), `8759bb9` (certificación diferencial + fixes)  
 **HEAD antes P1:** `6430da879fd108bd3585f99d0b925674ed473cc6`  
-**HEAD final:** ver §8
+**HEAD final:** `8759bb90ab8f8f0cc9ec0bfa4a8747eb102ef83a`
 
 ### P1 visual — Aprobaciones en ficha
 
