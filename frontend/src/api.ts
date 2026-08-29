@@ -1784,7 +1784,10 @@ export async function fetchCentroControlResumen(periodo = "mtd"): Promise<Centro
 
 export type CicloAprendizajeItem = {
   id: string;
+  organization_id?: string;
   opportunity_id: string;
+  work_plan_id?: string | null;
+  signal_id?: string | null;
   estado: string;
   impacto_esperado?: number | null;
   valor_esperado?: number | null;
@@ -1799,6 +1802,20 @@ export type CicloAprendizajeItem = {
   prioridad_anterior?: number | null;
   prioridad_propuesta?: number | null;
   explicacion_prioridad?: Record<string, unknown> | null;
+  referencias?: Record<string, unknown> | null;
+  evaluado_at?: string | null;
+  created_at?: string | null;
+};
+
+export type RetroalimentacionItem = {
+  id: string;
+  ciclo_id: string;
+  opportunity_id: string;
+  tipo_explicacion: string;
+  calidad_recomendacion?: string | null;
+  resumen?: string | null;
+  detalle?: string | null;
+  lecciones?: unknown[] | null;
   created_at?: string | null;
 };
 
@@ -1830,7 +1847,10 @@ export async function fetchCiclosAprendizaje(opportunityId?: string): Promise<Ci
   return api(`/api/aprendizaje/ciclos${params}`);
 }
 
-export async function fetchCicloAprendizaje(id: string): Promise<CicloAprendizajeItem & { retroalimentaciones?: unknown[]; recalibraciones?: RecalibracionItem[] }> {
+export async function fetchCicloAprendizaje(id: string): Promise<CicloAprendizajeItem & {
+  retroalimentaciones?: RetroalimentacionItem[];
+  recalibraciones?: RecalibracionItem[];
+}> {
   return api(`/api/aprendizaje/ciclos/${id}`);
 }
 
@@ -1896,8 +1916,26 @@ export type OptimizacionRecomendacion = {
   costo_esperado_total: number;
   impacto_esperado_total: number;
   roi_esperado?: number | null;
+  riesgo_promedio?: number | null;
+  confianza_promedio?: number | null;
+  created_at?: string | null;
   explicacion?: Record<string, unknown> | null;
   conflictos?: string[] | null;
+  aprendizaje_influencia?: Record<string, unknown> | null;
+  ejecucion?: {
+    tipo?: string | null;
+    estado?: string | null;
+    correlation_id?: string | null;
+    execution_reference?: string | null;
+    referencia_externa?: string | null;
+    executed_at?: string | null;
+    executed_by?: string | null;
+    approved_at?: string | null;
+    error?: unknown;
+    idempotent?: boolean;
+    learning_refs?: Array<Record<string, unknown>>;
+    oportunidades?: Array<Record<string, unknown>>;
+  } | null;
   items?: OptimizacionItem[];
 };
 
@@ -1908,6 +1946,11 @@ export type OptimizacionItem = {
   puntuacion_total?: number | null;
   factores?: Record<string, unknown> | null;
   exclusion_razon?: string | null;
+  valor_esperado?: number | null;
+  costo_esperado?: number | null;
+  riesgo?: number | null;
+  confianza?: number | null;
+  aprendizaje?: Record<string, unknown> | null;
 };
 
 export async function fetchOptimizacionRecomendaciones(): Promise<OptimizacionRecomendacion[]> {
@@ -1935,6 +1978,67 @@ export async function aprobarRecomendacionOptimizacion(id: string, justificacion
     method: "POST",
     body: JSON.stringify({ justificacion }),
   });
+}
+
+export async function ejecutarRecomendacionOptimizacion(
+  id: string,
+  tipoEjecucion: "AUTOMATICA" | "HUMANA_EXTERNA" = "AUTOMATICA",
+): Promise<OptimizacionRecomendacion> {
+  return api(`/api/optimizacion/recomendaciones/${id}/ejecutar`, {
+    method: "POST",
+    body: JSON.stringify({ tipo_ejecucion: tipoEjecucion }),
+  });
+}
+
+export async function confirmarEjecucionHumanaOptimizacion(
+  id: string,
+  referenciaExterna: string,
+  notas?: string,
+): Promise<OptimizacionRecomendacion> {
+  return api(`/api/optimizacion/recomendaciones/${id}/confirmar-ejecucion`, {
+    method: "POST",
+    body: JSON.stringify({ referencia_externa: referenciaExterna, notas }),
+  });
+}
+
+export type LlmInferenceLog = {
+  id: string;
+  trace_id: string;
+  employee_id?: string | null;
+  provider?: string | null;
+  model?: string | null;
+  tokens_in?: number | null;
+  tokens_out?: number | null;
+  tokens_total?: number | null;
+  latency_ms?: number | null;
+  cost?: number | null;
+  status: string;
+  error_category?: string | null;
+  error_message?: string | null;
+  fallback_used: boolean;
+  initial_provider?: string | null;
+  fallback_provider?: string | null;
+  created_at?: string | null;
+};
+
+export type LlmModelCatalog = {
+  id: string;
+  provider_type: string;
+  model_id: string;
+  display_name: string;
+  estado: string;
+  capabilities: Record<string, unknown>;
+  context_window?: number | null;
+  priority: number;
+  is_enabled: boolean;
+};
+
+export async function fetchLlmInferenceLogs(limit = 50): Promise<LlmInferenceLog[]> {
+  return api(`/api/llm/inference-logs?limit=${limit}`);
+}
+
+export async function fetchLlmModels(): Promise<LlmModelCatalog[]> {
+  return api("/api/llm/models");
 }
 
 export async function fetchLlmObservability(periodo = "mtd"): Promise<LlmObservabilitySummary> {

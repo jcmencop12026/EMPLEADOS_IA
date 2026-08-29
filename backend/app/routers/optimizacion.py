@@ -64,6 +64,19 @@ class RecalcularInput(BaseModel):
     restricciones: RestriccionesInput | None = None
 
 
+class EjecutarInput(BaseModel):
+    tipo_ejecucion: str = "AUTOMATICA"
+
+
+class ConfirmarEjecucionInput(BaseModel):
+    referencia_externa: str = Field(..., min_length=3)
+    notas: str | None = None
+
+
+class CancelarEjecucionInput(BaseModel):
+    motivo: str = Field(..., min_length=3)
+
+
 def _restricciones_dict(r: RestriccionesInput | None) -> dict | None:
     if not r:
         return None
@@ -234,6 +247,61 @@ def revisar(
 ):
     try:
         rec = svc.marcar_revisada(db, user, rec_id)
+        db.commit()
+        return svc.serializar_recomendacion(rec)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/recomendaciones/{rec_id}/ejecutar")
+def ejecutar(
+    rec_id: str,
+    body: EjecutarInput = EjecutarInput(),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("optimizacion.execute")),
+):
+    try:
+        rec = svc.ejecutar_recomendacion(db, user, rec_id, tipo_ejecucion=body.tipo_ejecucion)
+        db.commit()
+        payload = svc.serializar_recomendacion(rec, svc.listar_items(db, user.organization_id, rec_id))
+        if rec.estado == "FALLIDA":
+            raise HTTPException(status_code=400, detail=payload.get("ejecucion", {}).get("error", {}).get("message", "Ejecución fallida"))
+        return payload
+    except ValueError as exc:
+        db.commit()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/recomendaciones/{rec_id}/confirmar-ejecucion")
+def confirmar_ejecucion(
+    rec_id: str,
+    body: ConfirmarEjecucionInput,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("optimizacion.execute")),
+):
+    try:
+        rec = svc.confirmar_ejecucion_humana(
+            db,
+            user,
+            rec_id,
+            referencia_externa=body.referencia_externa,
+            notas=body.notas,
+        )
+        db.commit()
+        return svc.serializar_recomendacion(rec, svc.listar_items(db, user.organization_id, rec_id))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/recomendaciones/{rec_id}/cancelar-ejecucion")
+def cancelar_ejecucion(
+    rec_id: str,
+    body: CancelarEjecucionInput,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("optimizacion.execute")),
+):
+    try:
+        rec = svc.cancelar_ejecucion(db, user, rec_id, body.motivo)
         db.commit()
         return svc.serializar_recomendacion(rec)
     except ValueError as exc:

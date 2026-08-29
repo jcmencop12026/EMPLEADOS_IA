@@ -19,6 +19,7 @@ from app.optimization_models import (
     OptimizacionConfiguracion,
     OptimizacionItem,
     OptimizacionRecomendacion,
+    TIPOS_EJECUCION,
 )
 from app.valuation_models import OpportunityValuation, OpportunityValuationExpected
 
@@ -674,6 +675,301 @@ def marcar_revisada(db: Session, user: User, recomendacion_id: str) -> Optimizac
     return rec
 
 
+def _trazabilidad(rec: OptimizacionRecomendacion) -> dict[str, Any]:
+    return _json_load(rec.trazabilidad_json) or {}
+
+
+def _guardar_trazabilidad(rec: OptimizacionRecomendacion, data: dict[str, Any]) -> None:
+    rec.trazabilidad_json = _json_dump(data)
+
+
+def _ejecucion_meta(rec: OptimizacionRecomendacion) -> dict[str, Any]:
+    return dict(_trazabilidad(rec).get("ejecucion") or {})
+
+
+def _actualizar_ejecucion_meta(rec: OptimizacionRecomendacion, ejecucion: dict[str, Any]) -> None:
+    data = _trazabilidad(rec)
+    data["ejecucion"] = ejecucion
+    _guardar_trazabilidad(rec, data)
+
+
+def _items_seleccionados(db: Session, org_id: str, recomendacion_id: str) -> list[OptimizacionItem]:
+    return [i for i in listar_items(db, org_id, recomendacion_id) if i.seleccionado]
+
+
+def _serializar_ejecucion(rec: OptimizacionRecomendacion) -> dict[str, Any] | None:
+    ejec = _ejecucion_meta(rec)
+    if not ejec:
+        return None
+    return {
+        "tipo": ejec.get("execution_type"),
+        "estado": ejec.get("execution_status"),
+        "correlation_id": ejec.get("correlation_id"),
+        "execution_reference": ejec.get("execution_reference"),
+        "executed_by": ejec.get("executed_by"),
+        "executed_at": ejec.get("executed_at"),
+        "approved_by": rec.decidida_por,
+        "approved_at": rec.decidida_at.isoformat() if rec.decidida_at else None,
+        "error": ejec.get("error"),
+        "learning_refs": ejec.get("learning_refs"),
+        "oportunidades": ejec.get("oportunidades"),
+        "referencia_externa": ejec.get("referencia_externa"),
+        "idempotent": ejec.get("idempotent"),
+    }
+
+
+def ejecutar_recomendacion(
+    db: Session,
+    user: User,
+    recomendacion_id: str,
+    *,
+    tipo_ejecucion: str = "AUTOMATICA",
+) -> OptimizacionRecomendacion:
+    """Transición APROBADA → EJECUTADA (automática) o pendiente humana explícita."""
+    from app.services import proactive_service as opp_svc
+
+    rec = obtener_recomendacion(db, user.organization_id, recomendacion_id)
+    if not rec:
+        raise ValueError("Recomendación no encontrada")
+    if rec.es_simulacion:
+        raise ValueError("No se ejecutan simulaciones")
+
+    ejec = _ejecucion_meta(rec)
+    if rec.estado == "EJECUTADA":
+        ejec["idempotent"] = True
+        _actualizar_ejecucion_meta(rec, ejec)
+        return rec
+
+    if rec.estado not in ("APROBADA", "FALLIDA"):
+        raise ValueError(f"Estado {rec.estado} no permite ejecución; se requiere APROBADA")
+
+    if tipo_ejecucion not in TIPOS_EJECUCION:
+        raise ValueError(f"Tipo de ejecución no soportado: {tipo_ejecucion}")
+
+    items = _items_seleccionados(db, user.organization_id, recomendacion_id)
+    if not items:
+        raise ValueError("Sin oportunidades seleccionadas para ejecutar")
+
+    correlation_id = ejec.get("correlation_id") or str(uuid.uuid4())
+
+    if tipo_ejecucion == "HUMANA_EXTERNA":
+        learning_refs = [{"opportunity_id": i.opportunity_id, "recomendacion_id": rec.id} for i in items]
+        _actualizar_ejecucion_meta(
+            rec,
+            {
+                "correlation_id": correlation_id,
+                "execution_type": "HUMANA_EXTERNA",
+                "execution_status": "PENDIENTE_EJECUCION_HUMANA",
+                "execution_reference": f"opt-rec:{rec.id}",
+                "learning_refs": learning_refs,
+                "oportunidades": [{"opportunity_id": i.opportunity_id, "orden": i.orden} for i in items],
+                "requested_by": user.id,
+                "requested_at": _utcnow().isoformat(),
+            },
+        )
+        _registrar_auditoria(
+            db,
+            org_id=user.organization_id,
+            accion="recomendacion.pendiente_ejecucion_humana",
+            actor_id=user.id,
+            recomendacion_id=rec.id,
+            detalle={"correlation_id": correlation_id, "tipo": tipo_ejecucion},
+        )
+        return rec
+
+    if not rec.factible:
+        raise ValueError("Recomendación no factible; no puede ejecutarse automáticamente")
+
+    resultados: list[dict[str, Any]] = []
+    try:
+        for item in sorted(items, key=lambda i: (i.orden is None, i.orden or 0)):
+            opp = (
+                db.query(Opportunity)
+                .filter(Opportunity.id == item.opportunity_id, Opportunity.organization_id == user.organization_id)
+                .first()
+            )
+            if not opp:
+                raise ValueError(f"Oportunidad {item.opportunity_id} no encontrada")
+            if opp.estado in ("DESCARTADA", "NO_PERTINENTE", "CERRADA", "MATERIALIZADA"):
+                raise ValueError(f"Oportunidad {opp.codigo} no es ejecutable (estado {opp.estado})")
+            if opp.estado == "PENDIENTE_APROBACION":
+                opp_svc.approve_opportunity(
+                    db,
+                    opp,
+                    user_id=user.id,
+                    aprobado=True,
+                    motivo=f"Aprobación automática por recomendación {rec.codigo}",
+                )
+            elif opp.estado in ("PRIORIZADA", "PROPUESTA"):
+                opp_svc.approve_opportunity(
+                    db,
+                    opp,
+                    user_id=user.id,
+                    aprobado=True,
+                    motivo=f"Aprobación automática por recomendación {rec.codigo}",
+                )
+            activacion = opp_svc.activate_opportunity(db, opp, user_id=user.id, auto_execute=False)
+            resultados.append(
+                {
+                    "opportunity_id": opp.id,
+                    "codigo": opp.codigo,
+                    "work_plan_id": activacion.get("work_plan_id"),
+                    "estado_oportunidad": opp.estado,
+                    "idempotent": bool(activacion.get("idempotent")),
+                }
+            )
+    except Exception as exc:
+        rec.estado = "FALLIDA"
+        _actualizar_ejecucion_meta(
+            rec,
+            {
+                "correlation_id": correlation_id,
+                "execution_type": "AUTOMATICA",
+                "execution_status": "FALLIDA",
+                "executed_by": user.id,
+                "executed_at": _utcnow().isoformat(),
+                "error": {"message": str(exc), "categoria": "EJECUCION"},
+                "oportunidades_parciales": resultados,
+            },
+        )
+        _registrar_auditoria(
+            db,
+            org_id=user.organization_id,
+            accion="recomendacion.ejecucion_fallida",
+            actor_id=user.id,
+            recomendacion_id=rec.id,
+            detalle={"correlation_id": correlation_id, "error": str(exc), "parciales": resultados},
+        )
+        raise ValueError(str(exc)) from exc
+
+    execution_reference = f"opt-rec:{rec.id}"
+    learning_refs = [
+        {
+            "opportunity_id": r["opportunity_id"],
+            "work_plan_id": r.get("work_plan_id"),
+            "recomendacion_id": rec.id,
+        }
+        for r in resultados
+    ]
+    resultado_prev = _json_load(rec.resultado_json) or {}
+    resultado_prev["ejecucion"] = {
+        "tipo": "EJECUCION_AUTOMATICA",
+        "correlation_id": correlation_id,
+        "execution_reference": execution_reference,
+        "oportunidades": resultados,
+        "learning_refs": learning_refs,
+        "executed_at": _utcnow().isoformat(),
+    }
+    rec.resultado_json = _json_dump(resultado_prev)
+    rec.estado = "EJECUTADA"
+    _actualizar_ejecucion_meta(
+        rec,
+        {
+            "correlation_id": correlation_id,
+            "execution_type": "AUTOMATICA",
+            "execution_status": "EJECUTADA",
+            "execution_reference": execution_reference,
+            "executed_by": user.id,
+            "executed_at": _utcnow().isoformat(),
+            "learning_refs": learning_refs,
+            "oportunidades": resultados,
+        },
+    )
+    _registrar_auditoria(
+        db,
+        org_id=user.organization_id,
+        accion="recomendacion.ejecutada",
+        actor_id=user.id,
+        recomendacion_id=rec.id,
+        detalle={"correlation_id": correlation_id, "execution_reference": execution_reference},
+    )
+    return rec
+
+
+def confirmar_ejecucion_humana(
+    db: Session,
+    user: User,
+    recomendacion_id: str,
+    *,
+    referencia_externa: str,
+    notas: str | None = None,
+) -> OptimizacionRecomendacion:
+    rec = obtener_recomendacion(db, user.organization_id, recomendacion_id)
+    if not rec:
+        raise ValueError("Recomendación no encontrada")
+    ejec = _ejecucion_meta(rec)
+    if rec.estado == "EJECUTADA" and ejec.get("execution_type") == "HUMANA_EXTERNA":
+        ejec["idempotent"] = True
+        _actualizar_ejecucion_meta(rec, ejec)
+        return rec
+    if rec.estado != "APROBADA":
+        raise ValueError("Solo recomendaciones aprobadas pendientes de ejecución humana pueden confirmarse")
+    if ejec.get("execution_status") != "PENDIENTE_EJECUCION_HUMANA":
+        raise ValueError("La recomendación no está pendiente de ejecución humana")
+
+    correlation_id = ejec.get("correlation_id") or str(uuid.uuid4())
+    execution_reference = f"opt-rec:{rec.id}:humana"
+    learning_refs = ejec.get("learning_refs") or []
+    resultado_prev = _json_load(rec.resultado_json) or {}
+    resultado_prev["ejecucion"] = {
+        "tipo": "EJECUCION_HUMANA_EXTERNA",
+        "correlation_id": correlation_id,
+        "execution_reference": execution_reference,
+        "referencia_externa": referencia_externa,
+        "notas": notas,
+        "learning_refs": learning_refs,
+        "executed_at": _utcnow().isoformat(),
+    }
+    rec.resultado_json = _json_dump(resultado_prev)
+    rec.estado = "EJECUTADA"
+    _actualizar_ejecucion_meta(
+        rec,
+        {
+            **ejec,
+            "correlation_id": correlation_id,
+            "execution_type": "HUMANA_EXTERNA",
+            "execution_status": "EJECUTADA",
+            "execution_reference": execution_reference,
+            "referencia_externa": referencia_externa,
+            "executed_by": user.id,
+            "executed_at": _utcnow().isoformat(),
+            "notas": notas,
+        },
+    )
+    _registrar_auditoria(
+        db,
+        org_id=user.organization_id,
+        accion="recomendacion.ejecutada_humana",
+        actor_id=user.id,
+        recomendacion_id=rec.id,
+        detalle={"correlation_id": correlation_id, "referencia_externa": referencia_externa},
+    )
+    return rec
+
+
+def cancelar_ejecucion(db: Session, user: User, recomendacion_id: str, motivo: str) -> OptimizacionRecomendacion:
+    rec = obtener_recomendacion(db, user.organization_id, recomendacion_id)
+    if not rec:
+        raise ValueError("Recomendación no encontrada")
+    if rec.estado in ("EJECUTADA", "RECHAZADA"):
+        raise ValueError(f"No se puede cancelar desde estado {rec.estado}")
+    ejec = _ejecucion_meta(rec)
+    ejec["execution_status"] = "CANCELADA"
+    ejec["cancelled_by"] = user.id
+    ejec["cancelled_at"] = _utcnow().isoformat()
+    ejec["motivo_cancelacion"] = motivo
+    _actualizar_ejecucion_meta(rec, ejec)
+    _registrar_auditoria(
+        db,
+        org_id=user.organization_id,
+        accion="recomendacion.ejecucion_cancelada",
+        actor_id=user.id,
+        recomendacion_id=rec.id,
+        detalle={"motivo": motivo},
+    )
+    return rec
+
+
 def obtener_recomendacion(db: Session, org_id: str, rec_id: str) -> OptimizacionRecomendacion | None:
     return (
         db.query(OptimizacionRecomendacion)
@@ -728,6 +1024,7 @@ def serializar_recomendacion(rec: OptimizacionRecomendacion, items: list[Optimiz
         "tiempo_esperado_total": _float(rec.tiempo_esperado_total) if rec.tiempo_esperado_total else 0,
         "version": rec.version,
         "created_at": rec.created_at.isoformat() if rec.created_at else None,
+        "ejecucion": _serializar_ejecucion(rec),
         "items": [serializar_item(i) for i in items] if items is not None else None,
     }
 
