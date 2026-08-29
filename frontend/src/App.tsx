@@ -40,6 +40,7 @@ import { ContinuidadPage } from "./pages/ContinuidadPage";
 import { IntegracionesPage } from "./pages/IntegracionesPage";
 import { IntegracionWizardPage } from "./pages/IntegracionWizardPage";
 import { IntegracionDetailPage } from "./pages/IntegracionDetailPage";
+import { IntegracionTrazabilidadPage } from "./pages/IntegracionTrazabilidadPage";
 import { AprendizajePage } from "./pages/AprendizajePage";
 import { AprendizajeDetailPage } from "./pages/AprendizajeDetailPage";
 import { OptimizacionPage } from "./pages/OptimizacionPage";
@@ -116,6 +117,7 @@ export default function App() {
           <Route path="continuidad" element={<ContinuidadPage />} />
           <Route path="integraciones" element={<IntegracionesPage />} />
           <Route path="integraciones/nueva" element={<IntegracionWizardPage />} />
+          <Route path="integraciones/trazabilidad" element={<IntegracionTrazabilidadPage />} />
           <Route path="integraciones/:connectorId" element={<IntegracionDetailPage />} />
           <Route path="aprendizaje" element={<AprendizajePage />} />
           <Route path="aprendizaje/:cicloId" element={<AprendizajeDetailPage />} />

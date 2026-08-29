@@ -25,6 +25,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/continuidad": ["continuidad.view"],
   "/integraciones": ["integraciones.view"],
   "/integraciones/nueva": ["integraciones.create"],
+  "/integraciones/trazabilidad": ["integraciones.view"],
   "/aprendizaje": ["aprendizaje.view"],
   "/optimizacion": ["optimizacion.view"],
   "/costos-valor": ["finops.view"],
