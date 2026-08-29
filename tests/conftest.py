@@ -29,6 +29,10 @@ from app import baseline_models  # noqa: F401, E402
 from app import valuation_models  # noqa: F401, E402
 from app import diagnostic_models  # noqa: F401, E402
 from app import external_models  # noqa: F401, E402
+from app import commercial_models  # noqa: F401, E402
+from app import tco_models  # noqa: F401, E402
+from app import implementacion_models  # noqa: F401, E402
+from app import segmentation_models  # noqa: F401, E402
 from app import llm_models  # noqa: F401, E402
 from app.database import Base, SessionLocal, engine, get_db  # noqa: E402
 from app.main import app  # noqa: E402
