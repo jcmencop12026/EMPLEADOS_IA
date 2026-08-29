@@ -133,6 +133,15 @@ OPORTUNIDADES_PERMISSIONS = {
     "oportunidades.activate",
 }
 
+INTEGRATION_PERMISSIONS = {
+    "integraciones.view",
+    "integraciones.create",
+    "integraciones.configure",
+    "integraciones.test",
+    "integraciones.execute",
+    "integraciones.manage_secrets",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -211,6 +220,12 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "oportunidades.evaluate": ("Oportunidades", "Evaluar y priorizar oportunidades"),
     "oportunidades.approve": ("Oportunidades", "Aprobar oportunidades"),
     "oportunidades.activate": ("Oportunidades", "Activar oportunidades"),
+    "integraciones.view": ("Integraciones", "Consultar conectores e historial"),
+    "integraciones.create": ("Integraciones", "Crear conectores"),
+    "integraciones.configure": ("Integraciones", "Configurar conectores y mapeos"),
+    "integraciones.test": ("Integraciones", "Probar conexión de conectores"),
+    "integraciones.execute": ("Integraciones", "Ejecutar conectores"),
+    "integraciones.manage_secrets": ("Integraciones", "Gestionar referencias de credenciales"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -237,6 +252,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | LLM_PERMISSIONS
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
+        | INTEGRATION_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -253,6 +269,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | LLM_PERMISSIONS
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
+        | INTEGRATION_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -302,6 +319,11 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "oportunidades.evaluate",
         "oportunidades.approve",
         "oportunidades.activate",
+        "integraciones.view",
+        "integraciones.create",
+        "integraciones.configure",
+        "integraciones.test",
+        "integraciones.execute",
     },
     "viewer": {
         "employee.view",
@@ -319,6 +341,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "finops.view",
         "salud.consultar_diagnostico",
         "oportunidades.view",
+        "integraciones.view",
     },
 }
 
