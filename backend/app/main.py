@@ -25,6 +25,7 @@ from app import security_models  # noqa: F401 — seguridad avanzada 1300
 from app import identity_models  # noqa: F401 — identidad empresarial 1370
 from app import scim_models  # noqa: F401 — SCIM 1380
 from app import employee_audit_models  # noqa: F401 — auditor empleados MVP
+from app import consumption_planner_models  # noqa: F401 — planificador MB-07
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
