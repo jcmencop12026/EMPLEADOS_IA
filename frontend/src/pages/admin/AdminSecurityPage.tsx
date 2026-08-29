@@ -28,7 +28,7 @@ export function AdminSecurityPage() {
     <div className="ops-page">
       <header className="page-header">
         <h1>Seguridad</h1>
-        <p className="muted">Resumen administrativo del tenant</p>
+        <p className="muted">Resumen administrativo de la organización</p>
       </header>
       <div className="dashboard-grid">
         <div className="panel dashboard-card"><span className="dashboard-card-value">{data.users_active}</span><span className="dashboard-card-label">Usuarios activos</span></div>

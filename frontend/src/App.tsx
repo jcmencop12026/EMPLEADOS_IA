@@ -31,7 +31,6 @@ import { AprendizajePage } from "./pages/AprendizajePage";
 import { AprendizajeDetailPage } from "./pages/AprendizajeDetailPage";
 import { OptimizacionPage } from "./pages/OptimizacionPage";
 import { OptimizacionDetailPage } from "./pages/OptimizacionDetailPage";
-import { DashboardPage } from "./pages/DashboardPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
