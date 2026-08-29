@@ -51,7 +51,7 @@ export function AdminOrganizationPage() {
     <div className="ops-page">
       <header className="page-header">
         <h1>Organización</h1>
-        <p className="muted">Datos del tenant actual</p>
+        <p className="muted">Datos de la organización actual</p>
       </header>
       <form className="panel" onSubmit={save}>
         <table className="data-table">

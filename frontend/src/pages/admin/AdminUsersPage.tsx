@@ -63,7 +63,7 @@ export function AdminUsersPage() {
     <div className="ops-page">
       <header className="page-header">
         <h1>Usuarios</h1>
-        <p className="muted">Administración de usuarios del tenant</p>
+        <p className="muted">Administración de usuarios de la organización</p>
       </header>
       <div className="ops-actions">
         <button type="button" className="btn primary" onClick={() => setShowForm((v) => !v)}>+ Crear usuario</button>

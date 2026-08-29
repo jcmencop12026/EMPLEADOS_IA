@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ContinuidadTablero } from "../api";
 import { fetchContinuidadTablero } from "../api";
+import { formatContinuityEvent } from "../lib/uiTerms";
 
 type TabId =
   | "tablero"
@@ -77,7 +78,7 @@ export function ContinuidadPage() {
                 <dl className="kv-list">
                   <dt>Incidentes abiertos</dt>
                   <dd>{data.incidentes_abiertos}</dd>
-                  <dt>Backups fallidos</dt>
+                  <dt>Respaldos fallidos</dt>
                   <dd>{data.backups_fallidos}</dd>
                   <dt>Restauraciones verificadas</dt>
                   <dd>{data.restauraciones_verificadas}</dd>
@@ -93,7 +94,7 @@ export function ContinuidadPage() {
                   <ul>
                     {data.alertas.map((a, i) => (
                       <li key={`${a.tipo}-${i}`}>
-                        <strong>{a.tipo}</strong>: {a.mensaje}
+                        <strong>{formatContinuityEvent(a.tipo)}</strong>: {a.mensaje}
                       </li>
                     ))}
                   </ul>
