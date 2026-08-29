@@ -19,6 +19,7 @@ from app.services import control_center_adapters as adapters
 from app.services import finops_service, operations_center, proactive_service
 
 EXECUTIVE_INDICATOR_DEFS = [
+    {"id": "organizations_active", "label": "Organizaciones activas", "permiso": "platform.organization.view", "enlace": "/administracion/organizaciones"},
     {"id": "employees_active", "label": "Empleados IA activos", "permiso": "employee.view", "enlace": "/directorio"},
     {"id": "plans_active", "label": "Planes activos", "permiso": "operations.view", "enlace": "/operaciones"},
     {"id": "executions_running", "label": "Ejecuciones en curso", "permiso": "operations.view", "enlace": "/ejecuciones"},
@@ -26,15 +27,53 @@ EXECUTIVE_INDICATOR_DEFS = [
     {"id": "automations_active", "label": "Automatizaciones activas", "permiso": "automation.view", "enlace": "/automatizaciones"},
     {"id": "notifications_unread", "label": "Notificaciones sin leer", "permiso": "notification.view", "enlace": "/notificaciones"},
     {"id": "opportunities_open", "label": "Oportunidades abiertas", "permiso": "oportunidades.view", "enlace": "/oportunidades"},
-    {"id": "expected_value", "label": "Valor potencial", "permiso": "oportunidades.view", "enlace": "/oportunidades"},
+    {"id": "verified_value", "label": "Valor verificado", "permiso": "valoracion.view", "enlace": "/costos-valor"},
+    {"id": "estimated_value", "label": "Valor estimado", "permiso": "valoracion.view", "enlace": "/costos-valor"},
+    {"id": "potential_value", "label": "Valor potencial", "permiso": "oportunidades.view", "enlace": "/oportunidades"},
+    {"id": "realized_value", "label": "Valor realizado", "permiso": "valoracion.view", "enlace": "/costos-valor"},
     {"id": "materialized_value", "label": "Valor materializado", "permiso": "oportunidades.view", "enlace": "/oportunidades"},
     {"id": "ai_consumption", "label": "Consumo IA (periodo)", "permiso": "finops.view", "enlace": "/costos-valor"},
     {"id": "ai_cost", "label": "Costo IA (periodo)", "permiso": "finops.view", "enlace": "/costos-valor"},
+    {"id": "tco_total", "label": "TCO mensual", "permiso": "tco.view", "enlace": "/tco"},
+    {"id": "implementations_active", "label": "Implementaciones activas", "permiso": "implementacion.view", "enlace": "/implementacion"},
+    {"id": "milestones_at_risk", "label": "Hitos en riesgo", "permiso": "implementacion.view", "enlace": "/implementacion"},
     {"id": "failed_executions", "label": "Ejecuciones fallidas", "permiso": "operations.view", "enlace": "/ejecuciones"},
     {"id": "external_sources_active", "label": "Fuentes externas activas", "permiso": "inteligencia_externa.view", "enlace": "/inteligencia-externa"},
     {"id": "external_signals_pending", "label": "Señales externas pendientes", "permiso": "inteligencia_externa.view", "enlace": "/inteligencia-externa"},
     {"id": "external_risks_open", "label": "Riesgos externos abiertos", "permiso": "inteligencia_externa.view", "enlace": "/inteligencia-externa"},
 ]
+
+SEMANTICA_CONTRATO = {
+    "HECHO": "Dato observado o verificado en fuente primaria",
+    "INFERENCIA": "Derivado de cálculo, estimación o correlación — no es hecho demostrado",
+    "RECOMENDACION": "Acción sugerida — requiere decisión humana",
+    "SIN_CLASIFICAR": "Sin clasificación semántica disponible",
+    "valor": adapters.SEMANTICA_VALOR,
+}
+
+INTEGRACIONES_FUTURAS = {
+    "1100": "Integrado — estados operativos oportunidades",
+    "1110": "Integrado — FinOps extendido",
+    "1120": "Integrado — señales e ingesta",
+    "1200": "Integrado — línea base e impacto",
+    "1210": "Integrado — valoración y retorno",
+    "1220": "Integrado — diagnóstico transversal",
+    "1240": "Integrado — inteligencia externa",
+    "1260": "Integrado — aprendizaje",
+    "1270": "Integrado — multiproveedor IA",
+    "1280": "Integrado — comercial y valor",
+    "1290": "Integrado — optimización",
+    "1320": "Integrado — TCO",
+    "1340": "Integrado — implementación",
+    "MB-07": "Pendiente — Planificador nuevo",
+    "MB-11": "Pendiente — Comunicaciones",
+    "MB-12": "Pendiente — Mesa de Ayuda",
+    "AUDITOR": "Pendiente — Auditor",
+    "FABRICA": "Pendiente — Fábrica",
+    "CONOCIMIENTO_930": "Pendiente — Conocimiento",
+    "MI_TRABAJO": "Pendiente — Mi Trabajo Tramo 5",
+    "INTEGRACIONES_T5": "Pendiente — Integraciones visuales Tramo 5",
+}
 
 
 def _utcnow() -> datetime:
@@ -680,7 +719,20 @@ def get_executive_summary(
     opp_summary = proactive_service.business_summary(db, org_id) if _has(permissions, "oportunidades.view") else None
     finops = _finops_section(db, org_id, period_start=period_start) if _has(permissions, "finops.view") else None
 
+    organizations_active = None
+    if _has(permissions, "platform.organization.view"):
+        from app.models import Organization
+        from app.tenant_scope import ORG_STATUS_INACTIVE
+
+        organizations_active = (
+            db.query(func.count(Organization.id))
+            .filter(Organization.status != ORG_STATUS_INACTIVE)
+            .scalar()
+            or 0
+        )
+
     ctx = {
+        "organizations_active": organizations_active,
         "employees_active": employees["activos"] if employees else None,
         "plans_active": (ops_summary or {}).get("running", 0) + (ops_summary or {}).get("pending", 0) if ops_summary else None,
         "executions_running": (ops_summary or {}).get("running") if ops_summary else None,
@@ -693,10 +745,16 @@ def get_executive_summary(
         "automations_active": automations_active,
         "notifications_unread": notifications_unread,
         "opportunities_open": opp_summary.get("oportunidades_detectadas") if opp_summary else None,
-        "expected_value": opp_summary.get("valor_potencial_total") if opp_summary else None,
+        "potential_value": opp_summary.get("valor_potencial_total") if opp_summary else None,
         "materialized_value": opp_summary.get("valor_materializado_total") if opp_summary else None,
+        "verified_value": None,
+        "estimated_value": None,
+        "realized_value": None,
         "ai_consumption": finops["dashboard"].get("execution_count") if finops else None,
         "ai_cost": finops["dashboard"].get("total_cost_label") if finops else None,
+        "tco_total": None,
+        "implementations_active": None,
+        "milestones_at_risk": None,
         "failed_executions": (ops_summary or {}).get("error") if ops_summary else None,
     }
 
@@ -726,10 +784,16 @@ def get_executive_summary(
         adapters.ImpactoAdapter(),
         adapters.FinOpsExtendidoAdapter(),
         adapters.ValorRetornoAdapter(),
+        adapters.ComercialResumenAdapter(),
         adapters.DiagnosticoAdapter(),
         adapters.DiagnosticoExplicacionAdapter(),
         adapters.SenalesAdapter(),
         adapters.InteligenciaExternaAdapter(),
+        adapters.AprendizajeAdapter(),
+        adapters.OptimizacionAdapter(),
+        adapters.TcoAdapter(),
+        adapters.ImplementacionAdapter(),
+        adapters.MultiproveedorAdapter(),
     ]
     modulos = _fetch_module_adapters(
         db,
@@ -746,6 +810,42 @@ def get_executive_summary(
     ctx["external_signals_pending"] = ie_mod.get("sin_validar") if ie_mod.get("disponible") else None
     ctx["external_risks_open"] = ie_mod.get("riesgos_abiertos") if ie_mod.get("disponible") else None
 
+    vr_mod = modulos.get("valor_retorno") or {}
+    com_mod = modulos.get("comercial") or {}
+    if vr_mod.get("disponible"):
+        ctx["verified_value"] = vr_mod.get("valor_verificado")
+        ctx["estimated_value"] = vr_mod.get("valor_estimado")
+        ctx["realized_value"] = vr_mod.get("valor_realizado")
+        if ctx["potential_value"] is None:
+            ctx["potential_value"] = vr_mod.get("valor_potencial")
+    elif com_mod.get("disponible"):
+        ctx["verified_value"] = com_mod.get("valor_verificado")
+        ctx["estimated_value"] = com_mod.get("valor_estimado")
+        ctx["realized_value"] = com_mod.get("valor_realizado")
+        if ctx["potential_value"] is None:
+            ctx["potential_value"] = com_mod.get("valor_potencial")
+
+    tco_mod = modulos.get("tco") or {}
+    if tco_mod.get("disponible"):
+        ctx["tco_total"] = tco_mod.get("inversion_total")
+
+    impl_mod = modulos.get("implementacion") or {}
+    if impl_mod.get("disponible"):
+        ctx["implementations_active"] = impl_mod.get("proyectos_activos")
+        ctx["milestones_at_risk"] = impl_mod.get("hitos_en_riesgo")
+
+    valor_consolidado = {
+        "verificado": ctx.get("verified_value"),
+        "estimado": ctx.get("estimated_value"),
+        "potencial": ctx.get("potential_value"),
+        "realizado": ctx.get("realized_value"),
+        "materializado": ctx.get("materialized_value"),
+        "roi_porcentaje": vr_mod.get("retorno_porcentaje") if vr_mod.get("disponible") else None,
+        "payback_meses": com_mod.get("payback_promedio_meses") if com_mod.get("disponible") else None,
+        "nota_potencial": adapters.SEMANTICA_VALOR["nota_potencial"],
+        "semantica": adapters.SEMANTICA_VALOR,
+    }
+
     return {
         "generated_at": _utcnow().isoformat(),
         "organization_id": org_id,
@@ -755,35 +855,45 @@ def get_executive_summary(
             "proceso": proceso,
             "estado": estado,
         },
+        "semantica": SEMANTICA_CONTRATO,
+        "secciones": [
+            {"id": "resumen", "label": "Resumen"},
+            {"id": "valor", "label": "Valor"},
+            {"id": "operacion", "label": "Operación"},
+            {"id": "ia_costos", "label": "IA y costos"},
+            {"id": "implementacion", "label": "Implementación"},
+            {"id": "salud", "label": "Salud"},
+        ],
         "resumen_ejecutivo": {
             "indicadores": _build_indicators(ctx, permissions),
             "operaciones": ops_summary,
+            "valor": valor_consolidado,
         },
         "atencion_requerida": _atencion_requerida(db, org_id, permissions) if _has(permissions, "control_center.view") else [],
         "empleados_ia": employees,
         "oportunidades": modulos.get("oportunidades"),
+        "linea_base": modulos.get("impacto"),
         "impacto": modulos.get("impacto"),
         "finops": finops,
         "finops_extendido": modulos.get("finops_extendido"),
         "valor_retorno": modulos.get("valor_retorno"),
+        "comercial": modulos.get("comercial"),
+        "valor_consolidado": valor_consolidado,
         "diagnostico": modulos.get("diagnostico"),
         "explicacion": modulos.get("explicacion"),
         "senales": modulos.get("senales"),
         "inteligencia_externa": modulos.get("inteligencia_externa"),
+        "aprendizaje": modulos.get("aprendizaje"),
+        "optimizacion": modulos.get("optimizacion"),
+        "tco": modulos.get("tco"),
+        "implementacion": modulos.get("implementacion"),
+        "multiproveedor": modulos.get("multiproveedor"),
         "cadena_ejecutiva": _cadena_ejecutiva(db, org_id, permissions, period_start=period_start),
         "salud_plataforma": build_health_report(include_schedulers=True) if _has(permissions, "control_center.view") else None,
         "auditoria_reciente": _audit_section(db, org_id) if _has(permissions, "audit.view") else None,
         "llm": _llm_section(db, org_id) if _has(permissions, "llm.view") else None,
         "actividad_reciente": recent_events,
-        "integraciones_futuras": {
-            "1100": "Integrado — estados operativos oportunidades",
-            "1110": "Integrado — FinOps extendido",
-            "1120": "Integrado — señales e ingesta",
-            "1200": "Integrado — línea base e impacto",
-            "1210": "Integrado — valoración y retorno",
-            "1220": "Integrado — diagnóstico transversal",
-            "1240": "Integrado — inteligencia externa",
-        },
+        "integraciones_futuras": INTEGRACIONES_FUTURAS,
     }
 
 

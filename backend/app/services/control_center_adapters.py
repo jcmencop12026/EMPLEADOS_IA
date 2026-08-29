@@ -43,6 +43,37 @@ def _period_filter(query, column, period_start: datetime | None):
     return query
 
 
+SEMANTICA_VALOR = {
+    "VERIFICADO": "HECHO",
+    "ESTIMADO": "INFERENCIA",
+    "POTENCIAL": "INFERENCIA",
+    "RECOMENDACION": "RECOMENDACION",
+    "SIN_CLASIFICAR": "SIN_CLASIFICAR",
+    "nota_potencial": "POTENCIAL no se suma al valor realizado ni entra en ROI/payback realizado",
+}
+
+
+def _sum_valor_por_naturaleza(rows: list[tuple[str | None, Any]]) -> dict[str, float | None]:
+    buckets = {"VERIFICADO": 0.0, "ESTIMADO": 0.0, "POTENCIAL": 0.0}
+    for nature, total in rows:
+        key = (nature or "ESTIMADO").upper()
+        if key not in buckets:
+            key = "ESTIMADO"
+        buckets[key] += float(total or 0)
+    verificado = buckets["VERIFICADO"] or None
+    estimado = buckets["ESTIMADO"] or None
+    potencial = buckets["POTENCIAL"] or None
+    realizado = None
+    if verificado is not None or estimado is not None:
+        realizado = (verificado or 0.0) + (estimado or 0.0)
+    return {
+        "valor_verificado": verificado,
+        "valor_estimado": estimado,
+        "valor_potencial": potencial,
+        "valor_realizado": realizado if realizado else None,
+    }
+
+
 class OportunidadesAdapter:
     """Bloque 1100 — estados operativos de cierre."""
 
@@ -357,6 +388,21 @@ class ValorRetornoAdapter:
             real_q = real_q.filter(OpportunityValuationReal.created_at >= period_start)
         mat_sum, attr_sum = real_q.one()
 
+        nature_rows = (
+            db.query(
+                OpportunityValuationReal.value_nature,
+                func.sum(OpportunityValuationReal.attributable_value),
+            )
+            .join(OpportunityValuation, OpportunityValuationReal.valuation_id == OpportunityValuation.id)
+            .filter(
+                OpportunityValuation.organization_id == organization_id,
+                OpportunityValuationReal.is_current.is_(True),
+            )
+            .group_by(OpportunityValuationReal.value_nature)
+            .all()
+        )
+        valor_clasificado = _sum_valor_por_naturaleza(nature_rows)
+
         cost_q = (
             db.query(func.sum(OpportunityExecutionCost.amount))
             .join(OpportunityValuation, OpportunityExecutionCost.valuation_id == OpportunityValuation.id)
@@ -386,10 +432,15 @@ class ValorRetornoAdapter:
             "valor_esperado": valor_esperado_f,
             "valor_materializado": valor_materializado_f,
             "valor_atribuible": valor_atribuible_f,
+            "valor_verificado": valor_clasificado["valor_verificado"],
+            "valor_estimado": valor_clasificado["valor_estimado"],
+            "valor_potencial": valor_clasificado["valor_potencial"],
+            "valor_realizado": valor_clasificado["valor_realizado"],
             "costo": costo_f,
             "beneficio_neto": beneficio_neto,
             "retorno_porcentaje": retorno,
             "periodo_recuperacion": None,
+            "semantica": SEMANTICA_VALOR,
             "enlace": "/costos-valor",
         }
 
@@ -715,4 +766,437 @@ class InteligenciaExternaAdapter:
             "por_clasificacion": por_clasificacion,
             "recientes": recientes,
             "enlace": "/inteligencia-externa",
+        }
+
+
+class ComercialResumenAdapter:
+    """Bloque 1280 — valor comercial por naturaleza (VERIFICADO/ESTIMADO/POTENCIAL)."""
+
+    modulo = "comercial"
+    bloque = "1280"
+
+    def fetch(
+        self,
+        db: Session,
+        organization_id: str,
+        *,
+        permissions: set[str],
+        period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
+    ) -> dict[str, Any]:
+        if "comercial.view" not in permissions:
+            return {**_no_disponible(self.modulo, self.bloque, "Requiere comercial.view"), "restringido": True}
+        from app.commercial_enums import ValueNature
+        from app.commercial_models import CommercialProposal, CommercialProposalValue
+
+        prop_q = db.query(CommercialProposal).filter(CommercialProposal.organization_id == organization_id)
+        if period_start:
+            prop_q = prop_q.filter(CommercialProposal.updated_at >= period_start)
+        propuestas = prop_q.all()
+        if not propuestas:
+            return {
+                **_no_disponible(self.modulo, self.bloque, "Sin propuestas comerciales"),
+                "modulo": self.modulo,
+                "bloque": self.bloque,
+                "enlace": "/comercial",
+            }
+
+        prop_ids = [p.id for p in propuestas]
+        nature_rows = (
+            db.query(
+                CommercialProposalValue.naturaleza,
+                func.sum(CommercialProposalValue.valor_atribuible),
+            )
+            .filter(CommercialProposalValue.proposal_id.in_(prop_ids))
+            .group_by(CommercialProposalValue.naturaleza)
+            .all()
+        )
+        valor = _sum_valor_por_naturaleza(nature_rows)
+
+        por_estado = dict(
+            db.query(CommercialProposal.estado, func.count())
+            .filter(CommercialProposal.organization_id == organization_id)
+            .group_by(CommercialProposal.estado)
+            .all()
+        )
+
+        roi_vals = [float(p.roi_pct) for p in propuestas if p.roi_pct is not None]
+        payback_vals = [float(p.payback_meses) for p in propuestas if p.payback_meses is not None]
+        margen_vals = [float(p.margen_pct) for p in propuestas if p.margen_pct is not None]
+
+        result: dict[str, Any] = {
+            "disponible": True,
+            "estado": "Integrado con módulo 1280",
+            "modulo": self.modulo,
+            "bloque": self.bloque,
+            "propuestas_total": len(propuestas),
+            "por_estado": por_estado,
+            "valor_verificado": valor["valor_verificado"],
+            "valor_estimado": valor["valor_estimado"],
+            "valor_potencial": valor["valor_potencial"],
+            "valor_realizado": valor["valor_realizado"],
+            "roi_promedio": round(sum(roi_vals) / len(roi_vals), 2) if roi_vals else None,
+            "payback_promedio_meses": round(sum(payback_vals) / len(payback_vals), 2) if payback_vals else None,
+            "semantica": SEMANTICA_VALOR,
+            "enlace": "/comercial",
+        }
+        if "comercial.approve" in permissions and margen_vals:
+            result["margen_promedio_pct"] = round(sum(margen_vals) / len(margen_vals), 2)
+        else:
+            result["margen_promedio_pct"] = None
+            result["margen_restringido"] = True
+        return result
+
+
+class AprendizajeAdapter:
+    """Bloque 1260 — ciclos, patrones y recalibraciones."""
+
+    modulo = "aprendizaje"
+    bloque = "1260"
+
+    def fetch(
+        self,
+        db: Session,
+        organization_id: str,
+        *,
+        permissions: set[str],
+        period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
+    ) -> dict[str, Any]:
+        if "aprendizaje.view" not in permissions:
+            return {**_no_disponible(self.modulo, self.bloque, "Requiere aprendizaje.view"), "restringido": True}
+        from app.learning_models import CicloAprendizaje, PatronAprendizaje, Recalibracion
+        from app.services import learning_service as lsvc
+
+        ciclo_q = db.query(CicloAprendizaje).filter(CicloAprendizaje.organization_id == organization_id)
+        if period_start:
+            ciclo_q = ciclo_q.filter(CicloAprendizaje.created_at >= period_start)
+        ciclos = ciclo_q.count()
+        if ciclos == 0:
+            patrones = db.query(func.count(PatronAprendizaje.id)).filter(
+                PatronAprendizaje.organization_id == organization_id
+            ).scalar() or 0
+            if patrones == 0:
+                return {
+                    **_no_disponible(self.modulo, self.bloque, "Sin ciclos de aprendizaje"),
+                    "modulo": self.modulo,
+                    "bloque": self.bloque,
+                    "enlace": "/aprendizaje",
+                }
+
+        por_estado = dict(
+            db.query(CicloAprendizaje.estado, func.count())
+            .filter(CicloAprendizaje.organization_id == organization_id)
+            .group_by(CicloAprendizaje.estado)
+            .all()
+        )
+        patrones_total = (
+            db.query(func.count(PatronAprendizaje.id))
+            .filter(PatronAprendizaje.organization_id == organization_id)
+            .scalar()
+            or 0
+        )
+        recal_pendientes = (
+            db.query(func.count(Recalibracion.id))
+            .filter(
+                Recalibracion.organization_id == organization_id,
+                Recalibracion.estado == "SUGERIDA",
+            )
+            .scalar()
+            or 0
+        )
+        recientes = [
+            lsvc.serializar_ciclo(c)
+            for c in lsvc.listar_ciclos(db, organization_id)[:5]
+        ]
+        return {
+            "disponible": True,
+            "estado": "Integrado con módulo 1260",
+            "modulo": self.modulo,
+            "bloque": self.bloque,
+            "ciclos_total": ciclos,
+            "por_estado": por_estado,
+            "patrones_detectados": patrones_total,
+            "recalibraciones_pendientes": recal_pendientes,
+            "recientes": recientes,
+            "tipo_contenido": "INFERENCIA",
+            "semantica": SEMANTICA_VALOR,
+            "enlace": "/aprendizaje",
+        }
+
+
+class OptimizacionAdapter:
+    """Bloque 1290 — recomendaciones y simulaciones de portafolio."""
+
+    modulo = "optimizacion"
+    bloque = "1290"
+
+    def fetch(
+        self,
+        db: Session,
+        organization_id: str,
+        *,
+        permissions: set[str],
+        period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
+    ) -> dict[str, Any]:
+        if "optimizacion.view" not in permissions:
+            return {**_no_disponible(self.modulo, self.bloque, "Requiere optimizacion.view"), "restringido": True}
+        from app.optimization_models import OptimizacionRecomendacion
+        from app.services import optimization_service as osvc
+
+        rec_q = db.query(OptimizacionRecomendacion).filter(
+            OptimizacionRecomendacion.organization_id == organization_id
+        )
+        if period_start:
+            rec_q = rec_q.filter(OptimizacionRecomendacion.created_at >= period_start)
+        total = rec_q.count()
+        if total == 0:
+            return {
+                **_no_disponible(self.modulo, self.bloque, "Sin recomendaciones de optimización"),
+                "modulo": self.modulo,
+                "bloque": self.bloque,
+                "enlace": "/optimizacion",
+            }
+
+        por_estado = dict(
+            db.query(OptimizacionRecomendacion.estado, func.count())
+            .filter(OptimizacionRecomendacion.organization_id == organization_id)
+            .group_by(OptimizacionRecomendacion.estado)
+            .all()
+        )
+        recientes_raw = osvc.listar_recomendaciones(db, organization_id, incluir_simulaciones=False)[:5]
+        recientes = [
+            {
+                "id": r.id,
+                "titulo": r.codigo,
+                "estado": r.estado,
+                "objetivo": r.objetivo,
+                "tipo_contenido": "RECOMENDACION",
+                "enlace": f"/optimizacion/{r.id}",
+            }
+            for r in recientes_raw
+        ]
+        return {
+            "disponible": True,
+            "estado": "Integrado con módulo 1290",
+            "modulo": self.modulo,
+            "bloque": self.bloque,
+            "recomendaciones_total": total,
+            "por_estado": por_estado,
+            "pendientes_aprobacion": por_estado.get("PROPUESTA", 0) + por_estado.get("REVISADA", 0),
+            "aprobadas": por_estado.get("APROBADA", 0),
+            "ejecutadas": por_estado.get("EJECUTADA", 0),
+            "recientes": recientes,
+            "tipo_contenido": "RECOMENDACION",
+            "semantica": SEMANTICA_VALOR,
+            "enlace": "/optimizacion",
+        }
+
+
+class TcoAdapter:
+    """Bloque 1320 — resumen TCO reutilizando motor certificado."""
+
+    modulo = "tco"
+    bloque = "1320"
+
+    def fetch(
+        self,
+        db: Session,
+        organization_id: str,
+        *,
+        permissions: set[str],
+        period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
+    ) -> dict[str, Any]:
+        if "tco.view" not in permissions:
+            return {**_no_disponible(self.modulo, self.bloque, "Requiere tco.view"), "restringido": True}
+        from app.tco_models import TcoCosto
+        from app.orchestration_models import FinOpsRecord
+        from app.services import tco_service as tcosvc
+
+        costos_count = (
+            db.query(func.count(TcoCosto.id))
+            .filter(TcoCosto.organization_id == organization_id, TcoCosto.is_active.is_(True))
+            .scalar()
+            or 0
+        )
+        finops_count = (
+            db.query(func.count(FinOpsRecord.id))
+            .filter(FinOpsRecord.organization_id == organization_id)
+            .scalar()
+            or 0
+        )
+        if costos_count == 0 and finops_count == 0:
+            return {
+                **_no_disponible(self.modulo, self.bloque, "Sin costos TCO registrados"),
+                "modulo": self.modulo,
+                "bloque": self.bloque,
+                "enlace": "/tco",
+            }
+
+        tco_calc = tcosvc.calcular_tco(db, organization_id, {"incluir_finops": True}, user_id=None)
+
+        margen = tco_calc.get("margen_pct")
+        result: dict[str, Any] = {
+            "disponible": True,
+            "estado": "Integrado con módulo 1320",
+            "modulo": self.modulo,
+            "bloque": self.bloque,
+            "inversion_total": tco_calc.get("total"),
+            "desglose": tco_calc.get("desglose"),
+            "finops_ia": tco_calc.get("finops_ia"),
+            "ingreso": tco_calc.get("ingreso"),
+            "alertas": len(tco_calc.get("alertas") or []),
+            "moneda": tco_calc.get("moneda"),
+            "tipo_contenido": "INFERENCIA",
+            "semantica": SEMANTICA_VALOR,
+            "enlace": "/tco",
+        }
+        if "comercial.approve" in permissions:
+            result["margen_pct"] = margen
+            result["margen_bruto"] = tco_calc.get("margen_bruto")
+        else:
+            result["margen_pct"] = None
+            result["margen_restringido"] = True
+        return result
+
+
+class ImplementacionAdapter:
+    """Bloque 1340 — proyectos, hitos y riesgo de implementación."""
+
+    modulo = "implementacion"
+    bloque = "1340"
+
+    def fetch(
+        self,
+        db: Session,
+        organization_id: str,
+        *,
+        permissions: set[str],
+        period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
+    ) -> dict[str, Any]:
+        if "implementacion.view" not in permissions:
+            return {**_no_disponible(self.modulo, self.bloque, "Requiere implementacion.view"), "restringido": True}
+        from datetime import timezone
+
+        from app.implementacion_enums import EstadoImplementacion
+        from app.implementacion_models import ImplementacionHito, ImplementacionProyecto, ImplementacionRiesgo
+        from app.services import implementacion_service as isvc
+
+        proj_q = db.query(ImplementacionProyecto).filter(
+            ImplementacionProyecto.organization_id == organization_id
+        )
+        if period_start:
+            proj_q = proj_q.filter(ImplementacionProyecto.created_at >= period_start)
+        proyectos = proj_q.all()
+        if not proyectos:
+            return {
+                **_no_disponible(self.modulo, self.bloque, "Sin proyectos de implementación"),
+                "modulo": self.modulo,
+                "bloque": self.bloque,
+                "enlace": "/implementacion",
+            }
+
+        activos = sum(
+            1 for p in proyectos
+            if p.estado not in (EstadoImplementacion.CERRADO, EstadoImplementacion.CANCELADO)
+        )
+        por_estado = dict(
+            db.query(ImplementacionProyecto.estado, func.count())
+            .filter(ImplementacionProyecto.organization_id == organization_id)
+            .group_by(ImplementacionProyecto.estado)
+            .all()
+        )
+        now = datetime.now(timezone.utc)
+        hitos_riesgo = (
+            db.query(func.count(ImplementacionHito.id))
+            .filter(
+                ImplementacionHito.organization_id == organization_id,
+                ImplementacionHito.estado.notin_(("COMPLETADO", "CANCELADO")),
+                ImplementacionHito.fecha_objetivo.isnot(None),
+                ImplementacionHito.fecha_objetivo < now,
+            )
+            .scalar()
+            or 0
+        )
+        riesgos_abiertos = (
+            db.query(func.count(ImplementacionRiesgo.id))
+            .filter(
+                ImplementacionRiesgo.organization_id == organization_id,
+                ImplementacionRiesgo.estado == "ABIERTO",
+            )
+            .scalar()
+            or 0
+        )
+        recientes = isvc.list_proyectos(db, organization_id)[:5]
+        return {
+            "disponible": True,
+            "estado": "Integrado con módulo 1340",
+            "modulo": self.modulo,
+            "bloque": self.bloque,
+            "proyectos_total": len(proyectos),
+            "proyectos_activos": activos,
+            "por_estado": por_estado,
+            "hitos_en_riesgo": hitos_riesgo,
+            "riesgos_abiertos": riesgos_abiertos,
+            "recientes": recientes,
+            "tipo_contenido": "HECHO",
+            "enlace": "/implementacion",
+        }
+
+
+class MultiproveedorAdapter:
+    """Bloque 1270 — salud y observabilidad multiproveedor (sin secretos)."""
+
+    modulo = "multiproveedor"
+    bloque = "1270"
+
+    def fetch(
+        self,
+        db: Session,
+        organization_id: str,
+        *,
+        permissions: set[str],
+        period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
+    ) -> dict[str, Any]:
+        if "llm.view" not in permissions:
+            return {**_no_disponible(self.modulo, self.bloque, "Requiere llm.view"), "restringido": True}
+        from app.services import llm_health_service, llm_observability_service
+
+        salud = llm_health_service.list_providers_health(db, organization_id)
+        periodo = "30d" if period_start else "mtd"
+        observabilidad = llm_observability_service.get_observability_summary(
+            db, organization_id, periodo=periodo
+        )
+        if not salud and not observabilidad.get("total_inferencias"):
+            return {
+                **_no_disponible(self.modulo, self.bloque, "Sin proveedores ni consumo IA"),
+                "modulo": self.modulo,
+                "bloque": self.bloque,
+                "enlace": "/administracion/proveedores-ia",
+            }
+
+        degradados = sum(1 for p in salud if p.get("estado") == "DEGRADADO")
+        no_config = sum(1 for p in salud if p.get("estado") == "NO_CONFIGURADO")
+        return {
+            "disponible": True,
+            "estado": "Integrado con módulo 1270",
+            "modulo": self.modulo,
+            "bloque": self.bloque,
+            "proveedores_total": len(salud),
+            "proveedores_degradados": degradados,
+            "proveedores_sin_configurar": no_config,
+            "salud": salud,
+            "observabilidad": observabilidad,
+            "tipo_contenido": "HECHO",
+            "enlace": "/administracion/proveedores-ia",
         }
