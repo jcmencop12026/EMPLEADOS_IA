@@ -497,7 +497,7 @@ def _llm_section(db: Session, org_id: str) -> dict[str, Any]:
         .group_by(LlmInferenceLog.provider)
         .all()
     )
-    lat_map = {p: int(row[1]) for p, row in latency_rows if row[1] is not None}
+    lat_map = {p: int(avg) for p, avg in latency_rows if avg is not None}
     tokens_rows = (
         db.query(LlmInferenceLog.provider, func.coalesce(func.sum(LlmInferenceLog.tokens_total), 0))
         .filter(LlmInferenceLog.organization_id == org_id, LlmInferenceLog.created_at >= since)
