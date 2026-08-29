@@ -69,7 +69,10 @@ def get_observability_summary(db: Session, organization_id: str, *, periodo: str
     )
     if start:
         by_provider = by_provider.filter(LlmInferenceLog.created_at >= start)
-    provider_counts = dict(by_provider.group_by(LlmInferenceLog.provider).all())
+    provider_counts = {
+        (provider if provider is not None else "desconocido"): count
+        for provider, count in by_provider.group_by(LlmInferenceLog.provider).all()
+    }
 
     by_error = (
         db.query(LlmInferenceLog.error_category, func.count())
@@ -81,7 +84,10 @@ def get_observability_summary(db: Session, organization_id: str, *, periodo: str
     )
     if start:
         by_error = by_error.filter(LlmInferenceLog.created_at >= start)
-    error_counts = dict(by_error.group_by(LlmInferenceLog.error_category).all())
+    error_counts = {
+        (category if category is not None else "sin_categoria"): count
+        for category, count in by_error.group_by(LlmInferenceLog.error_category).all()
+    }
 
     success_rate = round((ok / total) * 100, 2) if total else None
 
