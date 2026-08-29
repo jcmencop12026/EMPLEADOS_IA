@@ -24,6 +24,7 @@ import {
   type FinOpsOpportunityEconomics,
 } from "../api";
 import { usePermissions } from "../hooks/usePermissions";
+import { formatCalcLabel } from "../lib/uiTerms";
 
 type Tab = "resumen" | "evidencia" | "seguimiento" | "resultado" | "ejecucion" | "trazabilidad" | "finops" | "valoracion";
 
@@ -715,8 +716,8 @@ export function OportunidadDetailPage() {
                   </dd>
                   <dt>Costo total ejecución</dt><dd>{valuation.total_execution_cost ?? "—"} (IA: {valuation.finops_ia_cost_label})</dd>
                   <dt>Beneficio neto</dt><dd>{valuation.net_benefit ?? "—"}</dd>
-                  <dt>Retorno</dt><dd>{valuation.return_label ?? "NO CALCULABLE"}</dd>
-                  <dt>Periodo recuperación</dt><dd>{valuation.payback_label ?? "NO CALCULABLE"}</dd>
+                  <dt>Retorno</dt><dd>{formatCalcLabel(valuation.return_label)}</dd>
+                  <dt>Periodo recuperación</dt><dd>{formatCalcLabel(valuation.payback_label)}</dd>
                   <dt>Atribución</dt>
                   <dd>{valuation.real?.attribution_level ?? "—"}</dd>
                 </dl>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { ContinuidadTablero } from "../api";
 import { fetchContinuidadTablero } from "../api";
 import { EVENT_HIGHLIGHT_TYPES, formatTs } from "./integrationLabels";
+import { formatBackupState, formatContinuityEvent } from "../lib/uiTerms";
 
 type TabId =
   | "tablero"
@@ -18,7 +19,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "tablero", label: "Tablero" },
   { id: "servicios", label: "Servicios críticos" },
   { id: "respaldos", label: "Respaldos" },
-  { id: "privacidad", label: "Privacidad / restore" },
+  { id: "privacidad", label: "Privacidad y restauración" },
   { id: "incidentes", label: "Incidentes" },
   { id: "planes", label: "Planes" },
   { id: "disponibilidad", label: "Disponibilidad" },
@@ -58,7 +59,7 @@ export function ContinuidadPage() {
         <div>
           <h1>Continuidad operativa</h1>
           <p className="muted">
-            Salud de integraciones, respaldos, recuperaciones y bloqueos de privacidad en restore.
+            Salud de integraciones, respaldos, recuperaciones y bloqueos de privacidad en restauración.
           </p>
         </div>
       </header>
@@ -90,7 +91,7 @@ export function ContinuidadPage() {
                 <h2>Resumen</h2>
                 <dl className="kv-list">
                   <dt>Incidentes abiertos</dt><dd>{data.incidentes_abiertos}</dd>
-                  <dt>Backups fallidos</dt><dd>{data.backups_fallidos}</dd>
+                  <dt>Respaldos fallidos</dt><dd>{data.backups_fallidos}</dd>
                   <dt>Restauraciones verificadas</dt><dd>{data.restauraciones_verificadas}</dd>
                   <dt>Acciones pendientes</dt><dd>{data.acciones_pendientes}</dd>
                 </dl>
@@ -116,7 +117,7 @@ export function ContinuidadPage() {
                           key={a.id ?? `${a.tipo}-${i}`}
                           className={EVENT_HIGHLIGHT_TYPES.includes(a.tipo) ? "row-highlight" : ""}
                         >
-                          <td><strong>{a.tipo}</strong></td>
+                          <td><strong>{formatContinuityEvent(a.tipo)}</strong></td>
                           <td>{a.severidad ?? "—"}</td>
                           <td>{a.mensaje}</td>
                           <td>{formatTs(a.created_at)}</td>
@@ -164,9 +165,9 @@ export function ContinuidadPage() {
 
           {tab === "respaldos" && (
             <>
-              <h2>Respaldos (metadata)</h2>
+              <h2>Respaldos (metadatos)</h2>
               <p className="muted">
-                Estados: PROGRAMADO → EJECUTADO → VERIFICADO → RESTAURADO_EN_PRUEBA. Sin secretos en metadata.
+                Estados: programado → ejecutado → verificado → restaurado en prueba. Sin secretos en metadatos.
               </p>
               <table className="data-table compact">
                 <thead>
@@ -177,7 +178,7 @@ export function ContinuidadPage() {
                     <tr key={`${b.recurso}-${i}`}>
                       <td>{b.recurso}</td>
                       <td>{b.resultado}</td>
-                      <td>{b.estado_registro}</td>
+                      <td>{formatBackupState(b.estado_registro)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -187,9 +188,9 @@ export function ContinuidadPage() {
 
           {tab === "privacidad" && (
             <>
-              <h2>Privacidad y restore</h2>
+              <h2>Privacidad y restauración</h2>
               <p className="muted">
-                Eventos destacados: <strong>RESTORE_BLOQUEADO_PRIVACIDAD</strong> y recuperación de integraciones.
+                Eventos destacados: restauración bloqueada por privacidad y recuperación de integraciones.
               </p>
               {alertasPrivacidad.length === 0 ? (
                 <p className="muted">Sin eventos de privacidad o recuperación registrados.</p>
@@ -201,7 +202,7 @@ export function ContinuidadPage() {
                   <tbody>
                     {alertasPrivacidad.map((a, i) => (
                       <tr key={a.id ?? `p-${i}`} className="row-highlight">
-                        <td><strong>{a.tipo}</strong></td>
+                        <td><strong>{formatContinuityEvent(a.tipo)}</strong></td>
                         <td>{a.severidad ?? "—"}</td>
                         <td>{a.mensaje}</td>
                         <td className="mono-sm">{a.entidad_ref ?? "—"}</td>
