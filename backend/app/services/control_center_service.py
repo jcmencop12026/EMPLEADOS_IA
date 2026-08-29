@@ -510,12 +510,19 @@ def _fetch_module_adapters(
     permissions: set[str],
     period_start: datetime | None,
     adapter_instances: list[Any],
+    proceso: str | None = None,
+    estado: str | None = None,
 ) -> dict[str, Any]:
     modulos: dict[str, Any] = {}
     for adapter in adapter_instances:
         try:
             modulos[adapter.modulo] = adapter.fetch(
-                db, org_id, permissions=permissions, period_start=period_start
+                db,
+                org_id,
+                permissions=permissions,
+                period_start=period_start,
+                proceso=proceso,
+                estado=estado,
             )
         except Exception:
             modulos[adapter.modulo] = {
@@ -705,11 +712,18 @@ def get_executive_summary(
         adapters.FinOpsExtendidoAdapter(),
         adapters.ValorRetornoAdapter(),
         adapters.DiagnosticoAdapter(),
+        adapters.DiagnosticoExplicacionAdapter(),
         adapters.SenalesAdapter(),
         adapters.InteligenciaExternaAdapter(),
     ]
     modulos = _fetch_module_adapters(
-        db, org_id, permissions=permissions, period_start=period_start, adapter_instances=adapter_instances
+        db,
+        org_id,
+        permissions=permissions,
+        period_start=period_start,
+        adapter_instances=adapter_instances,
+        proceso=proceso,
+        estado=estado,
     )
 
     ie_mod = modulos.get("inteligencia_externa") or {}
@@ -738,6 +752,7 @@ def get_executive_summary(
         "finops_extendido": modulos.get("finops_extendido"),
         "valor_retorno": modulos.get("valor_retorno"),
         "diagnostico": modulos.get("diagnostico"),
+        "explicacion": modulos.get("explicacion"),
         "senales": modulos.get("senales"),
         "inteligencia_externa": modulos.get("inteligencia_externa"),
         "cadena_ejecutiva": _cadena_ejecutiva(db, org_id, permissions, period_start=period_start),

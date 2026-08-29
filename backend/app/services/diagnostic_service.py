@@ -1351,3 +1351,342 @@ def get_diagnostic_trace(db: Session, organization_id: str, diagnostic_id: str) 
         "hallazgos": detail.get("hallazgos"),
         "oportunidades": detail.get("oportunidades"),
     }
+
+
+_CAUSE_CERTAINTY_LABELS = {
+    "CONFIRMADA": "CAUSA DEMOSTRADA",
+    "PROBABLE": "CAUSA PROBABLE",
+    "HIPOTESIS": "HIPÓTESIS",
+}
+
+
+def _classify_fuente_ambito(evidencia: dict | None, fuentes: Any) -> str:
+    ev = evidencia or {}
+    fuentes_dict = fuentes if isinstance(fuentes, dict) else {}
+    ambito = ev.get("ambito") or fuentes_dict.get("ambito")
+    has_ext = bool(ev.get("external_source_id")) or ambito == "EXTERNO" or fuentes_dict.get("ambito") == "EXTERNO"
+    signal_ids = ev.get("signal_ids") or fuentes_dict.get("signal_ids")
+    has_int = bool(ev.get("signal_id") or signal_ids or ev.get("origen") == "diagnostic_engine")
+    if has_ext and has_int:
+        return "MIXTA"
+    if has_ext:
+        return "EXTERNA"
+    return "INTERNA"
+
+
+def _resumen_evidencia_ejecutiva(
+    evidencia: dict | None,
+    *,
+    correlation_id: str | None,
+    periodo: dict[str, Any] | None,
+    magnitud: float | None,
+) -> dict[str, Any]:
+    ev = evidencia or {}
+    return {
+        "fuente": ev.get("fuente") or ev.get("origen") or ev.get("referencia"),
+        "identificador": ev.get("signal_id") or ev.get("referencia") or ev.get("indicador"),
+        "correlation_id": correlation_id or ev.get("correlation_id"),
+        "periodo": periodo,
+        "valor": ev.get("valor") if ev.get("valor") is not None else magnitud,
+        "comparacion": ev.get("comparacion") or ev.get("umbral"),
+        "resumen": ev.get("resumen"),
+    }
+
+
+def _matches_proceso_filter(
+    proceso: str | None,
+    *,
+    finding_proceso: str | None = None,
+    procesos_diag: list[str] | None = None,
+) -> bool:
+    if not proceso:
+        return True
+    needle = proceso.lower()
+    if finding_proceso:
+        return finding_proceso.lower() == needle
+    if procesos_diag:
+        return any(p and p.lower() == needle for p in procesos_diag)
+    return False
+
+
+def build_executive_explanations(
+    db: Session,
+    organization_id: str,
+    *,
+    period_start: datetime | None = None,
+    proceso: str | None = None,
+    estado: str | None = None,
+    limit: int = 8,
+) -> dict[str, Any]:
+    """Explicaciones ejecutivas QUÉ → POR QUÉ → EVIDENCIA → CERTEZA (reutiliza 1220)."""
+    diag_q = db.query(Diagnostic).filter(
+        Diagnostic.organization_id == organization_id,
+        Diagnostic.estado != "ARCHIVADO",
+    )
+    if period_start:
+        diag_q = diag_q.filter(Diagnostic.created_at >= period_start)
+    if estado:
+        diag_q = diag_q.filter(Diagnostic.estado == estado.upper())
+    diagnosticos = (
+        diag_q.order_by(Diagnostic.prioridad_score.desc().nullslast(), Diagnostic.created_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    if not diagnosticos:
+        return {
+            "disponible": False,
+            "estado": "Diagnóstico no disponible",
+            "modulo": "explicacion",
+            "bloque": "1220",
+            "elementos": [],
+            "nota_causalidad": _CORRELATION_NOTE,
+            "enlace": "/diagnosticos",
+        }
+
+    elementos: list[dict[str, Any]] = []
+    diag_ids = [d.id for d in diagnosticos]
+
+    for diagnostic in diagnosticos:
+        periodo = {
+            "inicio": diagnostic.periodo_inicio.isoformat() if diagnostic.periodo_inicio else None,
+            "fin": diagnostic.periodo_fin.isoformat() if diagnostic.periodo_fin else None,
+        }
+        procesos_diag = _parse_json(diagnostic.procesos_json) or []
+
+        items = (
+            db.query(DiagnosticItem)
+            .filter(DiagnosticItem.diagnostic_id == diagnostic.id)
+            .order_by(DiagnosticItem.orden.asc(), DiagnosticItem.prioridad_score.desc().nullslast())
+            .all()
+        )
+        finding_ids = [i.hallazgo_id for i in items if i.hallazgo_id]
+        findings_map = {
+            f.id: f
+            for f in db.query(DiagnosticFinding).filter(DiagnosticFinding.id.in_(finding_ids)).all()
+        } if finding_ids else {}
+
+        causes = (
+            db.query(DiagnosticProbableCause)
+            .filter(DiagnosticProbableCause.diagnostic_id == diagnostic.id)
+            .order_by(DiagnosticProbableCause.confianza.desc())
+            .all()
+        )
+        causes_by_finding = {c.finding_id: c for c in causes if c.finding_id}
+        causes_by_id = {c.id: c for c in causes}
+
+        for item in items:
+            finding = findings_map.get(item.hallazgo_id or "")
+            if proceso and not _matches_proceso_filter(
+                proceso, finding_proceso=finding.proceso if finding else None, procesos_diag=procesos_diag
+            ):
+                continue
+
+            cause = causes_by_id.get(item.causa_id or "") or causes_by_finding.get(item.hallazgo_id or "")
+            if finding:
+                evidencia_raw = _parse_json(finding.evidencia_json)
+                tipo_contenido = "HECHO" if finding.tipo_contenido == "HECHO" else "INFERENCIA"
+                magnitud = float(finding.magnitud) if finding.magnitud is not None else None
+                impacto = _parse_json(item.impacto_json)
+
+                if cause:
+                    certeza_codigo = cause.tipo if cause.tipo in CAUSE_TYPES else "HIPOTESIS"
+                    elementos.append({
+                        "id": cause.id,
+                        "tipo_entrada": "CAUSA",
+                        "situacion": finding.que_ocurre,
+                        "indicador_origen": finding.codigo,
+                        "dominio": finding.dominio,
+                        "proceso": finding.proceso,
+                        "causa": cause.descripcion,
+                        "certeza": _CAUSE_CERTAINTY_LABELS.get(certeza_codigo, "HIPÓTESIS"),
+                        "certeza_codigo": certeza_codigo,
+                        "tipo_contenido": tipo_contenido,
+                        "confianza": float(cause.confianza),
+                        "evidencia": _resumen_evidencia_ejecutiva(
+                            _parse_json(cause.evidencia_json) or evidencia_raw,
+                            correlation_id=diagnostic.correlation_id,
+                            periodo=periodo,
+                            magnitud=magnitud,
+                        ),
+                        "fuente_ambito": _classify_fuente_ambito(
+                            evidencia_raw, _parse_json(cause.fuentes_json)
+                        ),
+                        "correlation_id": diagnostic.correlation_id,
+                        "periodo": periodo,
+                        "magnitud": magnitud,
+                        "impacto": impacto,
+                        "diagnostic_id": diagnostic.id,
+                        "diagnostic_codigo": diagnostic.codigo,
+                        "enlace": f"/diagnosticos/{diagnostic.id}",
+                        "nota": cause.justificacion,
+                    })
+                else:
+                    elementos.append({
+                        "id": finding.id,
+                        "tipo_entrada": "SITUACION",
+                        "situacion": finding.que_ocurre,
+                        "indicador_origen": finding.codigo,
+                        "dominio": finding.dominio,
+                        "proceso": finding.proceso,
+                        "causa": None,
+                        "certeza": None,
+                        "certeza_codigo": None,
+                        "tipo_contenido": tipo_contenido,
+                        "confianza": float(finding.confianza),
+                        "evidencia": _resumen_evidencia_ejecutiva(
+                            evidencia_raw,
+                            correlation_id=diagnostic.correlation_id,
+                            periodo=periodo,
+                            magnitud=magnitud,
+                        ),
+                        "fuente_ambito": _classify_fuente_ambito(evidencia_raw, None),
+                        "correlation_id": diagnostic.correlation_id,
+                        "periodo": periodo,
+                        "magnitud": magnitud,
+                        "impacto": impacto,
+                        "diagnostic_id": diagnostic.id,
+                        "diagnostic_codigo": diagnostic.codigo,
+                        "enlace": f"/diagnosticos/{diagnostic.id}",
+                        "nota": "Hallazgo sin causa inferida aún",
+                    })
+
+            accion = _parse_json(item.accion_recomendada_json)
+            if accion and accion.get("accion"):
+                if proceso and finding and not _matches_proceso_filter(
+                    proceso, finding_proceso=finding.proceso, procesos_diag=procesos_diag
+                ):
+                    continue
+                elementos.append({
+                    "id": item.id,
+                    "tipo_entrada": "RECOMENDACION",
+                    "situacion": finding.que_ocurre if finding else diagnostic.resumen,
+                    "indicador_origen": finding.codigo if finding else diagnostic.codigo,
+                    "dominio": finding.dominio if finding else None,
+                    "proceso": finding.proceso if finding else None,
+                    "causa": accion.get("accion"),
+                    "certeza": None,
+                    "certeza_codigo": None,
+                    "tipo_contenido": "RECOMENDACION",
+                    "confianza": None,
+                    "evidencia": _resumen_evidencia_ejecutiva(
+                        _parse_json(finding.evidencia_json) if finding else None,
+                        correlation_id=diagnostic.correlation_id,
+                        periodo=periodo,
+                        magnitud=float(finding.magnitud) if finding and finding.magnitud else None,
+                    ),
+                    "fuente_ambito": "INTERNA",
+                    "correlation_id": diagnostic.correlation_id,
+                    "periodo": periodo,
+                    "magnitud": float(finding.magnitud) if finding and finding.magnitud else None,
+                    "impacto": _parse_json(item.impacto_json),
+                    "diagnostic_id": diagnostic.id,
+                    "diagnostic_codigo": diagnostic.codigo,
+                    "enlace": f"/diagnosticos/{diagnostic.id}",
+                    "nota": "Acción recomendada — requiere validación operativa",
+                })
+
+        linked_cause_ids = {item.causa_id for item in items if item.causa_id}
+        for cause in causes:
+            if cause.id in linked_cause_ids:
+                continue
+            finding = (
+                db.query(DiagnosticFinding).filter(DiagnosticFinding.id == cause.finding_id).first()
+                if cause.finding_id
+                else None
+            )
+            if proceso and finding and not _matches_proceso_filter(proceso, finding_proceso=finding.proceso, procesos_diag=procesos_diag):
+                continue
+            if finding:
+                evidencia_raw = _parse_json(finding.evidencia_json)
+                certeza_codigo = cause.tipo if cause.tipo in CAUSE_TYPES else "HIPOTESIS"
+                elementos.append({
+                    "id": cause.id,
+                    "tipo_entrada": "CAUSA",
+                    "situacion": finding.que_ocurre,
+                    "indicador_origen": finding.codigo,
+                    "dominio": finding.dominio,
+                    "proceso": finding.proceso,
+                    "causa": cause.descripcion,
+                    "certeza": _CAUSE_CERTAINTY_LABELS.get(certeza_codigo, "HIPÓTESIS"),
+                    "certeza_codigo": certeza_codigo,
+                    "tipo_contenido": "HECHO" if finding.tipo_contenido == "HECHO" else "INFERENCIA",
+                    "confianza": float(cause.confianza),
+                    "evidencia": _resumen_evidencia_ejecutiva(
+                        _parse_json(cause.evidencia_json) or evidencia_raw,
+                        correlation_id=diagnostic.correlation_id,
+                        periodo=periodo,
+                        magnitud=float(finding.magnitud) if finding.magnitud else None,
+                    ),
+                    "fuente_ambito": _classify_fuente_ambito(
+                        evidencia_raw, _parse_json(cause.fuentes_json)
+                    ),
+                    "correlation_id": diagnostic.correlation_id,
+                    "periodo": periodo,
+                    "magnitud": float(finding.magnitud) if finding.magnitud else None,
+                    "impacto": None,
+                    "diagnostic_id": diagnostic.id,
+                    "diagnostic_codigo": diagnostic.codigo,
+                    "enlace": f"/diagnosticos/{diagnostic.id}",
+                    "nota": cause.justificacion,
+                })
+
+    correlations = (
+        db.query(DiagnosticCorrelation)
+        .filter(DiagnosticCorrelation.organization_id == organization_id)
+        .order_by(DiagnosticCorrelation.created_at.desc())
+        .limit(10)
+        .all()
+    )
+    for corr in correlations:
+        if corr.es_causal:
+            continue
+        finding_ids_corr = _parse_json(corr.finding_ids_json) or []
+        if proceso and finding_ids_corr:
+            related_findings = db.query(DiagnosticFinding).filter(DiagnosticFinding.id.in_(finding_ids_corr)).all()
+            if related_findings and not any(
+                _matches_proceso_filter(proceso, finding_proceso=f.proceso) for f in related_findings
+            ):
+                continue
+        elementos.append({
+            "id": corr.id,
+            "tipo_entrada": "CORRELACION",
+            "situacion": corr.titulo,
+            "indicador_origen": None,
+            "dominio": None,
+            "proceso": None,
+            "causa": corr.descripcion,
+            "certeza": "CORRELACIÓN (no causalidad)",
+            "certeza_codigo": "CORRELACION",
+            "tipo_contenido": "INFERENCIA",
+            "confianza": float(corr.confianza),
+            "evidencia": _resumen_evidencia_ejecutiva(
+                _parse_json(corr.evidencia_json),
+                correlation_id=None,
+                periodo=None,
+                magnitud=None,
+            ),
+            "fuente_ambito": "INTERNA",
+            "correlation_id": (_parse_json(corr.evidencia_json) or {}).get("correlation_id"),
+            "periodo": None,
+            "magnitud": None,
+            "impacto": None,
+            "diagnostic_id": diagnosticos[0].id if diagnosticos else None,
+            "diagnostic_codigo": diagnosticos[0].codigo if diagnosticos else None,
+            "enlace": f"/diagnosticos/{diagnosticos[0].id}" if diagnosticos else "/diagnosticos",
+            "nota": corr.nota_causalidad or _CORRELATION_NOTE,
+        })
+
+    elementos.sort(key=lambda e: (e.get("confianza") or 0), reverse=True)
+    elementos = elementos[:limit]
+
+    return {
+        "disponible": len(elementos) > 0,
+        "estado": "Integrado con módulo 1220" if elementos else "Sin explicaciones disponibles",
+        "modulo": "explicacion",
+        "bloque": "1220",
+        "elementos": elementos,
+        "nota_causalidad": _CORRELATION_NOTE,
+        "diagnosticos_consultados": len(diag_ids),
+        "enlace": "/diagnosticos",
+    }
