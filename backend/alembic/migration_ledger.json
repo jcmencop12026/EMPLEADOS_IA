@@ -31,7 +31,8 @@
     "1250a1b2c3d4e",
     "1250b1c2d3e4f",
     "1250f1a2b3c4d",
-    "1360a1b2c3d4e"
+    "1360a1b2c3d4e",
+    "1350a1b2c3d4e"
   ],
   "upgrade_from_baseline": {
     "enabled": false,

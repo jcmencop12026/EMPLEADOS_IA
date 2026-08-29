@@ -18,6 +18,7 @@ from app import valuation_models  # noqa: F401 — valoración económica 1210
 from app import diagnostic_models  # noqa: F401 — diagnóstico transversal 1220
 from app import external_models  # noqa: F401 — inteligencia externa 1240
 from app import continuidad_models  # noqa: F401 — continuidad operativa 1360
+from app import governance_models  # noqa: F401 — gobierno de datos 1350
 from app import llm_models  # noqa: F401 — LLM Gateway V1
 from app.health import build_health_report, health_http_status
 from app.routers import (
@@ -45,6 +46,7 @@ from app.routers import (
     diagnosticos,
     inteligencia_externa,
     continuidad,
+    governance,
     test_lab,
     tools,
 )
@@ -142,6 +144,7 @@ app.include_router(diagnosticos.router)
 app.include_router(inteligencia_externa.router)
 app.include_router(continuidad.router)
 app.include_router(control_center.router)
+app.include_router(governance.router)
 app.include_router(llm_providers.router)
 
 

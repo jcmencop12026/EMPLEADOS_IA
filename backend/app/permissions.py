@@ -160,6 +160,16 @@ INTELIGENCIA_EXTERNA_PERMISSIONS = {
     "inteligencia_externa.validate",
 }
 
+DATOS_PERMISSIONS = {
+    "datos.view",
+    "datos.classify",
+    "datos.manage_policy",
+    "datos.export",
+    "datos.audit",
+    "datos.requests",
+    "datos.retention",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -276,6 +286,13 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
     "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
     "inteligencia_externa.validate": ("Inteligencia externa", "Validar análisis externo"),
+    "datos.view": ("Gobierno de datos", "Consultar catálogo y políticas"),
+    "datos.classify": ("Gobierno de datos", "Clasificar y catalogar datos"),
+    "datos.manage_policy": ("Gobierno de datos", "Gestionar políticas de datos"),
+    "datos.export": ("Gobierno de datos", "Registrar exportaciones"),
+    "datos.audit": ("Gobierno de datos", "Auditar accesos y hallazgos"),
+    "datos.requests": ("Gobierno de datos", "Gestionar solicitudes sobre datos"),
+    "datos.retention": ("Gobierno de datos", "Gestionar retención y legal hold"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -321,6 +338,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | CONTINUIDAD_PERMISSIONS
         | INCIDENTES_PERMISSIONS
         | BACKUPS_PERMISSIONS
+        | DATOS_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -345,6 +363,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | CONTINUIDAD_PERMISSIONS
         | INCIDENTES_PERMISSIONS
         | BACKUPS_PERMISSIONS
+        | DATOS_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -419,6 +438,13 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "backups.view",
         "backups.manage",
         "backups.verify",
+        "datos.view",
+        "datos.classify",
+        "datos.manage_policy",
+        "datos.export",
+        "datos.audit",
+        "datos.requests",
+        "datos.retention",
     },
     "viewer": {
         "employee.view",
@@ -445,6 +471,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "continuidad.view",
         "incidentes.view",
         "backups.view",
+        "datos.view",
     },
 }
 
