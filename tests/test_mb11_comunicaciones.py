@@ -64,11 +64,12 @@ def _template(db, org, user) -> dict:
 
 
 def test_template_create_version_and_variables(client: TestClient, auth_headers):
+    suffix = uuid.uuid4().hex[:4].upper()
     tpl = client.post(
         "/api/comunicaciones/plantillas",
         headers=auth_headers,
         json={
-            "codigo": "SLA_RIESGO",
+            "codigo": f"SLA_{suffix}",
             "nombre": "SLA en riesgo",
             "tipo_comunicacion": "ALERTA",
             "canal_tipo": "INTERNO_PLATAFORMA",
@@ -88,7 +89,7 @@ def test_template_create_version_and_variables(client: TestClient, auth_headers)
         "/api/comunicaciones/plantillas",
         headers=auth_headers,
         json={
-            "codigo": "MALA",
+            "codigo": f"MALA_{suffix}",
             "nombre": "Mala",
             "tipo_comunicacion": "X",
             "canal_tipo": "INTERNO_PLATAFORMA",
@@ -175,10 +176,11 @@ def test_rule_event_condition_idempotency_and_dedup(client: TestClient, auth_hea
 
 
 def test_channels_adapters_manual_schedule_cancel(client: TestClient, auth_headers):
+    suffix = uuid.uuid4().hex[:6]
     ch = client.post(
         "/api/comunicaciones/canales",
         headers=auth_headers,
-        json={"tipo": "CORREO_ELECTRONICO", "nombre": "Correo simulado"},
+        json={"tipo": "CORREO_ELECTRONICO", "nombre": f"Correo-sim-{suffix}"},
     )
     assert ch.status_code == 201
     assert ch.json()["secret_configured"] is False
@@ -187,28 +189,30 @@ def test_channels_adapters_manual_schedule_cancel(client: TestClient, auth_heade
     wh = client.post(
         "/api/comunicaciones/canales",
         headers=auth_headers,
-        json={"tipo": "WEBHOOK", "nombre": "Webhook", "config": {"webhook_url": "https://example.com/hook"}},
+        json={"tipo": "WEBHOOK", "nombre": f"Webhook-{suffix}", "config": {"webhook_url": "https://example.com/hook"}},
     )
     assert wh.status_code == 201
 
     interno = client.post(
         "/api/comunicaciones/canales",
         headers=auth_headers,
-        json={"tipo": "INTERNO_PLATAFORMA", "nombre": "Bandeja"},
+        json={"tipo": "INTERNO_PLATAFORMA", "nombre": f"Bandeja-{suffix}"},
     )
+    assert interno.status_code == 201
     channel_id = interno.json()["id"]
 
     tpl = client.post(
         "/api/comunicaciones/plantillas",
         headers=auth_headers,
         json={
-            "codigo": "MANUAL",
+            "codigo": f"MANUAL_{suffix.upper()}",
             "nombre": "Manual",
             "tipo_comunicacion": "MANUAL",
             "canal_tipo": "INTERNO_PLATAFORMA",
             "contenido": "Texto {{nombre}}",
         },
     )
+    assert tpl.status_code == 201
     ver_id = tpl.json()["current_version_id"]
     db = TestingSessionLocal()
     try:
@@ -250,13 +254,14 @@ def test_channels_adapters_manual_schedule_cancel(client: TestClient, auth_heade
 
 
 def test_retries_max_and_scheduler_810c(client: TestClient, auth_headers):
+    suffix = uuid.uuid4().hex[:6]
     db = TestingSessionLocal()
     try:
         admin = db.query(User).filter(User.username == "admin").one()
         ch = CommChannel(
             organization_id=admin.organization_id,
             tipo="WEBHOOK",
-            nombre="Roto",
+            nombre=f"Roto-{suffix}",
             activo=True,
             config_json='{"webhook_url":""}',
         )
@@ -457,3 +462,42 @@ def test_template_version_preserved_on_message():
         assert "Nueva" not in (stored.contenido or "")
     finally:
         db.close()
+
+
+def test_contratos_portables_sin_acoplamiento_modulos(client: TestClient, auth_headers):
+    """Contratos CC/Mi Trabajo responden sin cablear módulos externos."""
+    import inspect
+    import app.services.communications_service as mod
+
+    source = inspect.getsource(mod)
+    for forbidden in ("control_center", "trabajo_service", "support_service", "mesa_ayuda"):
+        assert forbidden not in source
+    cc = client.get("/api/comunicaciones/contrato/centro-control", headers=auth_headers)
+    mt = client.get("/api/comunicaciones/contrato/mi-trabajo", headers=auth_headers)
+    assert cc.status_code == 200 and isinstance(cc.json().get("pendientes"), int)
+    assert mt.status_code == 200 and "reintentos_agotados" in mt.json()
+
+
+def test_secret_ref_no_expuesto_en_api(client: TestClient, auth_headers):
+    created = client.post(
+        "/api/comunicaciones/canales",
+        headers=auth_headers,
+        json={
+            "tipo": "CORREO_ELECTRONICO",
+            "nombre": f"Secreto-{uuid.uuid4().hex[:6]}",
+            "secret_ref": "vault/smtp/password",
+            "config": {"smtp_host": "mail.example.com", "smtp_password": "NO-DEBE-APARECER"},
+        },
+    )
+    assert created.status_code == 201
+    body = created.json()
+    raw = str(body).lower()
+    assert "secret_ref" not in body
+    assert "vault/smtp" not in raw
+    assert "no-debe-aparecer" not in raw
+    assert body.get("secret_configured") in (True, False)
+    listed = client.get("/api/comunicaciones/canales", headers=auth_headers).json()
+    for ch in listed:
+        assert "secret_ref" not in ch
+        cfg = ch.get("config") or {}
+        assert "password" not in str(cfg).lower() or "[dato sensible omitido]" in str(cfg).lower() or not cfg
