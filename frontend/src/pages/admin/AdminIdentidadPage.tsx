@@ -24,6 +24,7 @@ import {
   type ScimStatus,
 } from "../../api";
 import { ErrorState, LoadingState } from "../../components/AsyncState";
+import { SCIM_RATE_LIMIT_NOTE, formatTs } from "./identityLabels";
 
 const STATUS_LABELS: Record<string, string> = {
   BORRADOR: "Borrador",
@@ -281,7 +282,11 @@ export function AdminIdentidadPage() {
             <p><strong>URL base SCIM:</strong> <code>{window.location.origin}{scim.scim_base_url}</code></p>
             <p className="muted">
               Usuarios activos: {scim.metrics.users_active ?? 0} · Desactivados: {scim.metrics.users_deactivated ?? 0} ·
-              Conflictos pendientes: {scim.conflicts_pending}
+              Errores: {scim.metrics.errors_count ?? 0} · Rate limited: {scim.metrics.rate_limited_count ?? 0} ·
+              Última sync: {formatTs(scim.metrics.last_sync_at)} · Conflictos pendientes: {scim.conflicts_pending}
+            </p>
+            <p className="muted" title="Limitación P2 documentada">
+              {SCIM_RATE_LIMIT_NOTE}
             </p>
             {newScimToken && (
               <p role="status" className="panel">

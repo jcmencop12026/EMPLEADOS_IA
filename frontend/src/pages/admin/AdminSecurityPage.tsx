@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   ApiError,
   fetchAdminSessions,
@@ -14,6 +15,7 @@ import {
 } from "../../api";
 import { ErrorState, LoadingState } from "../../components/AsyncState";
 import { formatAuditAction } from "../../lib/labels";
+import { SCIM_RATE_LIMIT_NOTE, formatTs } from "./identityLabels";
 
 export function AdminSecurityPage() {
   const [summary, setSummary] = useState<SecuritySummary | null>(null);
@@ -76,8 +78,21 @@ export function AdminSecurityPage() {
         <div className="panel dashboard-card"><span className="dashboard-card-value">{summary.users_active}</span><span className="dashboard-card-label">Usuarios activos</span></div>
         <div className="panel dashboard-card"><span className="dashboard-card-value">{summary.users_inactive}</span><span className="dashboard-card-label">Usuarios inactivos</span></div>
         <div className="panel dashboard-card"><span className="dashboard-card-value">{summary.users_blocked}</span><span className="dashboard-card-label">Usuarios bloqueados</span></div>
+        <div className="panel dashboard-card"><span className="dashboard-card-value">{summary.mfa_enabled_count ?? 0}</span><span className="dashboard-card-label">MFA habilitado</span></div>
         <div className="panel dashboard-card"><span className="dashboard-card-value">{summary.roles_total}</span><span className="dashboard-card-label">Roles</span></div>
       </div>
+
+      {summary.scim_metrics && (
+        <section className="panel">
+          <h2>Estado de aprovisionamiento (SCIM)</h2>
+          <p className="muted">
+            Activos SCIM: {summary.scim_metrics.users_active} · Desactivados: {summary.scim_metrics.users_deactivated} ·
+            Errores: {summary.scim_metrics.errors_count} · Rate limited: {summary.scim_metrics.rate_limited_count} ·
+            Última sync: {formatTs(summary.scim_metrics.last_sync_at)}
+          </p>
+          <p className="muted">{summary.scim_rate_limit_note || SCIM_RATE_LIMIT_NOTE}</p>
+        </section>
+      )}
 
       {policy && (
         <section className="panel">
@@ -134,13 +149,20 @@ export function AdminSecurityPage() {
       <section className="panel">
         <h2>Sesiones activas</h2>
         <table className="data-table">
-          <thead><tr><th>Usuario</th><th>IP</th><th>Última actividad</th><th></th></tr></thead>
+          <thead><tr><th>Usuario</th><th>IP</th><th>Método</th><th>Última actividad</th><th></th></tr></thead>
           <tbody>
             {sessions.map((s) => (
               <tr key={s.id}>
-                <td className="mono">{s.id.slice(0, 8)}…</td>
+                <td>
+                  {s.username ? (
+                    <Link to={`/administracion/usuarios/${s.user_id}`}>{s.username}</Link>
+                  ) : (
+                    <span className="mono-sm">{s.user_id ? s.user_id.slice(0, 8) + "…" : "—"}</span>
+                  )}
+                </td>
                 <td>{s.ip_address || "—"}</td>
-                <td>{new Date(s.last_activity_at).toLocaleString()}</td>
+                <td>{s.auth_method || "—"}</td>
+                <td className="mono-sm">{formatTs(s.last_activity_at)}</td>
                 <td>
                   <button type="button" className="btn" onClick={() => revokeAdminSession(s.id).then(load)}>Revocar</button>
                 </td>

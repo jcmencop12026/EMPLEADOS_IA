@@ -44,7 +44,7 @@ from app.services.session_service import (
 router = APIRouter(prefix="/api/security", tags=["security"])
 
 
-def _session_out(session, *, current_sid: str | None) -> SessionOut:
+def _session_out(session, *, current_sid: str | None, username: str | None = None) -> SessionOut:
     return SessionOut(
         id=session.id,
         ip_address=session.ip_address,
@@ -54,6 +54,9 @@ def _session_out(session, *, current_sid: str | None) -> SessionOut:
         expires_at=session.expires_at,
         mfa_verified=session.mfa_verified,
         current=bool(current_sid and session.id == current_sid),
+        user_id=session.user_id,
+        username=username,
+        auth_method=session.auth_method,
     )
 
 
@@ -241,7 +244,15 @@ def admin_sessions(
     user: User = Depends(require_permission("seguridad.revoke_sessions")),
 ):
     sessions = list_org_sessions(db, user.organization_id)
-    return [_session_out(s, current_sid=None) for s in sessions]
+    user_ids = {s.user_id for s in sessions}
+    users_map: dict[str, str] = {}
+    if user_ids:
+        rows = db.query(User).filter(User.id.in_(user_ids)).all()
+        users_map = {row.id: row.username for row in rows}
+    return [
+        _session_out(s, current_sid=None, username=users_map.get(s.user_id))
+        for s in sessions
+    ]
 
 
 @router.delete("/admin/sessions/{session_id}")
