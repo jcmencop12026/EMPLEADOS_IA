@@ -42,20 +42,131 @@ function Set-Result([string]$Key, [bool]$Pass, [string]$Detail) {
 function Write-CertLog([string]$Message) {
     Add-Content -Path $LogFile -Value $Message -ErrorAction SilentlyContinue
 }
+function Build-ProcessArgumentString {
+    param([string[]]$CmdArgs)
+    $parts = @()
+    foreach ($arg in $CmdArgs) {
+        if ($null -eq $arg) { continue }
+        if ($arg -match '[\s"]') {
+            $parts += '"' + ($arg -replace '"', '""') + '"'
+        }
+        else {
+            $parts += $arg
+        }
+    }
+    return ($parts -join ' ')
+}
+function Format-ExternalCommandLine {
+    param(
+        [string]$Exe,
+        [string[]]$CmdArgs
+    )
+    return ($Exe + ' ' + (Build-ProcessArgumentString -CmdArgs $CmdArgs)).Trim()
+}
+function Invoke-ExternalCommandProcess {
+    param(
+        [string]$Exe,
+        [string[]]$CmdArgs,
+        [string]$StdinContent = $null,
+        [string]$StdoutFile,
+        [string]$StderrFile
+    )
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $Exe
+    $psi.Arguments = Build-ProcessArgumentString -CmdArgs $CmdArgs
+    $psi.UseShellExecute = $false
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.RedirectStandardInput = ($null -ne $StdinContent)
+    $psi.CreateNoWindow = $true
+
+    $stdoutBuilder = New-Object System.Text.StringBuilder
+    $stderrBuilder = New-Object System.Text.StringBuilder
+    $streamAction = {
+        if ($null -ne $EventArgs.Data) {
+            [void]$Event.MessageData.AppendLine($EventArgs.Data)
+        }
+    }
+
+    $proc = New-Object System.Diagnostics.Process
+    $proc.StartInfo = $psi
+    $null = $proc.Start()
+
+    $stdoutEvent = Register-ObjectEvent -InputObject $proc -EventName OutputDataReceived `
+        -Action $streamAction -MessageData $stdoutBuilder
+    $stderrEvent = Register-ObjectEvent -InputObject $proc -EventName ErrorDataReceived `
+        -Action $streamAction -MessageData $stderrBuilder
+
+    $proc.BeginOutputReadLine()
+    $proc.BeginErrorReadLine()
+
+    if ($null -ne $StdinContent) {
+        $proc.StandardInput.Write($StdinContent)
+        $proc.StandardInput.Close()
+    }
+
+    $proc.WaitForExit()
+
+    Unregister-Event -SourceIdentifier $stdoutEvent.Name -ErrorAction SilentlyContinue
+    Unregister-Event -SourceIdentifier $stderrEvent.Name -ErrorAction SilentlyContinue
+    Remove-Event -SourceIdentifier $stdoutEvent.Name -ErrorAction SilentlyContinue
+    Remove-Event -SourceIdentifier $stderrEvent.Name -ErrorAction SilentlyContinue
+
+    $stdoutText = $stdoutBuilder.ToString()
+    $stderrText = $stderrBuilder.ToString()
+    [System.IO.File]::WriteAllText($StdoutFile, $stdoutText, [System.Text.UTF8Encoding]::new($false))
+    [System.IO.File]::WriteAllText($StderrFile, $stderrText, [System.Text.UTF8Encoding]::new($false))
+    return $proc.ExitCode
+}
 function Invoke-ExternalCommand {
     param(
         [string]$Label,
         [string]$Exe,
-        [string[]]$CmdArgs
+        [string[]]$CmdArgs,
+        [string]$StdinContent = $null
     )
-    $output = & $Exe @CmdArgs 2>&1
-    $exitCode = $LASTEXITCODE
-    $text = ($output | Out-String).Trim()
-    if ($exitCode -ne 0) {
-        $joined = $CmdArgs -join ' '
-        throw ($Label + " fallo (exit " + $exitCode + "): " + $Exe + " " + $joined + " :: " + $text)
+
+    $stdoutFile = [System.IO.Path]::GetTempFileName()
+    $stderrFile = [System.IO.Path]::GetTempFileName()
+    $cmdLine = Format-ExternalCommandLine -Exe $Exe -CmdArgs $CmdArgs
+
+    try {
+        $exitCode = Invoke-ExternalCommandProcess -Exe $Exe -CmdArgs $CmdArgs `
+            -StdinContent $StdinContent -StdoutFile $stdoutFile -StderrFile $stderrFile
+
+        $stdout = [System.IO.File]::ReadAllText($stdoutFile)
+        $stderr = [System.IO.File]::ReadAllText($stderrFile)
+        if ($null -eq $stdout) { $stdout = '' }
+        if ($null -eq $stderr) { $stderr = '' }
+
+        Write-CertLog ('COMMAND: ' + $cmdLine)
+        Write-CertLog ('EXIT CODE: ' + $exitCode)
+        if ($stdout.Trim().Length -gt 0) {
+            Write-CertLog ('STDOUT: ' + $stdout.Trim())
+        }
+        if ($stderr.Trim().Length -gt 0) {
+            Write-CertLog ('STDERR: ' + $stderr.Trim())
+        }
+
+        if ($exitCode -ne 0) {
+            $detail = $stderr.Trim()
+            if (-not $detail) { $detail = $stdout.Trim() }
+            throw ($Label + ' fallo (exit ' + $exitCode + '): ' + $cmdLine + ' :: ' + $detail)
+        }
+
+        $resultText = $stdout
+        if (-not $resultText.Trim() -and $stderr.Trim()) {
+            $resultText = $stderr
+        }
+        if (-not $resultText) {
+            return @()
+        }
+        return ($resultText -split "`r?`n")
     }
-    return $output
+    finally {
+        Remove-Item $stdoutFile -Force -ErrorAction SilentlyContinue
+        Remove-Item $stderrFile -Force -ErrorAction SilentlyContinue
+    }
 }
 function Invoke-GitCert {
     param(
@@ -67,11 +178,12 @@ function Invoke-GitCert {
 }
 function Invoke-DockerCompose {
     param(
+        [string]$StdinContent = $null,
         [Parameter(ValueFromRemainingArguments = $true)]
         [string[]]$ComposeArgs
     )
     $allArgs = @('compose', '--project-directory', $CertDir, '-f', $ComposeFile) + $ComposeArgs
-    return Invoke-ExternalCommand -Label ('docker compose ' + ($ComposeArgs -join ' ')) -Exe 'docker' -CmdArgs $allArgs
+    return Invoke-ExternalCommand -Label ('docker compose ' + ($ComposeArgs -join ' ')) -Exe 'docker' -CmdArgs $allArgs -StdinContent $StdinContent
 }
 function Test-PortFree([int]$Port) {
     -not (Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue)
@@ -407,7 +519,8 @@ catch {
 try {
     $null = Invoke-DockerCompose exec -T postgres psql -U empleados_cert -d postgres -c "DROP DATABASE IF EXISTS empleados_ia_cert_restore;"
     $null = Invoke-DockerCompose exec -T postgres psql -U empleados_cert -d postgres -c "CREATE DATABASE empleados_ia_cert_restore;"
-    Get-Content $backupFile -Raw | Invoke-DockerCompose exec -T postgres psql -U empleados_cert -d empleados_ia_cert_restore | Out-Null
+    $restoreSqlContent = Get-Content $backupFile -Raw
+    $null = Invoke-DockerCompose -StdinContent $restoreSqlContent exec -T postgres psql -U empleados_cert -d empleados_ia_cert_restore
     $restoreSql = "SELECT COUNT(*) FROM cert_persistence WHERE marker='" + $marker + "';"
     $restored = Invoke-DockerCompose exec -T postgres psql -U empleados_cert -d empleados_ia_cert_restore -tAc $restoreSql
     Set-Result 'RESTORE' ([int](($restored | Out-String).Trim()) -ge 1)
