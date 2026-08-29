@@ -8,7 +8,7 @@
 | Rama 1350 feature | `cursor/1350-gobierno-datos-privacidad` |
 | Base declarada | `cursor/1250a-fix-aislamiento-tests` @ `6352836813da85e31514e19cef125bcff53b4191` |
 | HEAD 1350 (pre-recert) | `3216b7d826e4de7626a0cd59b9401b5722e11fee` |
-| HEAD recert (final) | `e05c42c429d7e9afdbf461460aacadf0cb2cf1ba` |
+| HEAD recert (final) | `dff98c4b4699906cbc5709f1994abd6c5ef6a273` |
 | Alembic head | `1350a1b2c3d4e` |
 
 ## Resumen ejecutivo
