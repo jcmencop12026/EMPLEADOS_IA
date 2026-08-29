@@ -67,6 +67,8 @@ async def lifespan(_app: FastAPI):
         database_url=settings.database_url,
         jwt_secret=settings.jwt_secret,
         bootstrap_admin_password=settings.bootstrap_admin_password,
+        app_env=settings.app_env,
+        cors_origins=settings.cors_origins,
     )
 
     Base.metadata.create_all(bind=engine)
