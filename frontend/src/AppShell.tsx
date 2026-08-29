@@ -35,6 +35,7 @@ const MENU: NavSection[] = [
     label: "Empleados IA",
     items: [
       { to: "/directorio", label: "Directorio" },
+      { to: "/empleados/auditoria", label: "Auditoría empleados" },
       { to: "/empleados/nuevo", label: "Crear empleado" },
       { to: "/capacidades", label: "Capacidades" },
       { to: "/herramientas", label: "Herramientas" },

@@ -24,6 +24,7 @@ from app import llm_models  # noqa: F401 — LLM Gateway V1
 from app import security_models  # noqa: F401 — seguridad avanzada 1300
 from app import identity_models  # noqa: F401 — identidad empresarial 1370
 from app import scim_models  # noqa: F401 — SCIM 1380
+from app import employee_audit_models  # noqa: F401 — auditor empleados MVP
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
@@ -58,10 +59,12 @@ from app.routers import (
     test_lab,
     tools,
     trabajo,
+    empleados_auditor,
 )
 from app.seed import bootstrap
 from app.security_config import validate_security_settings
 from app.services.automation_events import register_automation_event_handlers
+from app.services.employee_audit_events import register_employee_audit_event_handlers
 from app.services.automation_scheduler import start_scheduler, stop_scheduler
 from app.services.proactive_scheduler import start_proactive_scheduler, stop_proactive_scheduler
 from app.services.authorization import AuthorizationError
@@ -91,6 +94,7 @@ async def lifespan(_app: FastAPI):
     finally:
         db.close()
     register_automation_event_handlers()
+    register_employee_audit_event_handlers()
     start_scheduler()
     start_proactive_scheduler()
     yield
@@ -160,6 +164,7 @@ app.include_router(governance.router)
 app.include_router(integraciones.router)
 app.include_router(llm_providers.router)
 app.include_router(trabajo.router)
+app.include_router(empleados_auditor.router)
 
 
 @app.get("/health")
