@@ -381,6 +381,15 @@ def _create_finding_from_signal(
     if not breach:
         return None
 
+    severidad = _severity_from_magnitude(valor, umbral)
+    # Sin umbral configurado, magnitud/umbral=1 deja severidad BAJA aunque el hallazgo
+    # se haya activado por impacto o severidad de la señal — alinear con criterio accionable.
+    if severidad == "BAJA" and umbral is None:
+        if signal.severidad in ("ALTA", "CRITICA"):
+            severidad = "ALTA"
+        elif signal.severidad == "MEDIA" or impacto:
+            severidad = "MEDIA"
+
     codigo = _next_codigo(db, organization_id, "HAL")
     finding = DiagnosticFinding(
         organization_id=organization_id,
@@ -390,7 +399,7 @@ def _create_finding_from_signal(
         donde=signal.dimension or signal.proceso or indicator.dominio,
         desde_cuando=signal.signal_at or signal.created_at,
         magnitud=Decimal(str(valor)),
-        severidad=_severity_from_magnitude(valor, umbral),
+        severidad=severidad,
         confianza=float(signal.confianza or 0.75),
         dominio=indicator.dominio,
         proceso=signal.proceso,
