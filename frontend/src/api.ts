@@ -1937,6 +1937,13 @@ export type CentroControlIndicador = {
   enlace: string;
 };
 
+export type SemanticMetaFields = {
+  tipo_semantico?: string | null;
+  subtipo_semantico?: string | null;
+  etiqueta_visible?: string | null;
+  tooltip_semantico?: string | null;
+};
+
 export type CentroControlAtencion = {
   prioridad: number;
   tipo: string;
@@ -1945,11 +1952,16 @@ export type CentroControlAtencion = {
   fecha?: string | null;
   enlace: string;
   origen: string;
-};
+} & SemanticMetaFields;
 
 export type CentroControlResumen = {
   generated_at: string;
   organization_id: string;
+  contrato_semantico?: {
+    version: string;
+    tipos: string[];
+    reglas?: string[];
+  };
   resumen_ejecutivo: { indicadores: CentroControlIndicador[]; operaciones?: Record<string, number> | null };
   atencion_requerida: CentroControlAtencion[];
   empleados_ia?: {

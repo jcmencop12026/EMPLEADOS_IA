@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { CentroControlResumen } from "../api";
 import { fetchCentroControlResumen } from "../api";
+import { SemanticBadge, resolveSemanticTipo } from "../components/SemanticBadge";
 import { usePermissions } from "../hooks/usePermissions";
 
 function ValorIndicador({ valor, disponible, estado }: { valor: unknown; disponible: boolean; estado?: string | null }) {
@@ -76,11 +77,18 @@ export function CentroControlPage() {
               <p className="muted">No hay asuntos prioritarios pendientes.</p>
             ) : (
               <table className="data-table compact-table">
-                <thead><tr><th>#</th><th>Tipo</th><th>Asunto</th><th>Origen</th><th></th></tr></thead>
+                <thead><tr><th>#</th><th>Semántica</th><th>Tipo</th><th>Asunto</th><th>Origen</th><th></th></tr></thead>
                 <tbody>
                   {data.atencion_requerida.map((item) => (
                     <tr key={`${item.tipo}-${item.prioridad}-${item.titulo}`}>
                       <td>{item.prioridad}</td>
+                      <td>
+                        <SemanticBadge
+                          tipo={item.tipo_semantico}
+                          subtipo={item.subtipo_semantico}
+                          tooltip={item.tooltip_semantico}
+                        />
+                      </td>
                       <td>{item.tipo}</td>
                       <td>{item.titulo}</td>
                       <td>{item.origen}</td>
@@ -114,12 +122,11 @@ export function CentroControlPage() {
                   {(data.explicacion.elementos ?? []).slice(0, 8).map((el) => (
                     <tr key={el.id}>
                       <td>
-                        <span
-                          className={`cc-tag cc-tag-${el.tipo_contenido.toLowerCase()}`}
-                          title={`Tipo: ${el.tipo_contenido}`}
-                        >
-                          {el.tipo_contenido}
-                        </span>
+                        <SemanticBadge
+                          tipo={resolveSemanticTipo(el)}
+                          subtipo={el.subtipo_semantico}
+                          tooltip={el.tooltip_semantico}
+                        />
                         <div>{el.situacion ?? "—"}</div>
                         {el.fuente_ambito && (
                           <small className="muted">Fuente: {el.fuente_ambito}</small>
@@ -193,7 +200,12 @@ export function CentroControlPage() {
                     <dt>Detectadas</dt><dd>{data.oportunidades.resumen?.oportunidades_detectadas ?? "—"}</dd>
                     <dt>En seguimiento</dt><dd>{data.oportunidades.estados_operativos?.seguimiento ?? "—"}</dd>
                     <dt>Materializadas</dt><dd>{data.oportunidades.resumen?.materializadas ?? "—"}</dd>
-                    <dt>Valor potencial</dt><dd>{data.oportunidades.resumen?.valor_potencial_total ?? "—"}</dd>
+                    <dt>Valor potencial{" "}
+                      <SemanticBadge
+                        tipo={data.oportunidades.campos_semanticos?.valor_potencial_total?.tipo_semantico ?? "INFERENCIA"}
+                        subtipo={data.oportunidades.campos_semanticos?.valor_potencial_total?.subtipo_semantico}
+                      />
+                    </dt><dd>{data.oportunidades.resumen?.valor_potencial_total ?? "—"}</dd>
                     <dt>Pend. aprobación</dt><dd>{data.oportunidades.resumen?.pendientes_aprobacion ?? "—"}</dd>
                   </dl>
                 </>
@@ -254,11 +266,17 @@ export function CentroControlPage() {
                 <p className="muted">{data.llm?.disponible === false ? "Sin información disponible" : "Sin proveedores configurados"}</p>
               ) : (
                 <table className="data-table compact-table">
-                  <thead><tr><th>Proveedor</th><th>Estado</th><th>Errores 24h</th><th>Latencia</th><th></th></tr></thead>
+                  <thead><tr><th>Proveedor</th><th>Semántica</th><th>Estado</th><th>Errores 24h</th><th>Latencia</th><th></th></tr></thead>
                   <tbody>
                     {data.llm.proveedores.slice(0, 5).map((p) => (
                       <tr key={p.id}>
                         <td>{p.nombre}</td>
+                        <td>
+                          <SemanticBadge
+                            tipo={p.tipo_semantico ?? "INFERENCIA"}
+                            tooltip={p.tooltip_semantico}
+                          />
+                        </td>
                         <td>{p.estado ?? (p.habilitado ? "ACTIVO" : "INACTIVO")}</td>
                         <td>{p.errores_24h}</td>
                         <td>{p.latencia_media_ms != null ? `${p.latencia_media_ms} ms` : "—"}</td>
@@ -299,11 +317,21 @@ export function CentroControlPage() {
                 <p className="muted">{data.valor_retorno?.estado ?? "Sin información disponible"}</p>
               ) : (
                 <dl className="detail-grid">
-                  <dt>Valor esperado</dt><dd>{data.valor_retorno.valor_esperado ?? "—"}</dd>
-                  <dt>Valor materializado</dt><dd>{data.valor_retorno.valor_materializado ?? "—"}</dd>
-                  <dt>Valor atribuible</dt><dd>{data.valor_retorno.valor_atribuible ?? "—"}</dd>
-                  <dt>Beneficio neto</dt><dd>{data.valor_retorno.beneficio_neto ?? "—"}</dd>
-                  <dt>Retorno</dt><dd>{data.valor_retorno.retorno_porcentaje != null ? `${data.valor_retorno.retorno_porcentaje}%` : "—"}</dd>
+                  <dt>Valor esperado{" "}
+                    <SemanticBadge tipo={data.valor_retorno.campos_semanticos?.valor_esperado?.tipo_semantico ?? "INFERENCIA"} />
+                  </dt><dd>{data.valor_retorno.valor_esperado ?? "—"}</dd>
+                  <dt>Valor materializado{" "}
+                    <SemanticBadge tipo={data.valor_retorno.campos_semanticos?.valor_materializado?.tipo_semantico ?? "HECHO"} />
+                  </dt><dd>{data.valor_retorno.valor_materializado ?? "—"}</dd>
+                  <dt>Valor atribuible{" "}
+                    <SemanticBadge tipo={data.valor_retorno.campos_semanticos?.valor_atribuible?.tipo_semantico ?? "HECHO"} />
+                  </dt><dd>{data.valor_retorno.valor_atribuible ?? "—"}</dd>
+                  <dt>Beneficio neto{" "}
+                    <SemanticBadge tipo={data.valor_retorno.campos_semanticos?.beneficio_neto?.tipo_semantico ?? "INFERENCIA"} />
+                  </dt><dd>{data.valor_retorno.beneficio_neto ?? "—"}</dd>
+                  <dt>Retorno{" "}
+                    <SemanticBadge tipo={data.valor_retorno.campos_semanticos?.retorno_porcentaje?.tipo_semantico ?? "INFERENCIA"} />
+                  </dt><dd>{data.valor_retorno.retorno_porcentaje != null ? `${data.valor_retorno.retorno_porcentaje}%` : "—"}</dd>
                 </dl>
               )}
               <p><Link to="/costos-valor">Ver valoración</Link></p>
@@ -358,11 +386,17 @@ export function CentroControlPage() {
                   </dl>
                   {data.inteligencia_externa.recientes && data.inteligencia_externa.recientes.length > 0 && (
                     <table className="data-table compact-table">
-                      <thead><tr><th>Señal</th><th>Clasificación</th><th></th></tr></thead>
+                      <thead><tr><th>Señal</th><th>Semántica</th><th>Clasificación</th><th></th></tr></thead>
                       <tbody>
                         {data.inteligencia_externa.recientes.slice(0, 5).map((s) => (
                           <tr key={s.id}>
                             <td>{s.titulo}</td>
+                            <td>
+                              <SemanticBadge
+                                tipo={s.tipo_semantico ?? "INFERENCIA"}
+                                subtipo={s.subtipo_semantico}
+                              />
+                            </td>
                             <td>{s.clasificacion ?? "—"}</td>
                             <td><Link to={s.enlace}>Ver</Link></td>
                           </tr>
