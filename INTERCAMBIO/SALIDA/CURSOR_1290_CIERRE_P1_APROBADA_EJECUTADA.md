@@ -68,7 +68,8 @@ con resultado trazable y distinción entre acción propuesta y hecho ejecutado.
 | Tipo | SHA |
 |------|-----|
 | FIX-1290-EJECUCION (+ frontend) | `245cb778e4eff058c70dca533607678899dffe0c` |
-| TESTS-1290-EJECUCION | `615717b` (completar SHA tras push) |
+| TESTS-1290-EJECUCION | `615717b9cd06e046f508339f06980838dfd43cf8` |
+| DOC | `c535c4c9cb13ca067810244b7e99433b7effdd9a` |
 
 ---
 
@@ -108,7 +109,7 @@ RAMA:
 cursor/1290-ejecucion-recomendacion-p1-9a85
 
 HEAD:
-<SHA tras push>
+c535c4c9cb13ca067810244b7e99433b7effdd9a
 
 COMMIT FUNCIONAL:
 245cb778e4eff058c70dca533607678899dffe0c
