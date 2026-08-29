@@ -34,6 +34,7 @@ from app import governance_models  # noqa: F401, E402
 from app import integration_models  # noqa: F401, E402
 from app import learning_models  # noqa: F401, E402
 from app import optimization_models  # noqa: F401, E402
+from app import commercial_models  # noqa: F401, E402
 from app import llm_models  # noqa: F401, E402
 from app import security_models  # noqa: F401, E402
 from app import identity_models  # noqa: F401, E402
