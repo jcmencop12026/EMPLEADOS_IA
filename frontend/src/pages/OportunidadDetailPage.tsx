@@ -18,7 +18,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "accion", label: "Siguiente acción" },
   { id: "equipo", label: "Equipo IA" },
   { id: "trazabilidad", label: "Trazabilidad" },
-  { id: "finops", label: "FinOps" },
+  { id: "finops", label: "Costos y consumo" },
 ];
 
 export function OportunidadDetailPage() {
@@ -64,7 +64,7 @@ export function OportunidadDetailPage() {
     if (!opportunityId) return;
     try {
       await activateOpportunity(opportunityId);
-      setMsg("Oportunidad activada — WorkPlan creado");
+      setMsg("Oportunidad activada — plan de trabajo creado");
       reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
@@ -90,7 +90,7 @@ export function OportunidadDetailPage() {
       <div className="toolbar" style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
         <button type="button" onClick={onEvaluar} title="Re-evaluar pertinencia y prioridad">Evaluar</button>
         <button type="button" onClick={onAprobar} title="Aprobar oportunidad">Aprobar</button>
-        <button type="button" onClick={onActivar} title="Activar y crear WorkPlan">Activar</button>
+        <button type="button" onClick={onActivar} title="Activar y crear plan de trabajo">Activar</button>
       </div>
 
       <nav className="tab-bar" style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
@@ -136,8 +136,8 @@ export function OportunidadDetailPage() {
         )}
         {tab === "finops" && (
           <dl className="detail-grid">
-            <dt>Referencia FINOPS</dt><dd>{(opp.finops_reference as string) ?? "—"}</dd>
-            <dt>WorkPlan</dt><dd>{(opp.work_plan_id as string) ?? "—"}</dd>
+            <dt>Referencia de costos</dt><dd>{(opp.finops_reference as string) ?? "—"}</dd>
+            <dt>Plan de trabajo</dt><dd>{(opp.work_plan_id as string) ?? "—"}</dd>
             <dt>Atribución</dt><dd>{(opp.atribucion_nivel as string) ?? "—"}</dd>
           </dl>
         )}
