@@ -1021,7 +1021,6 @@ body {
   margin-bottom: 10px;
 }
 
-<<<<<<< HEAD
 .compact-tabs {
   margin-bottom: 8px;
 }
@@ -1065,8 +1064,6 @@ body {
   background: #e2e8f0;
 }
 
-=======
->>>>>>> 0278177 (feat(1200): línea base, medición posterior e impacto B2.1)
 .compact-form {
   display: flex;
   flex-direction: column;
@@ -1097,7 +1094,6 @@ body {
   gap: 12px;
 }
 
-<<<<<<< HEAD
 .inline-input {
   min-width: 180px;
   padding: 6px 8px;
@@ -1111,8 +1107,6 @@ body {
   font-size: 12px;
 }
 
-=======
->>>>>>> 0278177 (feat(1200): línea base, medición posterior e impacto B2.1)
 .approval-card {
   border: 1px solid #e2e8f0;
   border-radius: 6px;

@@ -510,26 +510,19 @@ export function OportunidadDetailPage() {
         )}
 
         {tab === "finops" && (
-<<<<<<< HEAD
-          <dl className="detail-grid">
-            <dt>Referencia FINOPS</dt><dd>{opp.finops_reference ?? "—"}</dd>
-            <dt>Plan de trabajo</dt>
-            <dd>{opp.work_plan_id ? <Link to={`/operaciones/${opp.work_plan_id}`}>{opp.work_plan_id}</Link> : "—"}</dd>
-            <dt>Atribución</dt><dd>{opp.atribucion_nivel ?? "—"}</dd>
-            <dt>Valor potencial</dt><dd>{formatMoney(opp.valor_potencial)}</dd>
-            <dt>Valor materializado</dt><dd>{formatMoney(opp.valor_materializado)}</dd>
-          </dl>
-=======
           <div>
             <dl className="detail-grid">
-              <dt>Referencia FINOPS</dt><dd>{(opp.finops_reference as string) ?? "—"}</dd>
-              <dt>WorkPlan</dt><dd>{(opp.work_plan_id as string) ?? "—"}</dd>
-              <dt>Atribución</dt><dd>{(opp.atribucion_nivel as string) ?? "—"}</dd>
+              <dt>Referencia FINOPS</dt><dd>{opp.finops_reference ?? "—"}</dd>
+              <dt>Plan de trabajo</dt>
+              <dd>{opp.work_plan_id ? <Link to={`/operaciones/${opp.work_plan_id}`}>{opp.work_plan_id}</Link> : "—"}</dd>
+              <dt>Atribución</dt><dd>{opp.atribucion_nivel ?? "—"}</dd>
+              <dt>Valor potencial</dt><dd>{formatMoney(opp.valor_potencial)}</dd>
+              <dt>Valor materializado</dt><dd>{formatMoney(opp.valor_materializado)}</dd>
               <dt>Costo IA acumulado</dt><dd>{economics?.total_cost_label ?? "—"}</dd>
               <dt>Consumos vinculados</dt><dd>{economics?.consumption_count ?? 0}</dd>
             </dl>
             {economics && economics.consumptions.length > 0 && (
-              <table className="data-table" style={{ marginTop: "1rem" }}>
+              <table className="data-table compact-table" style={{ marginTop: "1rem" }}>
                 <thead>
                   <tr>
                     <th>Proveedor</th>
@@ -551,7 +544,6 @@ export function OportunidadDetailPage() {
               </table>
             )}
           </div>
->>>>>>> bc7e53c (feat(finops): trazabilidad costo-oportunidad y FinOps operativo (bloque 1110))
         )}
       </div>
     </div>
