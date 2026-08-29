@@ -19,6 +19,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/diagnosticos": ["diagnosticos.view"],
   "/costos-valor": ["finops.view"],
   "/notificaciones": ["notification.view"],
+  "/mi-seguridad": [],
   "/auditoria": ["audit.view"],
   "/administracion/empresas": ["platform.organization.view"],
   "/administracion/usuarios": ["admin.user.view"],
@@ -26,7 +27,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/administracion/organizacion": ["admin.organization.view"],
   "/administracion/configuracion": ["admin.config.view"],
   "/administracion/proveedores-ia": ["llm.view"],
-  "/administracion/seguridad": ["admin.security.view"],
+  "/administracion/seguridad": ["admin.security.view", "seguridad.view"],
 };
 
 export function canAccessRoute(path: string, permissions: Set<string>): boolean {
