@@ -6,7 +6,7 @@
 |-------|-------|
 | Rama | `cursor/post-v1-fix-migraciones-heredadas-1110-1120` |
 | Base oficial | `cursor/1250-convergencia-final-post-v1` @ `eb229806136e29acddc0f592b5f017f5c3cb2958` |
-| HEAD rama | (ver commit de documentación) |
+| HEAD rama | `0ec856f70f38761705f141f9054c2e480b2f7e76` |
 | Alembic head | `1250f1a2b3c4d` (único) |
 
 ## Hallazgo principal
