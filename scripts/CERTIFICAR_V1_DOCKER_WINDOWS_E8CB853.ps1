@@ -176,13 +176,26 @@ function Invoke-GitCert {
     $allArgs = @('-C', $CertDir) + $GitArgs
     return Invoke-ExternalCommand -Label ('git candidata ' + ($GitArgs -join ' ')) -Exe 'git' -CmdArgs $allArgs
 }
+function Get-DockerComposeCommandArgs {
+    param([string[]]$ComposeArgs)
+    return @('compose', '--project-directory', $CertDir, '-f', $ComposeFile) + $ComposeArgs
+}
 function Invoke-DockerCompose {
     param(
-        [string]$StdinContent = $null,
         [Parameter(ValueFromRemainingArguments = $true)]
         [string[]]$ComposeArgs
     )
-    $allArgs = @('compose', '--project-directory', $CertDir, '-f', $ComposeFile) + $ComposeArgs
+    $allArgs = Get-DockerComposeCommandArgs -ComposeArgs $ComposeArgs
+    return Invoke-ExternalCommand -Label ('docker compose ' + ($ComposeArgs -join ' ')) -Exe 'docker' -CmdArgs $allArgs
+}
+function Invoke-DockerComposeStdin {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$StdinContent,
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$ComposeArgs
+    )
+    $allArgs = Get-DockerComposeCommandArgs -ComposeArgs $ComposeArgs
     return Invoke-ExternalCommand -Label ('docker compose ' + ($ComposeArgs -join ' ')) -Exe 'docker' -CmdArgs $allArgs -StdinContent $StdinContent
 }
 function Test-PortFree([int]$Port) {
@@ -520,7 +533,7 @@ try {
     $null = Invoke-DockerCompose exec -T postgres psql -U empleados_cert -d postgres -c "DROP DATABASE IF EXISTS empleados_ia_cert_restore;"
     $null = Invoke-DockerCompose exec -T postgres psql -U empleados_cert -d postgres -c "CREATE DATABASE empleados_ia_cert_restore;"
     $restoreSqlContent = Get-Content $backupFile -Raw
-    $null = Invoke-DockerCompose -StdinContent $restoreSqlContent exec -T postgres psql -U empleados_cert -d empleados_ia_cert_restore
+    $null = Invoke-DockerComposeStdin -StdinContent $restoreSqlContent exec -T postgres psql -U empleados_cert -d empleados_ia_cert_restore
     $restoreSql = "SELECT COUNT(*) FROM cert_persistence WHERE marker='" + $marker + "';"
     $restored = Invoke-DockerCompose exec -T postgres psql -U empleados_cert -d empleados_ia_cert_restore -tAc $restoreSql
     Set-Result 'RESTORE' ([int](($restored | Out-String).Trim()) -ge 1)
