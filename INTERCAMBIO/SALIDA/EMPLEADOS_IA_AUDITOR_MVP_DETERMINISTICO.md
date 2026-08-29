@@ -195,7 +195,7 @@ RAMA:
 cursor/auditor-empleados-ia-mvp-deterministico
 
 HEAD:
-e6b47d5
+9fbe416
 
 POLÍTICAS:
 PASS
