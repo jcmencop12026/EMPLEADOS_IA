@@ -146,6 +146,7 @@ def create_signal(
     severidad: str = "MEDIA",
     confianza: float = 0.5,
     correlation_id: str | None = None,
+    modo_ingesta: str = "REAL",
 ) -> tuple[ProactiveSignal, bool]:
     """Crea señal con deduplicación. Retorna (señal, es_nueva)."""
     dedupe_key = _make_dedupe_key(organization_id, tipo, origen, source_reference, evento)
@@ -168,6 +169,7 @@ def create_signal(
         tipo=tipo,
         dominio=dominio,
         origen=origen,
+        modo_ingesta=modo_ingesta,
         source_reference=source_reference,
         evento=evento,
         payload_json=_json(payload) if payload else None,
@@ -175,6 +177,8 @@ def create_signal(
         confianza=confianza,
         dedupe_key=dedupe_key,
         correlation_id=corr,
+        estado_procesamiento="RECIBIDA",
+        signal_at=_utcnow(),
     )
     db.add(signal)
     db.flush()
@@ -1078,6 +1082,8 @@ def run_proactive_pipeline(
     user_id: str | None = None,
 ) -> dict[str, Any]:
     """Pipeline proactivo sin prompt humano."""
+    synthetic_origins = {"proactive_scheduler", "proactive_scheduler_sintetico", "proactive_scheduler_test"}
+    modo = "SINTETICO" if origen in synthetic_origins or (payload or {}).get("synthetic") else "REAL"
     signal, is_new = create_signal(
         db,
         organization_id=organization_id,
@@ -1089,6 +1095,7 @@ def run_proactive_pipeline(
         severidad=payload.get("severidad", "MEDIA") if payload else "MEDIA",
         confianza=payload.get("confianza", 0.7) if payload else 0.7,
         source_reference=payload.get("source_reference") if payload else None,
+        modo_ingesta=modo,
     )
     if not is_new:
         opp = db.query(Opportunity).filter(Opportunity.signal_id == signal.id).first()

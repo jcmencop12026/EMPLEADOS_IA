@@ -33,6 +33,7 @@ from app.routers import (
     salud,
     experience,
     oportunidades,
+    senales,
     test_lab,
     tools,
 )
@@ -121,6 +122,7 @@ app.include_router(finops.router)
 app.include_router(salud.router)
 app.include_router(experience.router)
 app.include_router(oportunidades.router)
+app.include_router(senales.router)
 app.include_router(llm_providers.router)
 
 
