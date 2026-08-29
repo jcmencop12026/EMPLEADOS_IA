@@ -6,7 +6,7 @@
 |-------|-------|
 | **Base obligatoria** | `cda96774909576e589ee1fddcbabf08aeec65540` |
 | **Rama** | `cursor/centro-control-cableado-ejecutivo-fase2` |
-| **HEAD** | `02b5804d1dbbb358c0f20499ca4d7cd6babfda13` |
+| **HEAD** | `c05bd1c` |
 | **Fix CC-DT portado** | `7bdfeee` + `3624a15` (cherry-pick de `096b7e8` + `84ab9f7`) |
 
 ## Arquitectura
