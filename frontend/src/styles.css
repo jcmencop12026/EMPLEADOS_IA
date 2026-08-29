@@ -1173,3 +1173,30 @@ body {
   background: #f0f0f0;
   border-color: #999;
 }
+
+/* --- Vistas aprendizaje / optimización / multiproveedor --- */
+.compact-panel { padding: 10px 12px; }
+.compact-tabs { gap: 4px; margin-bottom: 4px; }
+.compact-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; font-size: 12px; }
+.compact-metrics > div { display: flex; flex-direction: column; gap: 2px; }
+.compact-table { font-size: 12px; }
+.compact-table th, .compact-table td { padding: 6px 8px; }
+.compact-pre { font-size: 11px; max-height: 200px; overflow: auto; white-space: pre-wrap; }
+.compact-details summary { cursor: pointer; font-size: 12px; font-weight: 600; }
+.filter-input { max-width: 280px; margin-bottom: 8px; }
+.notice-banner { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 8px 10px; font-size: 12px; }
+.notice-banner.subtle { background: #f8fafc; border-color: #e2e8f0; }
+.help-tooltip { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; margin-left: 4px; border-radius: 50%; background: #e2e8f0; color: #475569; font-size: 10px; cursor: help; }
+.panel-header-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.semantic-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 4px; }
+.semantic-badge.hecho { background: #dcfce7; color: #166534; }
+.semantic-badge.inferencia { background: #dbeafe; color: #1e40af; }
+.semantic-badge.recomendacion { background: #f3e8ff; color: #6b21a8; }
+.estado-badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+.estado-badge.propuesta { background: #f1f5f9; color: #475569; }
+.estado-badge.aprobada { background: #dbeafe; color: #1d4ed8; }
+.estado-badge.ejecutada { background: #dcfce7; color: #15803d; }
+.estado-badge.fallida { background: #fee2e2; color: #b91c1c; }
+.estado-badge.pendiente { background: #fef3c7; color: #b45309; }
+.estado-badge.rechazada, .estado-badge.cancelada { background: #f1f5f9; color: #64748b; }
+.btn-sm { font-size: 12px; padding: 4px 8px; }

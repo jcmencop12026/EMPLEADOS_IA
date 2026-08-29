@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import type { RecalibracionItem } from "../api";
+import type { RecalibracionItem, RetroalimentacionItem } from "../api";
 import {
   aplicarRecalibracion,
   aprobarRecalibracion,
@@ -9,6 +9,15 @@ import {
   fetchHistorialAprendizaje,
   rechazarRecalibracion,
 } from "../api";
+import { HelpTooltip } from "../components/optimizacion/HelpTooltip";
+import { EstadoBadge } from "../components/optimizacion/EstadoBadge";
+import { SemanticBadge } from "../components/optimizacion/SemanticBadge";
+import {
+  extractCorrelationId,
+  sinCambioPrioridad,
+  TIPO_EXPLICACION_SEMANTICA,
+  TOOLTIPS,
+} from "../lib/optimizacionLabels";
 
 export function AprendizajeDetailPage() {
   const { cicloId } = useParams<{ cicloId: string }>();
@@ -90,43 +99,45 @@ export function AprendizajeDetailPage() {
   }
 
   if (!detail) {
-    return (
-      <div className="page">
-        <p className="muted">Cargando ciclo…</p>
-      </div>
-    );
+    return <div className="page"><p className="muted">Cargando ciclo…</p></div>;
   }
 
   const desviaciones = (detail.desviaciones ?? {}) as Record<string, { esperado?: number; real?: number; direccion?: string }>;
+  const correlationId = extractCorrelationId(detail.referencias);
+  const sinCambio = sinCambioPrioridad(detail.prioridad_anterior, detail.prioridad_propuesta);
+  const retro = (detail.retroalimentaciones ?? []) as RetroalimentacionItem[];
 
   return (
     <div className="page">
-      <header className="page-header">
-        <div>
-          <p className="muted">
-            <Link to="/aprendizaje">← Aprendizaje</Link>
-          </p>
-          <h1>Ciclo {detail.id.slice(0, 8)}…</h1>
-          <p className="muted">
-            Oportunidad{" "}
-            <Link to={`/oportunidades/${detail.opportunity_id}`}>{detail.opportunity_id.slice(0, 8)}…</Link> — {detail.estado}
-          </p>
-        </div>
+      <header className="page-header compact">
+        <p className="muted"><Link to="/aprendizaje">← Aprendizaje</Link></p>
+        <h1>Ciclo {detail.id.slice(0, 8)}…</h1>
+        <p className="muted">
+          Oportunidad <Link to={`/oportunidades/${detail.opportunity_id}`}>{detail.opportunity_id.slice(0, 8)}…</Link>
+          {" — "}<EstadoBadge estado={detail.estado} />
+        </p>
       </header>
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      <section className="card" style={{ marginBottom: "1rem" }}>
-        <h2>Esperado vs real</h2>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Métrica</th>
-              <th>Esperado</th>
-              <th>Real</th>
-              <th>Desviación</th>
-            </tr>
-          </thead>
+      <section className="card compact-panel" style={{ marginBottom: "1rem" }}>
+        <h2>Origen y trazabilidad</h2>
+        <div className="compact-metrics">
+          <div><span className="muted">Organización</span><strong className="mono">{detail.organization_id?.slice(0, 8) ?? "—"}</strong></div>
+          <div><span className="muted">Plan de trabajo</span><strong className="mono">{detail.work_plan_id?.slice(0, 8) ?? "—"}</strong></div>
+          <div><span className="muted">Señal origen</span><strong className="mono">{detail.signal_id?.slice(0, 8) ?? "—"}</strong></div>
+          <div>
+            <span className="muted">Correlation ID<HelpTooltip text={TOOLTIPS.correlation_id} /></span>
+            <strong className="mono">{correlationId ?? "—"}</strong>
+          </div>
+          <div><span className="muted">Evaluado</span><strong>{detail.evaluado_at ? new Date(detail.evaluado_at).toLocaleString("es-CO") : "—"}</strong></div>
+        </div>
+      </section>
+
+      <section className="card compact-panel" style={{ marginBottom: "1rem" }}>
+        <h2>Resultado esperado vs observado</h2>
+        <table className="data-table compact-table">
+          <thead><tr><th>Métrica</th><th>Esperado</th><th>Observado</th><th>Diferencia</th></tr></thead>
           <tbody>
             {[
               ["Impacto", detail.impacto_esperado, detail.impacto_real, desviaciones.impacto],
@@ -138,59 +149,60 @@ export function AprendizajeDetailPage() {
                 <td>{label}</td>
                 <td>{esp ?? "—"}</td>
                 <td>{real ?? "—"}</td>
-                <td>{dev?.direccion ?? "—"}</td>
+                <td>{dev?.direccion ?? (esp != null && real != null ? Number(real) - Number(esp) : "—")}</td>
               </tr>
             ))}
           </tbody>
         </table>
         {detail.estado === "ABIERTO" && (
-          <div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            <input
-              type="number"
-              placeholder="Valor real"
-              value={valorReal}
-              onChange={(e) => setValorReal(e.target.value)}
-            />
-            <input
-              type="number"
-              placeholder="Impacto real"
-              value={impactoReal}
-              onChange={(e) => setImpactoReal(e.target.value)}
-            />
-            <button type="button" className="btn btn-primary" onClick={onEvaluar} disabled={busy}>
-              Evaluar ciclo
-            </button>
+          <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input type="number" placeholder="Valor observado" value={valorReal} onChange={(e) => setValorReal(e.target.value)} />
+            <input type="number" placeholder="Impacto observado" value={impactoReal} onChange={(e) => setImpactoReal(e.target.value)} />
+            <button type="button" className="btn btn-primary btn-sm" onClick={onEvaluar} disabled={busy}>Evaluar ciclo</button>
           </div>
         )}
       </section>
 
-      {detail.explicacion_prioridad && (
-        <section className="card" style={{ marginBottom: "1rem" }}>
-          <h2>Explicación de repriorización</h2>
-          <p>Calidad recomendación: <strong>{detail.calidad_recomendacion}</strong></p>
-          <p>Prioridad anterior: {detail.prioridad_anterior ?? "—"} → propuesta: {detail.prioridad_propuesta ?? "—"}</p>
-          <pre style={{ whiteSpace: "pre-wrap", fontSize: "0.85rem" }}>
-            {JSON.stringify(detail.explicacion_prioridad, null, 2)}
-          </pre>
-        </section>
-      )}
-
-      <section className="card" style={{ marginBottom: "1rem" }}>
-        <h2>Recalibraciones</h2>
-        {(detail.recalibraciones ?? []).length === 0 ? (
-          <p className="muted">Sin propuestas de recalibración.</p>
+      <section className="card compact-panel" style={{ marginBottom: "1rem" }}>
+        <h2>Aprendizaje generado</h2>
+        {retro.length === 0 ? (
+          <p className="muted">Sin retroalimentación registrada aún.</p>
         ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Campo</th>
-                <th>Estado</th>
-                <th>Anterior</th>
-                <th>Nuevo</th>
-                <th>Justificación</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
+          retro.map((r) => {
+            const sem = TIPO_EXPLICACION_SEMANTICA[r.tipo_explicacion] ?? "INFERENCIA";
+            return (
+              <div key={r.id} className="approval-card">
+                <div className="panel-header-row">
+                  <strong>{r.resumen ?? "Aprendizaje"}</strong>
+                  <SemanticBadge kind={sem} />
+                </div>
+                <p>{r.detalle ?? "—"}</p>
+                <p className="muted">Calidad recomendación: {r.calidad_recomendacion ?? "—"}</p>
+                {(r.lecciones?.length ?? 0) > 0 && (
+                  <ul>
+                    {(r.lecciones as string[]).map((l, i) => <li key={i}>{l}</li>)}
+                  </ul>
+                )}
+                <p className="muted">{r.created_at ? new Date(r.created_at).toLocaleString("es-CO") : ""}</p>
+              </div>
+            );
+          })
+        )}
+      </section>
+
+      <section className="card compact-panel" style={{ marginBottom: "1rem" }}>
+        <h2>Repriorización <HelpTooltip text={TOOLTIPS.repriorizacion} /></h2>
+        {sinCambio ? (
+          <p className="notice-banner subtle">No hubo cambio de prioridad en este ciclo.</p>
+        ) : (
+          <p>Prioridad {detail.prioridad_anterior ?? "—"} → <strong>{detail.prioridad_propuesta ?? "—"}</strong></p>
+        )}
+        {detail.explicacion_prioridad && (
+          <pre className="compact-pre">{JSON.stringify(detail.explicacion_prioridad, null, 2)}</pre>
+        )}
+        {(detail.recalibraciones ?? []).length > 0 && (
+          <table className="data-table compact-table" style={{ marginTop: 8 }}>
+            <thead><tr><th>Campo</th><th>Estado</th><th>Anterior</th><th>Nuevo</th><th>Evidencia</th><th></th></tr></thead>
             <tbody>
               {(detail.recalibraciones ?? []).map((rec) => (
                 <tr key={rec.id}>
@@ -202,18 +214,12 @@ export function AprendizajeDetailPage() {
                   <td>
                     {rec.estado === "SUGERIDA" && (
                       <>
-                        <button type="button" className="btn btn-sm" onClick={() => onAprobar(rec)} disabled={busy}>
-                          Aprobar
-                        </button>{" "}
-                        <button type="button" className="btn btn-sm" onClick={() => onRechazar(rec)} disabled={busy}>
-                          Rechazar
-                        </button>
+                        <button type="button" className="btn btn-sm" onClick={() => onAprobar(rec)} disabled={busy}>Aprobar</button>{" "}
+                        <button type="button" className="btn btn-sm" onClick={() => onRechazar(rec)} disabled={busy}>Rechazar</button>
                       </>
                     )}
                     {rec.estado === "APROBADA" && (
-                      <button type="button" className="btn btn-sm btn-primary" onClick={() => onAplicar(rec)} disabled={busy}>
-                        Aplicar
-                      </button>
+                      <button type="button" className="btn btn-sm btn-primary" onClick={() => onAplicar(rec)} disabled={busy}>Aplicar</button>
                     )}
                   </td>
                 </tr>
@@ -223,16 +229,14 @@ export function AprendizajeDetailPage() {
         )}
       </section>
 
-      <section className="card">
+      <section className="card compact-panel">
         <h2>Historial auditable</h2>
         {historial.length === 0 ? (
           <p className="muted">Sin eventos.</p>
         ) : (
           <ul>
             {(historial as { accion: string; created_at?: string }[]).map((h, i) => (
-              <li key={i}>
-                {h.created_at ? new Date(h.created_at).toLocaleString("es-CO") : ""} — {h.accion}
-              </li>
+              <li key={i}>{h.created_at ? new Date(h.created_at).toLocaleString("es-CO") : ""} — {h.accion}</li>
             ))}
           </ul>
         )}
