@@ -6,6 +6,9 @@ desktop.ini
 frontend/dist/
 frontend/node_modules/
 node_modules/
+data/*.db
+data/*.db-journal
+.venv/
 *.pyc
 **/__pycache__/
 ﻿# Python / Node (cuando existan)
