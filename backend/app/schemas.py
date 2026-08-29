@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    mfa_required: bool = False
 
 
 class LoginRequest(BaseModel):

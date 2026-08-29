@@ -581,6 +581,115 @@ export async function fetchSecuritySummary(): Promise<SecuritySummary> {
   return api<SecuritySummary>("/api/admin/security");
 }
 
+export type MfaStatus = {
+  enabled: boolean;
+  confirmed_at?: string | null;
+  recovery_codes_remaining: number;
+  enrollment_pending: boolean;
+  mfa_required_by_policy: boolean;
+};
+
+export type UserSession = {
+  id: string;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  created_at: string;
+  last_activity_at: string;
+  expires_at: string;
+  mfa_verified: boolean;
+  current: boolean;
+};
+
+export type SecurityPolicy = {
+  mfa_mode: string;
+  mfa_required_roles: string[];
+  session_duration_minutes: number;
+  max_active_sessions: number;
+  login_max_attempts: number;
+  lockout_minutes: number;
+  revoke_sessions_on_password_change: boolean;
+  excess_session_policy: string;
+};
+
+export type SecurityEvent = {
+  id: string;
+  event_type: string;
+  user_id?: string | null;
+  detail?: string | null;
+  ip_address?: string | null;
+  created_at: string;
+};
+
+export async function fetchMfaStatus(): Promise<MfaStatus> {
+  return api<MfaStatus>("/api/security/mfa/status");
+}
+
+export async function startMfaEnrollment(): Promise<{ secret: string; provisioning_uri: string; qr_data_url: string }> {
+  return api("/api/security/mfa/enroll/start", { method: "POST" });
+}
+
+export async function confirmMfaEnrollment(code: string): Promise<{ recovery_codes: string[] }> {
+  return api("/api/security/mfa/enroll/confirm", { method: "POST", body: JSON.stringify({ code }) });
+}
+
+export async function disableMfa(password: string): Promise<void> {
+  await api("/api/security/mfa/disable", { method: "POST", body: JSON.stringify({ password }) });
+}
+
+export async function regenerateMfaRecovery(password: string): Promise<{ recovery_codes: string[] }> {
+  return api("/api/security/mfa/recovery/regenerate", { method: "POST", body: JSON.stringify({ password }) });
+}
+
+export async function fetchMySessions(): Promise<UserSession[]> {
+  return api<UserSession[]>("/api/security/sessions");
+}
+
+export async function revokeMySession(sessionId: string): Promise<void> {
+  await api(`/api/security/sessions/${sessionId}`, { method: "DELETE" });
+}
+
+export async function revokeOtherSessions(): Promise<void> {
+  await api("/api/security/sessions/revoke-others", { method: "POST" });
+}
+
+export async function changePassword(current: string, newPassword: string, revokeOthers = true): Promise<void> {
+  await api("/api/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({
+      current_password: current,
+      new_password: newPassword,
+      revoke_other_sessions: revokeOthers,
+    }),
+  });
+}
+
+export async function verifyMfaLogin(code: string, mfaToken: string): Promise<{ access_token: string }> {
+  return api("/api/auth/mfa/verify", {
+    method: "POST",
+    body: JSON.stringify({ code, mfa_token: mfaToken }),
+  });
+}
+
+export async function fetchSecurityPolicy(): Promise<SecurityPolicy> {
+  return api<SecurityPolicy>("/api/security/policy");
+}
+
+export async function updateSecurityPolicy(data: Partial<SecurityPolicy>): Promise<SecurityPolicy> {
+  return api<SecurityPolicy>("/api/security/policy", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function fetchSecurityEvents(limit = 50): Promise<SecurityEvent[]> {
+  return api<SecurityEvent[]>(`/api/security/events?limit=${limit}`);
+}
+
+export async function fetchAdminSessions(): Promise<UserSession[]> {
+  return api<UserSession[]>("/api/security/admin/sessions");
+}
+
+export async function revokeAdminSession(sessionId: string): Promise<void> {
+  await api(`/api/security/admin/sessions/${sessionId}`, { method: "DELETE" });
+}
+
 export async function fetchPlatformOrganizations(): Promise<PlatformOrganization[]> {
   return api<PlatformOrganization[]>("/api/platform/organizations");
 }

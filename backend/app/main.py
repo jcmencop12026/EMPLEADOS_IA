@@ -17,6 +17,7 @@ from app import baseline_models  # noqa: F401 — línea base e impacto 1200
 from app import valuation_models  # noqa: F401 — valoración económica 1210
 from app import diagnostic_models  # noqa: F401 — diagnóstico transversal 1220
 from app import llm_models  # noqa: F401 — LLM Gateway V1
+from app import security_models  # noqa: F401 — seguridad avanzada 1300
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
@@ -40,6 +41,7 @@ from app.routers import (
     senales,
     valoracion,
     diagnosticos,
+    security,
     test_lab,
     tools,
 )
@@ -109,6 +111,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(security.router)
 app.include_router(organization.router)
 app.include_router(platform.router)
 app.include_router(admin.router)
