@@ -259,3 +259,109 @@ def break_glass_login(body: BreakGlassRequest, request: Request, db: Session = D
                       login_method="BREAK_GLASS", result="EXITOSO", ip_address=client_ip(request))
   db.commit()
   return TokenResponse(access_token=token)
+
+
+# --- SCIM administración (1380) ---
+
+@router.get("/scim/estado")
+def scim_status(user: User = Depends(require_permission("identidad.view")), db: Session = Depends(get_db)):
+    from app.services.scim_auth_service import is_scim_enabled, list_tokens
+    from app.services.scim_audit import get_metrics, list_audit
+    from app.scim_models import ScimConflict
+    settings = svc.get_or_create_identity_settings(db, user.organization_id)
+    conflicts = db.query(ScimConflict).filter(
+        ScimConflict.organization_id == user.organization_id, ScimConflict.resolved.is_(False)
+    ).count()
+    return {
+        "scim_enabled": is_scim_enabled(db, user.organization_id),
+        "scim_base_url": "/scim/v2",
+        "metrics": get_metrics(db, user.organization_id),
+        "tokens": list_tokens(db, user.organization_id),
+        "conflicts_pending": conflicts,
+        "recent_events": [
+            {"action": e.action, "result": e.result, "detail": e.detail, "created_at": e.created_at.isoformat()}
+            for e in list_audit(db, user.organization_id, limit=10)
+        ],
+    }
+
+
+@router.put("/scim/configuracion")
+def scim_configure(
+    body: dict,
+    user: User = Depends(require_permission("identidad.manage")),
+    db: Session = Depends(get_db),
+):
+    from app.services.scim_auth_service import set_scim_enabled
+    enabled = bool(body.get("scim_enabled", False))
+    set_scim_enabled(db, user.organization_id, enabled)
+    db.commit()
+    return {"scim_enabled": enabled, "message": "Configuración SCIM actualizada"}
+
+
+@router.post("/scim/tokens")
+def scim_create_token(
+    body: dict,
+    user: User = Depends(require_permission("identidad.manage")),
+    db: Session = Depends(get_db),
+):
+    from app.services.scim_auth_service import create_token, set_scim_enabled
+    set_scim_enabled(db, user.organization_id, True)
+    row, plain = create_token(db, user.organization_id, name=body.get("name", "Token SCIM"), expires_days=body.get("expires_days"))
+    db.commit()
+    return {
+        "id": row.id,
+        "token": plain,
+        "token_prefix": row.token_prefix,
+        "message": "Guarde este token ahora. No se volverá a mostrar.",
+        "expires_at": row.expires_at.isoformat() if row.expires_at else None,
+    }
+
+
+@router.post("/scim/tokens/{token_id}/rotar")
+def scim_rotate_token(token_id: str, user: User = Depends(require_permission("identidad.manage")), db: Session = Depends(get_db)):
+    from app.services.scim_auth_service import rotate_token
+    row, plain = rotate_token(db, user.organization_id, token_id)
+    db.commit()
+    return {"id": row.id, "token": plain, "message": "Token rotado. Guarde el nuevo token ahora."}
+
+
+@router.post("/scim/tokens/{token_id}/revocar")
+def scim_revoke_token(token_id: str, user: User = Depends(require_permission("identidad.manage")), db: Session = Depends(get_db)):
+    from app.services.scim_auth_service import revoke_token
+    revoke_token(db, user.organization_id, token_id)
+    db.commit()
+    return {"message": "Token revocado"}
+
+
+@router.get("/scim/mapeos-roles")
+def scim_list_mappings(user: User = Depends(require_permission("identidad.view")), db: Session = Depends(get_db)):
+    from app.services.scim_group_service import list_group_role_mappings
+    return list_group_role_mappings(db, user.organization_id)
+
+
+@router.post("/scim/mapeos-roles")
+def scim_upsert_mapping(
+    body: dict,
+    user: User = Depends(require_permission("identidad.manage")),
+    db: Session = Depends(get_db),
+):
+    from app.services.scim_group_service import upsert_group_role_mapping
+    try:
+        result = upsert_group_role_mapping(db, user.organization_id, body["external_group"], body["role_code"])
+        db.commit()
+        return result
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/scim/conflictos")
+def scim_conflicts(user: User = Depends(require_permission("identidad.audit")), db: Session = Depends(get_db)):
+    from app.scim_models import ScimConflict
+    rows = db.query(ScimConflict).filter(
+        ScimConflict.organization_id == user.organization_id, ScimConflict.resolved.is_(False)
+    ).order_by(ScimConflict.created_at.desc()).limit(50).all()
+    return [
+        {"id": r.id, "conflict_type": r.conflict_type, "external_id": r.external_id, "detail": r.detail, "created_at": r.created_at.isoformat()}
+        for r in rows
+    ]
