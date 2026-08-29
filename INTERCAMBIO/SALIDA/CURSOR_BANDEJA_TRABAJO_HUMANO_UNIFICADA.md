@@ -138,7 +138,7 @@ RAMA:
 cursor/bandeja-trabajo-humano-unificada
 
 HEAD:
-(posterior al commit de entrega)
+40e76bcb1f1208562af83902c3dcf0fb683bd299
 
 NOTIFICACIONES 820:
 REUTILIZADAS
