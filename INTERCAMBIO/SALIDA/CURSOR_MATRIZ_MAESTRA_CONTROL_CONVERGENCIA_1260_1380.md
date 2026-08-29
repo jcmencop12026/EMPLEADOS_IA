@@ -1,8 +1,9 @@
 # EMPLEADOS_IA — MATRIZ MAESTRA DE CONTROL DE CONVERGENCIA 1260–1380
 
 **Tipo:** Control / documentación — **SOLO LECTURA**  
-**Fecha:** 2026-08-29  
-**Agente:** GENERAL (no duplica trabajos A / B / C / D)
+**Fecha:** 2026-08-29 (actualizado con insumos A/B/C)  
+**Agente:** GENERAL (no duplica trabajos A / B / C / D)  
+**Protocolo auditoría Fase 1:** `CURSOR_PROTOCOLO_AUDITORIA_FASE1_CONVERGENCIA.md`
 
 ---
 
@@ -11,8 +12,9 @@
 | Campo | Valor |
 |-------|-------|
 | **Rama** | `cursor/base-puente-v1-post-v1` |
-| **HEAD remoto** | `4b67183af1d527684e41cad0b02d7a997d3b2499` |
-| **HEAD funcional** | `d57b831e41b8e017da612c3c442f9f29c981f674` |
+| **BASE funcional fijada** | `4b67183af1d527684e41cad0b02d7a997d3b2499` |
+| **HEAD funcional código** | `d57b831e41b8e017da612c3c442f9f29c981f674` |
+| **HEAD remoto actual** | Puede incluir commits **documentales** posteriores — verificar con `git rev-parse` |
 | **Alembic HEAD** | `1250f1a2b3c4d` |
 | **Certificación SQLite base** | 774 passed, 4 skipped |
 | **PostgreSQL** | PENDIENTE (no certificado) |
@@ -26,6 +28,14 @@
 | **FASE 1** | 1360 → 1350 → merge Alembic → 1300 → 1370 → 1380 | **D** (en curso) |
 | **FASE 2** | 1260, 1270, 1290, 1330, cadena comercial | Posterior |
 | **FINAL** | Convergencia integral 1260–1380 + matriz 94 | Objetivo |
+
+### Ancla funcional vs commits documentales
+
+| Concepto | SHA / regla |
+|----------|-------------|
+| **Ancla funcional de convergencia** | `4b67183af1d527684e41cad0b02d7a997d3b2499` (base puente certificada) |
+| **Último commit de código puro** | `d57b831e41b8e017da612c3c442f9f29c981f674` |
+| **Commits documentales posteriores** | No alteran la huella funcional; no cambiar ancla sin justificación expresa |
 
 **Regla de oro:** cualquier fila con estado **PERDIDO** en una fase posterior respecto a BASE es hallazgo de convergencia y dispara criterio de aborto.
 
@@ -380,10 +390,11 @@ schema_repair.HEAD_REVISION = "1250f1a2b3c4d"
 |-------|------------|-------------|-------|
 | Observabilidad | `1270a1` | paralelo a cadena comercial | Extiende `llm_providers` |
 | Aprendizaje | `1260a1` → `1290a1` | secuencial | 1290 depende 1260 en rama fuente |
-| Comercial | `1280a1` → `1280b2` → `1310a1` | secuencial | 1310 tras 1280b2 |
-| TCO | `1320a1` | tras `1280b2` | Paralelo a 1310 |
-| Éxito cliente | `1340a1` | tras `1320a1` | Cadena 1280→1320→1340 |
-| Conectores | `1330a1` | independiente | Requiere versión limpia B |
+| Comercial | `1280a1` → `1280b2` → `1320a1` → `1340a1` → `1310a1` | secuencial (receta C) | **1310 no bloquea 1340** |
+| TCO | `1320a1` | tras `1280b2` | Parte de cadena C |
+| Éxito cliente | `1340a1` | tras `1320a1` | Antes de 1310 |
+| Segmentación | `1310a1` | tras `1340a1` | Último en cadena C |
+| Conectores | `1330a1` | **después de 1380** (receta B) | Inserción Fase 2 definida |
 | Merge final | `1390f1` *(propuesto)* | todas las cabezas residuales | **1 cabeza** al cierre |
 
 ### 5.4 Bifurcaciones conocidas (rama fuente — re-anclar en convergencia)
@@ -418,6 +429,13 @@ schema_repair.HEAD_REVISION = "1250f1a2b3c4d"
 | 12 | Seguridad V1 perdida (cualquier ítem §4) | ABORTAR |
 | 13 | Estado **PERDIDO** en matriz §3 | ABORTAR |
 | 14 | `control_center` o `inteligencia_externa` eliminados | ABORTAR |
+| 15 | Nuevo dashboard CC creado (viola receta A) | ABORTAR |
+| 16 | Wiring 1330↔1350↔1360 roto (receta B) | ABORTAR |
+| 17 | Cadena comercial fuera de orden C | ABORTAR |
+| 18–27 | Criterios aborto CC (receta A, §8.3) | ABORTAR |
+| 28–44 | Criterios aborto comercial (receta C, §10.3) | ABORTAR |
+
+> **P2 conocido permitido temporalmente:** SCIM rate limiting en memoria (1380) — documentar, no rechazar Fase 1 por sí solo.
 
 ---
 
@@ -457,57 +475,176 @@ schema_repair.HEAD_REVISION = "1250f1a2b3c4d"
 |-----------|----------------|
 | **BASE** | Suite completa SQLite (774+) + `npm run build` + tests V1 focal |
 | **FASE 1** | BASE + `test_continuidad_1360` + `test_governance_1350` + `test_bloque_1300_*` + `test_identidad_1370` + `test_scim_1380` + `assert_single_head` |
-| **FASE 2** | FASE 1 + tests 1260/1270/1290/1330/1280/1310/1320/1340 incorporados |
+| **FASE 2** | FASE 1 + tests 1260/1270/1290/1330 + cadena C + wiring B (29 focal) + CC A (48) |
 | **FINAL** | Todos los tests §7.1 + PostgreSQL real + frontend + matriz 94 |
 
----
+**Referencias de prueba por insumo:**
 
-## 8. Control Centro de Control — placeholder A
-
-**NO duplicar análisis de A.** Incorporar cuando A entregue mapa de integración.
-
-| Bloque | Integración esperada con Centro de Control | Estado |
-|--------|---------------------------------------------|--------|
-| 1260 | Indicadores aprendizaje / repriorización en resumen ejecutivo | PENDIENTE RESULTADO A |
-| 1270 | Métricas multiproveedor LLM en panel observabilidad CC | PENDIENTE RESULTADO A |
-| 1280 | KPIs comerciales / propuestas en CC | PENDIENTE RESULTADO A |
-| 1290 | Recomendaciones optimización en CC | PENDIENTE RESULTADO A |
-| 1300 | Eventos seguridad / MFA en CC | PENDIENTE RESULTADO A |
-| 1310 | Segmentación / planes en CC | PENDIENTE RESULTADO A |
-| 1320 | TCO / aliados en CC | PENDIENTE RESULTADO A |
-| 1330 | Salud conectores en CC | PENDIENTE RESULTADO A |
-| 1340 | Estado implementación / éxito cliente en CC | PENDIENTE RESULTADO A |
-| 1350 | Riesgo datos / privacidad en CC | PENDIENTE RESULTADO A |
-| 1360 | Continuidad / incidentes / SLO en CC | PENDIENTE RESULTADO A |
-| 1370 | Identidad / SSO estado en CC | PENDIENTE RESULTADO A |
-| 1380 | SCIM aprovisionamiento estado en CC | PENDIENTE RESULTADO A |
+| Insumo | Pruebas documentadas |
+|--------|---------------------|
+| **A (CC)** | 48 pruebas integración CC |
+| **B (wiring)** | 29 focales + regresión + roundtrip + frontend |
+| **C (comercial)** | Tests por bloque + 17 criterios aborto |
 
 ---
 
-## 9. Control integraciones — placeholder B
+## 8. Control Centro de Control — insumo A (cerrado)
 
-**NO duplicar B.** Incorporar cuando B entregue mapa 1330/1350/1360.
+**Documento fuente:** `CURSOR_RECETA_INTEGRACION_FINAL_CENTRO_CONTROL_POST_V1.md`
 
-| Par cruzado | Puntos de integración esperados | Estado |
-|-------------|--------------------------------|--------|
-| **1330 ↔ 1350** | Linaje datos conectores; clasificación exportaciones | PENDIENTE RESULTADO B |
-| **1330 ↔ 1360** | Conectores como dependencias críticas; fallback/degradado | PENDIENTE RESULTADO B |
-| **1350 ↔ 1360** | Retención/legal-hold vs continuidad/backups | PENDIENTE RESULTADO B |
+### 8.1 Resultado cerrado
+
+| Campo | Valor |
+|-------|-------|
+| **Bloque ancla** | 1230 (Centro de Control existente) |
+| **Dashboard único** | **SÍ** — extender `CentroControlPage`, **NO crear otro dashboard** |
+| **Endpoint principal** | `GET /api/centro-control/resumen-ejecutivo` |
+| **Endpoints nuevos obligatorios** | **0** |
+| **Secciones del resumen** | **12** |
+| **Integraciones con bloques** | **14** |
+| **Adaptadores** | **14** (`control_center_adapters.py`) |
+| **Alertas** | **22** |
+| **Acciones** | **22** |
+| **Gaps UI conocidos** | **4** (P2 documentados; no bloquean Fase 1) |
+| **Pruebas integración CC** | **48** |
+| **Criterios de aborto CC** | **10** |
+
+### 8.2 Integración por bloque (extensión del CC existente)
+
+La integración final **extiende** el Centro de Control 1230. Cada bloque incorporado debe aportar datos vía adaptadores al resumen ejecutivo — sin routers CC nuevos.
+
+| Bloque | Integración CC (receta A) | Adaptador | Alertas | Acciones | Fase |
+|--------|---------------------------|-----------|---------|----------|------|
+| 1260 | Aprendizaje / repriorización | Sí | Sí | Sí | FASE 2 |
+| 1270 | Observabilidad multiproveedor LLM | Sí | Sí | Sí | FASE 2 |
+| 1280 | KPIs comerciales / propuestas | Sí | Sí | Sí | FASE 2 |
+| 1290 | Recomendaciones optimización | Sí | Sí | Sí | FASE 2 |
+| 1300 | Eventos seguridad / MFA | Sí | Sí | Sí | FASE 1 |
+| 1310 | Segmentación / planes | Sí | Sí | Sí | FASE 2 |
+| 1320 | TCO / aliados | Sí | Sí | Sí | FASE 2 |
+| 1330 | Salud conectores | Sí | Sí | Sí | FASE 2 (post-1380) |
+| 1340 | Implementación / éxito cliente | Sí | Sí | Sí | FASE 2 |
+| 1350 | Riesgo datos / privacidad | Sí | Sí | Sí | FASE 1 |
+| 1360 | Continuidad / incidentes / SLO | Sí | Sí | Sí | FASE 1 |
+| 1370 | Identidad / SSO | Sí | Sí | Sí | FASE 1 |
+| 1380 | SCIM aprovisionamiento | Sí | Sí | Sí | FASE 1 |
+| 1230/1250 | Núcleo CC + adapters base | Base | Base | Base | BASE |
+
+### 8.3 Criterios de aborto Centro de Control (receta A)
+
+| # | Condición | Acción |
+|---|-----------|--------|
+| CC-A1 | Se crea un segundo dashboard ejecutivo | ABORTAR |
+| CC-A2 | Desaparece `GET /api/centro-control/resumen-ejecutivo` | ABORTAR |
+| CC-A3 | `CentroControlPage` deja de ser ruta `/` | ABORTAR |
+| CC-A4 | `control_center.py` o `control_center_service.py` eliminados | ABORTAR |
+| CC-A5 | Adaptadores BASE (1240, FinOps, diagnóstico) eliminados | ABORTAR |
+| CC-A6 | Sección obligatoria del resumen (1 de 12) ausente sin justificación | ABORTAR |
+| CC-A7 | Integración Fase 1 (1300/1350/1360/1370/1380) sin adaptador | FAIL Fase 2/FINAL |
+| CC-A8 | Alerta o acción documentada eliminada sin reemplazo | ABORTAR |
+| CC-A9 | Endpoint CC nuevo obligatorio ≠ 0 en receta A | ABORTAR si se añade sin acta |
+| CC-A10 | Regresión en 48 pruebas CC al integrar bloque | ABORTAR |
 
 ---
 
-## 10. Control comercial — placeholder C
+## 9. Control integraciones 1330/1350/1360 — insumo B (cerrado)
 
-**NO duplicar C.** Incorporar cuando C entregue receta definitiva.
+**Documento fuente:** `CURSOR_RECETA_WIRING_1330_1350_1360.md`
 
-| Bloque | Artefactos a portar (receta C) | Estado |
-|--------|-------------------------------|--------|
-| **1280** | `comercial.py`, migraciones `1280a1/b2`, UI comercial | PENDIENTE RESULTADO C |
-| **1310** | `segmentacion.py`, migración `1310a1`, UI segmentación | PENDIENTE RESULTADO C |
-| **1320** | `tco.py`, migración `1320a1`, UI TCO | PENDIENTE RESULTADO C |
-| **1340** | `implementacion.py`, migración `1340a1`, UI implementación | PENDIENTE RESULTADO C |
+### 9.1 Resultado cerrado
 
-**Cadena documentada (mapa comercial completado):** `1280 → 1310` y `1280 → 1320 → 1340`
+| Campo | Valor |
+|-------|-------|
+| **Puntos de wiring totales** | **14** |
+| **1330 ↔ 1350** | **7** puntos |
+| **1330 ↔ 1360** | **3** puntos |
+| **1350 ↔ 1360** | **3** puntos |
+| **P1 conocidos** | **2** (con solución definida) |
+| **P2 conocidos** | **1** |
+| **Eventos reutilizables** | **8** |
+| **Eventos nuevos** | **2** |
+| **Conflictos reales** | **9** |
+| **Pruebas** | **29** focales + regresión + roundtrip + frontend |
+| **Escenario post-Fase 1** | **DEFINIDO** |
+| **Inserción 1330** | **Después de 1380** (Fase 2) |
+
+### 9.2 Matriz de wiring
+
+| ID | Par | Puntos | Tipo | Fase aplicación |
+|----|-----|--------|------|-----------------|
+| W-B1..W-B7 | 1330 ↔ 1350 | 7 | Linaje, exportación, clasificación, auditoría datos | FASE 2 |
+| W-B8..W-B10 | 1330 ↔ 1360 | 3 | Dependencias críticas, fallback, degradado | FASE 2 |
+| W-B11..W-B13 | 1350 ↔ 1360 | 3 | Retención, legal-hold, backups | FASE 1 verificar base; FASE 2 wiring completo |
+| W-B14 | Transversal | 1 | Event bus / hooks compartidos | FASE 2 |
+
+### 9.3 P1 / P2 y conflictos (receta B)
+
+| ID | Severidad | Descripción | Solución | Bloquea Fase 1 |
+|----|-----------|-------------|----------|----------------|
+| P1-B1 | P1 | Conflicto permisos gobierno/conectores en hub | Unión en `permissions.py` | NO (1330 no en F1) |
+| P1-B2 | P1 | Evento duplicado exportación/backup | Reutilizar evento E-03 | NO |
+| P2-B1 | P2 | Latencia salud conector en CC | Adapter async documentado | NO |
+| C-B1..C-B9 | Conflicto | 9 archivos hub con solapamiento real | Resolución por unión (no ciega) | Verificar en F1 hub 1350∥1360 |
+
+**Archivos hub afectados por conflictos B:** `main.py`, `permissions.py`, `migration_ledger.json`, `schema_repair.py`, `api.ts`, `App.tsx`, `AppShell.tsx`, `auth/permissions.ts`, `conftest.py`
+
+---
+
+## 10. Control cadena comercial / implementación — insumo C (cerrado)
+
+**Documento fuente:** `CURSOR_RECETA_PORTADO_CADENA_COMERCIAL_IMPLEMENTACION.md`
+
+### 10.1 Orden funcional definitivo
+
+```
+1280 (modelo comercial)
+  → 1320 (TCO / aliados)
+    → 1340 (implementación / éxito cliente)
+      → 1310 (segmentación — NO bloquea 1340)
+```
+
+> **Corrección respecto a versión anterior:** 1310 va **después** de 1340, no en paralelo temprano con 1280.
+
+### 10.2 Commits fuente identificados (receta C)
+
+| Orden | SHA | Bloque / contenido |
+|-------|-----|-------------------|
+| 1 | `e64676b` | 1280 — núcleo comercial |
+| 2 | `64fb7d9` | 1280 — scope externo (`1280b2`) |
+| 3 | `f8f5e17` | 1320 — TCO |
+| 4 | `80cc277` | 1340 — implementación |
+| 5 | `14f05d4` | 1340 — éxito cliente |
+| 6 | `aa04780` | 1310 — segmentación |
+
+### 10.3 Re-parent y conflictos
+
+| Campo | Valor |
+|-------|-------|
+| **Re-parent migración** | `1280a1b2c3d4e` → `down_revision = 1250f1a2b3c4d` |
+| **Conflictos previstos** | **12** (archivos hub + dominio comercial) |
+| **Criterios de aborto** | **17** |
+| **1310 bloquea 1340** | **NO** |
+
+### 10.4 Artefactos por bloque (portado Fase 2)
+
+| Bloque | Router | Migraciones | Permisos | Frontend | Tests |
+|--------|--------|-------------|----------|----------|-------|
+| **1280** | `comercial.py` | `1280a1`, `1280b2` | 5 `comercial.*` | `ComercialPage`, `ComercialPropuestaDetailPage` | `test_modelo_comercial_1280` |
+| **1320** | `tco.py` | `1320a1` | 6 `tco.*` / `alianzas.*` | `TcoPage` | `test_tco_1320` |
+| **1340** | `implementacion.py` | `1340a1` | 6 `implementacion.*` / `exito_cliente.*` | `ImplementacionPage`, `ImplementacionDetailPage` | `test_implementacion_1340` |
+| **1310** | `segmentacion.py` | `1310a1` | 6 `segmentacion.*` / `planes.*` | `SegmentacionPage` | `test_segmentacion_1310` |
+
+### 10.5 Criterios de aborto cadena comercial (resumen — 17 totales en receta C)
+
+| # | Condición |
+|---|-----------|
+| C-C1 | Orden de portado distinto a 1280→1320→1340→1310 |
+| C-C2 | `1280a` no re-anclado a `1250f` |
+| C-C3 | Router `comercial.py` ausente tras 1280 |
+| C-C4 | Migración `1280b2` omitida |
+| C-C5 | `tco.py` incorporado antes de `1280b2` |
+| C-C6 | `1340` bloqueado por ausencia de 1310 |
+| C-C7..C-C17 | Conflictos hub sin resolución por unión; permisos comerciales perdidos; tests focales fallidos; regresión V1; multiempresa roto; etc. *(detalle en receta C)* |
 
 ---
 
@@ -544,8 +681,22 @@ Cuando D (u otro agente) termine una fase:
 5. Ejecutar batería §7.2
 6. alembic heads → debe ser 1
 7. Checklist §4 completo
-8. Registrar resultado en INTERCAMBIO/SALIDA/
+8. Aplicar protocolo Fase 1: CURSOR_PROTOCOLO_AUDITORIA_FASE1_CONVERGENCIA.md
+9. Registrar resultado en INTERCAMBIO/SALIDA/
 ```
+
+---
+
+## 13. Transición a Fase 2 (criterio preparado)
+
+Si Fase 1 recibe veredicto **A** o **B** (ver protocolo §9):
+
+| Elemento | Acción |
+|----------|--------|
+| **Nueva base acumulativa** | HEAD certificado de D tras Fase 1 |
+| **Alembic ancla** | `1380a1b2c3d4e` (verificar revisión merge real de D) |
+| **Fase 2 — piezas** | 1330 (post-1380), cadena C (1280→1320→1340→1310), 1260/1290/1270, extensiones CC (A) |
+| **NO ejecutar** | Fase 2 hasta cierre formal gate Fase 1 |
 
 ---
 
@@ -565,19 +716,22 @@ Cuando D (u otro agente) termine una fase:
 ## Salida final
 
 ```
-EMPLEADOS IA — MATRIZ MAESTRA DE CONVERGENCIA PREPARADA
+EMPLEADOS IA — MATRIZ MAESTRA DE CONVERGENCIA ACTUALIZADA
 
-BASE:
+BASE FUNCIONAL:
 4b67183af1d527684e41cad0b02d7a997d3b2499
 
-BLOQUES BASE INVENTARIADOS:
-10
+PLACEHOLDER A:
+SUSTITUIDO (receta CC — §8)
 
-BLOQUES A INCORPORAR:
-13
+PLACEHOLDER B:
+SUSTITUIDO (receta wiring 1330/1350/1360 — §9)
+
+PLACEHOLDER C:
+SUSTITUIDO (receta cadena comercial — §10)
 
 CAPACIDADES CONTROLADAS:
-39
+68
 
 ARTEFACTOS BASE PROTEGIDOS:
 157
@@ -591,29 +745,29 @@ PERMISOS CONTROLADOS:
 VISTAS CONTROLADAS:
 42
 
-MIGRACIONES CONTROLADAS:
-30
-
-TESTS CONTROLADOS:
+PRUEBAS BASE CONTROLADAS:
 54
+
+REFERENCIAS PRUEBA A/B/C:
+48 (CC) + 29 (wiring) + focal comercial
 
 CHECKS SEGURIDAD V1:
 14
 
 CRITERIOS DE ABORTO:
-14
-
-ALEMBIC PLANIFICADO:
-SI
+44 (14 base + 10 CC + 17 comercial + 3 wiring)
 
 CENTRO CONTROL:
-PENDIENTE RESULTADO A
+RECETA A CERRADA
 
 INTEGRACIÓN 1330/1350/1360:
-PENDIENTE RESULTADO B
+RECETA B CERRADA
 
 CADENA COMERCIAL:
-PENDIENTE RESULTADO C
+RECETA C CERRADA (1280→1320→1340→1310)
+
+PROTOCOLO FASE 1:
+CURSOR_PROTOCOLO_AUDITORIA_FASE1_CONVERGENCIA.md
 
 PORCENTAJE FINAL RECALCULADO:
 NO
@@ -628,11 +782,11 @@ V1:
 NO MODIFICADA
 
 VEREDICTO:
-MATRIZ LISTA PARA CONTROL DE FASES
+LISTO PARA AUDITAR HEAD DE D
 ```
 
 ---
 
 ## Veredicto
 
-**MATRIZ LISTA PARA CONTROL DE FASES** — documento de comprobación oficial para aceptar o rechazar cada fase de convergencia. Cuando D termine Fase 1, comparar su HEAD contra §3.2 y §4 sin redefinir criterios.
+**LISTO PARA AUDITAR HEAD DE D** — matriz actualizada con insumos A/B/C cerrados. Aplicar `CURSOR_PROTOCOLO_AUDITORIA_FASE1_CONVERGENCIA.md` cuando D entregue HEAD de Fase 1.
