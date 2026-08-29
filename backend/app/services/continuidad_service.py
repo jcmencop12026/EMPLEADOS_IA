@@ -81,6 +81,7 @@ def _ensure_scope(org_id: str, entity_org: str) -> None:
 
 def _alerta(db: Session, org_id: str, tipo: str, mensaje: str, severidad: str = "ALTA", ref: str | None = None) -> None:
     db.add(ContinuidadAlerta(organization_id=org_id, tipo=tipo, mensaje=mensaje, severidad=severidad, entidad_ref=ref))
+    db.flush()
 
 
 def _next_codigo(db: Session, org_id: str, prefix: str, model) -> str:
@@ -260,7 +261,11 @@ def registrar_ejecucion_backup(db: Session, org_id: str, data: dict[str, Any], u
     db.flush()
     if resultado == ResultadoBackup.FALLIDO:
         _alerta(db, org_id, "BACKUP_FALLIDO", f"Backup fallido: {pol.recurso}", "CRITICA", row.id)
-    _audit(db, org_id, "BACKUP", "backup_ejecucion", row.id, user_id, {"resultado": resultado})
+    _audit(db, org_id, "BACKUP", "backup_ejecucion", row.id, user_id, {
+        "resultado": resultado,
+        "organization_id": org_id,
+        "catalog_entry_id": data.get("catalog_entry_id"),
+    })
     return row
 
 
@@ -286,6 +291,14 @@ def verificar_backup(db: Session, org_id: str, data: dict[str, Any], user_id: st
 
 
 def registrar_restore(db: Session, org_id: str, data: dict[str, Any], user_id: str | None) -> ContinuidadRestorePrueba:
+    catalog_entry_id = data.get("catalog_entry_id")
+    if catalog_entry_id:
+        from app.services import integration_wiring as iw
+
+        try:
+            iw.validate_restore_privacy(db, org_id, catalog_entry_id, user_id)
+        except ValueError as exc:
+            raise ContinuidadValidationError(str(exc)) from exc
     tipo = data.get("tipo", TipoRestore.SIMULADA)
     if tipo not in TipoRestore.ALL:
         raise ContinuidadValidationError(f"Tipo restore inválido: {tipo}")
