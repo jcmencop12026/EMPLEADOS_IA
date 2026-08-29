@@ -1187,6 +1187,51 @@ export async function prioritizeOpportunities(): Promise<Record<string, unknown>
   return api("/api/oportunidades/priorizar", { method: "POST", body: JSON.stringify({}) });
 }
 
+// --- Señales reales (1120) ---
+
+export type SignalSourceItem = {
+  id: string;
+  code: string;
+  name: string;
+  tipo_fuente: string;
+  descripcion: string | null;
+  is_active: boolean;
+  configuracion: Record<string, unknown> | null;
+  created_at: string | null;
+};
+
+export type SignalItem = {
+  id: string;
+  tipo: string;
+  dominio: string;
+  origen: string;
+  modo_ingesta: string;
+  proceso: string | null;
+  metrica: string | null;
+  valor_metrica: string | null;
+  unidad: string | null;
+  referencia: string | null;
+  evidencia_resumen: string | null;
+  estado_procesamiento: string;
+  procesada: boolean;
+  opportunity_id?: string | null;
+  signal_at: string | null;
+  created_at: string | null;
+};
+
+export async function fetchSignalSources(): Promise<SignalSourceItem[]> {
+  return api("/api/senales/fuentes");
+}
+
+export async function fetchRecentSignals(modo?: string): Promise<SignalItem[]> {
+  const q = modo ? `?modo=${encodeURIComponent(modo)}` : "";
+  return api(`/api/senales${q}`);
+}
+
+export async function fetchSignalTrace(signalId: string): Promise<Record<string, unknown>> {
+  return api(`/api/senales/${signalId}/trazabilidad`);
+}
+
 export type LlmProvider = {
   id: string;
   organization_id: string;
