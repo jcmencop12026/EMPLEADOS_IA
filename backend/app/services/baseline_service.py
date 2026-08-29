@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -353,6 +353,7 @@ def register_medicion(
 
     impacto = _build_impacto(linea_base, med)
     db.add(impacto)
+    db.flush()
 
     if linea_base.estado in ("BORRADOR", "ACTIVA"):
         linea_base.estado = "EN_MEDICION"
@@ -518,3 +519,347 @@ def get_historial(db: Session, linea_base_id: str, organization_id: str) -> list
         }
         for r in rows
     ]
+
+
+# --- Vínculo oportunidad (1030) ↔ línea base (1200) — P1-ID-03 ---
+
+def _map_atribucion_oportunidad(nivel: str | None) -> str:
+    mapping = {
+        "ATRIBUIBLE": "ATRIBUIBLE",
+        "PARCIALMENTE_ATRIBUIBLE": "PARCIALMENTE_ATRIBUIBLE",
+        "INFLUENCIADO": "PARCIALMENTE_ATRIBUIBLE",
+        "NO_ATRIBUIBLE": "NO_ATRIBUIBLE",
+    }
+    return mapping.get(nivel or "", "NO_ATRIBUIBLE")
+
+
+def derive_baseline_context_from_opportunity(opportunity: Any) -> dict[str, Any]:
+    """Extrae indicador, valor base y metadatos desde la oportunidad."""
+    ctx = _parse_json(getattr(opportunity, "contexto_json", None)) or {}
+    evidencia = _parse_json(getattr(opportunity, "evidencia_json", None)) or {}
+    indicadores = ctx.get("indicadores") or evidencia.get("indicadores") or {}
+    accion = _parse_json(getattr(opportunity, "siguiente_accion_json", None)) or {}
+
+    indicador = accion.get("kpi_objetivo") or ctx.get("indicador_principal")
+    if not indicador and indicadores:
+        indicador = next(iter(indicadores.keys()))
+    if not indicador:
+        indicador = f"impacto_{getattr(opportunity, 'tipo', 'operativa').lower()}"
+
+    valor_base = 0.0
+    if indicadores:
+        if indicador in indicadores:
+            try:
+                valor_base = float(indicadores[indicador])
+            except (TypeError, ValueError):
+                valor_base = 0.0
+        else:
+            try:
+                valor_base = float(next(iter(indicadores.values())))
+            except (TypeError, ValueError, StopIteration):
+                valor_base = 0.0
+
+    unidad = ctx.get("unidad") or ("COP" if getattr(opportunity, "valor_potencial", None) else "unidad")
+    impacto_esperado = _to_float(getattr(opportunity, "valor_potencial", None))
+
+    return {
+        "indicador": str(indicador)[:120],
+        "proceso": getattr(opportunity, "dominio", None) or getattr(opportunity, "tipo", None) or "general",
+        "fuente": "OPORTUNIDAD",
+        "valor_base": valor_base,
+        "unidad": unidad,
+        "impacto_esperado": impacto_esperado,
+        "direccion_indicador": ctx.get("direccion_indicador", "MAYOR_ES_MEJOR"),
+        "valor_economico_tipo": "POTENCIAL",
+    }
+
+
+def find_linea_base_for_opportunity(
+    db: Session,
+    organization_id: str,
+    opportunity_id: str,
+) -> LineaBase | None:
+    return (
+        db.query(LineaBase)
+        .filter(
+            LineaBase.organization_id == organization_id,
+            LineaBase.opportunity_id == opportunity_id,
+        )
+        .order_by(LineaBase.created_at.desc())
+        .first()
+    )
+
+
+def find_compatible_linea_base(
+    db: Session,
+    organization_id: str,
+    *,
+    opportunity_id: str | None = None,
+    indicador: str | None = None,
+    proceso: str | None = None,
+    fuente: str | None = None,
+    work_plan_id: str | None = None,
+) -> LineaBase | None:
+    """Busca línea base existente compatible — protección anti-duplicados."""
+    if opportunity_id:
+        lb = find_linea_base_for_opportunity(db, organization_id, opportunity_id)
+        if lb:
+            return lb
+
+    if work_plan_id:
+        lb = (
+            db.query(LineaBase)
+            .filter(
+                LineaBase.organization_id == organization_id,
+                LineaBase.work_plan_id == work_plan_id,
+            )
+            .first()
+        )
+        if lb:
+            return lb
+
+    if indicador and proceso:
+        fuente_eff = fuente or "OPORTUNIDAD"
+        query = (
+            db.query(LineaBase)
+            .filter(
+                LineaBase.organization_id == organization_id,
+                LineaBase.indicador == indicador,
+                LineaBase.proceso == proceso,
+                LineaBase.fuente == fuente_eff,
+                LineaBase.estado.notin_(["CERRADA"]),
+            )
+        )
+        if opportunity_id:
+            query = query.filter(
+                (LineaBase.opportunity_id.is_(None)) | (LineaBase.opportunity_id == opportunity_id)
+            )
+        else:
+            query = query.filter(LineaBase.opportunity_id.is_(None))
+        lb = query.order_by(LineaBase.created_at.desc()).first()
+        if lb:
+            return lb
+    return None
+
+
+def ensure_linea_base_for_opportunity(
+    db: Session,
+    opportunity: Any,
+    *,
+    user_id: str,
+) -> tuple[LineaBase, bool]:
+    """Identifica o crea línea base al aprobar/activar oportunidad. Retorna (lb, creada)."""
+    org_id = opportunity.organization_id
+    ctx = derive_baseline_context_from_opportunity(opportunity)
+    existing = find_compatible_linea_base(
+        db,
+        org_id,
+        opportunity_id=opportunity.id,
+        indicador=ctx["indicador"],
+        proceso=ctx["proceso"],
+        fuente=ctx["fuente"],
+        work_plan_id=getattr(opportunity, "work_plan_id", None),
+    )
+    if existing:
+        if not existing.opportunity_id:
+            existing.opportunity_id = opportunity.id
+            existing.updated_at = _utcnow()
+        if getattr(opportunity, "work_plan_id", None) and not existing.work_plan_id:
+            existing.work_plan_id = opportunity.work_plan_id
+        return existing, False
+
+    ctx = derive_baseline_context_from_opportunity(opportunity)
+    now = _utcnow()
+    lb = create_linea_base(
+        db,
+        organization_id=org_id,
+        user_id=user_id,
+        indicador=ctx["indicador"],
+        valor_base=ctx["valor_base"],
+        fecha_inicio_base=now - timedelta(days=30),
+        fecha_fin_base=now,
+        unidad=ctx["unidad"],
+        descripcion=f"Línea base — oportunidad {getattr(opportunity, 'codigo', opportunity.id)}",
+        fuente=ctx["fuente"],
+        evidencia={"origen": "oportunidad", "opportunity_id": opportunity.id},
+        direccion_indicador=ctx["direccion_indicador"],
+        impacto_esperado=ctx["impacto_esperado"],
+        estado="ACTIVA",
+        proceso=ctx["proceso"],
+        opportunity_id=opportunity.id,
+        work_plan_id=getattr(opportunity, "work_plan_id", None),
+        accion_referencia=getattr(opportunity, "codigo", None),
+        valor_economico_tipo=ctx["valor_economico_tipo"],
+    )
+    return lb, True
+
+
+def resolve_valor_clasificacion(
+    *,
+    valor_real: float | None,
+    evidencia: dict | None,
+    certidumbre_origen: str = "ESTIMADO",
+) -> str:
+    from app.valuation_enums import RealValueNature
+
+    if valor_real is None:
+        return RealValueNature.POTENCIAL
+    if evidencia:
+        return RealValueNature.VERIFICADO
+    if certidumbre_origen in ("NO_CUANTIFICABLE", "POTENCIAL"):
+        return RealValueNature.POTENCIAL
+    return RealValueNature.ESTIMADO
+
+
+def close_opportunity_with_baseline(
+    db: Session,
+    opportunity: Any,
+    *,
+    user_id: str,
+    valor_esperado: float,
+    valor_medido: float | None,
+    evidencia: dict | None,
+    valor_clasificacion: str,
+    atribucion_nivel: str,
+    correlation_id: str | None,
+    periodo_inicio: datetime | None = None,
+    periodo_fin: datetime | None = None,
+) -> dict[str, Any]:
+    """Registra cierre con medición comparada contra línea base 1200."""
+    from app.valuation_enums import RealValueNature
+
+    org_id = opportunity.organization_id
+    existing_result = _parse_json(getattr(opportunity, "resultado_json", None)) or {}
+    if existing_result.get("linea_base") and existing_result.get("idempotente"):
+        return existing_result
+
+    lb, lb_creada = ensure_linea_base_for_opportunity(db, opportunity, user_id=user_id)
+    if lb.organization_id != org_id:
+        raise ValueError("Fuga multiempresa: línea base de otra organización")
+
+    now = _utcnow()
+    periodo_ini = periodo_inicio or (lb.fecha_inicio_base or now - timedelta(days=30))
+    periodo_f = periodo_fin or now
+
+    valor_posterior = valor_medido if valor_medido is not None else valor_esperado
+    med, impacto = register_medicion(
+        db,
+        lb,
+        user_id=user_id,
+        valor_posterior=valor_posterior,
+        periodo_inicio=periodo_ini,
+        periodo_fin=periodo_f,
+        fuente="OPORTUNIDAD",
+        evidencia=evidencia,
+    )
+
+    baseline_attr = _map_atribucion_oportunidad(atribucion_nivel)
+    impacto.atribucion_nivel = baseline_attr
+    impacto.atribucion_justificacion = (
+        "Atribución inferida desde cierre de oportunidad — correlación no implica causalidad"
+    )
+    impacto.tipo_impacto = resolve_tipo_impacto(
+        atribucion_nivel=baseline_attr,
+        medicion_validada=False,
+        tiene_evidencia=bool(evidencia),
+    )
+
+    verificacion_pendiente = False
+    if valor_clasificacion == RealValueNature.VERIFICADO and evidencia:
+        validate_medicion(db, lb, med, impacto, user_id=user_id)
+        impacto = (
+            db.query(LineaBaseImpacto)
+            .filter(LineaBaseImpacto.medicion_id == med.id)
+            .first()
+        ) or impacto
+    elif valor_clasificacion == RealValueNature.VERIFICADO and not evidencia:
+        valor_clasificacion = RealValueNature.ESTIMADO
+        verificacion_pendiente = True
+
+    diferencia = None
+    if valor_medido is not None:
+        diferencia = valor_medido - valor_esperado
+
+    impacto_atribuible = None
+    if impacto.impacto_real is not None:
+        impacto_atribuible = _to_float(impacto.impacto_real)
+    elif valor_medido is not None and baseline_attr in ("ATRIBUIBLE", "PARCIALMENTE_ATRIBUIBLE"):
+        impacto_atribuible = diferencia
+
+    learning_refs = {
+        "opportunity_id": opportunity.id,
+        "linea_base_id": lb.id,
+        "medicion_id": med.id,
+        "impacto_id": impacto.id,
+        "correlation_id": correlation_id or getattr(opportunity, "correlation_id", None),
+        "organization_id": org_id,
+        "valor_clasificacion": valor_clasificacion,
+        "modulo_aprendizaje": "1260",
+    }
+
+    cierre = {
+        "linea_base": {
+            "id": lb.id,
+            "indicador": lb.indicador,
+            "valor_base": _to_float(lb.valor_base),
+            "creada_en_cierre": lb_creada,
+            "reutilizada": not lb_creada,
+        },
+        "medicion_id": med.id,
+        "impacto_id": impacto.id,
+        "valor_esperado": valor_esperado,
+        "valor_medido": valor_medido,
+        "valor_atribuible": impacto_atribuible,
+        "diferencia": diferencia,
+        "valor_clasificacion": valor_clasificacion,
+        "tipo_valor": valor_clasificacion,
+        "atribucion_nivel": atribucion_nivel,
+        "atribucion_baseline": baseline_attr,
+        "atribucion_tipo": "INFERENCIA",
+        "resultado_tipo": "HECHO" if valor_clasificacion == RealValueNature.VERIFICADO else "INFERENCIA",
+        "periodo": {
+            "inicio": periodo_ini.isoformat(),
+            "fin": periodo_f.isoformat(),
+        },
+        "evidencia": evidencia,
+        "verificacion_pendiente": verificacion_pendiente,
+        "correlation_id": correlation_id or getattr(opportunity, "correlation_id", None),
+        "organization_id": org_id,
+        "cerrado_por": user_id,
+        "cerrado_en": now.isoformat(),
+        "learning_refs": learning_refs,
+        "comparacion": {
+            "valor_base": _to_float(impacto.valor_base),
+            "valor_posterior": _to_float(impacto.valor_posterior),
+            "variacion_absoluta": _to_float(impacto.variacion_absoluta),
+            "variacion_porcentual": _to_float(impacto.variacion_porcentual),
+            "evaluacion": impacto.evaluacion,
+            "tipo_impacto": impacto.tipo_impacto,
+        },
+        "idempotente": True,
+    }
+
+    _record_historial(
+        db,
+        linea_base=lb,
+        actor_id=user_id,
+        accion="OPORTUNIDAD_CERRADA",
+        snapshot={
+            "opportunity_id": opportunity.id,
+            "medicion_id": med.id,
+            "valor_clasificacion": valor_clasificacion,
+            "correlation_id": cierre["correlation_id"],
+        },
+    )
+    write_audit(
+        db,
+        action="oportunidad.cierre_linea_base",
+        organization_id=org_id,
+        user_id=user_id,
+        detail=(
+            f"opportunity={opportunity.id} baseline={lb.id} "
+            f"medicion={med.id} clasificacion={valor_clasificacion}"
+        ),
+        commit=False,
+    )
+    return cierre
