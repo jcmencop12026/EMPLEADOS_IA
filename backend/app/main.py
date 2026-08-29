@@ -20,6 +20,7 @@ from app import external_models  # noqa: F401 — inteligencia externa 1240
 from app import continuidad_models  # noqa: F401 — continuidad operativa 1360
 from app import governance_models  # noqa: F401 — gobierno de datos 1350
 from app import integration_models  # noqa: F401 — integraciones 1330
+from app import learning_models  # noqa: F401 — aprendizaje y repriorización 1260
 from app import llm_models  # noqa: F401 — LLM Gateway V1
 from app import security_models  # noqa: F401 — seguridad avanzada 1300
 from app import identity_models  # noqa: F401 — identidad empresarial 1370
@@ -55,6 +56,7 @@ from app.routers import (
     security,
     identidad,
     scim,
+    aprendizaje,
     test_lab,
     tools,
 )
@@ -157,6 +159,7 @@ app.include_router(continuidad.router)
 app.include_router(control_center.router)
 app.include_router(governance.router)
 app.include_router(integraciones.router)
+app.include_router(aprendizaje.router)
 app.include_router(llm_providers.router)
 
 
