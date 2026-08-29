@@ -168,6 +168,81 @@ def _compute_attributable(gross: Decimal, pct: Decimal) -> Decimal:
     return (gross * pct / Decimal("100")).quantize(Decimal("0.0001"))
 
 
+def _aggregate_values_by_nature(values: list[CommercialProposalValue]) -> dict[str, Decimal]:
+    """Desagrega valor atribuible por naturaleza. POTENCIAL no entra al precio."""
+    buckets = {
+        ValueNature.VERIFICADO: Decimal("0"),
+        ValueNature.ESTIMADO: Decimal("0"),
+        ValueNature.POTENCIAL: Decimal("0"),
+    }
+    gross_buckets = {
+        ValueNature.VERIFICADO: Decimal("0"),
+        ValueNature.ESTIMADO: Decimal("0"),
+        ValueNature.POTENCIAL: Decimal("0"),
+    }
+    for v in values:
+        nat = v.naturaleza if v.naturaleza in ValueNature.ALL else ValueNature.ESTIMADO
+        buckets[nat] += v.valor_atribuible or Decimal("0")
+        gross_buckets[nat] += v.valor_bruto or Decimal("0")
+    realizable = buckets[ValueNature.VERIFICADO] + buckets[ValueNature.ESTIMADO]
+    return {
+        "valor_verificado_atribuible": buckets[ValueNature.VERIFICADO],
+        "valor_estimado_atribuible": buckets[ValueNature.ESTIMADO],
+        "valor_potencial_atribuible": buckets[ValueNature.POTENCIAL],
+        "valor_atribuible_precio": realizable,
+        "valor_bruto_verificado": gross_buckets[ValueNature.VERIFICADO],
+        "valor_bruto_estimado": gross_buckets[ValueNature.ESTIMADO],
+        "valor_bruto_potencial": gross_buckets[ValueNature.POTENCIAL],
+        "valor_bruto_realizable": gross_buckets[ValueNature.VERIFICADO] + gross_buckets[ValueNature.ESTIMADO],
+    }
+
+
+def _nature_breakdown_dict(agg: dict[str, Decimal]) -> dict[str, float]:
+    return {k: float(v) for k, v in agg.items()}
+
+
+def _centro_control_contract(
+    proposal: CommercialProposal,
+    agg: dict[str, Decimal],
+    costs: list[CommercialProposalCost],
+    economics: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Contrato de salida preparado para consumo futuro del Centro de Control (1230)."""
+    costo_ia = sum(
+        (c.monto for c in costs if c.categoria == CostCategory.CONSUMO_IA),
+        Decimal("0"),
+    )
+    return {
+        "organization_id": proposal.organization_id,
+        "proposal_id": proposal.id,
+        "plan_id": proposal.plan_id,
+        "segment_id": proposal.segment_id,
+        "valor_generado_atribuible": float(agg["valor_atribuible_precio"]),
+        "valor_verificado": float(agg["valor_verificado_atribuible"]),
+        "valor_estimado": float(agg["valor_estimado_atribuible"]),
+        "valor_potencial": float(agg["valor_potencial_atribuible"]),
+        "costo_ia": float(costo_ia),
+        "costo_total": float(proposal.costo_total) if proposal.costo_total else None,
+        "roi_pct": economics.get("roi_pct") if economics else (float(proposal.roi_pct) if proposal.roi_pct else None),
+        "payback_meses": economics.get("payback_meses") if economics else (
+            float(proposal.payback_meses) if proposal.payback_meses else None
+        ),
+        "estado_implementacion": None,
+        "plan_segmento": {
+            "plan_id": proposal.plan_id,
+            "segment_id": proposal.segment_id,
+            "package_id": proposal.package_id,
+        },
+        "semantica_contrato_transversal": {
+            "VERIFICADO": "HECHO",
+            "ESTIMADO": "INFERENCIA",
+            "POTENCIAL": "INFERENCIA",
+            "PROPUESTA_PLAN_ACCION": "RECOMENDACION",
+            "nota": "POTENCIAL no se presenta como valor realizado ni entra al precio sugerido",
+        },
+    }
+
+
 def plan_to_dict(row: CommercialPlan) -> dict[str, Any]:
     return {
         "id": row.id,
@@ -250,6 +325,13 @@ def create_proposal(db: Session, organization_id: str, data: dict[str, Any], use
         prof = get_profile(db, organization_id)
         if prof:
             profile_snap = _profile_to_dict(prof)
+    plan = None
+    if data.get("plan_id"):
+        plan = get_plan(db, organization_id, data["plan_id"])
+    credential_mode = data.get("credential_mode")
+    if not credential_mode and plan:
+        credential_mode = plan.credential_mode
+    credential_mode = credential_mode or CredentialMode.IA_ADMINISTRADA
     row = CommercialProposal(
         organization_id=organization_id,
         codigo=_next_codigo(db, organization_id),
@@ -259,7 +341,7 @@ def create_proposal(db: Session, organization_id: str, data: dict[str, Any], use
         segment_id=segment_id,
         catalog_snapshot_json=_json(catalog_snap) if catalog_snap else None,
         profile_snapshot_json=_json(profile_snap) if profile_snap else None,
-        credential_mode=data.get("credential_mode", CredentialMode.IA_ADMINISTRADA),
+        credential_mode=credential_mode,
         diagnostic_id=data.get("diagnostic_id"),
         currency=data.get("currency", "USD"),
         vigencia_hasta=_parse_dt(data.get("vigencia_hasta")),
@@ -504,7 +586,8 @@ def suggest_price(
         .first()
     )
 
-    valor_atribuible = sum((v.valor_atribuible for v in values), Decimal("0"))
+    agg = _aggregate_values_by_nature(values)
+    valor_atribuible = agg["valor_atribuible_precio"]
     if scenario and scenario.valor_atribuible:
         valor_atribuible = scenario.valor_atribuible
     elif scenario and scenario.valor_esperado and scenario.probabilidad:
@@ -527,9 +610,14 @@ def suggest_price(
         precio_minimo=plan.precio_minimo if plan else None,
         precio_maximo=plan.precio_maximo if plan else None,
     )
+    if agg["valor_potencial_atribuible"] > 0:
+        result["advertencias"] = list(result.get("advertencias", [])) + [
+            "El valor POTENCIAL no se incluye en el precio sugerido ni se presenta como realizado"
+        ]
+    result["desglose_naturaleza"] = _nature_breakdown_dict(agg)
     precio_sugerido = Decimal(str(result["precio_sugerido"]))
 
-    proposal.valor_total_esperado = sum((v.valor_bruto for v in values), Decimal("0")) or None
+    proposal.valor_total_esperado = agg["valor_bruto_realizable"] or None
     proposal.valor_atribuible_total = valor_atribuible or None
     proposal.costo_total = costo_total or None
     proposal.precio_sugerido = precio_sugerido
@@ -651,6 +739,7 @@ def build_traceability(db: Session, organization_id: str, proposal_id: str) -> d
     proposal = _get_proposal(db, organization_id, proposal_id)
     values = db.query(CommercialProposalValue).filter(CommercialProposalValue.proposal_id == proposal.id).all()
     costs = db.query(CommercialProposalCost).filter(CommercialProposalCost.proposal_id == proposal.id).all()
+    agg = _aggregate_values_by_nature(values)
     trace = {
         "diagnostico_id": proposal.diagnostic_id,
         "oportunidades": list({v.opportunity_id for v in values if v.opportunity_id}),
@@ -660,9 +749,13 @@ def build_traceability(db: Session, organization_id: str, proposal_id: str) -> d
         "finops_refs": list({c.finops_record_id for c in costs if c.finops_record_id}),
         "valor_interno_atribuible": float(sum((v.valor_atribuible for v in values if v.alcance == ValueScope.INTERNO), Decimal("0"))),
         "valor_externo_atribuible": float(sum((v.valor_atribuible for v in values if v.alcance == ValueScope.EXTERNO), Decimal("0"))),
+        "desglose_naturaleza": _nature_breakdown_dict(agg),
+        "valor_atribuible_para_precio": float(agg["valor_atribuible_precio"]),
+        "valor_potencial_excluido_precio": float(agg["valor_potencial_atribuible"]),
         "supuestos": _parse_json(proposal.supuestos_json),
         "riesgos": _parse_json(proposal.riesgos_json),
-        "precio_sugerido_formula": "max(valor_atribuible × fracción, costo × (1 + margen_mínimo), precio_base_plan)",
+        "precio_sugerido_formula": "max(valor_atribuible_realizable × fracción, costo × (1 + margen_mínimo), precio_base_plan)",
+        "contrato_centro_control": _centro_control_contract(proposal, agg, costs),
     }
     proposal.traceability_json = _json(trace)
     db.flush()
@@ -698,6 +791,9 @@ def proposal_to_detail(db: Session, organization_id: str, proposal_id: str) -> d
         "currency": proposal.currency,
         "valor_total_esperado": float(proposal.valor_total_esperado) if proposal.valor_total_esperado else None,
         "valor_atribuible_total": float(proposal.valor_atribuible_total) if proposal.valor_atribuible_total else None,
+        "desglose_naturaleza": trace.get("desglose_naturaleza"),
+        "valor_potencial_atribuible": trace.get("valor_potencial_excluido_precio"),
+        "contrato_centro_control": trace.get("contrato_centro_control"),
         "costo_total": float(proposal.costo_total) if proposal.costo_total else None,
         "precio_sugerido": float(proposal.precio_sugerido) if proposal.precio_sugerido else None,
         "precio_final": float(proposal.precio_final) if proposal.precio_final else None,
@@ -831,9 +927,10 @@ def simulate_proposal(
         .first()
     )
 
+    agg = _aggregate_values_by_nature(values)
     valor_atribuible = _decimal(overrides.get("valor_atribuible"))
     if valor_atribuible is None:
-        valor_atribuible = sum((v.valor_atribuible for v in values), Decimal("0"))
+        valor_atribuible = agg["valor_atribuible_precio"]
         if scenario and scenario.valor_atribuible:
             valor_atribuible = scenario.valor_atribuible
         elif scenario and scenario.valor_esperado and scenario.probabilidad:
@@ -871,6 +968,11 @@ def simulate_proposal(
     result["simulacion"] = True
     result["propuesta_id"] = proposal_id
     result["precio_sugerido_actual"] = float(proposal.precio_sugerido) if proposal.precio_sugerido else None
+    result["desglose_naturaleza"] = _nature_breakdown_dict(agg)
+    if agg["valor_potencial_atribuible"] > 0:
+        result["advertencias"] = list(result.get("advertencias", [])) + [
+            "El valor POTENCIAL no se incluye en el precio sugerido ni se presenta como realizado"
+        ]
     if plan and overrides.get("tokens_usados"):
         result["consumo_ia"] = _compute_excedente_cost(plan, int(overrides["tokens_usados"]))
     return result
