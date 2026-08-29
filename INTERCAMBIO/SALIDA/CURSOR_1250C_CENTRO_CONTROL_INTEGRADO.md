@@ -6,7 +6,7 @@
 |-------|-------|
 | RAMA | `cursor/1250c-centro-control-integrado` |
 | BASE | `46fa6e5` (1230 Centro de Control) |
-| HEAD | *(ver commit final tras push)* |
+| HEAD | `2087cee` |
 
 ## Matriz de verificación previa
 
@@ -78,7 +78,7 @@ EMPLEADOS_IA — CONVERGENCIA 1250C TERMINADA
 
 RAMA: cursor/1250c-centro-control-integrado
 BASE: 46fa6e5
-HEAD: <SHA post-push>
+HEAD: 2087cee
 
 CENTRO CONTROL 1230: PASS
 OPORTUNIDADES 1100: PASS
