@@ -20,6 +20,19 @@ from app.permissions import user_permissions
 from app.services import control_center_service as cc_svc
 from app.services import finops_service
 from app.services import integration_service as integ_svc
+from app.services import support_service as support_svc
+from app.support_enums import ESTADOS_ABIERTOS
+from app.support_models import SupportCase
+
+SUPPORT_NOTIFICATION_TYPES = frozenset(
+    {
+        "SUPPORT_CASE_ASSIGNED",
+        "SUPPORT_CASE_STATUS",
+        "SUPPORT_CASE_RESOLVED",
+        "SUPPORT_CASE_COMMENT",
+        "SUPPORT_SLA_WARNING",
+    }
+)
 
 TRABAJO_VIEW_PERMISSIONS = frozenset(
     {
@@ -33,6 +46,9 @@ TRABAJO_VIEW_PERMISSIONS = frozenset(
         "optimizacion.view",
         "linea_base.view",
         "diagnosticos.view",
+        "support.view",
+        "support.create",
+        "support.assign",
     }
 )
 
@@ -117,6 +133,61 @@ def _trazabilidad_link(correlation_id: str | None, modulo: str) -> str | None:
     return f"/integraciones/trazabilidad?cid={correlation_id}"
 
 
+def _has_support_access(permissions: set[str]) -> bool:
+    return any(
+        _has(permissions, code)
+        for code in ("support.view", "support.create", "support.assign", "support.admin")
+    )
+
+
+def _support_case_visible(case: SupportCase, user: User, permissions: set[str]) -> bool:
+    if case.estado not in ESTADOS_ABIERTOS:
+        return False
+    can_assign = _has(permissions, "support.assign") or _has(permissions, "support.admin")
+    if case.responsable_id == user.id:
+        return True
+    if case.estado == "PENDIENTE_USUARIO" and case.solicitante_id == user.id:
+        return True
+    if case.estado == "NUEVO" and not case.responsable_id and can_assign:
+        return True
+    return False
+
+
+def _support_trabajo_tipo(case: SupportCase, sla_estado: str) -> str:
+    if sla_estado == "VENCIDO":
+        return "soporte_sla_vencido"
+    if sla_estado == "PROXIMO":
+        return "soporte_sla_riesgo"
+    if case.estado == "NUEVO" and not case.responsable_id:
+        return "soporte_asignacion"
+    return "soporte_caso"
+
+
+def _support_presentation(case: SupportCase, sla_estado: str, *, vencida: bool) -> str:
+    if vencida or sla_estado == "VENCIDO":
+        return "VENCIDA"
+    if case.estado in ("EN_PROCESO", "ASIGNADO", "PENDIENTE_TERCERO"):
+        return "EN_CURSO"
+    return "PENDIENTE"
+
+
+def _sla_remaining_minutes(fecha_limite: datetime | None, now: datetime) -> float | None:
+    if not fecha_limite:
+        return None
+    delta = _ensure_aware(fecha_limite) - now
+    return round(delta.total_seconds() / 60, 1)
+
+
+def _support_requires_action(case: SupportCase, user: User) -> bool:
+    if case.estado == "PENDIENTE_USUARIO" and case.solicitante_id == user.id:
+        return True
+    if case.responsable_id == user.id:
+        return case.estado != "PENDIENTE_TERCERO"
+    if case.estado == "NUEVO" and not case.responsable_id:
+        return True
+    return False
+
+
 def _notification_visible_query(db: Session, user: User) -> Any:
     query = db.query(Notification).filter(Notification.organization_id == user.organization_id)
     perms = user_permissions(user, db)
@@ -158,6 +229,8 @@ def collect_items(
     items: list[dict[str, Any]] = []
     pending_approval_ids: set[str] = set()
     pending_opp_ids: set[str] = set()
+    pending_support_case_ids: set[str] = set()
+    pending_support_correlation_ids: set[str] = set()
     now = _utcnow()
 
     if _has(permissions, "operations.view"):
@@ -585,6 +658,71 @@ def collect_items(
                 }
             )
 
+    if _has_support_access(permissions):
+        support_rows = (
+            db.query(SupportCase)
+            .filter(
+                SupportCase.organization_id == org_id,
+                SupportCase.estado.in_(list(ESTADOS_ABIERTOS)),
+            )
+            .order_by(SupportCase.created_at.desc())
+            .limit(200)
+            .all()
+        )
+        for case in support_rows:
+            if not _support_case_visible(case, user, permissions):
+                continue
+            sla_estado = support_svc.compute_sla_estado(case, now)
+            fecha_limite = case.resolucion_limite or case.fecha_limite
+            vencida = sla_estado == "VENCIDO"
+            tipo_item = _support_trabajo_tipo(case, sla_estado)
+            prio_label, prio_order = _priority_label_and_order(case.prioridad)
+            asunto_safe = support_svc.sanitize_text(case.asunto)
+            detalle_safe = support_svc.sanitize_text(case.descripcion)
+            pending_support_case_ids.add(case.id)
+            if case.correlation_id:
+                pending_support_correlation_ids.add(case.correlation_id)
+            items.append(
+                {
+                    "id": f"{tipo_item}:{case.id}",
+                    "source_id": case.id,
+                    "tipo": tipo_item,
+                    "asunto": asunto_safe,
+                    "modulo": "soporte",
+                    "organization_id": org_id,
+                    "organization_name": organization_name,
+                    "prioridad": prio_label,
+                    "prioridad_orden": prio_order,
+                    "estado_dominio": case.estado,
+                    "estado_presentacion": _support_presentation(case, sla_estado, vencida=vencida),
+                    "responsable_id": case.responsable_id,
+                    "responsable_nombre": None,
+                    "created_at": case.created_at,
+                    "fecha_limite": fecha_limite,
+                    "antiguedad_horas": _age_hours(case.created_at),
+                    "vencida": vencida,
+                    "correlation_id": case.correlation_id,
+                    "requires_action": _support_requires_action(case, user),
+                    "informativa": False,
+                    "semantic_kind": "HECHO",
+                    "detalle": detalle_safe[:300] if detalle_safe else None,
+                    "enlace": f"/soporte/casos/{case.id}",
+                    "trazabilidad_enlace": _trazabilidad_link(case.correlation_id, "soporte"),
+                    "acciones": [
+                        _action("ver", "Abrir caso", None, href=f"/soporte/casos/{case.id}"),
+                    ],
+                    "metadata": {
+                        "origen": "Mesa de Ayuda",
+                        "case_id": case.id,
+                        "case_numero": case.numero,
+                        "case_tipo": case.tipo,
+                        "sla_estado": sla_estado,
+                        "sla_restante_minutos": _sla_remaining_minutes(fecha_limite, now),
+                        "support_estado": case.estado,
+                    },
+                }
+            )
+
     if _has(permissions, "notification.view"):
         notifications = (
             _notification_visible_query(db, user)
@@ -600,6 +738,16 @@ def collect_items(
                 continue
             if n.source_type == "opportunity" and n.source_id and n.source_id in pending_opp_ids:
                 continue
+            if n.source_type == "support_case" and n.source_id and n.source_id in pending_support_case_ids:
+                continue
+            if n.type in SUPPORT_NOTIFICATION_TYPES:
+                case_id = str(meta.get("case_id") or n.source_id or "")
+                if case_id and case_id in pending_support_case_ids:
+                    continue
+            corr = meta.get("correlation_id") or n.event_id
+            if corr and corr in pending_support_correlation_ids:
+                if n.source_type == "support_case" or n.type in SUPPORT_NOTIFICATION_TYPES:
+                    continue
             requires = _notification_requires_action(n)
             prio_label, prio_order = _priority_label_and_order(n.severity)
             href = "/notificaciones"
@@ -677,6 +825,7 @@ def filter_items(
     responsable_id: str | None = None,
     vencimiento: str | None = None,
     requires_action: bool | None = None,
+    case_id: str | None = None,
     sort: str = "prioridad",
     sort_dir: str = "desc",
 ) -> list[dict[str, Any]]:
@@ -698,6 +847,12 @@ def filter_items(
         rows = [r for r in rows if r.get("modulo") == modulo]
     if responsable_id:
         rows = [r for r in rows if r.get("responsable_id") == responsable_id]
+    if case_id:
+        rows = [
+            r
+            for r in rows
+            if r.get("source_id") == case_id or (r.get("metadata") or {}).get("case_id") == case_id
+        ]
     if requires_action is not None:
         rows = [r for r in rows if r.get("requires_action") == requires_action]
     if vencimiento == "vencida":
@@ -744,6 +899,7 @@ def list_items(
     responsable_id: str | None = None,
     vencimiento: str | None = None,
     requires_action: bool | None = None,
+    case_id: str | None = None,
     sort: str = "prioridad",
     sort_dir: str = "desc",
     limit: int = 200,
@@ -763,6 +919,7 @@ def list_items(
         responsable_id=responsable_id,
         vencimiento=vencimiento,
         requires_action=requires_action,
+        case_id=case_id,
         sort=sort,
         sort_dir=sort_dir,
     )
@@ -779,6 +936,7 @@ def list_items(
             "responsable_id": responsable_id,
             "vencimiento": vencimiento,
             "requires_action": requires_action,
+            "case_id": case_id,
             "sort": sort,
             "sort_dir": sort_dir,
             "organization_id": org_id,
