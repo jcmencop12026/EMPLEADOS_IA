@@ -57,6 +57,7 @@ from app.routers import (
     scim,
     test_lab,
     tools,
+    trabajo,
 )
 from app.seed import bootstrap
 from app.security_config import validate_security_settings
@@ -158,6 +159,7 @@ app.include_router(control_center.router)
 app.include_router(governance.router)
 app.include_router(integraciones.router)
 app.include_router(llm_providers.router)
+app.include_router(trabajo.router)
 
 
 @app.get("/health")
