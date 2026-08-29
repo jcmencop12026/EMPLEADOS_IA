@@ -4,16 +4,17 @@
   Certificacion Docker Desktop Windows - candidata V1 e8cb853 (aislada).
 .DESCRIPTION
   Ejecutar en PowerShell en Windows 10/11 con Docker Desktop.
-  Workspace candidata: D:\EMPLEADOS_IA_CERT (checkout e8cb853)
+  TOOLS (script): puede ejecutarse desde D:\EMPLEADOS_IA_CERT_TOOLS u otra ruta.
+  CANDIDATA (git/docker): siempre D:\EMPLEADOS_IA_CERT
   Proyecto Compose: empleados_ia_cert
   Evidencia: D:\EMPLEADOS_IA_CERT\INTERCAMBIO\SALIDA\CERT_WINDOWS_E8CB853_EVIDENCIA
-  NO modifica D:\EMPLEADOS_IA ni la candidata V1.
+  NO modifica D:\EMPLEADOS_IA ni la candidata V1 (solo .env local de certificacion).
 #>
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # --- Parametros fijos ---
-$CertRoot            = 'D:\EMPLEADOS_IA_CERT'
+$CertDir             = 'D:\EMPLEADOS_IA_CERT'
 $CertBranch          = 'cursor/v1-candidata-final-release-r2'
 $CertSha             = 'e8cb853a2c447fd5e136a0907e44d68ce2c8cf81'
 $ComposeProject      = 'empleados_ia_cert'
@@ -21,9 +22,9 @@ $PostgresHostPort    = 55432
 $BackendPort         = 18010
 $FrontendPort        = 15180
 $ExpectedAlembicHead = 'd1e2f3a4b5c6'
-$RepoUrl             = 'https://github.com/jcmencop12026/EMPLEADOS_IA.git'
-$EvidenceDir         = Join-Path $CertRoot 'INTERCAMBIO\SALIDA\CERT_WINDOWS_E8CB853_EVIDENCIA'
+$EvidenceDir         = Join-Path $CertDir 'INTERCAMBIO\SALIDA\CERT_WINDOWS_E8CB853_EVIDENCIA'
 $LogFile             = Join-Path $EvidenceDir 'certificacion.log'
+$ComposeFile         = Join-Path $CertDir 'docker-compose.yml'
 
 $Results = [ordered]@{}
 function Get-CertResult([string]$Key) {
@@ -37,6 +38,40 @@ function Set-Result([string]$Key, [bool]$Pass, [string]$Detail) {
     if ($Detail) { $line = "$line - $Detail" }
     Write-Host $line
     Add-Content -Path $LogFile -Value $line -ErrorAction SilentlyContinue
+}
+function Write-CertLog([string]$Message) {
+    Add-Content -Path $LogFile -Value $Message -ErrorAction SilentlyContinue
+}
+function Invoke-ExternalCommand {
+    param(
+        [string]$Label,
+        [string]$Exe,
+        [string[]]$CmdArgs
+    )
+    $output = & $Exe @CmdArgs 2>&1
+    $exitCode = $LASTEXITCODE
+    $text = ($output | Out-String).Trim()
+    if ($exitCode -ne 0) {
+        $joined = $CmdArgs -join ' '
+        throw ($Label + " fallo (exit " + $exitCode + "): " + $Exe + " " + $joined + " :: " + $text)
+    }
+    return $output
+}
+function Invoke-GitCert {
+    param(
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$GitArgs
+    )
+    $allArgs = @('-C', $CertDir) + $GitArgs
+    return Invoke-ExternalCommand -Label ('git candidata ' + ($GitArgs -join ' ')) -Exe 'git' -CmdArgs $allArgs
+}
+function Invoke-DockerCompose {
+    param(
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$ComposeArgs
+    )
+    $allArgs = @('compose', '--project-directory', $CertDir, '-f', $ComposeFile) + $ComposeArgs
+    return Invoke-ExternalCommand -Label ('docker compose ' + ($ComposeArgs -join ' ')) -Exe 'docker' -CmdArgs $allArgs
 }
 function Test-PortFree([int]$Port) {
     -not (Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue)
@@ -64,6 +99,57 @@ function Pass-Fail([string]$Key) {
     if (Get-CertResult $Key) { return 'PASS' }
     return 'FAIL'
 }
+function Ensure-CandidateRepository {
+    $gitDir = Join-Path $CertDir '.git'
+    if (-not (Test-Path $gitDir)) {
+        throw ("Repositorio candidato no encontrado: " + $gitDir + ". Prepare D:\EMPLEADOS_IA_CERT con la candidata e8cb853 antes de certificar.")
+    }
+    if (-not (Test-Path $ComposeFile)) {
+        throw ("docker-compose.yml no encontrado en candidata: " + $ComposeFile)
+    }
+
+    $origin = (Invoke-GitCert remote get-url origin | Out-String).Trim()
+    Set-Result 'GIT_ORIGIN_CANDIDATA' $true ("origin=" + $origin)
+    Write-CertLog ("git -C " + $CertDir + " remote get-url origin => " + $origin)
+
+    $currentSha = (Invoke-GitCert rev-parse HEAD | Out-String).Trim()
+    Write-CertLog ("git -C " + $CertDir + " rev-parse HEAD => " + $currentSha)
+
+    if ($currentSha -eq $CertSha) {
+        Write-CertLog "Candidata ya en SHA objetivo; se omite fetch/checkout destructivo."
+        Set-Result 'SHA_CANDIDATA' $true ("HEAD=" + $currentSha + " (sin cambios)")
+        return
+    }
+
+    $hasCommit = $false
+    try {
+        $null = Invoke-GitCert cat-file -e ($CertSha + '^{commit}')
+        $hasCommit = $true
+    }
+    catch {
+        $hasCommit = $false
+    }
+
+    if (-not $hasCommit) {
+        Write-CertLog ("git -C " + $CertDir + " fetch origin " + $CertBranch)
+        $fetchOut = Invoke-GitCert fetch origin $CertBranch
+        if ($fetchOut) { Write-CertLog ($fetchOut | Out-String) }
+    }
+
+    $currentSha = (Invoke-GitCert rev-parse HEAD | Out-String).Trim()
+    if ($currentSha -ne $CertSha) {
+        Write-CertLog ("git -C " + $CertDir + " checkout " + $CertSha)
+        $checkoutOut = Invoke-GitCert checkout $CertSha
+        if ($checkoutOut) { Write-CertLog ($checkoutOut | Out-String) }
+    }
+
+    $finalSha = (Invoke-GitCert rev-parse HEAD | Out-String).Trim()
+    $shaOk = $finalSha -eq $CertSha
+    Set-Result 'SHA_CANDIDATA' $shaOk ("HEAD=" + $finalSha)
+    if (-not $shaOk) {
+        throw ("SHA incorrecto en candidata. Esperado " + $CertSha + ", actual " + $finalSha)
+    }
+}
 
 # --- 0. Windows real ---
 if ($env:OS -ne 'Windows_NT') {
@@ -74,13 +160,13 @@ Set-Result 'WINDOWS_REAL' $true ("OS=" + [Environment]::OSVersion.VersionString)
 New-Item -ItemType Directory -Force -Path $EvidenceDir | Out-Null
 $header = "=== Certificacion V1 e8cb853 " + (Get-Date -Format o) + " ==="
 $header | Set-Content $LogFile
+Write-CertLog ("TOOLS workdir=" + (Get-Location).Path)
+Write-CertLog ("CANDIDATA dir=" + $CertDir)
 
 # --- 1. Docker Desktop ---
 try {
-    $null = docker version 2>&1
-    if ($LASTEXITCODE -ne 0) { throw 'docker version fallo' }
-    $composeVer = docker compose version 2>&1
-    if ($LASTEXITCODE -ne 0) { throw 'docker compose version fallo' }
+    $dockerVer = Invoke-ExternalCommand -Label 'docker version' -Exe 'docker' -CmdArgs @('version')
+    $composeVer = Invoke-ExternalCommand -Label 'docker compose version' -Exe 'docker' -CmdArgs @('compose', 'version')
     $composeText = ($composeVer | Out-String).Trim()
     if ($composeText.Length -gt 80) { $composeText = $composeText.Substring(0, 80) }
     Set-Result 'DOCKER_DESKTOP' $true $composeText
@@ -90,19 +176,8 @@ catch {
     throw 'Docker Desktop no esta operativo. Inicie Docker Desktop y reintente.'
 }
 
-# --- 2. Checkout candidata aislada ---
-if (-not (Test-Path $CertRoot)) {
-    git clone $RepoUrl $CertRoot
-}
-Set-Location $CertRoot
-git fetch origin $CertBranch 2>&1 | Tee-Object -Append $LogFile
-git checkout $CertSha 2>&1 | Tee-Object -Append $LogFile
-$actualSha = (git rev-parse HEAD).Trim()
-$shaOk = $actualSha -eq $CertSha
-Set-Result 'SHA_CANDIDATA' $shaOk ("HEAD=" + $actualSha)
-if (-not $shaOk) {
-    throw ("SHA incorrecto. Esperado " + $CertSha + ", actual " + $actualSha)
-}
+# --- 2. Verificar candidata local (git -C D:\EMPLEADOS_IA_CERT) ---
+Ensure-CandidateRepository
 
 # --- 3. Puertos ---
 $portsOk = (Test-PortFree $PostgresHostPort) -and (Test-PortFree $BackendPort) -and (Test-PortFree $FrontendPort)
@@ -131,7 +206,7 @@ $envLines = @(
     ('POSTGRES_PORT=' + $PostgresHostPort)
 )
 $envContent = $envLines -join "`r`n"
-$envPath = Join-Path $CertRoot '.env'
+$envPath = Join-Path $CertDir '.env'
 $envContent | Set-Content -Path $envPath -Encoding UTF8
 $specialOk = ($pgPassword -match '@') -and ($pgPassword -match '#') -and ($pgPassword -match '%') `
     -and ($pgPassword -match ':') -and ($pgPassword -match '/') -and ($pgPassword -match '\+')
@@ -141,36 +216,58 @@ $env:COMPOSE_PROJECT_NAME = $ComposeProject
 
 # --- 5. docker compose config ---
 $rawConfigPath = Join-Path $EvidenceDir 'compose-config-raw.tmp'
-docker compose config *> $rawConfigPath
-$configExit = $LASTEXITCODE
-$rendered = Get-Content $rawConfigPath -Raw
-$safeConfig = $rendered
-$safeConfig = $safeConfig.Replace($pgPassword, '***REDACTED_PG***')
-$safeConfig = $safeConfig.Replace($jwtSecret, '***REDACTED_JWT***')
-$safeConfig = $safeConfig.Replace($bootstrapPass, '***REDACTED_BOOTSTRAP***')
-$safeConfig | Set-Content -Path (Join-Path $EvidenceDir 'compose-config.txt')
-Remove-Item $rawConfigPath -Force -ErrorAction SilentlyContinue
-$noHostWorkaround = $rendered -notmatch 'host\.docker\.internal'
-$configDetail = 'OK'
-if (-not $noHostWorkaround) { $configDetail = 'host.docker.internal detectado' }
-Set-Result 'COMPOSE_CONFIG' (($configExit -eq 0) -and $noHostWorkaround) $configDetail
+try {
+    Invoke-DockerCompose config | Set-Content -Path $rawConfigPath -Encoding UTF8
+    $rendered = Get-Content $rawConfigPath -Raw
+    $safeConfig = $rendered
+    $safeConfig = $safeConfig.Replace($pgPassword, '***REDACTED_PG***')
+    $safeConfig = $safeConfig.Replace($jwtSecret, '***REDACTED_JWT***')
+    $safeConfig = $safeConfig.Replace($bootstrapPass, '***REDACTED_BOOTSTRAP***')
+    $safeConfig | Set-Content -Path (Join-Path $EvidenceDir 'compose-config.txt')
+    $noHostWorkaround = $rendered -notmatch 'host\.docker\.internal'
+    $configDetail = 'OK'
+    if (-not $noHostWorkaround) { $configDetail = 'host.docker.internal detectado' }
+    Set-Result 'COMPOSE_CONFIG' $noHostWorkaround $configDetail
+}
+catch {
+    Set-Result 'COMPOSE_CONFIG' $false $_.Exception.Message
+    throw
+}
+finally {
+    Remove-Item $rawConfigPath -Force -ErrorAction SilentlyContinue
+}
 
 # --- 6. Build ---
-docker compose build --no-cache 2>&1 | Tee-Object -Append $LogFile
-Set-Result 'BUILD' ($LASTEXITCODE -eq 0)
+try {
+    $buildOut = Invoke-DockerCompose build --no-cache
+    if ($buildOut) { Write-CertLog ($buildOut | Out-String) }
+    Set-Result 'BUILD' $true
+}
+catch {
+    Set-Result 'BUILD' $false $_.Exception.Message
+    throw
+}
 
 # --- 7. Stack up ---
-docker compose up -d 2>&1 | Tee-Object -Append $LogFile
-Start-Sleep -Seconds 8
-docker compose ps 2>&1 | Tee-Object -FilePath (Join-Path $EvidenceDir 'compose-ps.txt')
-$psText = Get-Content (Join-Path $EvidenceDir 'compose-ps.txt') -Raw
-$stackUp = ($psText -match 'postgres') -and ($psText -match 'backend') -and ($psText -match 'frontend')
-Set-Result 'STACK' $stackUp
+try {
+    $upOut = Invoke-DockerCompose up -d
+    if ($upOut) { Write-CertLog ($upOut | Out-String) }
+    Start-Sleep -Seconds 8
+    $psOut = Invoke-DockerCompose ps
+    $psOut | Set-Content -Path (Join-Path $EvidenceDir 'compose-ps.txt')
+    $psText = ($psOut | Out-String)
+    $stackUp = ($psText -match 'postgres') -and ($psText -match 'backend') -and ($psText -match 'frontend')
+    Set-Result 'STACK' $stackUp
+}
+catch {
+    Set-Result 'STACK' $false $_.Exception.Message
+    throw
+}
 
 # --- 8. PostgreSQL ---
 try {
-    $pgReady = docker compose exec -T postgres pg_isready -U empleados_cert -d empleados_ia_cert 2>&1
-    Set-Result 'POSTGRESQL' ($pgReady -match 'accepting')
+    $pgReady = Invoke-DockerCompose exec -T postgres pg_isready -U empleados_cert -d empleados_ia_cert
+    Set-Result 'POSTGRESQL' (($pgReady | Out-String) -match 'accepting')
 }
 catch {
     Set-Result 'POSTGRESQL' $false $_.Exception.Message
@@ -196,14 +293,20 @@ catch {
 }
 
 # --- 11. Alembic (1 head, upgrade en entrypoint) ---
-$alembicHeads = docker compose exec -T backend alembic heads 2>&1
-$alembicHeads | Tee-Object -FilePath (Join-Path $EvidenceDir 'alembic-heads.txt')
-$alembicText = ($alembicHeads | Out-String)
-$headCount = ([regex]::Matches($alembicText, '\(head\)')).Count
-$headOk = ($headCount -eq 1) -and ($alembicText -match $ExpectedAlembicHead)
-Set-Result 'ALEMBIC' $headOk ("heads=" + $headCount + " expected=" + $ExpectedAlembicHead)
-$script:AlembicHead = 'desconocido'
-if ($headOk) { $script:AlembicHead = $ExpectedAlembicHead }
+try {
+    $alembicHeads = Invoke-DockerCompose exec -T backend alembic heads
+    ($alembicHeads | Out-String) | Set-Content -Path (Join-Path $EvidenceDir 'alembic-heads.txt')
+    $alembicText = ($alembicHeads | Out-String)
+    $headCount = ([regex]::Matches($alembicText, '\(head\)')).Count
+    $headOk = ($headCount -eq 1) -and ($alembicText -match $ExpectedAlembicHead)
+    Set-Result 'ALEMBIC' $headOk ("heads=" + $headCount + " expected=" + $ExpectedAlembicHead)
+    $script:AlembicHead = 'desconocido'
+    if ($headOk) { $script:AlembicHead = $ExpectedAlembicHead }
+}
+catch {
+    Set-Result 'ALEMBIC' $false $_.Exception.Message
+    $script:AlembicHead = 'desconocido'
+}
 
 # --- 12. Validar DATABASE_URL con caracteres especiales (backend) ---
 try {
@@ -215,8 +318,8 @@ pwd = parse_database_password(url)
 assert pwd and "@" in pwd and "#" in pwd, "round-trip password incompleto"
 print("DATABASE_URL_OK")
 '@
-    $dbTest = docker compose exec -T backend python -c $pyCode 2>&1
-    Set-Result 'DATABASE_URL_ESPECIAL' ($dbTest -match 'DATABASE_URL_OK')
+    $dbTest = Invoke-DockerCompose exec -T backend python -c $pyCode
+    Set-Result 'DATABASE_URL_ESPECIAL' (($dbTest | Out-String) -match 'DATABASE_URL_OK')
 }
 catch {
     Set-Result 'DATABASE_URL_ESPECIAL' $false $_.Exception.Message
@@ -251,13 +354,13 @@ catch {
 $marker = "cert-marker-" + (Get-Date -Format 'yyyyMMddHHmmss')
 try {
     $sql = "CREATE TABLE IF NOT EXISTS cert_persistence (id serial PRIMARY KEY, marker text NOT NULL); INSERT INTO cert_persistence(marker) VALUES ('" + $marker + "');"
-    docker compose exec -T postgres psql -U empleados_cert -d empleados_ia_cert -c $sql | Out-Null
-    docker compose restart 2>&1 | Out-Null
+    $null = Invoke-DockerCompose exec -T postgres psql -U empleados_cert -d empleados_ia_cert -c $sql
+    $null = Invoke-DockerCompose restart
     Start-Sleep -Seconds 30
     $null = Wait-HttpOk ("http://localhost:" + $FrontendPort + "/health/ready") 180 @(200)
     $countSql = "SELECT COUNT(*) FROM cert_persistence WHERE marker='" + $marker + "';"
-    $found = docker compose exec -T postgres psql -U empleados_cert -d empleados_ia_cert -tAc $countSql
-    Set-Result 'PERSISTENCIA' ([int]$found.Trim() -eq 1)
+    $found = Invoke-DockerCompose exec -T postgres psql -U empleados_cert -d empleados_ia_cert -tAc $countSql
+    Set-Result 'PERSISTENCIA' ([int](($found | Out-String).Trim()) -eq 1)
 }
 catch {
     Set-Result 'PERSISTENCIA' $false $_.Exception.Message
@@ -265,7 +368,7 @@ catch {
 
 # --- 16. Caida / recuperacion DB ---
 try {
-    docker compose stop postgres 2>&1 | Out-Null
+    $null = Invoke-DockerCompose stop postgres
     Start-Sleep -Seconds 6
     $downOk = $false
     try {
@@ -276,7 +379,7 @@ try {
         $downOk = $true
     }
     Set-Result 'CAIDA_DB' $downOk 'readiness degradado con PG detenido'
-    docker compose start postgres 2>&1 | Out-Null
+    $null = Invoke-DockerCompose start postgres
     Start-Sleep -Seconds 20
     $null = Wait-HttpOk ("http://localhost:" + $BackendPort + "/health/ready") 180 @(200)
     Set-Result 'RECUPERACION_DB' $true
@@ -289,7 +392,8 @@ catch {
 # --- 17. Backup pg_dump ---
 $backupFile = Join-Path $EvidenceDir ("backup_e8cb853_" + (Get-Date -Format 'yyyyMMdd_HHmmss') + ".sql")
 try {
-    docker compose exec -T postgres pg_dump -U empleados_cert -d empleados_ia_cert | Set-Content -Path $backupFile -Encoding UTF8
+    $dump = Invoke-DockerCompose exec -T postgres pg_dump -U empleados_cert -d empleados_ia_cert
+    ($dump | Out-String) | Set-Content -Path $backupFile -Encoding UTF8
     $bkSize = 0
     if (Test-Path $backupFile) { $bkSize = (Get-Item $backupFile).Length }
     $bkOk = (Test-Path $backupFile) -and ($bkSize -gt 0)
@@ -301,12 +405,12 @@ catch {
 
 # --- 18. Restore aislado ---
 try {
-    docker compose exec -T postgres psql -U empleados_cert -d postgres -c "DROP DATABASE IF EXISTS empleados_ia_cert_restore;" | Out-Null
-    docker compose exec -T postgres psql -U empleados_cert -d postgres -c "CREATE DATABASE empleados_ia_cert_restore;" | Out-Null
-    Get-Content $backupFile -Raw | docker compose exec -T postgres psql -U empleados_cert -d empleados_ia_cert_restore | Out-Null
+    $null = Invoke-DockerCompose exec -T postgres psql -U empleados_cert -d postgres -c "DROP DATABASE IF EXISTS empleados_ia_cert_restore;"
+    $null = Invoke-DockerCompose exec -T postgres psql -U empleados_cert -d postgres -c "CREATE DATABASE empleados_ia_cert_restore;"
+    Get-Content $backupFile -Raw | Invoke-DockerCompose exec -T postgres psql -U empleados_cert -d empleados_ia_cert_restore | Out-Null
     $restoreSql = "SELECT COUNT(*) FROM cert_persistence WHERE marker='" + $marker + "';"
-    $restored = docker compose exec -T postgres psql -U empleados_cert -d empleados_ia_cert_restore -tAc $restoreSql
-    Set-Result 'RESTORE' ([int]$restored.Trim() -ge 1)
+    $restored = Invoke-DockerCompose exec -T postgres psql -U empleados_cert -d empleados_ia_cert_restore -tAc $restoreSql
+    Set-Result 'RESTORE' ([int](($restored | Out-String).Trim()) -ge 1)
 }
 catch {
     Set-Result 'RESTORE' $false $_.Exception.Message
@@ -344,9 +448,15 @@ if ($script:AuthToken) {
 }
 
 # --- 22. Limpieza ---
-docker compose stop 2>&1 | Tee-Object -Append $LogFile
+try {
+    $stopOut = Invoke-DockerCompose stop
+    if ($stopOut) { Write-CertLog ($stopOut | Out-String) }
+}
+catch {
+    Write-CertLog ("docker compose stop warning: " + $_.Exception.Message)
+}
 $stopMsg = "Stack detenido. Proyecto=" + $ComposeProject + ". Volumenes conservados."
-$stopMsg | Add-Content $LogFile
+Write-CertLog $stopMsg
 
 # --- Resumen final (formato gate) ---
 $p0 = @()
@@ -354,7 +464,7 @@ $p1 = @()
 $p2 = @()
 $critical = @(
     'NGINX_BACKEND', 'LOGIN_VIA_FRONTEND', 'POSTGRESQL', 'ALEMBIC', 'BACKEND', 'FRONTEND',
-    'PERSISTENCIA', 'BACKUP', 'RESTORE', 'PASSWORD_ESPECIAL', 'DATABASE_URL_ESPECIAL'
+    'PERSISTENCIA', 'BACKUP', 'RESTORE', 'PASSWORD_ESPECIAL', 'DATABASE_URL_ESPECIAL', 'SHA_CANDIDATA'
 )
 $allPass = $true
 foreach ($kv in $Results.GetEnumerator()) {
