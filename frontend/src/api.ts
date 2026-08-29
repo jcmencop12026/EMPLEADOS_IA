@@ -2320,6 +2320,102 @@ export async function fetchTcoHistorial() {
   return api("/api/tco/historial");
 }
 
+// --- Implementación y éxito del cliente (1340) ---
+
+export type ImplProyectoSummary = {
+  id: string;
+  codigo: string;
+  titulo: string;
+  estado: string;
+  avance_pct: number;
+  valor_compromiso?: Record<string, unknown> | null;
+};
+
+export type ImplTablero = {
+  proyecto?: ImplProyectoSummary;
+  fase_actual?: string | null;
+  avance_pct?: number;
+  salud?: { resultado: string; puntuacion: number };
+  tco?: { total: number; margen_pct?: number };
+  bloqueadores?: Array<{ descripcion: string }>;
+  trazabilidad?: Record<string, unknown>;
+};
+
+export type ImplProyectoDetalle = ImplProyectoSummary & {
+  hitos?: Array<{ id: string; nombre: string; estado: string }>;
+  tareas?: Array<Record<string, unknown>>;
+  requisitos?: Array<Record<string, unknown>>;
+  tablero?: ImplTablero;
+};
+
+export async function fetchImplProyectos(): Promise<ImplProyectoSummary[]> {
+  return api("/api/implementacion/proyectos");
+}
+
+export async function createImplProyecto(data: Record<string, unknown>): Promise<ImplProyectoSummary> {
+  return api("/api/implementacion/proyectos", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchImplProyectoDetalle(id: string): Promise<ImplProyectoDetalle> {
+  return api(`/api/implementacion/proyectos/${id}`);
+}
+
+export async function fetchImplTablero(id: string): Promise<ImplTablero> {
+  return api(`/api/implementacion/proyectos/${id}/tablero`);
+}
+
+export async function createImplHito(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/hitos`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function completarImplHito(hitoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/hitos/${hitoId}/completar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function createImplRequisito(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/requisitos`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function evaluarImplReadiness(proyectoId: string, dimensiones: Record<string, number>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/readiness`, { method: "POST", body: JSON.stringify({ dimensiones }) });
+}
+
+export async function createImplBloqueador(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/bloqueadores`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function createImplPiloto(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/pilotos`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function registrarImplPilotoResultado(pilotoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/pilotos/${pilotoId}/resultado`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function aprobarImplPiloto(pilotoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/pilotos/${pilotoId}/aprobar-produccion`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function aprobarImplGoLive(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/go-live`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function registrarImplAdopcion(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/adopcion`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function createImplExitoPlan(data: Record<string, unknown>) {
+  return api("/api/implementacion/exito/planes", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function medirImplObjetivo(objetivoId: string, valor_medido: number) {
+  return api(`/api/implementacion/exito/objetivos/${objetivoId}/medir`, { method: "POST", body: JSON.stringify({ valor_medido }) });
+}
+
+export async function calcularImplSalud(proyectoId: string) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/salud`, { method: "POST", body: JSON.stringify({}) });
+}
+
 export type ContinuidadServicio = {
   id: string;
   codigo: string;
