@@ -20,7 +20,7 @@ from app import models  # noqa: F401
 from app import orchestration_models  # noqa: F401
 from app import finops_models  # noqa: F401
 
-HEAD_REVISION = "1330b1b2c3d4f"
+HEAD_REVISION = "1270a1b2c3d4e"
 REV_801 = "4355c73adcb8"
 
 # Columnas legacy conocidas que no existen en el modelo actual y rompen INSERT ORM.
