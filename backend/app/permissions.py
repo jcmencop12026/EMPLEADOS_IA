@@ -140,6 +140,20 @@ VALORACION_PERMISSIONS = {
     "valoracion.roi",
 }
 
+LINEA_BASE_PERMISSIONS = {
+    "linea_base.view",
+    "linea_base.manage",
+    "linea_base.validate",
+}
+
+COMMERCIAL_PERMISSIONS = {
+    "comercial.view",
+    "comercial.simulate",
+    "comercial.create",
+    "comercial.approve",
+    "comercial.manage_plans",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -222,6 +236,14 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "valoracion.manage": ("Valoración económica", "Crear y modificar valoraciones"),
     "valoracion.validate": ("Valoración económica", "Validar valoraciones"),
     "valoracion.roi": ("Valoración económica", "Consultar retorno y beneficio neto"),
+    "linea_base.view": ("Línea base", "Consultar líneas base e impacto"),
+    "linea_base.manage": ("Línea base", "Crear línea base y registrar mediciones"),
+    "linea_base.validate": ("Línea base", "Validar impacto y atribución"),
+    "comercial.view": ("Comercial", "Consultar propuestas y planes comerciales"),
+    "comercial.simulate": ("Comercial", "Simular valor y precio"),
+    "comercial.create": ("Comercial", "Crear y editar propuestas comerciales"),
+    "comercial.approve": ("Comercial", "Aprobar precio final y propuestas"),
+    "comercial.manage_plans": ("Comercial", "Administrar planes comerciales"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -249,6 +271,8 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
         | VALORACION_PERMISSIONS
+        | LINEA_BASE_PERMISSIONS
+        | COMMERCIAL_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -266,6 +290,8 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
         | VALORACION_PERMISSIONS
+        | LINEA_BASE_PERMISSIONS
+        | COMMERCIAL_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -319,6 +345,12 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "valoracion.manage",
         "valoracion.validate",
         "valoracion.roi",
+        "linea_base.view",
+        "linea_base.manage",
+        "linea_base.validate",
+        "comercial.view",
+        "comercial.simulate",
+        "comercial.create",
     },
     "viewer": {
         "employee.view",
@@ -338,6 +370,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "oportunidades.view",
         "valoracion.view",
         "valoracion.roi",
+        "linea_base.view",
+        "comercial.view",
+        "comercial.simulate",
     },
 }
 
