@@ -92,6 +92,75 @@ export function CentroControlPage() {
             )}
           </section>
 
+          <section className="panel compact-panel">
+            <h2 className="section-title">¿Por qué está pasando?</h2>
+            <p className="muted cc-explicacion-nota">
+              {data.explicacion?.nota_causalidad ?? "Las correlaciones no implican causalidad demostrada."}
+            </p>
+            {!data.explicacion?.disponible ? (
+              <p className="muted">{data.explicacion?.estado ?? "Diagnóstico no disponible"}</p>
+            ) : (
+              <table className="data-table compact-table">
+                <thead>
+                  <tr>
+                    <th>Situación</th>
+                    <th>Causa / acción</th>
+                    <th>Certeza</th>
+                    <th>Evidencia</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data.explicacion.elementos ?? []).slice(0, 8).map((el) => (
+                    <tr key={el.id}>
+                      <td>
+                        <span
+                          className={`cc-tag cc-tag-${el.tipo_contenido.toLowerCase()}`}
+                          title={`Tipo: ${el.tipo_contenido}`}
+                        >
+                          {el.tipo_contenido}
+                        </span>
+                        <div>{el.situacion ?? "—"}</div>
+                        {el.fuente_ambito && (
+                          <small className="muted">Fuente: {el.fuente_ambito}</small>
+                        )}
+                      </td>
+                      <td>{el.causa ?? "—"}</td>
+                      <td>
+                        {el.certeza ? (
+                          <span className="cc-tag cc-tag-certeza" title={el.nota ?? undefined}>
+                            {el.certeza}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                        {el.confianza != null && (
+                          <small className="muted"> ({Math.round(el.confianza * 100)}%)</small>
+                        )}
+                      </td>
+                      <td title={el.evidencia?.resumen ?? undefined}>
+                        {el.evidencia?.resumen ?? el.evidencia?.identificador ?? "—"}
+                        {el.correlation_id && (
+                          <small className="muted"> · corr: {el.correlation_id.slice(0, 8)}…</small>
+                        )}
+                      </td>
+                      <td>
+                        {el.enlace?.startsWith("/") ? (
+                          <Link to={el.enlace}>Detalle</Link>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {data.explicacion?.enlace && (
+              <p><Link to={data.explicacion.enlace}>Ver diagnósticos</Link></p>
+            )}
+          </section>
+
           <div className="cc-grid-2">
             <section className="panel compact-panel">
               <h2 className="section-title">Empleados IA</h2>
