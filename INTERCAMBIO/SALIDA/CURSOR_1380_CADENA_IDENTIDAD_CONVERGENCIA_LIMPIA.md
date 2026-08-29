@@ -12,7 +12,7 @@
 |-------|-------|
 | **BASE** | `eb229806136e29acddc0f592b5f017f5c3cb2958` (`cursor/1250-convergencia-final-post-v1`) |
 | **RAMA** | `cursor/1380-identidad-convergencia-limpia` |
-| **HEAD** | `8f0b3adc1380fd41fcefb109ba4438921a75d5f6` |
+| **HEAD** | `315451193ba0c8efd463baa965b657651aa467c7` |
 
 ---
 
@@ -83,7 +83,7 @@ RAMA:
 cursor/1380-identidad-convergencia-limpia
 
 HEAD:
-8f0b3adc1380fd41fcefb109ba4438921a75d5f6
+315451193ba0c8efd463baa965b657651aa467c7
 
 COMMIT FUNCIONAL 1300:
 d0ab18e21077df7fadf7e75d7dd169b753a66a12
