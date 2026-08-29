@@ -146,6 +146,13 @@ VALORACION_PERMISSIONS = {
     "valoracion.roi",
 }
 
+DIAGNOSTICOS_PERMISSIONS = {
+    "diagnosticos.view",
+    "diagnosticos.generate",
+    "diagnosticos.validate",
+    "diagnosticos.manage",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -231,6 +238,10 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "valoracion.manage": ("Valoración económica", "Crear y modificar valoraciones"),
     "valoracion.validate": ("Valoración económica", "Validar valoraciones"),
     "valoracion.roi": ("Valoración económica", "Consultar retorno y beneficio neto"),
+    "diagnosticos.view": ("Diagnósticos", "Consultar diagnósticos transversales"),
+    "diagnosticos.generate": ("Diagnósticos", "Generar diagnósticos"),
+    "diagnosticos.validate": ("Diagnósticos", "Validar diagnósticos"),
+    "diagnosticos.manage": ("Diagnósticos", "Administrar configuración de diagnóstico"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -259,6 +270,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | OPORTUNIDADES_PERMISSIONS
         | LINEA_BASE_PERMISSIONS
         | VALORACION_PERMISSIONS
+        | DIAGNOSTICOS_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -277,6 +289,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | OPORTUNIDADES_PERMISSIONS
         | LINEA_BASE_PERMISSIONS
         | VALORACION_PERMISSIONS
+        | DIAGNOSTICOS_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -333,6 +346,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "valoracion.manage",
         "valoracion.validate",
         "valoracion.roi",
+        "diagnosticos.view",
+        "diagnosticos.generate",
+        "diagnosticos.validate",
     },
     "viewer": {
         "employee.view",
@@ -353,6 +369,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "linea_base.view",
         "valoracion.view",
         "valoracion.roi",
+        "diagnosticos.view",
     },
 }
 

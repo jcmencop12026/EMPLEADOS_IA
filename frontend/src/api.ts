@@ -1346,6 +1346,85 @@ export async function fetchSignalTrace(signalId: string): Promise<Record<string,
   return api(`/api/senales/${signalId}/trazabilidad`);
 }
 
+// --- Diagnósticos transversales (1220) ---
+
+export type DiagnosticSummary = {
+  id: string;
+  codigo: string;
+  version: number;
+  estado: string;
+  periodo_inicio: string | null;
+  periodo_fin: string | null;
+  dominios: string[] | null;
+  resumen: string | null;
+  prioridad_score: number | null;
+  created_at: string | null;
+  validated_at: string | null;
+};
+
+export type DiagnosticFinding = {
+  id: string;
+  codigo: string;
+  tipo_contenido: string;
+  que_ocurre: string;
+  dominio: string;
+  severidad: string;
+  confianza: number;
+  signal_ids?: string[] | null;
+};
+
+export type DiagnosticCause = {
+  id: string;
+  tipo: string;
+  descripcion: string;
+  justificacion: string | null;
+};
+
+export type DiagnosticDetail = DiagnosticSummary & {
+  procesos: string[] | null;
+  explicacion: {
+    que_esta_pasando?: string;
+    donde?: string;
+    desde_cuando?: string;
+    que_deberia_hacerse?: string;
+    nota_evidencia?: string;
+  } | null;
+  hallazgos: DiagnosticFinding[];
+  causas: DiagnosticCause[];
+  correlaciones: Array<{ id: string; titulo: string; nota_causalidad: string }>;
+  items_estructurados: Array<{
+    hallazgo: DiagnosticFinding | null;
+    prioridad: number | null;
+    accion_recomendada: { accion?: string } | null;
+    opportunity_id: string | null;
+  }>;
+  oportunidades: Array<{ opportunity_id: string; finding_id: string | null; signal_id: string | null }>;
+};
+
+export async function fetchDiagnostics(): Promise<DiagnosticSummary[]> {
+  return api("/api/diagnosticos");
+}
+
+export async function fetchDiagnostic(id: string): Promise<DiagnosticDetail> {
+  return api(`/api/diagnosticos/${id}`);
+}
+
+export async function generateDiagnostic(body: {
+  periodo_inicio?: string;
+  periodo_fin?: string;
+  dominios?: string[];
+}): Promise<DiagnosticDetail> {
+  return api("/api/diagnosticos/generar", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function validateDiagnostic(id: string): Promise<DiagnosticDetail> {
+  return api(`/api/diagnosticos/${id}/validar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchDiagnosticTrace(id: string): Promise<Record<string, unknown>> {
+  return api(`/api/diagnosticos/${id}/trazabilidad`);
+}
+
 export type LlmProvider = {
   id: string;
   organization_id: string;
