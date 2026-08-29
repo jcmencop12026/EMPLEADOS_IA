@@ -14,6 +14,7 @@ from app import salud_models  # noqa: F401 — registra tablas IPS
 from app import experience_models  # noqa: F401 — experiencia transversal core
 from app import opportunity_models  # noqa: F401 — oportunidades proactivas 1030
 from app import diagnostic_models  # noqa: F401 — diagnóstico transversal 1220
+from app import external_models  # noqa: F401 — inteligencia externa 1240
 from app import llm_models  # noqa: F401 — LLM Gateway V1
 from app.health import build_health_report, health_http_status
 from app.routers import (
@@ -36,6 +37,7 @@ from app.routers import (
     oportunidades,
     senales,
     diagnosticos,
+    inteligencia_externa,
     test_lab,
     tools,
 )
@@ -126,6 +128,7 @@ app.include_router(experience.router)
 app.include_router(oportunidades.router)
 app.include_router(senales.router)
 app.include_router(diagnosticos.router)
+app.include_router(inteligencia_externa.router)
 app.include_router(llm_providers.router)
 
 
