@@ -30,6 +30,7 @@ from app import llm_models  # noqa: F401 — LLM Gateway V1
 from app import security_models  # noqa: F401 — seguridad avanzada 1300
 from app import identity_models  # noqa: F401 — identidad empresarial 1370
 from app import scim_models  # noqa: F401 — SCIM 1380
+from app import consumption_planner_models  # noqa: F401 — planificador MB-07 portable
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
