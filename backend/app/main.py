@@ -18,6 +18,7 @@ from app import valuation_models  # noqa: F401 — valoración económica 1210
 from app import diagnostic_models  # noqa: F401 — diagnóstico transversal 1220
 from app import external_models  # noqa: F401 — inteligencia externa 1240
 from app import commercial_models  # noqa: F401 — modelo comercial 1280
+from app import tco_models  # noqa: F401 — TCO y ecosistema 1320
 from app import llm_models  # noqa: F401 — LLM Gateway V1
 from app.health import build_health_report, health_http_status
 from app.routers import (
@@ -45,6 +46,7 @@ from app.routers import (
     diagnosticos,
     inteligencia_externa,
     comercial,
+    tco,
     test_lab,
     tools,
 )
@@ -142,6 +144,7 @@ app.include_router(diagnosticos.router)
 app.include_router(inteligencia_externa.router)
 app.include_router(control_center.router)
 app.include_router(comercial.router)
+app.include_router(tco.router)
 app.include_router(llm_providers.router)
 
 
