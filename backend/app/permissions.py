@@ -170,6 +170,25 @@ CONTROL_CENTER_PERMISSIONS = {
     "control_center.view",
 }
 
+CONTINUIDAD_PERMISSIONS = {
+    "continuidad.view",
+    "continuidad.manage",
+    "continuidad.activate",
+    "continuidad.test",
+}
+
+INCIDENTES_PERMISSIONS = {
+    "incidentes.view",
+    "incidentes.manage",
+    "incidentes.close",
+}
+
+BACKUPS_PERMISSIONS = {
+    "backups.view",
+    "backups.manage",
+    "backups.verify",
+}
+
 ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "employee.view": ("Empleados IA", "Ver directorio de empleados"),
     "employee.create": ("Empleados IA", "Crear empleados"),
@@ -261,6 +280,16 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
     "control_center.view": ("Centro de Control", "Ver centro de control ejecutivo"),
+    "continuidad.view": ("Continuidad", "Consultar continuidad operativa y resiliencia"),
+    "continuidad.manage": ("Continuidad", "Administrar servicios críticos y planes"),
+    "continuidad.activate": ("Continuidad", "Activar planes de contingencia"),
+    "continuidad.test": ("Continuidad", "Ejecutar pruebas de continuidad y restauración"),
+    "incidentes.view": ("Incidentes", "Consultar incidentes operativos"),
+    "incidentes.manage": ("Incidentes", "Gestionar incidentes operativos"),
+    "incidentes.close": ("Incidentes", "Cerrar incidentes operativos"),
+    "backups.view": ("Respaldos", "Consultar políticas y ejecuciones de respaldo"),
+    "backups.manage": ("Respaldos", "Administrar políticas y registrar ejecuciones"),
+    "backups.verify": ("Respaldos", "Verificar integridad de respaldos"),
 }
 
 SYSTEM_ROLE_CODES = {"admin", "operator", "viewer", "superadmin"}
@@ -289,6 +318,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | DIAGNOSTICOS_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
+        | CONTINUIDAD_PERMISSIONS
+        | INCIDENTES_PERMISSIONS
+        | BACKUPS_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -310,6 +342,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | DIAGNOSTICOS_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
+        | CONTINUIDAD_PERMISSIONS
+        | INCIDENTES_PERMISSIONS
+        | BACKUPS_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -374,6 +409,16 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "inteligencia_externa.ingest",
         "inteligencia_externa.validate",
         "control_center.view",
+        "continuidad.view",
+        "continuidad.manage",
+        "continuidad.activate",
+        "continuidad.test",
+        "incidentes.view",
+        "incidentes.manage",
+        "incidentes.close",
+        "backups.view",
+        "backups.manage",
+        "backups.verify",
     },
     "viewer": {
         "employee.view",
@@ -397,6 +442,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "diagnosticos.view",
         "inteligencia_externa.view",
         "control_center.view",
+        "continuidad.view",
+        "incidentes.view",
+        "backups.view",
     },
 }
 
