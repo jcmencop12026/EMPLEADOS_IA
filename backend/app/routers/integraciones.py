@@ -57,9 +57,13 @@ def get_connector(connector_id: str, user: User = Depends(get_current_user), db:
 @router.put("/conectores/{connector_id}")
 def update_connector(connector_id: str, body: ConnectorUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     check_permission(user, "integraciones.configure", db)
-    row = svc.update_connector(db, user.organization_id, connector_id, body.model_dump(exclude_none=True), user.id)
-    db.commit()
-    return svc.connector_to_dict(row)
+    try:
+        row = svc.update_connector(db, user.organization_id, connector_id, body.model_dump(exclude_none=True), user.id)
+        db.commit()
+        return svc.connector_to_dict(row)
+    except svc.IntegrationValidationError as exc:
+        db.rollback()
+        raise _validation_error(exc) from exc
 
 
 @router.post("/conectores/{connector_id}/probar")
