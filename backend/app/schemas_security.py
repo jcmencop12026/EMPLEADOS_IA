@@ -50,6 +50,9 @@ class SessionOut(BaseModel):
     expires_at: datetime
     mfa_verified: bool
     current: bool = False
+    user_id: str | None = None
+    username: str | None = None
+    auth_method: str | None = None
 
     model_config = {"from_attributes": True}
 

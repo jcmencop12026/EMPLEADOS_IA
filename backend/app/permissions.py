@@ -206,6 +206,12 @@ PLATFORM_PERMISSIONS = {
     "platform.organization.manage",
 }
 
+EMPLOYEE_AUDIT_PERMISSIONS = {
+    "auditor_empleados.view",
+    "auditor_empleados.execute",
+    "auditor_empleados.configure",
+}
+
 CONTROL_CENTER_PERMISSIONS = {
     "control_center.view",
 }
@@ -243,6 +249,9 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "employee.rollback": ("Empleados IA", "Revertir versión de empleado"),
     "employee.train": ("Empleados IA", "Capacitar empleados"),
     "employee.admin": ("Empleados IA", "Administrar empleados"),
+    "auditor_empleados.view": ("Auditor Empleados IA", "Ver auditorías y salud de empleados"),
+    "auditor_empleados.execute": ("Auditor Empleados IA", "Ejecutar auditorías de empleados"),
+    "auditor_empleados.configure": ("Auditor Empleados IA", "Configurar política de auditoría"),
     "notification.view": ("Notificaciones", "Ver notificaciones"),
     "notification.manage": ("Notificaciones", "Gestionar notificaciones"),
     "notification.acknowledge": ("Notificaciones", "Confirmar notificaciones"),
@@ -392,6 +401,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | INTEGRATION_PERMISSIONS
         | SECURITY_PERMISSIONS
         | IDENTITY_PERMISSIONS
+        | EMPLOYEE_AUDIT_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -421,13 +431,15 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | PLATFORM_PERMISSIONS
         | SECURITY_PERMISSIONS
         | IDENTITY_PERMISSIONS
+        | EMPLOYEE_AUDIT_PERMISSIONS
     ),
     "operator": {
         "employee.view",
         "employee.create",
         "employee.edit",
         "employee.test",
-        "notification.view",
+        "auditor_empleados.view",
+        "auditor_empleados.execute",
         "notification.acknowledge",
         "alert_rule.view",
         "operations.view",

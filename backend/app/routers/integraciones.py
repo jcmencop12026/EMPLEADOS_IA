@@ -26,8 +26,14 @@ def get_catalog(user: User = Depends(get_current_user), db: Session = Depends(ge
 
 
 @router.get("/conectores")
-def list_connectors(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def list_connectors(
+    vista: str | None = None,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     check_permission(user, "integraciones.view", db)
+    if vista == "operativa":
+        return svc.list_connectors_overview(db, user.organization_id)
     return [svc.connector_to_dict(c) for c in svc.list_connectors(db, user.organization_id)]
 
 
@@ -45,6 +51,21 @@ def create_connector(body: ConnectorCreate, user: User = Depends(get_current_use
         return out
     except svc.IntegrationValidationError as exc:
         db.rollback()
+        raise _validation_error(exc) from exc
+
+
+@router.get("/conectores/{connector_id}/cableado")
+def get_connector_wiring(connector_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "integraciones.view", db)
+    return svc.get_wiring_detail(db, user.organization_id, connector_id)
+
+
+@router.get("/trazabilidad/{correlation_id}")
+def trace_wiring(correlation_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "integraciones.view", db)
+    try:
+        return svc.trace_correlation(db, user.organization_id, correlation_id)
+    except svc.IntegrationValidationError as exc:
         raise _validation_error(exc) from exc
 
 

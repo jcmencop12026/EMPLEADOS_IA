@@ -14,6 +14,7 @@ import { AdminRolesPage } from "./pages/admin/AdminRolesPage";
 import { AdminSecurityPage } from "./pages/admin/AdminSecurityPage";
 import { AdminIdentidadPage } from "./pages/admin/AdminIdentidadPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
+import { AdminUserDetailPage } from "./pages/admin/AdminUserDetailPage";
 import { AuditPage } from "./pages/AuditPage";
 import { CapabilitiesPage } from "./pages/CapabilitiesPage";
 import { CentroControlPage } from "./pages/CentroControlPage";
@@ -33,10 +34,12 @@ import { ContinuidadPage } from "./pages/ContinuidadPage";
 import { IntegracionesPage } from "./pages/IntegracionesPage";
 import { IntegracionWizardPage } from "./pages/IntegracionWizardPage";
 import { IntegracionDetailPage } from "./pages/IntegracionDetailPage";
+import { IntegracionTrazabilidadPage } from "./pages/IntegracionTrazabilidadPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
+import { EmployeeAuditorPage } from "./pages/EmployeeAuditorPage";
 import { EmployeeWizardPage } from "./pages/EmployeeWizardPage";
 import { ExecutionDetailPage } from "./pages/ExecutionDetailPage";
 import { ExecutionsPage } from "./pages/ExecutionsPage";
@@ -45,6 +48,7 @@ import { KnowledgePage } from "./pages/KnowledgePage";
 import { LoginPage } from "./pages/LoginPage";
 import { MiSeguridadPage } from "./pages/MiSeguridadPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
+import { TrabajoPage } from "./pages/TrabajoPage";
 import { OperationDetailPage } from "./pages/OperationDetailPage";
 import { OperationsCenterPage } from "./pages/OperationsCenterPage";
 import { OperationsHubPage } from "./pages/OperationsHubPage";
@@ -70,6 +74,25 @@ export default function App() {
           <Route path="ejecuciones" element={<ExecutionsPage />} />
           <Route path="ejecuciones/:planId" element={<ExecutionDetailPage />} />
           <Route path="aprobaciones" element={<ApprovalsPage />} />
+          <Route
+            element={
+              <RequirePermission
+                anyOf={[
+                  "operations.view",
+                  "notification.view",
+                  "oportunidades.view",
+                  "continuidad.view",
+                  "integraciones.view",
+                  "finops.view",
+                  "automation.view",
+                  "linea_base.view",
+                  "diagnosticos.view",
+                ]}
+              />
+            }
+          >
+            <Route path="trabajo" element={<TrabajoPage />} />
+          </Route>
           <Route path="directorio" element={<DirectoryPage />} />
           <Route path="automatizaciones" element={<AutomationsPage />} />
           <Route path="automatizaciones/nueva" element={<AutomationWizardPage />} />
@@ -78,6 +101,7 @@ export default function App() {
           <Route path="conocimiento" element={<KnowledgePage />} />
           <Route path="conocimiento/:documentId" element={<KnowledgeDetailPage />} />
           <Route path="empleados/nuevo" element={<EmployeeWizardPage />} />
+          <Route path="empleados/auditoria" element={<EmployeeAuditorPage />} />
           <Route path="empleados/:employeeId/editar" element={<EmployeeWizardPage />} />
           <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />
           <Route path="capacidades" element={<CapabilitiesPage />} />
@@ -98,6 +122,7 @@ export default function App() {
           <Route path="continuidad" element={<ContinuidadPage />} />
           <Route path="integraciones" element={<IntegracionesPage />} />
           <Route path="integraciones/nueva" element={<IntegracionWizardPage />} />
+          <Route path="integraciones/trazabilidad" element={<IntegracionTrazabilidadPage />} />
           <Route path="integraciones/:connectorId" element={<IntegracionDetailPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
           <Route element={<RequirePermission anyOf={["platform.organization.view"]} />}>
@@ -105,6 +130,7 @@ export default function App() {
           </Route>
           <Route element={<RequirePermission anyOf={["admin.user.view"]} />}>
             <Route path="administracion/usuarios" element={<AdminUsersPage />} />
+            <Route path="administracion/usuarios/:userId" element={<AdminUserDetailPage />} />
           </Route>
           <Route element={<RequirePermission anyOf={["admin.role.view"]} />}>
             <Route path="administracion/roles" element={<AdminRolesPage />} />

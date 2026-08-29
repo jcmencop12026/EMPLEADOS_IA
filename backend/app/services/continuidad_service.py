@@ -604,7 +604,18 @@ def tablero(db: Session, org_id: str) -> dict[str, Any]:
         "backups_fallidos": backups_fallidos,
         "restauraciones_verificadas": restores,
         "acciones_pendientes": acciones_pend,
-        "alertas": [{"tipo": a.tipo, "mensaje": a.mensaje} for a in alertas],
+        "alertas": [
+            {
+                "id": a.id,
+                "tipo": a.tipo,
+                "mensaje": a.mensaje,
+                "severidad": a.severidad,
+                "entidad_ref": a.entidad_ref,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+                "resuelta": a.resuelta,
+            }
+            for a in alertas
+        ],
         "centro_control_adapter": {
             "disponibilidad": True, "incidentes": incidentes_abiertos > 0,
             "backups": len(backups_recientes), "riesgos": backups_fallidos > 0,

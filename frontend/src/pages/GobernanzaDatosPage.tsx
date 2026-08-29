@@ -16,10 +16,13 @@ import {
   fetchGovClassifications,
   fetchGovDashboard,
   fetchGovFindings,
+  fetchGovProviderPolicies,
   fetchGovRetentionPolicies,
   fetchGovSubjectRequests,
   scanGovFindings,
+  type GovProviderPolicy,
 } from "../api";
+import { POLICY_DECISION_LABELS } from "./integrationLabels";
 
 type Tab = "tablero" | "catalogo" | "clasificacion" | "politicas" | "retencion" | "accesos" | "solicitudes" | "hallazgos";
 
@@ -45,6 +48,8 @@ export function GobernanzaDatosPage() {
   const [accesses, setAccesses] = useState<Array<Record<string, unknown>>>([]);
   const [requests, setRequests] = useState<GovSubjectRequest[]>([]);
   const [findings, setFindings] = useState<GovFinding[]>([]);
+  const [policies, setPolicies] = useState<GovProviderPolicy[]>([]);
+  const [policyFilter, setPolicyFilter] = useState("");
 
   const load = useCallback(() => {
     setError(null);
@@ -57,6 +62,7 @@ export function GobernanzaDatosPage() {
       fetchGovAccessLogs().then(setAccesses).catch(() => undefined),
       fetchGovSubjectRequests().then(setRequests).catch(() => undefined),
       fetchGovFindings().then(setFindings).catch(() => undefined),
+      fetchGovProviderPolicies().then(setPolicies).catch(() => undefined),
     ];
     return Promise.all(tasks);
   }, []);
@@ -171,8 +177,54 @@ export function GobernanzaDatosPage() {
 
       {tab === "politicas" && (
         <section>
-          <p className="muted">Políticas de salida a proveedores IA y minimización configurables por organización y clasificación.</p>
-          <p>Consulte y gestione políticas desde la API <code>/api/gobierno-datos/politicas-proveedor</code>.</p>
+          <p className="muted">
+            Políticas de exportación a proveedores por clasificación y categoría. Alcance: organización actual.
+          </p>
+          <div className="toolbar" style={{ marginBottom: "0.75rem" }}>
+            <input
+              placeholder="Filtrar por decisión o alcance"
+              value={policyFilter}
+              onChange={(e) => setPolicyFilter(e.target.value)}
+            />
+          </div>
+          <table className="data-table compact">
+            <thead>
+              <tr>
+                <th>Decisión</th>
+                <th>Transformación</th>
+                <th>Alcance proveedor</th>
+                <th>Clasificación</th>
+                <th>Categoría</th>
+                <th>Global</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {policies
+                .filter((p) => {
+                  const q = policyFilter.trim().toLowerCase();
+                  if (!q) return true;
+                  return (
+                    p.decision.toLowerCase().includes(q) ||
+                    (p.provider_scope ?? "").toLowerCase().includes(q)
+                  );
+                })
+                .map((p) => (
+                  <tr key={p.id}>
+                    <td>{POLICY_DECISION_LABELS[p.decision] ?? p.decision}</td>
+                    <td>{p.minimization_action ?? "—"}</td>
+                    <td>{p.provider_scope ?? "—"}</td>
+                    <td className="mono-sm">{p.classification_level_id ?? "—"}</td>
+                    <td className="mono-sm">{p.category_id ?? "—"}</td>
+                    <td>{p.is_mandatory_global ? "Sí" : "No"}</td>
+                    <td>
+                      {p.decision === "PROHIBIDO" || p.decision === "DENEGADO" ? "Bloqueado" : "Permitido / condicionado"}
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+          {policies.length === 0 && <p className="muted">Sin políticas de proveedor configuradas.</p>}
         </section>
       )}
 
@@ -203,12 +255,14 @@ export function GobernanzaDatosPage() {
 
       {tab === "accesos" && (
         <section>
-          <table className="data-table">
+          <table className="data-table compact">
             <thead>
               <tr>
                 <th>Acción</th>
                 <th>Resultado</th>
+                <th>Catálogo</th>
                 <th>Recurso</th>
+                <th>Detalle</th>
                 <th>Fecha</th>
               </tr>
             </thead>
@@ -217,7 +271,9 @@ export function GobernanzaDatosPage() {
                 <tr key={String(a.id)}>
                   <td>{String(a.action)}</td>
                   <td>{String(a.result)}</td>
-                  <td>{String(a.resource_ref ?? a.catalog_entry_id ?? "—")}</td>
+                  <td className="mono-sm">{String(a.catalog_entry_id ?? "—")}</td>
+                  <td>{String(a.resource_ref ?? "—")}</td>
+                  <td className="truncate">{String(a.detail ?? "—")}</td>
                   <td>{String(a.created_at ?? "")}</td>
                 </tr>
               ))}
