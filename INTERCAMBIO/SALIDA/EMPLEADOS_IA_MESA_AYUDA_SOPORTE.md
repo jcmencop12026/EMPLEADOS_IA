@@ -2,7 +2,7 @@
 
 **Rama:** `cursor/mesa-ayuda-soporte-empresarial`  
 **Base:** `cursor/fase2-central-integracion` @ `3049cc586d60fecfe18c035e94e5ea412b649270`  
-**HEAD:** `86c39192c76d8ce7d80e4d66301f73c47576efdc`  
+**HEAD:** `562e255c29ffe28d15cb424b0563f230b39266b1`  
 **Alcance:** Mesa de ayuda empresarial conectada al ecosistema existente (notificaciones 820, RBAC, multiempresa). Sin duplicar Centro de Control, Mi trabajo, auditoría ni automatizaciones.
 
 ---
@@ -112,7 +112,7 @@ Desde rama destino `cursor/fase2-central-integracion` (o integración posterior)
 ```bash
 # 1. Traer solo archivos MB-12 (ajustar SHA al HEAD de mesa-ayuda)
 git fetch origin cursor/mesa-ayuda-soporte-empresarial
-SHA=26d7656735464d6b1524e8f694057536aa641efc
+SHA=562e255
 
 git checkout $SHA -- \
   backend/app/support_enums.py \
