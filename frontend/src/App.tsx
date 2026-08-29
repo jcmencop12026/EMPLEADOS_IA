@@ -37,7 +37,6 @@ import { DiagnosticoDetailPage } from "./pages/DiagnosticoDetailPage";
 import { InteligenciaExternaPage } from "./pages/InteligenciaExternaPage";
 import { InteligenciaExternaDetailPage } from "./pages/InteligenciaExternaDetailPage";
 import { ContinuidadPage } from "./pages/ContinuidadPage";
-import { DashboardPage } from "./pages/DashboardPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";

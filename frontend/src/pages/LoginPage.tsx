@@ -128,7 +128,7 @@ export function LoginPage() {
     return (
       <div className="login-wrap">
         <form className="login-card" onSubmit={onMfaSubmit}>
-          <h1>Verificación MFA</h1>
+          <h1>Autenticación multifactor (MFA)</h1>
           <p className="muted">Ingrese el código de su aplicación de autenticación o un código de recuperación.</p>
           <label>
             Código
