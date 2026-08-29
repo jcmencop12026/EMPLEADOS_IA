@@ -2321,3 +2321,80 @@ export async function fetchIntegrationExecutions(id: string): Promise<Integratio
 export async function fetchIntegrationHealth(id: string): Promise<IntegrationHealth> {
   return api(`/api/integraciones/conectores/${id}/salud`);
 }
+
+// --- Mesa de Ayuda y Soporte (MB-12) ---
+
+export type SupportCase = {
+  id: string;
+  organization_id: string;
+  numero: number;
+  referencia: string;
+  tipo: string;
+  categoria?: string | null;
+  asunto: string;
+  descripcion?: string | null;
+  prioridad: string;
+  impacto: string;
+  urgencia: string;
+  estado: string;
+  solicitante_id: string;
+  responsable_id?: string | null;
+  sla_estado?: string | null;
+  correlation_id?: string | null;
+  modulo_relacionado?: string | null;
+  entidad_relacionada?: string | null;
+  resolucion?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type SupportCaseDetail = SupportCase & {
+  historial: Array<{ id: string; accion: string; detalle?: Record<string, unknown> | null; created_at?: string | null }>;
+  comentarios: Array<{ id: string; usuario_id: string; cuerpo: string; es_interno: boolean; created_at?: string | null }>;
+};
+
+export async function fetchSupportCases(params?: {
+  estado?: string;
+  q?: string;
+  solo_mios?: boolean;
+}): Promise<SupportCase[]> {
+  const qs = new URLSearchParams();
+  if (params?.estado) qs.set("estado", params.estado);
+  if (params?.q) qs.set("q", params.q);
+  if (params?.solo_mios) qs.set("solo_mios", "true");
+  const query = qs.toString();
+  return api(`/api/soporte/casos${query ? `?${query}` : ""}`);
+}
+
+export async function fetchSupportCase(id: string): Promise<SupportCaseDetail> {
+  return api(`/api/soporte/casos/${id}`);
+}
+
+export async function createSupportCase(data: Record<string, unknown>): Promise<SupportCase> {
+  return api("/api/soporte/casos", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function assignSupportCase(id: string, data: { responsable_id?: string | null; grupo?: string | null }): Promise<SupportCase> {
+  return api(`/api/soporte/casos/${id}/asignar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateSupportCaseStatus(id: string, data: { estado: string; nota?: string }): Promise<SupportCase> {
+  return api(`/api/soporte/casos/${id}/estado`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function resolveSupportCase(id: string, data: { resolucion: string; cerrar?: boolean }): Promise<SupportCase> {
+  return api(`/api/soporte/casos/${id}/resolver`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function closeSupportCase(id: string, data: { nota?: string }): Promise<SupportCase> {
+  return api(`/api/soporte/casos/${id}/cerrar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function addSupportComment(id: string, data: { cuerpo: string; es_interno?: boolean }): Promise<unknown> {
+  return api(`/api/soporte/casos/${id}/comentarios`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchSupportTipos(): Promise<{ tipos: string[]; estados: string[]; prioridades: string[] }> {
+  return api("/api/soporte/tipos");
+}
+
