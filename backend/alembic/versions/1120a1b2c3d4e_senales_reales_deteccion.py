@@ -10,6 +10,8 @@ down_revision: Union[str, Sequence[str], None] = "d1e2f3a4b5c6"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
+FK_PROACTIVE_SIGNALS_SOURCE = "fk_proactive_signals_source_id"
+
 
 def upgrade() -> None:
     op.create_table(
@@ -29,7 +31,13 @@ def upgrade() -> None:
     op.create_index("ix_signal_sources_org_code", "signal_sources", ["organization_id", "code"], unique=True)
 
     with op.batch_alter_table("proactive_signals") as batch_op:
-        batch_op.add_column(sa.Column("source_id", sa.String(36), sa.ForeignKey("signal_sources.id"), nullable=True))
+        batch_op.add_column(sa.Column("source_id", sa.String(36), nullable=True))
+        batch_op.create_foreign_key(
+            FK_PROACTIVE_SIGNALS_SOURCE,
+            "signal_sources",
+            ["source_id"],
+            ["id"],
+        )
         batch_op.add_column(sa.Column("modo_ingesta", sa.String(20), nullable=False, server_default="REAL"))
         batch_op.add_column(sa.Column("proceso", sa.String(120), nullable=True))
         batch_op.add_column(sa.Column("metrica", sa.String(120), nullable=True))
@@ -63,6 +71,7 @@ def downgrade() -> None:
         batch_op.drop_column("metrica")
         batch_op.drop_column("proceso")
         batch_op.drop_column("modo_ingesta")
+        batch_op.drop_constraint(FK_PROACTIVE_SIGNALS_SOURCE, type_="foreignkey")
         batch_op.drop_column("source_id")
     op.drop_index("ix_signal_sources_org_code", table_name="signal_sources")
     op.drop_index("ix_signal_sources_org", table_name="signal_sources")
