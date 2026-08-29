@@ -149,11 +149,7 @@ export function AdminUsersPage() {
     <div className="ops-page">
       <header className="page-header">
         <h1>Usuarios</h1>
-<<<<<<< HEAD
-        <p className="muted">Administración de usuarios de la organización</p>
-=======
-        <p className="muted">Identidades del tenant: MFA, origen, aprovisionamiento y roles (1300/1370/1380)</p>
->>>>>>> b3046cc (feat(vistas): identidad, seguridad y accesos 1300/1370/1380 visible en UI)
+        <p className="muted">Administración de usuarios: MFA, origen, aprovisionamiento y roles (1300/1370/1380)</p>
       </header>
 
       <div className="ops-actions" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
