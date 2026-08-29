@@ -53,6 +53,7 @@ const MENU: NavSection[] = [
       { to: "/continuidad", label: "Continuidad" },
       { to: "/costos-valor", label: "Costos y valor" },
       { to: "/gobernanza-datos", label: "Gobierno de datos" },
+      { to: "/mi-seguridad", label: "Mi seguridad" },
       { to: "/notificaciones", label: "Notificaciones" },
       { to: "/auditoria", label: "Auditoría" },
     ],

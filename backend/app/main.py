@@ -20,6 +20,7 @@ from app import external_models  # noqa: F401 — inteligencia externa 1240
 from app import continuidad_models  # noqa: F401 — continuidad operativa 1360
 from app import governance_models  # noqa: F401 — gobierno de datos 1350
 from app import llm_models  # noqa: F401 — LLM Gateway V1
+from app import security_models  # noqa: F401 — seguridad avanzada 1300
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
@@ -47,6 +48,7 @@ from app.routers import (
     inteligencia_externa,
     continuidad,
     governance,
+    security,
     test_lab,
     tools,
 )
@@ -118,6 +120,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(security.router)
 app.include_router(organization.router)
 app.include_router(platform.router)
 app.include_router(admin.router)
