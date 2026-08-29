@@ -133,6 +133,12 @@ OPORTUNIDADES_PERMISSIONS = {
     "oportunidades.activate",
 }
 
+LINEA_BASE_PERMISSIONS = {
+    "linea_base.view",
+    "linea_base.manage",
+    "linea_base.validate",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -215,6 +221,9 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "oportunidades.evaluate": ("Oportunidades", "Evaluar y priorizar oportunidades"),
     "oportunidades.approve": ("Oportunidades", "Aprobar oportunidades"),
     "oportunidades.activate": ("Oportunidades", "Activar oportunidades"),
+    "linea_base.view": ("Línea base", "Consultar líneas base e impacto"),
+    "linea_base.manage": ("Línea base", "Crear línea base y registrar mediciones"),
+    "linea_base.validate": ("Línea base", "Validar impacto y atribución"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -243,6 +252,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
+        | LINEA_BASE_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -260,6 +270,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
+        | LINEA_BASE_PERMISSIONS
         | PLATFORM_PERMISSIONS
     ),
     "operator": {
@@ -310,6 +321,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "oportunidades.approve",
         "oportunidades.activate",
         "control_center.view",
+        "linea_base.view",
+        "linea_base.manage",
+        "linea_base.validate",
     },
     "viewer": {
         "employee.view",
@@ -328,6 +342,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "salud.consultar_diagnostico",
         "oportunidades.view",
         "control_center.view",
+        "linea_base.view",
     },
 }
 

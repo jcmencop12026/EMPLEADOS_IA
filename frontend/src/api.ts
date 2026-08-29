@@ -1180,17 +1180,119 @@ export type CentroControlResumen = {
   } | null;
   oportunidades?: Record<string, unknown> | null;
   impacto?: Record<string, unknown> | null;
-  finops?: {
-    disponible: boolean;
-    dashboard?: Record<string, unknown>;
-    tokens_periodo?: number;
-  } | null;
+  finops?: Record<string, unknown> | null;
   valor_retorno?: Record<string, unknown> | null;
   diagnostico?: Record<string, unknown> | null;
   senales?: Record<string, unknown> | null;
   salud_plataforma?: Record<string, unknown> | null;
+  cadena_ejecutiva?: Array<Record<string, unknown>>;
 };
 
 export async function fetchCentroControlResumen(periodo = "mtd"): Promise<CentroControlResumen> {
   return api(`/api/centro-control/resumen-ejecutivo?periodo=${encodeURIComponent(periodo)}`);
 }
+
+// --- Línea base e impacto (1200) ---
+
+export type LineaBaseItem = {
+  id: string;
+  indicador: string;
+  descripcion?: string | null;
+  unidad: string;
+  valor_base: number;
+  fecha_inicio_base: string;
+  fecha_fin_base: string;
+  fuente: string;
+  metodo_calculo?: string | null;
+  evidencia?: Record<string, unknown> | null;
+  direccion_indicador: string;
+  impacto_esperado?: number | null;
+  estado: string;
+  responsable_id?: string | null;
+  proceso?: string | null;
+  opportunity_id?: string | null;
+  work_plan_id?: string | null;
+  employee_id?: string | null;
+  accion_referencia?: string | null;
+  valor_economico_tipo?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type LineaBaseImpacto = {
+  id: string;
+  medicion_id: string;
+  valor_base: number;
+  valor_posterior: number;
+  variacion_absoluta: number;
+  variacion_porcentual?: number | null;
+  evaluacion: string;
+  tipo_impacto: string;
+  atribucion_nivel: string;
+  atribucion_porcentaje?: number | null;
+  atribucion_justificacion?: string | null;
+  impacto_esperado?: number | null;
+  impacto_real?: number | null;
+  congelado: boolean;
+};
+
+export type LineaBaseMedicion = {
+  id: string;
+  valor_posterior: number;
+  periodo_inicio: string;
+  periodo_fin: string;
+  fuente: string;
+  evidencia?: Record<string, unknown> | null;
+  responsable_id?: string | null;
+  estado: string;
+  created_at?: string;
+  validated_at?: string | null;
+  impacto?: LineaBaseImpacto | null;
+};
+
+export type LineaBaseDetail = {
+  linea_base: LineaBaseItem;
+  mediciones: LineaBaseMedicion[];
+  evolucion: { linea_base_id: string; puntos: Array<{ fecha: string; valor: number; evaluacion?: string; estado: string }> };
+  historial: Array<{ id: string; accion: string; actor_id?: string; fecha?: string }>;
+};
+
+export async function fetchLineasBase(params = ""): Promise<{ items: LineaBaseItem[]; total: number }> {
+  return api(`/api/lineas-base${params ? `?${params}` : ""}`);
+}
+
+export async function fetchLineaBase(id: string): Promise<LineaBaseDetail> {
+  return api(`/api/lineas-base/${id}`);
+}
+
+export async function createLineaBase(data: Record<string, unknown>): Promise<LineaBaseItem> {
+  return api("/api/lineas-base", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateLineaBase(id: string, data: Record<string, unknown>): Promise<LineaBaseItem> {
+  return api(`/api/lineas-base/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function addLineaBaseMedicion(id: string, data: Record<string, unknown>): Promise<{ medicion: LineaBaseMedicion; comparacion: LineaBaseImpacto }> {
+  return api(`/api/lineas-base/${id}/mediciones`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function validateLineaBaseMedicion(lineaBaseId: string, medicionId: string): Promise<Record<string, unknown>> {
+  return api(`/api/lineas-base/${lineaBaseId}/mediciones/${medicionId}/validar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function updateLineaBaseAtribucion(
+  lineaBaseId: string,
+  medicionId: string,
+  data: Record<string, unknown>,
+): Promise<LineaBaseImpacto> {
+  return api(`/api/lineas-base/${lineaBaseId}/mediciones/${medicionId}/atribucion`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function fetchLineasBaseByOpportunity(opportunityId: string): Promise<{ items: LineaBaseItem[] }> {
+  return api(`/api/lineas-base/oportunidad/${opportunityId}`);
+}
+

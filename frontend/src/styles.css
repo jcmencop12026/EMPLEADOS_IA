@@ -1007,7 +1007,11 @@ body {
   font-size: 12px;
 }
 
+<<<<<<< HEAD
 /* Bloques 1100/1230 — UI compacta compartida */
+=======
+/* Bloque 1200 — línea base e impacto */
+>>>>>>> origin/cursor/1200-linea-base-impacto
 .compact-panel {
   padding: 12px 14px;
   margin-bottom: 10px;
@@ -1021,6 +1025,7 @@ body {
   margin-bottom: 10px;
 }
 
+<<<<<<< HEAD
 .compact-tabs {
   margin-bottom: 8px;
 }
@@ -1064,6 +1069,8 @@ body {
   background: #e2e8f0;
 }
 
+=======
+>>>>>>> origin/cursor/1200-linea-base-impacto
 .compact-form {
   display: flex;
   flex-direction: column;
@@ -1094,6 +1101,7 @@ body {
   gap: 12px;
 }
 
+<<<<<<< HEAD
 .inline-input {
   min-width: 180px;
   padding: 6px 8px;
@@ -1107,6 +1115,8 @@ body {
   font-size: 12px;
 }
 
+=======
+>>>>>>> origin/cursor/1200-linea-base-impacto
 .approval-card {
   border: 1px solid #e2e8f0;
   border-radius: 6px;
@@ -1124,6 +1134,7 @@ body {
   font-size: 13px;
   margin: 0 0 8px;
 }
+<<<<<<< HEAD
 
 .centro-control-page .cc-metric-card {
   text-decoration: none;
@@ -1137,3 +1148,5 @@ body {
   margin-bottom: 10px;
 }
 
+=======
+>>>>>>> origin/cursor/1200-linea-base-impacto
