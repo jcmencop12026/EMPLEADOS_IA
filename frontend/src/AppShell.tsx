@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { fetchUnreadCount } from "./api";
-import { filterMenuByPermissions } from "./auth/permissions";
+import { fetchTrabajoResumen, fetchUnreadCount } from "./api";
+import { filterMenuByPermissions, canAccessRoute } from "./auth/permissions";
 import { getCachedUser, logout } from "./auth/session";
 
 type NavItem = { to: string; label: string; end?: boolean };
@@ -17,6 +17,7 @@ const MENU: NavSection[] = [
     id: "operaciones",
     label: "Operaciones",
     items: [
+      { to: "/trabajo", label: "Mi trabajo" },
       { to: "/operaciones", label: "Centro de operaciones" },
       { to: "/operaciones/solicitud", label: "Nueva solicitud" },
       { to: "/ejecuciones", label: "Ejecuciones" },
@@ -34,6 +35,7 @@ const MENU: NavSection[] = [
     label: "Empleados IA",
     items: [
       { to: "/directorio", label: "Directorio" },
+      { to: "/empleados/auditoria", label: "Auditoría empleados" },
       { to: "/empleados/nuevo", label: "Crear empleado" },
       { to: "/capacidades", label: "Capacidades" },
       { to: "/herramientas", label: "Herramientas" },
@@ -90,6 +92,7 @@ export function AppShell() {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
   const [sections, setSections] = useState<Record<string, boolean>>(loadSections);
   const [unread, setUnread] = useState(0);
+  const [trabajoPendientes, setTrabajoPendientes] = useState(0);
   const user = getCachedUser();
   const permissionSet = useMemo(
     () => new Set(user?.permissions ?? []),
@@ -114,7 +117,17 @@ export function AppShell() {
   }, [sections]);
 
   useEffect(() => {
-    const refresh = () => fetchUnreadCount().then(setUnread).catch(() => undefined);
+    const refreshNotif = () => fetchUnreadCount().then(setUnread).catch(() => undefined);
+    const refreshTrabajo = () => {
+      if (!canAccessRoute("/trabajo", permissionSet)) return;
+      fetchTrabajoResumen()
+        .then((r) => setTrabajoPendientes(r.pendientes))
+        .catch(() => undefined);
+    };
+    const refresh = () => {
+      refreshNotif();
+      refreshTrabajo();
+    };
     refresh();
     const timer = window.setInterval(refresh, 60000);
     window.addEventListener("notifications-changed", refresh);
@@ -122,7 +135,7 @@ export function AppShell() {
       window.clearInterval(timer);
       window.removeEventListener("notifications-changed", refresh);
     };
-  }, []);
+  }, [permissionSet]);
 
   function toggleSection(id: string) {
     setSections((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }));
@@ -160,7 +173,12 @@ export function AppShell() {
                   className={section.id === "admin" ? "nav-sub" : undefined}
                 >
                   <span className="nav-icon">{section.id === "admin" ? "○" : "●"}</span>
-                  <span className="nav-label">{item.label}</span>
+                  <span className="nav-label">
+                    {item.label}
+                    {item.to === "/trabajo" && trabajoPendientes > 0 && (
+                      <span className="notification-badge">{trabajoPendientes > 99 ? "99+" : trabajoPendientes}</span>
+                    )}
+                  </span>
                 </NavLink>
               ),
             )}

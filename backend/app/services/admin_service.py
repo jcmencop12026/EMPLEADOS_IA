@@ -12,7 +12,14 @@ from sqlalchemy.orm import Session
 
 from app.audit import write_audit
 from app.models import Organization, Permission, Role, RolePermission, User
-from app.permissions import SYSTEM_ROLE_CODES, assert_permission_subset, assert_role_assignable, is_system_role, user_permissions
+from app.permissions import (
+    SYSTEM_ROLE_CODES,
+    assert_permission_subset,
+    assert_role_assignable,
+    is_system_role,
+    resolve_authoritative_role,
+    user_permissions,
+)
 from app.security import hash_password
 
 USER_STATUS_ACTIVE = "ACTIVE"
@@ -394,10 +401,317 @@ def update_org_config(db: Session, *, org: Organization, actor_id: str, config: 
     return current
 
 
+SCIM_RATE_LIMIT_NOTE = (
+    "P2 conocido: límite de tasa SCIM en memoria (120 solicitudes/minuto por token). "
+    "Limitación administrativa documentada; no afecta la operación normal de aprovisionamiento."
+)
+
+
+def _safe_subject_ref(value: str | None) -> str | None:
+    if not value:
+        return None
+    trimmed = value.strip()
+    if len(trimmed) <= 12:
+        return trimmed
+    return f"{trimmed[:8]}…"
+
+
+def _identity_origin_for_user(db: Session, user: User) -> dict:
+    from app.identity_models import IdentityProvider, UserExternalIdentity
+    from app.security_models import UserSession
+
+    link = (
+        db.query(UserExternalIdentity, IdentityProvider)
+        .join(IdentityProvider, IdentityProvider.id == UserExternalIdentity.provider_id)
+        .filter(UserExternalIdentity.user_id == user.id, UserExternalIdentity.organization_id == user.organization_id)
+        .first()
+    )
+    if link:
+        ext, provider = link
+        return {
+            "source": "SSO",
+            "provider_code": provider.code,
+            "provider_name": provider.name,
+            "external_subject_ref": _safe_subject_ref(ext.external_subject),
+        }
+    latest_session = (
+        db.query(UserSession)
+        .filter(UserSession.user_id == user.id)
+        .order_by(UserSession.created_at.desc())
+        .first()
+    )
+    if latest_session and (latest_session.auth_method or "").upper() == "SSO":
+        provider_name = None
+        provider_code = None
+        if latest_session.identity_provider_id:
+            provider = db.query(IdentityProvider).filter(IdentityProvider.id == latest_session.identity_provider_id).first()
+            if provider:
+                provider_name = provider.name
+                provider_code = provider.code
+        return {
+            "source": "SSO",
+            "provider_code": provider_code,
+            "provider_name": provider_name,
+            "external_subject_ref": None,
+        }
+    return {
+        "source": "LOCAL",
+        "provider_code": None,
+        "provider_name": None,
+        "external_subject_ref": None,
+    }
+
+
+def _mfa_overview_for_user(db: Session, user: User) -> dict:
+    from app.security_models import UserMfaSettings
+    from app.services.mfa_service import mfa_status
+    from app.services.security_policy_service import get_or_create_policy, is_mfa_required_for_user
+
+    status = mfa_status(db, user)
+    settings_row = db.query(UserMfaSettings).filter(UserMfaSettings.user_id == user.id).first()
+    policy = get_or_create_policy(db, user.organization_id)
+    return {
+        "enabled": bool(status["enabled"]),
+        "enrollment_pending": bool(status["enrollment_pending"]),
+        "confirmed_at": status["confirmed_at"],
+        "updated_at": settings_row.updated_at if settings_row else None,
+        "mfa_required_by_policy": is_mfa_required_for_user(db, user),
+        "policy_mfa_mode": policy.mfa_mode,
+        "allowed_method": "TOTP",
+    }
+
+
+def _provision_overview_for_user(db: Session, user: User) -> dict:
+    from app.scim_models import ScimUserResource
+
+    scim = db.query(ScimUserResource).filter(ScimUserResource.user_id == user.id).first()
+    if scim:
+        return {
+            "status": scim.provision_status,
+            "external_id": scim.external_id,
+            "scim_resource_id": scim.id,
+            "updated_at": scim.updated_at,
+        }
+    return {
+        "status": "MANUAL",
+        "external_id": None,
+        "scim_resource_id": None,
+        "updated_at": None,
+    }
+
+
+def _role_name_for_user(db: Session, user: User) -> str | None:
+    role = resolve_authoritative_role(db, user)
+    return role.name if role else user.role
+
+
+def list_users_overview(
+    db: Session,
+    org_id: str,
+    *,
+    q: str | None = None,
+    status_filter: str | None = None,
+) -> list[dict]:
+    org = get_organization(db, org_id)
+    users = list_users(db, org_id, q=q, status_filter=status_filter)
+    out: list[dict] = []
+    for user in users:
+        out.append(
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "full_name": user.full_name,
+                "role": user.role,
+                "role_name": _role_name_for_user(db, user),
+                "status": user.status,
+                "is_active": user.is_active,
+                "organization_id": user.organization_id,
+                "organization_name": org.name,
+                "last_login_at": user.last_login_at,
+                "created_at": user.created_at,
+                "updated_at": user.updated_at,
+                "mfa": _mfa_overview_for_user(db, user),
+                "identity_origin": _identity_origin_for_user(db, user),
+                "provisioning": _provision_overview_for_user(db, user),
+            }
+        )
+    return out
+
+
+def _user_audit_entries(db: Session, org_id: str, target_user: User, limit: int = 30) -> list[dict]:
+    from app.identity_models import IdentityLoginAudit
+    from app.models import AuditLog
+    from app.scim_models import ScimAuditLog, ScimUserResource
+    from app.security_models import SecurityEvent
+
+    entries: list[dict] = []
+    for row in (
+        db.query(IdentityLoginAudit)
+        .filter(
+            IdentityLoginAudit.organization_id == org_id,
+            IdentityLoginAudit.user_id == target_user.id,
+        )
+        .order_by(IdentityLoginAudit.created_at.desc())
+        .limit(limit)
+    ):
+        entries.append(
+            {
+                "stream": "identidad",
+                "action": f"login.{row.login_method.lower()}",
+                "result": row.result,
+                "actor_id": row.user_id,
+                "organization_id": row.organization_id,
+                "detail": row.detail,
+                "correlation_id": None,
+                "created_at": row.created_at,
+            }
+        )
+    for row in (
+        db.query(SecurityEvent)
+        .filter(
+            SecurityEvent.organization_id == org_id,
+            SecurityEvent.user_id == target_user.id,
+        )
+        .order_by(SecurityEvent.created_at.desc())
+        .limit(limit)
+    ):
+        entries.append(
+            {
+                "stream": "seguridad",
+                "action": row.event_type,
+                "result": "OK",
+                "actor_id": row.user_id,
+                "organization_id": row.organization_id,
+                "detail": row.detail,
+                "correlation_id": None,
+                "created_at": row.created_at,
+            }
+        )
+    resource_hint = target_user.id
+    for row in (
+        db.query(AuditLog)
+        .filter(
+            AuditLog.organization_id == org_id,
+            or_(
+                AuditLog.user_id == target_user.id,
+                AuditLog.detail.ilike(f"%{resource_hint}%"),
+            ),
+        )
+        .order_by(AuditLog.created_at.desc())
+        .limit(limit)
+    ):
+        entries.append(
+            {
+                "stream": "auditoria",
+                "action": row.action,
+                "result": "OK",
+                "actor_id": row.user_id,
+                "organization_id": row.organization_id,
+                "detail": row.detail,
+                "correlation_id": None,
+                "created_at": row.created_at,
+            }
+        )
+    scim = db.query(ScimUserResource).filter(ScimUserResource.user_id == target_user.id).first()
+    if scim:
+        for row in (
+            db.query(ScimAuditLog)
+            .filter(
+                ScimAuditLog.organization_id == org_id,
+                ScimAuditLog.resource_id == scim.id,
+            )
+            .order_by(ScimAuditLog.created_at.desc())
+            .limit(limit)
+        ):
+            entries.append(
+                {
+                    "stream": "scim",
+                    "action": row.action,
+                    "result": row.result,
+                    "actor_id": None,
+                    "organization_id": row.organization_id,
+                    "detail": row.detail,
+                    "correlation_id": row.correlation_id,
+                    "created_at": row.created_at,
+                }
+            )
+    entries.sort(key=lambda item: item["created_at"], reverse=True)
+    return entries[:limit]
+
+
+def get_user_identity_detail(db: Session, org_id: str, user_id: str) -> dict:
+    from app.services.session_service import list_user_sessions
+
+    target = get_user_in_org(db, user_id, org_id)
+    org = get_organization(db, org_id)
+    role = resolve_authoritative_role(db, target)
+    perms = sorted(user_permissions(target, db))
+    permissions_effective = [
+        {
+            "code": code,
+            "source": "role",
+            "role_code": role.code if role else target.role,
+            "organization_id": org_id,
+        }
+        for code in perms
+    ]
+    sessions = list_user_sessions(db, target.id)
+    scim_events: list[dict] = []
+    provision = _provision_overview_for_user(db, target)
+    if provision.get("scim_resource_id"):
+        from app.scim_models import ScimAuditLog
+
+        scim_events = [
+            {
+                "action": row.action,
+                "result": row.result,
+                "detail": row.detail,
+                "correlation_id": row.correlation_id,
+                "created_at": row.created_at.isoformat(),
+            }
+            for row in (
+                db.query(ScimAuditLog)
+                .filter(
+                    ScimAuditLog.organization_id == org_id,
+                    ScimAuditLog.resource_id == provision["scim_resource_id"],
+                )
+                .order_by(ScimAuditLog.created_at.desc())
+                .limit(20)
+            )
+        ]
+    return {
+        "user": target,
+        "organization_name": org.name,
+        "role_name": _role_name_for_user(db, target),
+        "mfa": _mfa_overview_for_user(db, target),
+        "identity_origin": _identity_origin_for_user(db, target),
+        "provisioning": provision,
+        "permissions_effective": permissions_effective,
+        "sessions": [
+            {
+                "id": s.id,
+                "ip_address": s.ip_address,
+                "user_agent": s.user_agent,
+                "created_at": s.created_at,
+                "last_activity_at": s.last_activity_at,
+                "expires_at": s.expires_at,
+                "mfa_verified": s.mfa_verified,
+                "auth_method": s.auth_method,
+            }
+            for s in sessions
+        ],
+        "audit_entries": _user_audit_entries(db, org_id, target),
+        "scim_user_events": scim_events,
+    }
+
+
 def security_summary(db: Session, org_id: str) -> dict:
     users = db.query(User).filter(User.organization_id == org_id).all()
     roles = list_roles(db, org_id)
     from app.models import AuditLog
+    from app.security_models import UserMfaSettings
+    from app.services.scim_audit import get_metrics
 
     recent = (
         db.query(AuditLog)
@@ -422,11 +736,19 @@ def security_summary(db: Session, org_id: str) -> dict:
         .limit(20)
         .all()
     )
+    mfa_enabled_count = (
+        db.query(UserMfaSettings)
+        .filter(UserMfaSettings.organization_id == org_id, UserMfaSettings.enabled.is_(True))
+        .count()
+    )
     return {
         "users_active": sum(1 for u in users if u.status == USER_STATUS_ACTIVE),
         "users_inactive": sum(1 for u in users if u.status == USER_STATUS_INACTIVE),
         "users_blocked": sum(1 for u in users if u.status == USER_STATUS_BLOCKED),
         "roles_total": len(roles),
+        "mfa_enabled_count": mfa_enabled_count,
+        "scim_metrics": get_metrics(db, org_id),
+        "scim_rate_limit_note": SCIM_RATE_LIMIT_NOTE,
         "recent_events": [
             {
                 "action": row.action,

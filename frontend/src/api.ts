@@ -178,6 +178,108 @@ export type SecuritySummary = {
   users_blocked: number;
   roles_total: number;
   recent_events: Array<{ action: string; detail: string | null; created_at: string }>;
+  mfa_enabled_count?: number;
+  scim_metrics?: {
+    users_provisioned: number;
+    users_active: number;
+    users_deactivated: number;
+    errors_count: number;
+    conflicts_count: number;
+    rate_limited_count: number;
+    requests_total: number;
+    last_sync_at: string | null;
+    last_latency_ms: number | null;
+  } | null;
+  scim_rate_limit_note?: string | null;
+};
+
+export type AdminUserMfaOverview = {
+  enabled: boolean;
+  enrollment_pending: boolean;
+  confirmed_at?: string | null;
+  updated_at?: string | null;
+  mfa_required_by_policy: boolean;
+  policy_mfa_mode?: string | null;
+  allowed_method: string;
+};
+
+export type AdminUserIdentityOrigin = {
+  source: string;
+  provider_code?: string | null;
+  provider_name?: string | null;
+  external_subject_ref?: string | null;
+};
+
+export type AdminUserProvisionOverview = {
+  status: string;
+  external_id?: string | null;
+  scim_resource_id?: string | null;
+  updated_at?: string | null;
+};
+
+export type AdminUserOverview = {
+  id: string;
+  username: string;
+  email: string | null;
+  full_name: string | null;
+  role: string;
+  role_name?: string | null;
+  status: string;
+  is_active: boolean;
+  organization_id: string;
+  organization_name?: string | null;
+  last_login_at: string | null;
+  created_at: string;
+  updated_at: string | null;
+  mfa: AdminUserMfaOverview;
+  identity_origin: AdminUserIdentityOrigin;
+  provisioning: AdminUserProvisionOverview;
+};
+
+export type AdminUserPermissionEffective = {
+  code: string;
+  source: string;
+  role_code?: string | null;
+  organization_id: string;
+};
+
+export type AdminUserAuditEntry = {
+  stream: string;
+  action: string;
+  result?: string | null;
+  actor_id?: string | null;
+  organization_id?: string | null;
+  detail?: string | null;
+  correlation_id?: string | null;
+  created_at: string;
+};
+
+export type AdminUserIdentityDetail = {
+  user: AdminUser;
+  organization_name?: string | null;
+  role_name?: string | null;
+  mfa: AdminUserMfaOverview;
+  identity_origin: AdminUserIdentityOrigin;
+  provisioning: AdminUserProvisionOverview;
+  permissions_effective: AdminUserPermissionEffective[];
+  sessions: Array<{
+    id: string;
+    ip_address?: string | null;
+    user_agent?: string | null;
+    created_at: string;
+    last_activity_at: string;
+    expires_at: string;
+    mfa_verified: boolean;
+    auth_method?: string | null;
+  }>;
+  audit_entries: AdminUserAuditEntry[];
+  scim_user_events: Array<{
+    action: string;
+    result: string;
+    detail?: string | null;
+    correlation_id?: string | null;
+    created_at: string;
+  }>;
 };
 
 export type AuditLog = {
@@ -365,6 +467,168 @@ export async function fetchUnreadCount(): Promise<number> {
 
 export async function transitionNotification(id: string, action: "read" | "acknowledge" | "dismiss") {
   return api<NotificationItem>(`/api/notifications/${id}/${action}`, { method: "POST" });
+}
+
+export type TrabajoAccion = {
+  codigo: string;
+  etiqueta: string;
+  permiso?: string | null;
+  href?: string | null;
+  payload?: Record<string, unknown> | null;
+};
+
+export type TrabajoItem = {
+  id: string;
+  source_id: string;
+  tipo: string;
+  asunto: string;
+  modulo: string;
+  organization_id: string;
+  organization_name?: string | null;
+  prioridad: string;
+  prioridad_orden: number;
+  estado_dominio: string;
+  estado_presentacion: string;
+  responsable_id?: string | null;
+  responsable_nombre?: string | null;
+  created_at?: string | null;
+  fecha_limite?: string | null;
+  antiguedad_horas?: number | null;
+  vencida: boolean;
+  correlation_id?: string | null;
+  requires_action: boolean;
+  informativa: boolean;
+  semantic_kind?: string | null;
+  detalle?: string | null;
+  enlace: string;
+  trazabilidad_enlace?: string | null;
+  acciones: TrabajoAccion[];
+  metadata?: Record<string, unknown>;
+};
+
+export type TrabajoResumen = {
+  organization_id: string;
+  pendientes: number;
+  vencidas: number;
+  requieren_aprobacion: number;
+  total_visible: number;
+};
+
+export type TrabajoItemsResponse = {
+  items: TrabajoItem[];
+  total: number;
+  filtros_aplicados: Record<string, unknown>;
+};
+
+export async function fetchTrabajoItems(params: Record<string, string | boolean | undefined> = {}): Promise<TrabajoItemsResponse> {
+  const qs = new URLSearchParams();
+  for (const [key, val] of Object.entries(params)) {
+    if (val !== undefined && val !== "") {
+      qs.set(key, String(val));
+    }
+  }
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return api<TrabajoItemsResponse>(`/api/trabajo/items${suffix}`);
+}
+
+export async function fetchTrabajoResumen(): Promise<TrabajoResumen> {
+  return api<TrabajoResumen>("/api/trabajo/resumen");
+}
+
+export type EmployeeAuditHealthRow = {
+  employee_id: string;
+  employee_name: string;
+  organization_id: string;
+  health_status: string;
+  score?: number | null;
+  lifecycle_status?: string | null;
+  last_audit_at?: string | null;
+  open_findings: number;
+  critical_findings: number;
+};
+
+export type EmployeeAuditFinding = {
+  id: string;
+  run_id: string;
+  assessment_id: string;
+  employee_id: string;
+  rule_code: string;
+  metric_name: string;
+  observed_value?: string | null;
+  threshold_value?: string | null;
+  severity: string;
+  semantic_kind: string;
+  title: string;
+  detail?: string | null;
+  evidence?: Record<string, unknown>;
+  recommended_action?: string | null;
+  status: string;
+  correlation_id: string;
+  created_at: string;
+};
+
+export type EmployeeAuditRun = {
+  id: string;
+  organization_id: string;
+  trigger_type: string;
+  status: string;
+  correlation_id: string;
+  employee_count: number;
+  findings_count: number;
+  cost_usd: number;
+  started_at: string;
+  finished_at?: string | null;
+};
+
+export async function fetchEmployeeAuditHealth(): Promise<EmployeeAuditHealthRow[]> {
+  return api<EmployeeAuditHealthRow[]>("/api/empleados-auditor/salud");
+}
+
+export async function fetchEmployeeAuditFindings(
+  params: Record<string, string> = {},
+): Promise<EmployeeAuditFinding[]> {
+  const qs = new URLSearchParams(params).toString();
+  const suffix = qs ? `?${qs}` : "";
+  return api<EmployeeAuditFinding[]>(`/api/empleados-auditor/hallazgos${suffix}`);
+}
+
+export async function executeEmployeeAudit(body: {
+  employee_id?: string;
+  employee_ids?: string[];
+  scope?: string;
+}): Promise<EmployeeAuditRun> {
+  return api<EmployeeAuditRun>("/api/empleados-auditor/ejecutar", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function iniciarMejoraAuditor(findingId: string, idempotencyKey?: string): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-auditor/hallazgos/${findingId}/iniciar-mejora`, {
+    method: "POST",
+    body: JSON.stringify({ idempotency_key: idempotencyKey }),
+  });
+}
+
+export async function ejecutarMejoraFabrica(
+  traceId: string,
+  data: { operation?: string; payload?: Record<string, unknown>; idempotency_key?: string },
+): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-auditor/mejoras/${traceId}/ejecutar`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function reauditarMejora(traceId: string, idempotencyKey?: string): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-auditor/mejoras/${traceId}/reauditar`, {
+    method: "POST",
+    body: JSON.stringify({ idempotency_key: idempotencyKey }),
+  });
+}
+
+export async function fetchMejoraTrazabilidad(traceId: string): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-auditor/mejoras/${traceId}/trazabilidad`);
 }
 
 export type EmployeeTemplate = { code: string; name: string; description?: string; specialty: string };
@@ -590,6 +854,21 @@ export async function fetchAdminUsers(q?: string, status?: string): Promise<Admi
   return api<AdminUser[]>(`/api/admin/users${qs ? `?${qs}` : ""}`);
 }
 
+export async function fetchAdminUsersOverview(q?: string, status?: string): Promise<AdminUserOverview[]> {
+  const params = new URLSearchParams({ vista: "operativa" });
+  if (q) params.set("q", q);
+  if (status) params.set("status", status);
+  return api<AdminUserOverview[]>(`/api/admin/users?${params}`);
+}
+
+export async function fetchAdminUser(id: string): Promise<AdminUser> {
+  return api<AdminUser>(`/api/admin/users/${id}`);
+}
+
+export async function fetchAdminUserIdentityDetail(id: string): Promise<AdminUserIdentityDetail> {
+  return api<AdminUserIdentityDetail>(`/api/admin/users/${id}/identidad`);
+}
+
 export async function createAdminUser(data: Record<string, unknown>): Promise<AdminUser> {
   return api<AdminUser>("/api/admin/users", { method: "POST", body: JSON.stringify(data) });
 }
@@ -670,6 +949,9 @@ export type UserSession = {
   expires_at: string;
   mfa_verified: boolean;
   current: boolean;
+  user_id?: string | null;
+  username?: string | null;
+  auth_method?: string | null;
 };
 
 export type SecurityPolicy = {
@@ -2173,7 +2455,15 @@ export type ContinuidadTablero = {
   backups_fallidos: number;
   restauraciones_verificadas: number;
   acciones_pendientes: number;
-  alertas: Array<{ tipo: string; mensaje: string }>;
+  alertas: Array<{
+    id?: string;
+    tipo: string;
+    mensaje: string;
+    severidad?: string;
+    entidad_ref?: string | null;
+    created_at?: string | null;
+    resuelta?: boolean;
+  }>;
   centro_control_adapter?: Record<string, unknown>;
   integracion_1330_prep?: Record<string, unknown>;
   integracion_1260_prep?: Record<string, unknown>;
@@ -2244,6 +2534,33 @@ export type GovFinding = {
   description: string;
   status: string;
 };
+
+export type GovProviderPolicy = {
+  id: string;
+  organization_id: string | null;
+  classification_level_id: string | null;
+  category_id: string | null;
+  decision: string;
+  minimization_action: string | null;
+  provider_scope: string | null;
+  is_mandatory_global: boolean;
+};
+
+export async function fetchGovProviderPolicies(): Promise<GovProviderPolicy[]> {
+  return api("/api/gobierno-datos/politicas-proveedor");
+}
+
+export async function evaluateGovProvider(data: Record<string, unknown>): Promise<{
+  result: string;
+  reasons: string[];
+  minimization_action?: string | null;
+}> {
+  return api("/api/gobierno-datos/evaluar-proveedor", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchGovLineage(entryId: string): Promise<Array<Record<string, unknown>>> {
+  return api(`/api/gobierno-datos/catalogo/${entryId}/linaje`);
+}
 
 export async function fetchGovDashboard(): Promise<GovDashboard> {
   return api("/api/gobierno-datos/dashboard");
@@ -2316,9 +2633,25 @@ export type IntegrationConnector = {
     consecutive_failures: number;
     circuit_open: boolean;
   };
+  gov_catalog_entry_id?: string | null;
   webhook_token?: string;
   webhook_url_hint?: string;
   created_at: string | null;
+};
+
+export type IntegrationConnectorOverview = IntegrationConnector & {
+  organization_name?: string;
+  proveedor_ref?: string;
+  continuidad_estado?: string | null;
+  continuidad_servicio_id?: string | null;
+  politica_decision?: string | null;
+  politica_restricciones?: string[];
+  ultima_ejecucion?: {
+    id: string;
+    status: string;
+    started_at: string | null;
+    correlation_id?: string | null;
+  } | null;
 };
 
 export type IntegrationExecution = {
@@ -2331,6 +2664,7 @@ export type IntegrationExecution = {
   records_rejected: number;
   error_category: string | null;
   error_message: string | null;
+  correlation_id?: string | null;
 };
 
 export type IntegrationHealth = {
@@ -2351,6 +2685,68 @@ export async function fetchIntegrationCatalog(): Promise<IntegrationCatalogItem[
 
 export async function fetchIntegrationConnectors(): Promise<IntegrationConnector[]> {
   return api("/api/integraciones/conectores");
+}
+
+export async function fetchIntegrationConnectorsOverview(): Promise<IntegrationConnectorOverview[]> {
+  return api("/api/integraciones/conectores?vista=operativa");
+}
+
+export type IntegrationWiringDetail = {
+  connector: IntegrationConnector;
+  catalog_entry: Record<string, unknown> | null;
+  policy: Record<string, unknown> | null;
+  preflight: {
+    allowed: boolean;
+    decision: string;
+    reasons: string[];
+    minimization_action?: string | null;
+  } | null;
+  executions: IntegrationExecution[];
+  health: IntegrationHealth;
+  lineage: Array<Record<string, unknown>>;
+  access_logs: Array<Record<string, unknown>>;
+  continuidad: {
+    proveedor_ref: string;
+    servicio_id: string | null;
+    servicio_nombre: string | null;
+    estado_operacional: string | null;
+  };
+  eventos: Array<{
+    id: string;
+    tipo: string;
+    mensaje: string;
+    severidad: string;
+    entidad_ref: string | null;
+    created_at: string | null;
+    resuelta: boolean;
+  }>;
+  auditoria: Array<{
+    id: string;
+    action: string;
+    detail: string | null;
+    user_id: string | null;
+    created_at: string | null;
+  }>;
+};
+
+export type IntegrationTraceStep = {
+  etapa: string;
+  origen: string;
+  referencia: string;
+  estado: string;
+  detalle: string;
+  timestamp: string | null;
+};
+
+export async function fetchIntegrationWiringDetail(id: string): Promise<IntegrationWiringDetail> {
+  return api(`/api/integraciones/conectores/${id}/cableado`);
+}
+
+export async function fetchIntegrationTrace(correlationId: string): Promise<{
+  correlation_id: string;
+  pasos: IntegrationTraceStep[];
+}> {
+  return api(`/api/integraciones/trazabilidad/${encodeURIComponent(correlationId)}`);
 }
 
 export async function fetchIntegrationConnector(id: string): Promise<IntegrationConnector> {
@@ -2380,6 +2776,7 @@ export async function executeIntegrationConnector(
   records_rejected: number;
   signals_created?: number;
   idempotent?: boolean;
+  correlation_id?: string;
 }> {
   return api(`/api/integraciones/conectores/${id}/ejecutar`, { method: "POST", body: JSON.stringify(data) });
 }
