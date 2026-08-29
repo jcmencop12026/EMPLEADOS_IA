@@ -19,6 +19,7 @@ from app import diagnostic_models  # noqa: F401 — diagnóstico transversal 122
 from app import external_models  # noqa: F401 — inteligencia externa 1240
 from app import continuidad_models  # noqa: F401 — continuidad operativa 1360
 from app import governance_models  # noqa: F401 — gobierno de datos 1350
+from app import commercial_models  # noqa: F401 — modelo comercial 1280
 from app import llm_models  # noqa: F401 — LLM Gateway V1
 from app import security_models  # noqa: F401 — seguridad avanzada 1300
 from app import identity_models  # noqa: F401 — identidad empresarial 1370
@@ -53,6 +54,7 @@ from app.routers import (
     security,
     identidad,
     scim,
+    comercial,
     test_lab,
     tools,
 )
@@ -154,6 +156,7 @@ app.include_router(inteligencia_externa.router)
 app.include_router(continuidad.router)
 app.include_router(control_center.router)
 app.include_router(governance.router)
+app.include_router(comercial.router)
 app.include_router(llm_providers.router)
 
 

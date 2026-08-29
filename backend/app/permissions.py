@@ -185,6 +185,14 @@ DATOS_PERMISSIONS = {
     "datos.retention",
 }
 
+COMMERCIAL_PERMISSIONS = {
+    "comercial.view",
+    "comercial.simulate",
+    "comercial.create",
+    "comercial.approve",
+    "comercial.manage_plans",
+}
+
 PLATFORM_PERMISSIONS = {
     "platform.organization.view",
     "platform.organization.create",
@@ -317,6 +325,11 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "datos.audit": ("Gobierno de datos", "Auditar accesos y hallazgos"),
     "datos.requests": ("Gobierno de datos", "Gestionar solicitudes sobre datos"),
     "datos.retention": ("Gobierno de datos", "Gestionar retención y legal hold"),
+    "comercial.view": ("Comercial", "Consultar propuestas y planes comerciales"),
+    "comercial.simulate": ("Comercial", "Simular valor y precio"),
+    "comercial.create": ("Comercial", "Crear y editar propuestas comerciales"),
+    "comercial.approve": ("Comercial", "Aprobar precio final y propuestas"),
+    "comercial.manage_plans": ("Comercial", "Administrar planes comerciales"),
     "platform.organization.view": ("Plataforma", "Ver empresas de la plataforma"),
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
@@ -365,6 +378,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | DATOS_PERMISSIONS
         | SECURITY_PERMISSIONS
         | IDENTITY_PERMISSIONS
+        | COMMERCIAL_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -390,6 +404,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | INCIDENTES_PERMISSIONS
         | BACKUPS_PERMISSIONS
         | DATOS_PERMISSIONS
+        | COMMERCIAL_PERMISSIONS
         | PLATFORM_PERMISSIONS
         | SECURITY_PERMISSIONS
         | IDENTITY_PERMISSIONS
@@ -473,6 +488,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "datos.audit",
         "datos.requests",
         "datos.retention",
+        "comercial.view",
+        "comercial.simulate",
+        "comercial.create",
     },
     "viewer": {
         "employee.view",
@@ -500,6 +518,8 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "incidentes.view",
         "backups.view",
         "datos.view",
+        "comercial.view",
+        "comercial.simulate",
     },
 }
 

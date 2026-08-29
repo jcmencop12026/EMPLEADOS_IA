@@ -1980,6 +1980,118 @@ export async function fetchCentroControlResumen(periodo = "mtd"): Promise<Centro
   return api(`/api/centro-control/resumen-ejecutivo?periodo=${encodeURIComponent(periodo)}`);
 }
 
+// --- Modelo comercial (1280) ---
+
+export type CommercialPlanItem = {
+  id: string;
+  code: string;
+  name: string;
+  margen_minimo_pct: number;
+  consumo_ia_incluido_tokens?: number | null;
+  presupuesto_ia_incluido?: number | null;
+  credential_mode: string;
+};
+
+export type CommercialProposalSummary = {
+  id: string;
+  codigo: string;
+  titulo: string;
+  estado: string;
+  valor_atribuible_total?: number | null;
+  precio_sugerido?: number | null;
+  precio_final?: number | null;
+};
+
+export type CommercialProposalDetail = CommercialProposalSummary & {
+  escenario_recomendado: string;
+  costo_total?: number | null;
+  beneficio_neto_cliente?: number | null;
+  roi_pct?: number | null;
+  payback_meses?: number | null;
+  margen_pct?: number | null;
+  pct_valor_conservado_cliente?: number | null;
+  pct_valor_capturado_empleados_ia?: number | null;
+  valores: Array<{
+    id: string;
+    categoria: string;
+    alcance?: string;
+    naturaleza: string;
+    valor_bruto: number;
+    atribucion_pct: number;
+    valor_atribuible: number;
+    external_intelligence_ref?: string | null;
+  }>;
+  escenarios: Array<{
+    scenario_type: string;
+    valor_esperado?: number | null;
+    valor_atribuible?: number | null;
+    probabilidad?: number | null;
+    es_recomendado: boolean;
+  }>;
+  costos: Array<{ id: string; categoria: string; clase_costo: string; monto: number }>;
+  alertas_doble_conteo: Array<{ id: string; severidad: string; mensaje: string }>;
+  trazabilidad: Record<string, unknown>;
+};
+
+export async function fetchCommercialPlans(): Promise<CommercialPlanItem[]> {
+  return api("/api/comercial/planes");
+}
+
+export async function createCommercialPlan(data: Record<string, unknown>): Promise<CommercialPlanItem> {
+  return api("/api/comercial/planes", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchCommercialProposals(): Promise<CommercialProposalSummary[]> {
+  return api("/api/comercial/propuestas");
+}
+
+export async function createCommercialProposal(data: Record<string, unknown>): Promise<CommercialProposalDetail> {
+  return api("/api/comercial/propuestas", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchCommercialProposal(id: string): Promise<CommercialProposalDetail> {
+  return api(`/api/comercial/propuestas/${id}`);
+}
+
+export async function addCommercialValue(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/valores`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function addCommercialScenario(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/escenarios`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function addCommercialCost(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/costos`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function suggestCommercialPrice(proposalId: string, scenario_type = "BASE") {
+  return api(`/api/comercial/propuestas/${proposalId}/precio-sugerido`, {
+    method: "POST",
+    body: JSON.stringify({ scenario_type }),
+  });
+}
+
+export async function setCommercialFinalPrice(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/precio-final`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function approveCommercialProposal(proposalId: string) {
+  return api(`/api/comercial/propuestas/${proposalId}/aprobar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function detectCommercialDoubleCount(proposalId: string) {
+  return api(`/api/comercial/propuestas/${proposalId}/detectar-doble-conteo`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchCommercialPlan(id: string): Promise<CommercialPlanItem> {
+  return api(`/api/comercial/planes/${id}`);
+}
+
+export async function simulateCommercialValue(data: Record<string, unknown>) {
+  return api("/api/comercial/simular", { method: "POST", body: JSON.stringify(data) });
+}
+
 export type ContinuidadServicio = {
   id: string;
   codigo: string;
