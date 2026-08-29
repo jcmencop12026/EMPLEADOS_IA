@@ -185,4 +185,6 @@ d17a3c7 feat(valoracion): motor económico, escenarios y ROI por oportunidad (bl
 bbf3f22 feat(1220): diagnóstico transversal multidominio sobre señales 1120
 ```
 
-Commit adicional pendiente de push: merge Alembic, ledger, pruebas convergencia, fix test 1200.
+Commit adicional: `8572a4f` — merge Alembic, pruebas convergencia, entregable.
+
+**HEAD final rama:** `8572a4f520fabd4b9d251ccfb0dddeb6600dc44d`
