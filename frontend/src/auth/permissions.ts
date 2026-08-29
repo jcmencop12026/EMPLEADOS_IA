@@ -29,6 +29,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/administracion/configuracion": ["admin.config.view"],
   "/administracion/proveedores-ia": ["llm.view"],
   "/administracion/seguridad": ["admin.security.view", "seguridad.view"],
+  "/administracion/identidad": ["identidad.view"],
 };
 
 export function canAccessRoute(path: string, permissions: Set<string>): boolean {

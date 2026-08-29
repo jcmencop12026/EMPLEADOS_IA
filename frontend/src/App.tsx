@@ -12,6 +12,7 @@ import { AdminConfigPage } from "./pages/admin/AdminConfigPage";
 import { AdminOrganizationPage } from "./pages/admin/AdminOrganizationPage";
 import { AdminRolesPage } from "./pages/admin/AdminRolesPage";
 import { AdminSecurityPage } from "./pages/admin/AdminSecurityPage";
+import { AdminIdentidadPage } from "./pages/admin/AdminIdentidadPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { AuditPage } from "./pages/AuditPage";
 import { CapabilitiesPage } from "./pages/CapabilitiesPage";
@@ -109,6 +110,9 @@ export default function App() {
           </Route>
           <Route element={<RequirePermission anyOf={["admin.security.view", "seguridad.view"]} />}>
             <Route path="administracion/seguridad" element={<AdminSecurityPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["identidad.view"]} />}>
+            <Route path="administracion/identidad" element={<AdminIdentidadPage />} />
           </Route>
           <Route element={<RequirePermission anyOf={["audit.view"]} />}>
             <Route path="auditoria" element={<AuditPage />} />

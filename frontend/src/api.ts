@@ -109,6 +109,8 @@ export type UserMe = {
   full_name?: string | null;
   status?: string;
   permissions: string[];
+  auth_via_sso?: boolean;
+  identity_provider_name?: string | null;
 };
 
 export type Organization = {
@@ -688,6 +690,84 @@ export async function fetchAdminSessions(): Promise<UserSession[]> {
 
 export async function revokeAdminSession(sessionId: string): Promise<void> {
   await api(`/api/security/admin/sessions/${sessionId}`, { method: "DELETE" });
+}
+
+export type IdentityPolicy = {
+  auth_mode: string;
+  mfa_sso_mode: string;
+  auto_provision_enabled: boolean;
+  default_role_on_provision: string;
+  allowed_domains: string[];
+  org_discovery_code: string | null;
+  attribute_mapping: Record<string, unknown>;
+  break_glass_enabled: boolean;
+  break_glass_configured: boolean;
+  scim_prepared: boolean;
+};
+
+export type IdentityProvider = {
+  id: string;
+  code: string;
+  name: string;
+  provider_type: string;
+  vendor_hint: string | null;
+  status: string;
+  is_default: boolean;
+  secret_configured: boolean;
+  config: Record<string, unknown>;
+  health: Record<string, string | null>;
+};
+
+export type IdentityLoginEvent = {
+  id: string;
+  login_method: string;
+  result: string;
+  detail: string | null;
+  created_at: string;
+};
+
+export async function fetchIdentityPolicy(): Promise<IdentityPolicy> {
+  return api<IdentityPolicy>("/api/identidad/politica");
+}
+
+export async function updateIdentityPolicy(data: Partial<IdentityPolicy>): Promise<IdentityPolicy> {
+  return api<IdentityPolicy>("/api/identidad/politica", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function fetchIdentityProviders(): Promise<IdentityProvider[]> {
+  return api<IdentityProvider[]>("/api/identidad/proveedores");
+}
+
+export async function createIdentityProvider(data: Record<string, unknown>): Promise<IdentityProvider> {
+  return api<IdentityProvider>("/api/identidad/proveedores", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function testIdentityProvider(id: string): Promise<{ resultado: string; mensaje: string }> {
+  return api(`/api/identidad/proveedores/${id}/probar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function activateIdentityProvider(id: string): Promise<IdentityProvider> {
+  return api<IdentityProvider>(`/api/identidad/proveedores/${id}/activar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function upsertGroupRoleMapping(providerId: string, data: { external_group: string; role_code: string }) {
+  return api(`/api/identidad/proveedores/${providerId}/mapeos-roles`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchIdentityEvents(limit = 50): Promise<IdentityLoginEvent[]> {
+  return api<IdentityLoginEvent[]>(`/api/identidad/eventos?limit=${limit}`);
+}
+
+export async function discoverLogin(orgCode: string): Promise<{ auth_mode: string | null; providers: { id: string; name: string; provider_type: string }[] }> {
+  return api("/api/identidad/descubrir", { method: "POST", body: JSON.stringify({ org_code: orgCode }) });
+}
+
+export async function beginPublicOidc(providerId: string, orgCode: string): Promise<{ authorization_url: string; state: string }> {
+  return api(`/api/identidad/public/oidc/${providerId}/iniciar`, { method: "POST", body: JSON.stringify({ org_code: orgCode }) });
+}
+
+export async function completeOidcCallback(state: string, code: string): Promise<{ access_token: string }> {
+  return api("/api/identidad/oidc/callback", { method: "POST", body: JSON.stringify({ state, code }) });
 }
 
 export async function fetchPlatformOrganizations(): Promise<PlatformOrganization[]> {

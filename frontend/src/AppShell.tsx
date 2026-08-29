@@ -66,6 +66,7 @@ const MENU: NavSection[] = [
       { to: "/administracion/configuracion", label: "Configuración" },
       { to: "/administracion/proveedores-ia", label: "Proveedores IA" },
       { to: "/administracion/seguridad", label: "Seguridad" },
+      { to: "/administracion/identidad", label: "Identidad empresarial" },
     ],
   },
 ];
