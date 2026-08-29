@@ -38,6 +38,8 @@ import { DiagnosticoDetailPage } from "./pages/DiagnosticoDetailPage";
 import { InteligenciaExternaPage } from "./pages/InteligenciaExternaPage";
 import { InteligenciaExternaDetailPage } from "./pages/InteligenciaExternaDetailPage";
 import { ContinuidadPage } from "./pages/ContinuidadPage";
+import { SoportePage } from "./pages/SoportePage";
+import { SoporteCasoDetailPage } from "./pages/SoporteCasoDetailPage";
 import { IntegracionesPage } from "./pages/IntegracionesPage";
 import { IntegracionWizardPage } from "./pages/IntegracionWizardPage";
 import { IntegracionDetailPage } from "./pages/IntegracionDetailPage";
@@ -136,6 +138,8 @@ export default function App() {
           <Route path="inteligencia-externa" element={<InteligenciaExternaPage />} />
           <Route path="inteligencia-externa/senales/:signalId" element={<InteligenciaExternaDetailPage />} />
           <Route path="continuidad" element={<ContinuidadPage />} />
+          <Route path="soporte" element={<SoportePage />} />
+          <Route path="soporte/casos/:caseId" element={<SoporteCasoDetailPage />} />
           <Route path="integraciones" element={<IntegracionesPage />} />
           <Route path="integraciones/nueva" element={<IntegracionWizardPage />} />
           <Route path="integraciones/trazabilidad" element={<IntegracionTrazabilidadPage />} />

@@ -56,6 +56,7 @@ const MENU: NavSection[] = [
       { to: "/diagnosticos", label: "Diagnósticos" },
       { to: "/inteligencia-externa", label: "Inteligencia externa" },
       { to: "/continuidad", label: "Continuidad" },
+      { to: "/soporte", label: "Mesa de Ayuda" },
       { to: "/integraciones", label: "Integraciones" },
       { to: "/aprendizaje", label: "Aprendizaje" },
       { to: "/optimizacion", label: "Optimización" },
