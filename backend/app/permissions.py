@@ -684,6 +684,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "segmentacion.view",
         "planes.view",
         "support.view",
+        "support.create",
     },
 }
 
