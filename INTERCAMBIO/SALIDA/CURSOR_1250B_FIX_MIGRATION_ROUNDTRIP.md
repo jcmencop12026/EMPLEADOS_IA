@@ -68,7 +68,7 @@ RAMA:
 cursor/1250b-fix-migration-roundtrip-85e4
 
 HEAD:
-<SHA post-commit>
+ef1717b82605b8485c1ad68591663ced65b41adf
 
 CAUSA RAÍZ:
 FK sin nombre en batch_alter_table de 1120a1b2c3d4e (proactive_signals.source_id)
