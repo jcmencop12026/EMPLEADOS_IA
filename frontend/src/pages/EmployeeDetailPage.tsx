@@ -275,10 +275,10 @@ export function EmployeeDetailPage() {
         <section className="panel muted auditor-context-banner">
           <p><strong>Contexto Auditor</strong> — hallazgo vinculado desde Mi Trabajo.</p>
           <p className="mono small">
-            finding: {findingId.slice(0, 8)}…
-            {auditRunId ? ` · run: ${auditRunId.slice(0, 8)}…` : ""}
-            {correlationId ? ` · cid: ${correlationId.slice(0, 8)}…` : ""}
-            {traceId ? ` · trace: ${traceId.slice(0, 8)}…` : ""}
+            Hallazgo: {findingId.slice(0, 8)}…
+            {auditRunId ? ` · Ejecución: ${auditRunId.slice(0, 8)}…` : ""}
+            {correlationId ? ` · Correlación: ${correlationId.slice(0, 8)}…` : ""}
+            {traceId ? ` · Traza: ${traceId.slice(0, 8)}…` : ""}
           </p>
           {auditContext?.outcome_classification ? (
             <p>Resultado: {String(auditContext.outcome_classification)}</p>
@@ -443,7 +443,7 @@ export function EmployeeDetailPage() {
           <>
             <p><strong>Proveedor:</strong> {String(model?.provider || "—")}</p>
             <p><strong>Modelo:</strong> {String(model?.model || "—")}</p>
-            <p><strong>Fallback:</strong> {String(model?.fallback_model || "—")}</p>
+            <p><strong>Modelo de respaldo:</strong> {String(model?.fallback_model || "—")}</p>
             <p className="muted">Las credenciales permanecen en infraestructura segura (sin secretos en el empleado).</p>
           </>
         )}
@@ -458,7 +458,7 @@ export function EmployeeDetailPage() {
 
         {tab === "Límites" && (
           <>
-            <p><strong>Timeout:</strong> {String(limits?.timeout_seconds ?? "—")}s</p>
+            <p><strong>Tiempo límite:</strong> {String(limits?.timeout_seconds ?? "—")}s</p>
             <p><strong>Tareas concurrentes:</strong> {String(limits?.max_concurrent_tasks ?? "—")}</p>
             <p><strong>Presupuesto diario:</strong> {finops?.budget_daily != null ? String(finops.budget_daily) : "—"}</p>
             <p><strong>Límite costo diario:</strong> {finops?.daily_cost_limit != null ? String(finops.daily_cost_limit) : "—"}</p>

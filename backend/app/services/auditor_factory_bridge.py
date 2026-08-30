@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from app.audit import write_audit
@@ -308,6 +309,112 @@ def _require_factory_permission(user: User, permission: str, db: Session) -> str
         return f"Permiso requerido: {permission}"
 
 
+def _atomic_claim_trace_execution(
+    db: Session,
+    trace_id: str,
+    org_id: str,
+    user_id: str,
+) -> tuple[bool, EmployeeImprovementTrace | None]:
+    """CAS transaccional: una sola transición efectiva PENDING|FAILED → IN_PROGRESS por traza."""
+    now = _utcnow()
+    result = db.execute(
+        update(EmployeeImprovementTrace)
+        .where(
+            EmployeeImprovementTrace.id == trace_id,
+            EmployeeImprovementTrace.organization_id == org_id,
+            EmployeeImprovementTrace.status.in_(("PENDING", "FAILED")),
+        )
+        .values(
+            status="IN_PROGRESS",
+            executed_by_id=user_id,
+            updated_at=now,
+        )
+    )
+    db.commit()
+    trace = (
+        db.query(EmployeeImprovementTrace)
+        .filter(
+            EmployeeImprovementTrace.id == trace_id,
+            EmployeeImprovementTrace.organization_id == org_id,
+        )
+        .first()
+    )
+    return result.rowcount == 1, trace
+
+
+def _response_for_unclaimed_trace(trace: EmployeeImprovementTrace | None) -> dict[str, Any]:
+    if trace is None:
+        return {"error": "Trazabilidad no encontrada"}
+    if trace.status == "COMPLETED":
+        return {
+            "trace_id": trace.id,
+            "status": trace.status,
+            "outcome_classification": trace.outcome_classification,
+            "idempotent": True,
+            "factory_result_ref": trace.factory_result_ref,
+            "conflict": False,
+        }
+    if trace.status == "IN_PROGRESS":
+        return {
+            "error": "Otra acción incompatible está en curso sobre este hallazgo",
+            "trace_id": trace.id,
+            "status": trace.status,
+            "conflict": True,
+        }
+    return {
+        "error": "La obligación causal ya fue reclamada por otra solicitud concurrente",
+        "trace_id": trace.id,
+        "status": trace.status,
+        "conflict": True,
+    }
+
+
+def _recommended_factory_operation(trace: EmployeeImprovementTrace) -> str | None:
+    nav = resolve_factory_navigation(trace.recommendation)
+    if nav:
+        return nav.get("factory_op")
+    return trace.factory_operation
+
+
+def _validate_human_factory_decision(
+    trace: EmployeeImprovementTrace,
+    user: User,
+    operation: str,
+    payload: dict[str, Any],
+) -> tuple[dict[str, Any] | None, str | None]:
+    """RECOMENDACIÓN ≠ DECISIÓN HUMANA; decisión explícita obligatoria si hay desviación."""
+    recommended = _recommended_factory_operation(trace)
+    authorized = str(payload.get("authorized_operation") or operation or "").strip()
+    if not authorized:
+        return None, "Debe especificar la operación autorizada."
+
+    is_deviation = bool(recommended and authorized != recommended)
+    if is_deviation:
+        if not payload.get("authorize_deviation"):
+            return None, (
+                f"La operación autorizada '{authorized}' difiere de la recomendación '{recommended}'. "
+                "Requiere authorize_deviation=true y justificación explícita."
+            )
+        justification = str(payload.get("deviation_justification") or "").strip()
+        if len(justification) < 5:
+            return None, "Debe registrar una justificación para la desviación de la recomendación."
+
+    evidence = _json_loads(trace.evidence_json) or {}
+    prior = evidence.get("human_decision")
+    if prior and prior.get("authorized_operation") != authorized:
+        return None, "Ya existe una decisión humana distinta registrada para esta traza."
+
+    decision = {
+        "recommended_operation": recommended,
+        "authorized_operation": authorized,
+        "decided_by_id": user.id,
+        "decided_at": _utcnow().isoformat(),
+        "is_deviation": is_deviation,
+        "deviation_justification": payload.get("deviation_justification") if is_deviation else None,
+    }
+    return decision, None
+
+
 def ejecutar_operacion_fabrica(
     db: Session,
     org_id: str,
@@ -333,16 +440,14 @@ def ejecutar_operacion_fabrica(
             "idempotent": True,
             "factory_result_ref": trace.factory_result_ref,
         }
-    if trace.status == "IN_PROGRESS" and trace.executed_by_id and trace.executed_by_id != user.id:
-        return {"error": "Otra acción incompatible está en curso sobre este hallazgo"}
 
-    op = operation or trace.factory_operation
+    body = dict(payload or {})
+    op = operation or body.get("authorized_operation") or trace.factory_operation
     if not op:
         return {"error": "Operación de fábrica no especificada"}
 
-    trace.factory_operation = op
     nav = resolve_factory_navigation(trace.recommendation) or {}
-    if operation:
+    if operation or body.get("authorized_operation"):
         op_permissions = {
             "capacitar": "employee.train",
             "probar": "employee.test",
@@ -383,12 +488,56 @@ def ejecutar_operacion_fabrica(
             "factory_result_ref": trace.factory_result_ref,
         }
 
-    trace.status = "IN_PROGRESS"
-    trace.executed_by_id = user.id
-    trace.updated_at = _utcnow()
-    db.commit()
+    claimed, trace = _atomic_claim_trace_execution(db, trace_id, org_id, user.id)
+    if not claimed:
+        return _response_for_unclaimed_trace(trace)
 
-    body = payload or {}
+    evidence = _json_loads(trace.evidence_json) or {}
+    decision, decision_err = _validate_human_factory_decision(trace, user, op, body)
+    if decision_err:
+        trace.status = "FAILED"
+        trace.evidence_json = _json_dumps({**evidence, "error": decision_err})
+        trace.updated_at = _utcnow()
+        db.commit()
+        return {"error": decision_err, "trace_id": trace.id}
+
+    if not evidence.get("human_decision"):
+        evidence["human_decision"] = decision
+        trace.evidence_json = _json_dumps(evidence)
+        trace.updated_at = _utcnow()
+        db.commit()
+        write_audit(
+            db,
+            action="auditor.factory_decision_recorded",
+            organization_id=org_id,
+            user_id=user.id,
+            detail=_json_dumps({
+                "trace_id": trace.id,
+                "finding_id": trace.finding_id,
+                "decision": decision,
+                "auto_execution_blocked": True,
+            }),
+        )
+        if decision.get("is_deviation"):
+            write_audit(
+                db,
+                action="auditor.factory_decision_deviation",
+                organization_id=org_id,
+                user_id=user.id,
+                detail=_json_dumps({
+                    "trace_id": trace.id,
+                    "finding_id": trace.finding_id,
+                    "recommended_operation": decision.get("recommended_operation"),
+                    "authorized_operation": decision.get("authorized_operation"),
+                    "justification": decision.get("deviation_justification"),
+                }),
+            )
+    else:
+        decision = evidence["human_decision"]
+
+    op = decision["authorized_operation"]
+    trace.factory_operation = op
+
     result: dict[str, Any]
     employee_id = trace.employee_id
 
@@ -423,19 +572,46 @@ def ejecutar_operacion_fabrica(
                 trace.test_run_id = last_run.id
                 trace.factory_result_ref = last_run.id
         elif op == "solicitar_aprobacion":
-            result = employee_lifecycle_service.request_approval(
-                db,
-                org_id,
-                user.id,
-                employee_id,
-                kind=body.get("kind", "PUBLISH"),
-                reason=body.get("reason", f"Aprobación por hallazgo {trace.finding_id}"),
-                target_version=body.get("target_version"),
-            )
-            if result.get("error"):
-                raise ValueError(result["error"])
-            trace.approval_id = result.get("approval_request_id")
+            if trace.approval_id:
+                result = {
+                    "approval_request_id": trace.approval_id,
+                    "status": "PENDING",
+                    "idempotent": True,
+                }
+            else:
+                result = employee_lifecycle_service.request_approval(
+                    db,
+                    org_id,
+                    user.id,
+                    employee_id,
+                    kind=body.get("kind", "PUBLISH"),
+                    reason=body.get("reason", f"Aprobación por hallazgo {trace.finding_id}"),
+                    target_version=body.get("target_version"),
+                )
+                if result.get("error"):
+                    existing_id = result.get("approval_request_id") or result.get("approval_id")
+                    if existing_id:
+                        result = {
+                            "approval_request_id": existing_id,
+                            "status": "PENDING",
+                            "idempotent": True,
+                            "note": result.get("error"),
+                        }
+                    else:
+                        raise ValueError(result["error"])
+            trace.approval_id = result.get("approval_request_id") or trace.approval_id
             trace.factory_result_ref = trace.approval_id
+            finding_for_approval = _get_finding(db, org_id, trace.finding_id)
+            if finding_for_approval:
+                prior_evidence = _json_loads(finding_for_approval.evidence_json) or {}
+                finding_for_approval.evidence_json = _json_dumps({
+                    **prior_evidence,
+                    "workflow_stage": "SOLICITUD_APROBACION",
+                    "approval_id": trace.approval_id,
+                    "approval_requested_at": _utcnow().isoformat(),
+                    "approval_requested_by": user.id,
+                    "trace_id": trace.id,
+                })
         elif op == "publicar":
             result = employee_lifecycle_service.publish_with_guards(db, org_id, user.id, employee_id)
             if result.get("error"):
@@ -528,6 +704,8 @@ def ejecutar_operacion_fabrica(
         "factory_result_ref": trace.factory_result_ref,
         "result": result,
         "correlation_id": trace.correlation_id,
+        "human_decision": decision,
+        "auto_execution_blocked": True,
     }
 
 
