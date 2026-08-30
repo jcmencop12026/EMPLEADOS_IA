@@ -54,3 +54,67 @@ class TemplateOut(BaseModel):
     name: str
     description: str | None = None
     specialty: str
+
+
+class EmployeeVersionCreateRequest(BaseModel):
+    reason: str = Field(min_length=3, max_length=500)
+    changed_fields: list[str] | None = None
+
+
+class EmployeeTestCaseCreateRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    description: str | None = None
+    test_type: str = "SMOKE"
+    test_category: str | None = None
+    input: dict[str, Any] = Field(default_factory=dict)
+    expected: dict[str, Any] | None = None
+    criterion: str | None = None
+    validation_rules: dict[str, Any] | None = None
+    severity: str = "medium"
+    is_active: bool = True
+
+
+class EmployeeApprovalRequest(BaseModel):
+    kind: str = Field(description="PUBLISH, ROLLBACK, PROVIDER_CHANGE, etc.")
+    reason: str = Field(min_length=3, max_length=500)
+    target_version: int | None = None
+
+
+class EmployeeApprovalOut(BaseModel):
+    factory_approval_id: str
+    approval_request_id: str
+    approval_kind: str
+    status: str
+    approval_status: str
+    reason: str
+    requested_by_id: str
+    requested_by_name: str | None = None
+    requester_id: str
+    requester_name: str | None = None
+    decided_by_id: str | None = None
+    decided_by_name: str | None = None
+    decision_comment: str | None = None
+    target_version: int | None = None
+    created_at: str
+    requested_at: str
+    decided_at: str | None = None
+    can_decide: bool = False
+    work_plan_id: str
+
+
+class EmployeeRollbackRequest(BaseModel):
+    target_version: int = Field(ge=1)
+    reason: str = Field(min_length=3, max_length=500)
+    force: bool = False
+
+
+class EmployeeTrainingRequest(BaseModel):
+    training_type: str = Field(description="NEW_KNOWLEDGE, INSTRUCTIONS, REGULATION, etc.")
+    reason: str = Field(min_length=3, max_length=500)
+    source: str | None = None
+    config_delta: dict[str, Any] | None = None
+    approved_by_id: str | None = None
+
+
+class EmployeeRetireRequest(BaseModel):
+    reason: str = Field(min_length=3, max_length=500)

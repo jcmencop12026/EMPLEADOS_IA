@@ -66,3 +66,44 @@ class LlmInferenceLog(Base):
     fallback_used: Mapped[bool] = mapped_column(Boolean, default=False)
     metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, index=True)
+
+
+class LlmModelCatalog(Base):
+    """Catálogo de modelos por proveedor y organización."""
+
+    __tablename__ = "llm_model_catalog"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
+    provider_type: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    model_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    display_name: Mapped[str] = mapped_column(String(160), nullable=False)
+    estado: Mapped[str] = mapped_column(String(30), nullable=False, default="HABILITADO")
+    capabilities_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    context_window: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    modalities_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cost_hint_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    priority: Mapped[int] = mapped_column(Integer, default=100)
+    is_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+
+class LlmRoutingPolicy(Base):
+    """Política de enrutamiento IA por organización."""
+
+    __tablename__ = "llm_routing_policies"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    preferred_provider: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    preferred_model: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    required_capability: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    fallback_allowed: Mapped[bool] = mapped_column(Boolean, default=True)
+    max_cost_per_1k_tokens: Mapped[float | None] = mapped_column(Float, nullable=True)
+    credential_scope: Mapped[str] = mapped_column(String(30), nullable=False, default="ORGANIZACION")
+    priority: Mapped[int] = mapped_column(Integer, default=100)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
