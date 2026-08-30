@@ -1479,6 +1479,84 @@ export async function fetchOpportunityEconomics(opportunityId: string): Promise<
   return api<FinOpsOpportunityEconomics>(`/api/finops/opportunities/${opportunityId}/economics`);
 }
 
+export type PlannerResumen = {
+  organization_id: string;
+  currency: string;
+  credential_mode: string;
+  consumo_incluido: number;
+  consumo_real: number;
+  consumo_estimado_mensual: number;
+  consumo_proyectado_mes: number;
+  sobreconsumo_estimado: number;
+  real_by_class: Record<
+    string,
+    { cost_ia: number; cost_other: number; cost_total: number; tokens_in: number; tokens_out: number; executions: number }
+  >;
+  estimated_direct: Record<string, unknown>;
+  estimated_transversal: Record<string, unknown>;
+  valor_realizado_mes: number;
+  potencial_excluido_roi: boolean;
+  margin: Record<string, unknown>;
+};
+
+export type PlannerSimulation = {
+  kind: string;
+  directo: Record<string, unknown>;
+  transversal: Record<string, unknown>;
+  plataforma_cost_monthly: number;
+  cost_total: number;
+  consumo_incluido: number;
+  sobreconsumo: number;
+  capacity: Record<string, unknown>;
+  budget: Record<string, unknown>;
+  demo_notice?: string;
+};
+
+export type PlannerPresupuesto = {
+  currency: string;
+  presupuesto_ia: number;
+  consumo_incluido: number;
+  consumo_real: number;
+  consumo_proyectado: number;
+  sobreconsumo: number;
+  porcentaje_utilizado: number | null;
+  proyeccion_cierre_mes: number;
+  alert_thresholds: number[];
+};
+
+export type PlannerCompareRow = {
+  provider: string | null;
+  model: string | null;
+  cost_estimated: number;
+  currency: string;
+  rate_configured: boolean;
+  note?: string;
+};
+
+export async function fetchPlannerResumen(): Promise<PlannerResumen> {
+  return api<PlannerResumen>("/api/finops/planner/resumen");
+}
+
+export async function fetchPlannerPresupuesto(): Promise<PlannerPresupuesto> {
+  return api<PlannerPresupuesto>("/api/finops/planner/presupuesto");
+}
+
+export async function fetchPlannerCapacidad(): Promise<Record<string, unknown>> {
+  return api<Record<string, unknown>>("/api/finops/planner/capacidad");
+}
+
+export async function simulatePlannerConsumption(data: Record<string, unknown>): Promise<PlannerSimulation> {
+  return api<PlannerSimulation>("/api/finops/planner/simular", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function comparePlannerProviders(data: Record<string, unknown>): Promise<PlannerCompareRow[]> {
+  return api<PlannerCompareRow[]>("/api/finops/planner/comparar", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchPlannerMargen(): Promise<Record<string, unknown>> {
+  return api<Record<string, unknown>>("/api/finops/planner/margen");
+}
+
 export type ValuationSummary = {
   has_valuation: boolean;
   opportunity_id: string;

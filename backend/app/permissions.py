@@ -143,6 +143,9 @@ FINOPS_PERMISSIONS = {
     "finops.manage",
     "finops.budget",
     "finops.rates",
+    "finops.planner.simulate",
+    "finops.planner.configure",
+    "finops.margin.view",
 }
 
 OPORTUNIDADES_PERMISSIONS = {
@@ -378,6 +381,9 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "finops.manage": ("FinOps", "Gestionar costos y valor"),
     "finops.budget": ("FinOps", "Gestionar presupuestos"),
     "finops.rates": ("FinOps", "Gestionar tarifas"),
+    "finops.planner.simulate": ("FinOps", "Simular consumo y capacidad IA"),
+    "finops.planner.configure": ("FinOps", "Configurar planificador de consumo IA"),
+    "finops.margin.view": ("FinOps", "Ver margen comercial"),
     "llm.view": ("Proveedores IA", "Ver proveedores de inferencia"),
     "llm.manage": ("Proveedores IA", "Administrar proveedores de inferencia"),
     "llm.use": ("Proveedores IA", "Ejecutar inferencia LLM"),

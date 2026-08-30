@@ -32,6 +32,7 @@ from app import identity_models  # noqa: F401 — identidad empresarial 1370
 from app import scim_models  # noqa: F401 — SCIM 1380
 from app import support_models  # noqa: F401 — mesa de ayuda MB-12
 from app import employee_audit_models  # noqa: F401 — auditor empleados MVP
+from app import consumption_planner_models  # noqa: F401 — planificador MB-07 portable
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,

@@ -43,6 +43,7 @@ from app import security_models  # noqa: F401, E402
 from app import identity_models  # noqa: F401, E402
 from app import scim_models  # noqa: F401, E402
 from app import employee_audit_models  # noqa: F401, E402
+from app import consumption_planner_models  # noqa: F401, E402
 from app.database import Base, SessionLocal, engine, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.seed import bootstrap  # noqa: E402
