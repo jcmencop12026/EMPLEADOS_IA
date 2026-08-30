@@ -132,7 +132,38 @@ class EmployeeEventType(StrEnum):
     EMPLOYEE_PUBLISHED = "employee.published"
     EMPLOYEE_ACTIVATED = "employee.activated"
     EMPLOYEE_PAUSED = "employee.paused"
+    EMPLOYEE_RETIRED = "employee.retired"
     EMPLOYEE_VERSION_CHANGED = "employee.version_changed"
+    EMPLOYEE_TRAINED = "employee.trained"
+    EMPLOYEE_ROLLBACK = "employee.rollback"
+    EMPLOYEE_APPROVAL_REQUESTED = "employee.approval_requested"
+    EMPLOYEE_APPROVAL_DECIDED = "employee.approval_decided"
+
+
+class EmployeeApprovalKind(StrEnum):
+    PUBLISH = "PUBLISH"
+    CRITICAL_CHANGE = "CRITICAL_CHANGE"
+    TOOL_CHANGE = "TOOL_CHANGE"
+    PROVIDER_CHANGE = "PROVIDER_CHANGE"
+    LIMIT_INCREASE = "LIMIT_INCREASE"
+    PERMISSION_CHANGE = "PERMISSION_CHANGE"
+    ROLLBACK = "ROLLBACK"
+    TRAINING = "TRAINING"
+
+
+class EmployeeTestCategory(StrEnum):
+    TECHNICAL = "TECHNICAL"
+    FUNCTIONAL = "FUNCTIONAL"
+    SECURITY = "SECURITY"
+
+
+class EmployeeTrainingType(StrEnum):
+    NEW_KNOWLEDGE = "NEW_KNOWLEDGE"
+    UPDATE_KNOWLEDGE = "UPDATE_KNOWLEDGE"
+    INSTRUCTIONS = "INSTRUCTIONS"
+    EXAMPLES = "EXAMPLES"
+    PROCEDURE = "PROCEDURE"
+    REGULATION = "REGULATION"
 
 
 class AutomationStatus(StrEnum):

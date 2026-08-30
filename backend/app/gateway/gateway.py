@@ -9,17 +9,25 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.gateway.adapters.anthropic_adapter import AnthropicAdapter
+from app.gateway.adapters.azure_openai_adapter import AzureOpenAIAdapter
 from app.gateway.adapters.base import BaseLlmAdapter
+from app.gateway.adapters.gemini_adapter import GeminiAdapter
 from app.gateway.adapters.ollama_adapter import OllamaAdapter
 from app.gateway.adapters.openai_adapter import OpenAIAdapter
 from app.gateway.errors import FALLBACK_ELIGIBLE, LlmErrorCategory, LlmGatewayError
+from app.gateway.providers import is_executable_llm_provider
 from app.gateway.secrets import resolve_secret
 from app.gateway.types import GatewayRequest, GatewayResponse, LlmMessage
 from app.llm_models import LlmInferenceLog, LlmProviderConfig
+from app.services.llm_routing_service import select_routed_provider
 
 _ADAPTER_REGISTRY: dict[str, type[BaseLlmAdapter]] = {
     "openai": OpenAIAdapter,
     "ollama": OllamaAdapter,
+    "anthropic": AnthropicAdapter,
+    "gemini": GeminiAdapter,
+    "azure-openai": AzureOpenAIAdapter,
 }
 
 
@@ -45,7 +53,23 @@ def list_provider_configs(
     query = db.query(LlmProviderConfig).filter(LlmProviderConfig.organization_id == organization_id)
     if enabled_only:
         query = query.filter(LlmProviderConfig.is_enabled.is_(True))
-    return query.order_by(LlmProviderConfig.priority.asc(), LlmProviderConfig.name.asc()).all()
+    rows = query.order_by(LlmProviderConfig.priority.asc(), LlmProviderConfig.name.asc()).all()
+    return [row for row in rows if is_executable_llm_provider(row.provider_type)]
+
+
+def _configuration_error(
+    *,
+    technical_detail: str,
+    provider: str | None = None,
+    model: str | None = None,
+) -> GatewayResponse:
+    error = LlmGatewayError.from_category(
+        LlmErrorCategory.CONFIGURATION_ERROR,
+        provider=provider,
+        model=model,
+        technical_detail=technical_detail,
+    )
+    return GatewayResponse(error=error)
 
 
 def select_primary_provider(
@@ -54,16 +78,27 @@ def select_primary_provider(
     *,
     preferred_provider: str | None = None,
     preferred_model: str | None = None,
+    require_explicit_match: bool = False,
 ) -> ProviderSelection | None:
     configs = list_provider_configs(db, organization_id, enabled_only=True)
     if not configs:
         return None
 
     if preferred_provider:
-        for cfg in configs:
-            if cfg.provider_type.lower() == preferred_provider.lower() and not cfg.is_fallback:
-                model = preferred_model or cfg.model_default or "gpt-4o-mini"
-                return ProviderSelection(config=cfg, model=model)
+        normalized = preferred_provider.lower().strip()
+        if not is_executable_llm_provider(normalized):
+            if require_explicit_match:
+                return None
+        else:
+            match = next(
+                (c for c in configs if c.provider_type.lower() == normalized and not c.is_fallback),
+                None,
+            )
+            if match:
+                model = preferred_model or match.model_default or _default_model(match.provider_type)
+                return ProviderSelection(config=match, model=model)
+            if require_explicit_match:
+                return None
 
     primary = next((c for c in configs if not c.is_fallback), configs[0])
     model = preferred_model or primary.model_default or _default_model(primary.provider_type)
@@ -90,11 +125,14 @@ def select_fallback_provider(
 
 
 def _default_model(provider_type: str) -> str:
-    if provider_type.lower() == "openai":
-        return "gpt-4o-mini"
-    if provider_type.lower() == "ollama":
-        return "llama3.2"
-    return "default"
+    defaults = {
+        "openai": "gpt-4o-mini",
+        "ollama": "llama3.2",
+        "anthropic": "claude-3-haiku-20240307",
+        "gemini": "gemini-1.5-flash",
+        "azure-openai": "gpt-4o-mini",
+    }
+    return defaults.get(provider_type.lower(), "default")
 
 
 def _invoke_adapter(
@@ -137,37 +175,58 @@ def complete(
     task_id: str | None = None,
     enable_fallback: bool = True,
     transport: Any | None = None,
+    require_explicit_preferred: bool = False,
 ) -> GatewayResponse:
     trace_id = str(uuid.uuid4())
-    base_request = GatewayRequest(
-        provider=preferred_provider or "",
-        model=preferred_model or "",
-        messages=messages,
-        system_instructions=system_instructions,
-        parameters=parameters or {},
-        timeout_seconds=timeout_seconds or 60,
-        metadata=metadata or {},
-        organization_id=organization_id,
-        employee_id=employee_id,
-        trace_id=trace_id,
-    )
 
-    primary_sel = select_primary_provider(
+    if require_explicit_preferred and preferred_provider:
+        normalized = preferred_provider.lower().strip()
+        if not is_executable_llm_provider(normalized):
+            response = _configuration_error(
+                technical_detail=f"Proveedor no soportado: {normalized}",
+                provider=normalized,
+                model=preferred_model,
+            )
+            response.trace_id = trace_id
+            _persist_inference_log(db, organization_id, response, employee_id, work_plan_id, task_id)
+            return response
+
+    routed = select_routed_provider(
         db,
         organization_id,
         preferred_provider=preferred_provider,
         preferred_model=preferred_model,
+        allow_fallback=enable_fallback,
+        require_explicit=require_explicit_preferred,
     )
+    primary_sel = ProviderSelection(config=routed.config, model=routed.model) if routed else None
     if not primary_sel:
-        error = LlmGatewayError.from_category(
-            LlmErrorCategory.CONFIGURATION_ERROR,
-            technical_detail="No hay proveedores IA habilitados.",
+        detail = (
+            f"Proveedor preferido no disponible o inválido: {preferred_provider}"
+            if require_explicit_preferred and preferred_provider
+            else "No hay proveedores IA habilitados."
         )
-        response = GatewayResponse(error=error, trace_id=trace_id)
+        response = _configuration_error(
+            technical_detail=detail,
+            provider=preferred_provider,
+            model=preferred_model,
+        )
+        response.trace_id = trace_id
         _persist_inference_log(db, organization_id, response, employee_id, work_plan_id, task_id)
         return response
 
-    adapter = get_adapter(primary_sel.config.provider_type, transport=transport)
+    try:
+        adapter = get_adapter(primary_sel.config.provider_type, transport=transport)
+    except ValueError as exc:
+        response = _configuration_error(
+            technical_detail=str(exc),
+            provider=primary_sel.config.provider_type,
+            model=primary_sel.model,
+        )
+        response.trace_id = trace_id
+        _persist_inference_log(db, organization_id, response, employee_id, work_plan_id, task_id)
+        return response
+
     primary_request = GatewayRequest(
         provider=primary_sel.config.provider_type,
         model=primary_sel.model,
@@ -204,7 +263,18 @@ def complete(
         return result
 
     fb_model = fallback_model or fallback_sel.model
-    fb_adapter = get_adapter(fallback_sel.config.provider_type, transport=transport)
+    try:
+        fb_adapter = get_adapter(fallback_sel.config.provider_type, transport=transport)
+    except ValueError as exc:
+        result.error = LlmGatewayError.from_category(
+            LlmErrorCategory.CONFIGURATION_ERROR,
+            technical_detail=str(exc),
+            provider=fallback_sel.config.provider_type,
+        )
+        result.initial_error = initial_error
+        _persist_inference_log(db, organization_id, result, employee_id, work_plan_id, task_id)
+        return result
+
     fb_request = GatewayRequest(
         provider=fallback_sel.config.provider_type,
         model=fb_model,
@@ -255,8 +325,26 @@ def test_provider_connection(
             ),
         )
 
+    if not is_executable_llm_provider(config.provider_type):
+        return GatewayResponse(
+            error=LlmGatewayError.from_category(
+                LlmErrorCategory.CONFIGURATION_ERROR,
+                provider=config.provider_type,
+                technical_detail=f"Proveedor no soportado: {config.provider_type}",
+            ),
+        )
+
     model = config.model_default or _default_model(config.provider_type)
-    adapter = get_adapter(config.provider_type, transport=transport)
+    try:
+        adapter = get_adapter(config.provider_type, transport=transport)
+    except ValueError as exc:
+        return GatewayResponse(
+            error=LlmGatewayError.from_category(
+                LlmErrorCategory.CONFIGURATION_ERROR,
+                provider=config.provider_type,
+                technical_detail=str(exc),
+            ),
+        )
     request = GatewayRequest(
         provider=config.provider_type,
         model=model,
@@ -275,6 +363,9 @@ def _persist_inference_log(
     employee_id: str | None,
     work_plan_id: str | None,
     task_id: str | None,
+    *,
+    cost: float | None = None,
+    currency: str | None = None,
 ) -> LlmInferenceLog:
     status = "OK" if response.success else "ERROR"
     error = response.error
@@ -293,6 +384,8 @@ def _persist_inference_log(
         tokens_out=response.tokens_out,
         tokens_total=tokens_total,
         latency_ms=response.latency_ms,
+        cost=cost,
+        currency=currency,
         status=status,
         finish_reason=response.finish_reason,
         error_category=error.category if error else None,
