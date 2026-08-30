@@ -10,7 +10,7 @@
 
 ## HEAD FINAL
 
-`3773c8fee18f81564c3a9f97d9fdf16b289f9b0c` (rama `cursor/correccion-focal-post6e-85e4`)
+`6198f09a06888d051fdee74277905becadaae0fb` (rama `cursor/correccion-focal-post6e-85e4`)
 
 ## Archivos modificados
 
