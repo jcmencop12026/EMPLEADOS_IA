@@ -85,7 +85,7 @@ export function AprendizajePage() {
                   <th>Estado</th>
                   <th>Esperado / Real (valor)</th>
                   <th>Repriorización</th>
-                  <th>Correlation</th>
+                  <th>Correlación</th>
                   <th>Fecha</th>
                 </tr>
               </thead>

@@ -95,3 +95,16 @@ export function formatAuditAction(action: string | undefined | null): string {
   if (!action) return "—";
   return AUDIT_ACTION[action] ?? action.replace(/\./g, " · ").replace(/_/g, " ");
 }
+
+/** Estados técnicos de salud de plataforma (valores API permanecen en inglés). */
+export const HEALTH_STATUS: Record<string, string> = {
+  up: "Operativa",
+  down: "No disponible",
+  degraded: "Degradada",
+  unknown: "Desconocido",
+};
+
+export function formatHealthStatus(status: string | undefined | null): string {
+  if (!status) return "—";
+  return HEALTH_STATUS[status.toLowerCase()] ?? status;
+}

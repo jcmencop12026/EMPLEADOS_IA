@@ -187,6 +187,34 @@ def get_case(db: Session, org_id: str, case_id: str) -> SupportCase | None:
     )
 
 
+def list_assignable_agents(db: Session, org_id: str) -> list[dict[str, Any]]:
+    """Usuarios de la organización autorizados para asignación de casos de soporte."""
+    from app.permissions import user_permissions
+
+    assign_perms = frozenset({"support.assign", "support.view", "support.admin", "support.update"})
+    users = (
+        db.query(User)
+        .filter(User.organization_id == org_id, User.is_active.is_(True), User.status == "ACTIVE")
+        .order_by(User.full_name.asc().nullslast(), User.username.asc())
+        .all()
+    )
+    agents: list[dict[str, Any]] = []
+    for u in users:
+        perms = user_permissions(u, db)
+        if not perms.intersection(assign_perms):
+            continue
+        label = u.full_name or u.username
+        agents.append({
+            "id": u.id,
+            "nombre": label,
+            "username": u.username,
+            "email": u.email,
+            "rol": u.role,
+            "etiqueta": f"{label} ({u.username})" + (f" — {u.email}" if u.email else ""),
+        })
+    return agents
+
+
 def list_cases(
     db: Session,
     org_id: str,
@@ -598,6 +626,11 @@ def get_case_detail(
         comments_q = comments_q.filter(SupportCaseComment.es_interno.is_(False))
     comments = comments_q.order_by(SupportCaseComment.created_at.asc()).all()
     detail = case_to_dict(case)
+    if case.responsable_id:
+        resp = db.query(User).filter(User.id == case.responsable_id, User.organization_id == org_id).first()
+        if resp:
+            detail["responsable_nombre"] = resp.full_name or resp.username
+            detail["responsable_email"] = resp.email
     detail["historial"] = [
         {
             "id": h.id,

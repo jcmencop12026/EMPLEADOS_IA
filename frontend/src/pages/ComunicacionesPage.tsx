@@ -280,7 +280,7 @@ export function ComunicacionesPage() {
             <div className="card" style={{ marginTop: "1rem" }}>
               <h3>Detalle de comunicación</h3>
               <p><strong>Evento:</strong> {detail.event_id ?? "—"}</p>
-              <p><strong>Correlation:</strong> {detail.correlation_id ?? "—"}</p>
+              <p><strong>ID de correlación:</strong> {detail.correlation_id ?? "—"}</p>
               <p><strong>Plantilla v:</strong> {detail.template_version ?? "—"}</p>
               <p><strong>Regla:</strong> {detail.rule_id ?? "—"}</p>
               <p><strong>Contenido:</strong> {detail.contenido}</p>

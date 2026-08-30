@@ -2428,10 +2428,37 @@ export type CentroControlAtencion = {
   origen: string;
 };
 
+export type CentroControlValorConsolidado = {
+  verificado?: number | null;
+  estimado?: number | null;
+  potencial?: number | null;
+  realizado?: number | null;
+  materializado?: number | null;
+  roi_porcentaje?: number | null;
+  payback_meses?: number | null;
+  nota_potencial?: string;
+  semantica?: Record<string, string>;
+};
+
+export type CentroControlModuloResumen = {
+  disponible: boolean;
+  estado?: string;
+  enlace?: string;
+  tipo_contenido?: string;
+  [key: string]: unknown;
+};
+
 export type CentroControlResumen = {
   generated_at: string;
   organization_id: string;
-  resumen_ejecutivo: { indicadores: CentroControlIndicador[]; operaciones?: Record<string, number> | null };
+  semantica?: Record<string, unknown>;
+  secciones?: Array<{ id: string; label: string }>;
+  resumen_ejecutivo: {
+    indicadores: CentroControlIndicador[];
+    operaciones?: Record<string, number> | null;
+    valor?: CentroControlValorConsolidado | null;
+  };
+  valor_consolidado?: CentroControlValorConsolidado | null;
   atencion_requerida: CentroControlAtencion[];
   empleados_ia?: {
     total: number;
@@ -2464,9 +2491,20 @@ export type CentroControlResumen = {
     oportunidades_con_costo?: number;
     enlace?: string;
   } | null;
-  valor_retorno?: Record<string, unknown> | null;
-  diagnostico?: Record<string, unknown> | null;
-  senales?: Record<string, unknown> | null;
+  valor_retorno?: CentroControlModuloResumen | null;
+  comercial?: CentroControlModuloResumen | null;
+  tco?: CentroControlModuloResumen | null;
+  implementacion?: CentroControlModuloResumen | null;
+  aprendizaje?: CentroControlModuloResumen | null;
+  optimizacion?: CentroControlModuloResumen | null;
+  multiproveedor?: CentroControlModuloResumen | null;
+  mb07_planificador?: CentroControlModuloResumen | null;
+  mb11_comunicaciones?: CentroControlModuloResumen | null;
+  mb12_soporte?: CentroControlModuloResumen | null;
+  auditor_empleados?: CentroControlModuloResumen | null;
+  mi_trabajo?: CentroControlModuloResumen | null;
+  continuidad?: CentroControlModuloResumen | null;
+  integraciones_futuras?: Record<string, string>;
   inteligencia_externa?: {
     disponible: boolean;
     estado?: string;
@@ -3593,9 +3631,24 @@ export type SupportCase = {
 };
 
 export type SupportCaseDetail = SupportCase & {
+  responsable_nombre?: string | null;
+  responsable_email?: string | null;
   historial: Array<{ id: string; accion: string; detalle?: Record<string, unknown> | null; created_at?: string | null }>;
   comentarios: Array<{ id: string; usuario_id: string; cuerpo: string; es_interno: boolean; created_at?: string | null }>;
 };
+
+export type SupportAssignee = {
+  id: string;
+  nombre: string;
+  username: string;
+  email?: string | null;
+  rol: string;
+  etiqueta: string;
+};
+
+export async function fetchSupportAssignees(): Promise<SupportAssignee[]> {
+  return api("/api/soporte/agentes-asignables");
+}
 
 export async function fetchSupportCases(params?: {
   estado?: string;

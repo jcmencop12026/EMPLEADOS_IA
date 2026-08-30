@@ -18,6 +18,7 @@ from app.schemas_support import (
     SupportCaseOut,
     SupportCaseResolve,
     SupportCaseStatusUpdate,
+    SupportAssigneeOut,
     SupportCommentCreate,
     SupportContratoCentroControl,
     SupportContratoMiTrabajo,
@@ -123,6 +124,14 @@ def get_case(
     if not can_all and user.id not in (detail["solicitante_id"], detail.get("responsable_id")):
         raise HTTPException(status_code=403, detail="No autorizado para ver este caso.")
     return detail
+
+
+@router.get("/agentes-asignables", response_model=list[SupportAssigneeOut])
+def list_assignable_agents(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("support.assign")),
+):
+    return svc.list_assignable_agents(db, user.organization_id)
 
 
 @router.post("/casos/{case_id}/asignar", response_model=SupportCaseOut)

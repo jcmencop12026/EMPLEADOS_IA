@@ -55,7 +55,7 @@ export function IntegracionTrazabilidadPage() {
       <section className="card">
         <form className="toolbar" onSubmit={onBuscar}>
           <input
-            placeholder="correlation_id"
+            placeholder="ID de correlación"
             value={cid}
             onChange={(e) => setCid(e.target.value)}
             style={{ minWidth: "320px" }}

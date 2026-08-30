@@ -299,7 +299,7 @@ export function AdminLlmProvidersPage() {
             {canFinops && (
               <div><span className="muted">Costo<HelpTooltip text={TOOLTIPS.finops} /></span><strong>{observability.costo_total ?? "—"}</strong></div>
             )}
-            <div><span className="muted">Fallbacks</span><strong>{observability.fallbacks}</strong></div>
+            <div><span className="muted">Respaldos</span><strong>{observability.fallbacks}</strong></div>
           </div>
           {Object.keys(observability.por_proveedor ?? {}).length > 0 && (
             <table className="data-table compact-table" style={{ marginTop: 8 }}>
@@ -328,7 +328,7 @@ export function AdminLlmProvidersPage() {
         <div className="panel compact-panel">
           <table className="data-table compact-table">
             <thead>
-              <tr><th>Fecha</th><th>Trace</th><th>Proveedor</th><th>Modelo</th><th>Estado</th><th>Tokens</th><th>Latencia</th>{canFinops && <th>Costo</th>}<th>Fallback</th></tr>
+              <tr><th>Fecha</th><th>Trazabilidad</th><th>Proveedor</th><th>Modelo</th><th>Estado</th><th>Tokens</th><th>Latencia</th>{canFinops && <th>Costo</th>}<th>Respaldo</th></tr>
             </thead>
             <tbody>
               {logs.length === 0 ? (
@@ -359,7 +359,7 @@ export function AdminLlmProvidersPage() {
           </p>
           {routingExplain && <pre className="compact-pre">{JSON.stringify(routingExplain, null, 2)}</pre>}
           <table className="data-table compact-table">
-            <thead><tr><th>Política</th><th>Preferido</th><th>Modelo</th><th>Fallback</th><th>Prioridad</th><th>Activa</th></tr></thead>
+            <thead><tr><th>Política</th><th>Preferido</th><th>Modelo</th><th>Respaldo</th><th>Prioridad</th><th>Activa</th></tr></thead>
             <tbody>
               {policies.map((p) => (
                 <tr key={p.id}>

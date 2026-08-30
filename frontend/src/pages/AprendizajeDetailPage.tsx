@@ -127,7 +127,7 @@ export function AprendizajeDetailPage() {
           <div><span className="muted">Plan de trabajo</span><strong className="mono">{detail.work_plan_id?.slice(0, 8) ?? "—"}</strong></div>
           <div><span className="muted">Señal origen</span><strong className="mono">{detail.signal_id?.slice(0, 8) ?? "—"}</strong></div>
           <div>
-            <span className="muted">Correlation ID<HelpTooltip text={TOOLTIPS.correlation_id} /></span>
+            <span className="muted">ID de correlación<HelpTooltip text={TOOLTIPS.correlation_id} /></span>
             <strong className="mono">{correlationId ?? "—"}</strong>
           </div>
           <div><span className="muted">Evaluado</span><strong>{detail.evaluado_at ? new Date(detail.evaluado_at).toLocaleString("es-CO") : "—"}</strong></div>
