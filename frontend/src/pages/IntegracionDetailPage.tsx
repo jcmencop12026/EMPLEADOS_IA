@@ -281,7 +281,7 @@ export function IntegracionDetailPage() {
                   <th>Válidos</th>
                   <th>Rechazados</th>
                   <th>Latencia</th>
-                  <th>correlation_id</th>
+                  <th>ID de correlación</th>
                   <th>Error</th>
                 </tr>
               </thead>

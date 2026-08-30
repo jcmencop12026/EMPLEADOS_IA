@@ -48,7 +48,6 @@ import { AprendizajePage } from "./pages/AprendizajePage";
 import { AprendizajeDetailPage } from "./pages/AprendizajeDetailPage";
 import { OptimizacionPage } from "./pages/OptimizacionPage";
 import { OptimizacionDetailPage } from "./pages/OptimizacionDetailPage";
-import { DashboardPage } from "./pages/DashboardPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
@@ -80,6 +79,7 @@ export default function App() {
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route index element={<CentroControlPage />} />
+          <Route path="centro-control" element={<CentroControlPage />} />
           <Route path="panel" element={<Navigate to="/" replace />} />
           <Route path="operaciones" element={<OperationsHubPage />} />
           <Route path="operaciones/solicitud" element={<OperationsCenterPage />} />
@@ -101,9 +101,11 @@ export default function App() {
                   "automation.view",
                   "linea_base.view",
                   "diagnosticos.view",
+                  "optimizacion.view",
                   "support.view",
                   "support.create",
                   "support.assign",
+                  "communications.view",
                 ]}
               />
             }

@@ -28,6 +28,11 @@ function fmtNum(v: unknown): string {
   return String(v);
 }
 
+function healthComponentStatus(salud: Record<string, unknown>, key: string): string | undefined {
+  const components = salud.components as Record<string, { status?: string }> | undefined;
+  return components?.[key]?.status ?? (salud[key] as { status?: string } | undefined)?.status;
+}
+
 function SemanticBadge({ tipo }: { tipo: string }) {
   const cls = tipo.toLowerCase();
   if (cls === "hecho") return <span className="semantic-badge hecho">HECHO</span>;
@@ -219,7 +224,7 @@ export function CentroControlPage() {
 
               <div className="cc-grid-2">
                 <section className="panel compact-panel">
-                  <h2 className="section-title">Valoración 1210</h2>
+                  <h2 className="section-title">Valoración económica</h2>
                   {!data.valor_retorno?.disponible ? (
                     <p className="muted">{data.valor_retorno?.estado ?? "Sin información disponible"}</p>
                   ) : (
@@ -234,7 +239,7 @@ export function CentroControlPage() {
                 </section>
 
                 <section className="panel compact-panel">
-                  <h2 className="section-title">Comercial 1280</h2>
+                  <h2 className="section-title">Comercial y propuestas</h2>
                   {!data.comercial?.disponible ? (
                     <p className="muted">{data.comercial?.estado ?? "Sin información disponible"}</p>
                   ) : (
@@ -418,6 +423,11 @@ export function CentroControlPage() {
                   )}
                   <p><Link to="/inteligencia-externa">Ver inteligencia externa</Link></p>
                 </section>
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Integraciones</h2>
+                  <p className="muted">Conectores, cableado y trazabilidad de integraciones empresariales.</p>
+                  <p><Link to="/integraciones">Ir a integraciones</Link></p>
+                </section>
               </div>
 
               <section className="panel compact-panel">
@@ -461,7 +471,7 @@ export function CentroControlPage() {
                 </section>
 
                 <section className="panel compact-panel">
-                  <h2 className="section-title">Planificador consumo (MB-07)</h2>
+                  <h2 className="section-title">Planificador de consumo</h2>
                   {!data.mb07_planificador?.disponible ? (
                     <p className="muted">{data.mb07_planificador?.estado ?? "Sin información disponible"}</p>
                   ) : (
@@ -494,7 +504,7 @@ export function CentroControlPage() {
 
               <div className="cc-grid-2">
                 <section className="panel compact-panel">
-                  <h2 className="section-title">Proveedores IA (1270)</h2>
+                  <h2 className="section-title">Proveedores IA</h2>
                   {!data.multiproveedor?.disponible ? (
                     <p className="muted">{data.multiproveedor?.estado ?? "Sin información disponible"}</p>
                   ) : (
@@ -588,8 +598,8 @@ export function CentroControlPage() {
                   {data.salud_plataforma ? (
                     <dl className="detail-grid">
                       <dt>Estado API</dt><dd>{formatHealthStatus(data.salud_plataforma.status as string)}</dd>
-                      <dt>Base de datos</dt><dd>{formatHealthStatus((data.salud_plataforma.database as { status?: string })?.status)}</dd>
-                      <dt>Schedulers</dt><dd>{formatHealthStatus((data.salud_plataforma.schedulers as { status?: string })?.status)}</dd>
+                      <dt>Base de datos</dt><dd>{formatHealthStatus(healthComponentStatus(data.salud_plataforma as Record<string, unknown>, "database"))}</dd>
+                      <dt>Schedulers</dt><dd>{formatHealthStatus(healthComponentStatus(data.salud_plataforma as Record<string, unknown>, "schedulers"))}</dd>
                     </dl>
                   ) : (
                     <p className="muted">Sin información disponible</p>

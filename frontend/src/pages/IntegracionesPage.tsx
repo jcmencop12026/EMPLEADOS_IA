@@ -118,7 +118,7 @@ export function IntegracionesPage() {
         <div>
           <h1>Integraciones</h1>
           <p className="muted">
-            Vista operativa del cableado 1330/1350/1360: conectores, gobierno, continuidad y trazabilidad.
+            Vista operativa de conectores, gobierno, continuidad y trazabilidad.
           </p>
         </div>
         <div className="toolbar">

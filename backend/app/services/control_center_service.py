@@ -19,7 +19,7 @@ from app.services import control_center_adapters as adapters
 from app.services import finops_service, operations_center, proactive_service
 
 EXECUTIVE_INDICATOR_DEFS = [
-    {"id": "organizations_active", "label": "Organizaciones activas", "permiso": "platform.organization.view", "enlace": "/administracion/organizaciones"},
+    {"id": "organizations_active", "label": "Organizaciones activas", "permiso": "platform.organization.view", "enlace": "/administracion/empresas"},
     {"id": "employees_active", "label": "Empleados IA activos", "permiso": "employee.view", "enlace": "/directorio"},
     {"id": "plans_active", "label": "Planes activos", "permiso": "operations.view", "enlace": "/operaciones"},
     {"id": "executions_running", "label": "Ejecuciones en curso", "permiso": "operations.view", "enlace": "/ejecuciones"},
@@ -562,6 +562,7 @@ def _fetch_module_adapters(
     db: Session,
     org_id: str,
     *,
+    user: User,
     permissions: set[str],
     period_start: datetime | None,
     adapter_instances: list[Any],
@@ -571,13 +572,18 @@ def _fetch_module_adapters(
     modulos: dict[str, Any] = {}
     for adapter in adapter_instances:
         try:
+            fetch_kwargs: dict[str, Any] = {
+                "permissions": permissions,
+                "period_start": period_start,
+                "proceso": proceso,
+                "estado": estado,
+            }
+            if isinstance(adapter, adapters.MiTrabajoAdapter):
+                fetch_kwargs["user"] = user
             modulos[adapter.modulo] = adapter.fetch(
                 db,
                 org_id,
-                permissions=permissions,
-                period_start=period_start,
-                proceso=proceso,
-                estado=estado,
+                **fetch_kwargs,
             )
         except Exception:
             db.rollback()
@@ -806,6 +812,7 @@ def get_executive_summary(
     modulos = _fetch_module_adapters(
         db,
         org_id,
+        user=user,
         permissions=permissions,
         period_start=period_start,
         adapter_instances=adapter_instances,

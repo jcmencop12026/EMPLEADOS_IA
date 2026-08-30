@@ -196,7 +196,7 @@ export function AdminUserDetailPage() {
             <>
               <h3>Eventos SCIM del usuario</h3>
               <table className="data-table compact">
-                <thead><tr><th>Fecha</th><th>Acción</th><th>Resultado</th><th>Detalle</th><th>Correlation</th></tr></thead>
+                <thead><tr><th>Fecha</th><th>Acción</th><th>Resultado</th><th>Detalle</th><th>Correlación</th></tr></thead>
                 <tbody>
                   {detail.scim_user_events.map((ev, i) => (
                     <tr key={i}>
@@ -224,7 +224,7 @@ export function AdminUserDetailPage() {
           ) : (
             <table className="data-table compact">
               <thead>
-                <tr><th>Fecha</th><th>Flujo</th><th>Acción</th><th>Resultado</th><th>Actor</th><th>Detalle</th><th>Correlation</th></tr>
+                <tr><th>Fecha</th><th>Flujo</th><th>Acción</th><th>Resultado</th><th>Actor</th><th>Detalle</th><th>Correlación</th></tr>
               </thead>
               <tbody>
                 {detail.audit_entries.map((ev, i) => (

@@ -179,7 +179,7 @@ export function CostosValorPage() {
     <div className="ops-page">
       <header className="page-header">
         <h1>Costos y valor</h1>
-        <p className="muted">Consumo IA, capacidad, simulación y presupuestos (FinOps + planificador MB-07)</p>
+        <p className="muted">Consumo IA, capacidad, simulación y presupuestos</p>
       </header>
       {error && <p className="error">{error}</p>}
 

@@ -1455,19 +1455,21 @@ class MiTrabajoAdapter:
         period_start: datetime | None = None,
         proceso: str | None = None,
         estado: str | None = None,
+        user: Any | None = None,
     ) -> dict[str, Any]:
         from app.models import User
         from app.permissions import user_permissions
         from app.services import trabajo_service as trabajo
 
-        user = db.query(User).filter(User.organization_id == organization_id).first()
-        if not user:
+        viewer = user if isinstance(user, User) else None
+        if not viewer:
+            viewer = db.query(User).filter(User.organization_id == organization_id).first()
+        if not viewer:
             return {**_no_disponible(self.modulo, self.bloque, "Sin usuarios en organización"), "modulo": self.modulo, "bloque": self.bloque}
-        perms = user_permissions(user, db)
-        if not trabajo.can_access_trabajo(user, db):
+        if not trabajo.can_access_trabajo(viewer, db):
             return {**_no_disponible(self.modulo, self.bloque, "Sin acceso a Mi Trabajo"), "restringido": True}
         try:
-            resumen = trabajo.resumen(db, user, organization_id=organization_id)
+            resumen = trabajo.resumen(db, viewer, organization_id=organization_id)
         except Exception:
             db.rollback()
             return {**_no_disponible(self.modulo, self.bloque, "Resumen no disponible temporalmente"), "modulo": self.modulo, "bloque": self.bloque}

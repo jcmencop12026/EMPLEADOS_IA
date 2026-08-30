@@ -66,7 +66,6 @@ const MENU: NavSection[] = [
       { to: "/mi-seguridad", label: "Mi seguridad" },
       { to: "/notificaciones", label: "Notificaciones" },
       { to: "/comunicaciones", label: "Comunicaciones" },
-      { to: "/trabajo", label: "Mi trabajo" },
       { to: "/auditoria", label: "Auditoría" },
     ],
   },
@@ -229,7 +228,7 @@ export function AppShell() {
       </aside>
       <div className="main">
         <header className="topbar">
-          <span>EMPLEADOS_IA · Centro de operaciones · Módulo Salud</span>
+          <span>EMPLEADOS IA · Plataforma empresarial</span>
           <NavLink className="notification-bell" to="/notificaciones" title="Centro de notificaciones">
             🔔{unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}
           </NavLink>
