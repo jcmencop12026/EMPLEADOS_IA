@@ -1,0 +1,440 @@
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import type { CentroControlResumen } from "../api";
+import { fetchCentroControlResumen } from "../api";
+import { usePermissions } from "../hooks/usePermissions";
+
+function ValorIndicador({ valor, disponible, estado }: { valor: unknown; disponible: boolean; estado?: string | null }) {
+  if (!disponible) return <span className="muted">{estado ?? "Sin información disponible"}</span>;
+  if (valor === null || valor === undefined) return <span className="muted">Sin información disponible</span>;
+  return <strong>{String(valor)}</strong>;
+}
+
+export function CentroControlPage() {
+  const { has } = usePermissions();
+  const [data, setData] = useState<CentroControlResumen | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [periodo, setPeriodo] = useState("mtd");
+
+  const load = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    fetchCentroControlResumen(periodo)
+      .then(setData)
+      .catch((e) => setError(e instanceof Error ? e.message : "Error al cargar"))
+      .finally(() => setLoading(false));
+  }, [periodo]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (!has("control_center.view")) {
+    return (
+      <div className="ops-page">
+        <p className="error">No tiene permiso para ver el Centro de Control.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="ops-page centro-control-page">
+      <header className="page-header compact">
+        <h1>Centro de Control ejecutivo</h1>
+        <p className="muted">Consolidación operativa — qué pasa, qué requiere atención y qué valor se genera</p>
+        <div className="toolbar compact-toolbar">
+          <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} title="Periodo">
+            <option value="mtd">Mes actual</option>
+            <option value="7d">Últimos 7 días</option>
+            <option value="30d">Últimos 30 días</option>
+          </select>
+          <button type="button" onClick={load} disabled={loading}>Actualizar</button>
+        </div>
+      </header>
+
+      {loading && <p className="muted">Cargando centro de control…</p>}
+      {error && <p className="error">{error}</p>}
+
+      {data && (
+        <>
+          <section className="panel compact-panel">
+            <h2 className="section-title">Resumen ejecutivo</h2>
+            <div className="metrics-grid">
+              {data.resumen_ejecutivo.indicadores.map((ind) => (
+                <Link key={ind.id} to={ind.enlace} className="metric-card cc-metric-card" title={ind.label}>
+                  <span className="metric-label">{ind.label}</span>
+                  <ValorIndicador valor={ind.valor} disponible={ind.disponible} estado={ind.estado} />
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <section className="panel compact-panel">
+            <h2 className="section-title">Atención requerida</h2>
+            {data.atencion_requerida.length === 0 ? (
+              <p className="muted">No hay asuntos prioritarios pendientes.</p>
+            ) : (
+              <table className="data-table compact-table">
+                <thead><tr><th>#</th><th>Tipo</th><th>Asunto</th><th>Origen</th><th></th></tr></thead>
+                <tbody>
+                  {data.atencion_requerida.map((item) => (
+                    <tr key={`${item.tipo}-${item.prioridad}-${item.titulo}`}>
+                      <td>{item.prioridad}</td>
+                      <td>{item.tipo}</td>
+                      <td>{item.titulo}</td>
+                      <td>{item.origen}</td>
+                      <td><Link to={item.enlace}>Ver</Link></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
+
+          <section className="panel compact-panel">
+            <h2 className="section-title">¿Por qué está pasando?</h2>
+            <p className="muted cc-explicacion-nota">
+              {data.explicacion?.nota_causalidad ?? "Las correlaciones no implican causalidad demostrada."}
+            </p>
+            {!data.explicacion?.disponible ? (
+              <p className="muted">{data.explicacion?.estado ?? "Diagnóstico no disponible"}</p>
+            ) : (
+              <table className="data-table compact-table">
+                <thead>
+                  <tr>
+                    <th>Situación</th>
+                    <th>Causa / acción</th>
+                    <th>Certeza</th>
+                    <th>Evidencia</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data.explicacion.elementos ?? []).slice(0, 8).map((el) => (
+                    <tr key={el.id}>
+                      <td>
+                        <span
+                          className={`cc-tag cc-tag-${el.tipo_contenido.toLowerCase()}`}
+                          title={`Tipo: ${el.tipo_contenido}`}
+                        >
+                          {el.tipo_contenido}
+                        </span>
+                        <div>{el.situacion ?? "—"}</div>
+                        {el.fuente_ambito && (
+                          <small className="muted">Fuente: {el.fuente_ambito}</small>
+                        )}
+                      </td>
+                      <td>{el.causa ?? "—"}</td>
+                      <td>
+                        {el.certeza ? (
+                          <span className="cc-tag cc-tag-certeza" title={el.nota ?? undefined}>
+                            {el.certeza}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                        {el.confianza != null && (
+                          <small className="muted"> ({Math.round(el.confianza * 100)}%)</small>
+                        )}
+                      </td>
+                      <td title={el.evidencia?.resumen ?? undefined}>
+                        {el.evidencia?.resumen ?? el.evidencia?.identificador ?? "—"}
+                        {el.correlation_id && (
+                          <small className="muted"> · corr: {el.correlation_id.slice(0, 8)}…</small>
+                        )}
+                      </td>
+                      <td>
+                        {el.enlace?.startsWith("/") ? (
+                          <Link to={el.enlace}>Detalle</Link>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {data.explicacion?.enlace && (
+              <p><Link to={data.explicacion.enlace}>Ver diagnósticos</Link></p>
+            )}
+          </section>
+
+          <div className="cc-grid-2">
+            <section className="panel compact-panel">
+              <h2 className="section-title">Empleados IA</h2>
+              {!data.empleados_ia ? (
+                <p className="muted">Sin información disponible</p>
+              ) : (
+                <table className="data-table compact-table">
+                  <thead><tr><th>Empleado</th><th>Estado</th><th>Última actividad</th><th></th></tr></thead>
+                  <tbody>
+                    {data.empleados_ia.items.slice(0, 8).map((e) => (
+                      <tr key={e.id}>
+                        <td>{e.nombre}</td>
+                        <td>{e.estado}</td>
+                        <td>{e.ultima_actividad ? new Date(e.ultima_actividad).toLocaleString("es-CO") : "—"}</td>
+                        <td><Link to={e.enlace}>Detalle</Link></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </section>
+
+            <section className="panel compact-panel">
+              <h2 className="section-title">Oportunidades</h2>
+              {!data.oportunidades?.disponible ? (
+                <p className="muted">{data.oportunidades?.estado ?? "Sin información disponible"}</p>
+              ) : (
+                <>
+                  <dl className="detail-grid">
+                    <dt>Detectadas</dt><dd>{data.oportunidades.resumen?.oportunidades_detectadas ?? "—"}</dd>
+                    <dt>En seguimiento</dt><dd>{data.oportunidades.estados_operativos?.seguimiento ?? "—"}</dd>
+                    <dt>Materializadas</dt><dd>{data.oportunidades.resumen?.materializadas ?? "—"}</dd>
+                    <dt>Valor potencial</dt><dd>{data.oportunidades.resumen?.valor_potencial_total ?? "—"}</dd>
+                    <dt>Pend. aprobación</dt><dd>{data.oportunidades.resumen?.pendientes_aprobacion ?? "—"}</dd>
+                  </dl>
+                </>
+              )}
+              <p><Link to="/oportunidades">Ir al centro de oportunidades</Link></p>
+            </section>
+          </div>
+
+          <div className="cc-grid-2">
+            <section className="panel compact-panel">
+              <h2 className="section-title">Impacto (línea base)</h2>
+              {!data.impacto?.disponible ? (
+                <p className="muted">{data.impacto?.estado ?? "Sin información disponible"}</p>
+              ) : (
+                <dl className="detail-grid">
+                  <dt>Líneas base activas</dt><dd>{data.impacto.lineas_base_activas ?? "—"}</dd>
+                  <dt>Mediciones</dt><dd>{data.impacto.mediciones ?? "—"}</dd>
+                  <dt>Impactos reales</dt><dd>{data.impacto.impactos_reales ?? "—"}</dd>
+                  <dt>Pend. validación</dt><dd>{data.impacto.mediciones_pendientes_validacion ?? "—"}</dd>
+                  <dt>Con atribución</dt><dd>{data.impacto.impactos_con_atribucion ?? "—"}</dd>
+                </dl>
+              )}
+              <p><Link to="/lineas-base">Ver líneas base</Link></p>
+            </section>
+
+            <section className="panel compact-panel">
+              <h2 className="section-title">Costos y FinOps</h2>
+              {!data.finops?.disponible ? (
+                <p className="muted">Sin información disponible</p>
+              ) : (
+                <dl className="detail-grid">
+                  <dt>Costo periodo</dt><dd>{data.finops.dashboard?.total_cost_label ?? "—"}</dd>
+                  <dt>Valor generado</dt><dd>{data.finops.dashboard?.total_value_label ?? "—"}</dd>
+                  <dt>Tokens periodo</dt><dd>{data.finops.tokens_periodo ?? "—"}</dd>
+                  <dt>ROI</dt><dd>{data.finops.dashboard?.roi_label ?? "—"}</dd>
+                </dl>
+              )}
+              {data.finops_extendido?.disponible && (
+                <div className="cc-subsection">
+                  <h3 className="subsection-title">FinOps extendido</h3>
+                  <dl className="detail-grid">
+                    <dt>Consumos periodo</dt><dd>{data.finops_extendido.consumos_periodo ?? "—"}</dd>
+                    <dt>Costo periodo</dt><dd>{data.finops_extendido.costo_periodo ?? "—"}</dd>
+                    <dt>Alertas presupuesto</dt><dd>{data.finops_extendido.alertas_registradas ?? "—"}</dd>
+                    <dt>Presup. con bloqueo</dt><dd>{data.finops_extendido.presupuestos_con_bloqueo ?? "—"}</dd>
+                    <dt>Oport. con costo</dt><dd>{data.finops_extendido.oportunidades_con_costo ?? "—"}</dd>
+                  </dl>
+                </div>
+              )}
+              <p><Link to="/costos-valor">Ver costos y valor</Link></p>
+            </section>
+          </div>
+
+          <div className="cc-grid-2">
+            <section className="panel compact-panel">
+              <h2 className="section-title">IA y proveedores</h2>
+              {!data.llm?.proveedores?.length ? (
+                <p className="muted">{data.llm?.disponible === false ? "Sin información disponible" : "Sin proveedores configurados"}</p>
+              ) : (
+                <table className="data-table compact-table">
+                  <thead><tr><th>Proveedor</th><th>Estado</th><th>Errores 24h</th><th>Latencia</th><th></th></tr></thead>
+                  <tbody>
+                    {data.llm.proveedores.slice(0, 5).map((p) => (
+                      <tr key={p.id}>
+                        <td>{p.nombre}</td>
+                        <td>{p.estado ?? (p.habilitado ? "ACTIVO" : "INACTIVO")}</td>
+                        <td>{p.errores_24h}</td>
+                        <td>{p.latencia_media_ms != null ? `${p.latencia_media_ms} ms` : "—"}</td>
+                        <td><Link to={p.enlace}>Ver</Link></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              <p><Link to="/administracion/proveedores-ia">Administrar proveedores IA</Link></p>
+            </section>
+
+            <section className="panel compact-panel">
+              <h2 className="section-title">Actividad reciente</h2>
+              {!data.actividad_reciente?.length ? (
+                <p className="muted">Sin actividad operativa reciente</p>
+              ) : (
+                <table className="data-table compact-table">
+                  <thead><tr><th>Evento</th><th>Fecha</th><th></th></tr></thead>
+                  <tbody>
+                    {data.actividad_reciente.slice(0, 8).map((ev) => (
+                      <tr key={ev.id}>
+                        <td>{ev.tipo}</td>
+                        <td>{ev.fecha ? new Date(ev.fecha).toLocaleString("es-CO") : "—"}</td>
+                        <td>{ev.enlace ? <Link to={ev.enlace}>Ver</Link> : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </section>
+          </div>
+
+          <div className="cc-grid-2">
+            <section className="panel compact-panel">
+              <h2 className="section-title">Valor y retorno</h2>
+              {!data.valor_retorno?.disponible ? (
+                <p className="muted">{data.valor_retorno?.estado ?? "Sin información disponible"}</p>
+              ) : (
+                <dl className="detail-grid">
+                  <dt>Valor esperado</dt><dd>{data.valor_retorno.valor_esperado ?? "—"}</dd>
+                  <dt>Valor materializado</dt><dd>{data.valor_retorno.valor_materializado ?? "—"}</dd>
+                  <dt>Valor atribuible</dt><dd>{data.valor_retorno.valor_atribuible ?? "—"}</dd>
+                  <dt>Beneficio neto</dt><dd>{data.valor_retorno.beneficio_neto ?? "—"}</dd>
+                  <dt>Retorno</dt><dd>{data.valor_retorno.retorno_porcentaje != null ? `${data.valor_retorno.retorno_porcentaje}%` : "—"}</dd>
+                </dl>
+              )}
+              <p><Link to="/costos-valor">Ver valoración</Link></p>
+            </section>
+            <section className="panel compact-panel">
+              <h2 className="section-title">Diagnóstico</h2>
+              {!data.diagnostico?.disponible ? (
+                <p className="muted">{data.diagnostico?.estado ?? "Sin información disponible"}</p>
+              ) : (
+                <dl className="detail-grid">
+                  <dt>Diagnósticos activos</dt><dd>{data.diagnostico.diagnosticos_activos ?? "—"}</dd>
+                  <dt>Hallazgos</dt><dd>{data.diagnostico.hallazgos ?? "—"}</dd>
+                  <dt>Riesgos</dt><dd>{data.diagnostico.riesgos ?? "—"}</dd>
+                  <dt>Oportunidades generadas</dt><dd>{data.diagnostico.oportunidades_generadas ?? "—"}</dd>
+                </dl>
+              )}
+              <p><Link to="/diagnosticos">Ver diagnósticos</Link></p>
+            </section>
+          </div>
+
+          <div className="cc-grid-2">
+            <section className="panel compact-panel">
+              <h2 className="section-title">Señales internas</h2>
+              {!data.senales ? (
+                <p className="muted">Sin información disponible</p>
+              ) : (
+                <>
+                  <dl className="detail-grid">
+                    <dt>Total señales</dt><dd>{data.senales.total ?? "—"}</dd>
+                    <dt>Sin procesar</dt><dd>{data.senales.sin_procesar ?? "—"}</dd>
+                    <dt>Procesadas</dt><dd>{data.senales.procesadas ?? "—"}</dd>
+                    <dt>Errores ingesta</dt><dd>{data.senales.errores_ingesta ?? "—"}</dd>
+                  </dl>
+                  <p><Link to="/senales">Ver señales</Link></p>
+                </>
+              )}
+            </section>
+
+            <section className="panel compact-panel">
+              <h2 className="section-title">Inteligencia externa</h2>
+              {!data.inteligencia_externa?.disponible ? (
+                <p className="muted">{data.inteligencia_externa?.estado ?? "Sin información disponible"}</p>
+              ) : (
+                <>
+                  <dl className="detail-grid">
+                    <dt>Fuentes activas</dt><dd>{data.inteligencia_externa.fuentes_activas ?? "—"}</dd>
+                    <dt>Señales externas</dt><dd>{data.inteligencia_externa.total_senales ?? "—"}</dd>
+                    <dt>Sin validar</dt><dd>{data.inteligencia_externa.sin_validar ?? "—"}</dd>
+                    <dt>Riesgos abiertos</dt><dd>{data.inteligencia_externa.riesgos_abiertos ?? "—"}</dd>
+                    <dt>Oportunidades</dt><dd>{data.inteligencia_externa.oportunidades_detectadas ?? "—"}</dd>
+                    <dt>Tendencias</dt><dd>{data.inteligencia_externa.tendencias ?? "—"}</dd>
+                  </dl>
+                  {data.inteligencia_externa.recientes && data.inteligencia_externa.recientes.length > 0 && (
+                    <table className="data-table compact-table">
+                      <thead><tr><th>Señal</th><th>Clasificación</th><th></th></tr></thead>
+                      <tbody>
+                        {data.inteligencia_externa.recientes.slice(0, 5).map((s) => (
+                          <tr key={s.id}>
+                            <td>{s.titulo}</td>
+                            <td>{s.clasificacion ?? "—"}</td>
+                            <td><Link to={s.enlace}>Ver</Link></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  <p><Link to="/inteligencia-externa">Ver inteligencia externa</Link></p>
+                </>
+              )}
+            </section>
+          </div>
+
+          {data.cadena_ejecutiva && data.cadena_ejecutiva.length > 0 && (
+            <section className="panel compact-panel">
+              <h2 className="section-title">Cadena ejecutiva</h2>
+              <table className="data-table compact-table">
+                <thead><tr><th>Oportunidad</th><th>Etapas</th></tr></thead>
+                <tbody>
+                  {data.cadena_ejecutiva.map((cadena) => (
+                    <tr key={cadena.oportunidad_id as string}>
+                      <td><Link to={`/oportunidades/${cadena.oportunidad_id}`}>{String(cadena.titulo)}</Link></td>
+                      <td>
+                        {(cadena.etapas as Array<{ etapa: string; enlace: string }>).map((e) => (
+                          <Link key={`${cadena.oportunidad_id}-${e.etapa}`} to={e.enlace} className="cc-chain-link">
+                            {e.etapa}
+                          </Link>
+                        ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          )}
+
+          <section className="panel compact-panel">
+            <h2 className="section-title">Auditoría reciente</h2>
+            {!data.auditoria_reciente?.length ? (
+              <p className="muted">Sin registros de auditoría recientes</p>
+            ) : (
+              <table className="data-table compact-table">
+                <thead><tr><th>Acción</th><th>Actor</th><th>Fecha</th><th></th></tr></thead>
+                <tbody>
+                  {data.auditoria_reciente.slice(0, 8).map((row) => (
+                    <tr key={row.id}>
+                      <td title={row.detalle ?? undefined}>{row.accion}</td>
+                      <td>{row.actor ?? "—"}</td>
+                      <td>{row.fecha ? new Date(row.fecha).toLocaleString("es-CO") : "—"}</td>
+                      <td><Link to={row.enlace}>Ver</Link></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <p><Link to="/auditoria">Ver auditoría completa</Link></p>
+          </section>
+
+          <section className="panel compact-panel">
+            <h2 className="section-title">Salud de la plataforma</h2>
+            {data.salud_plataforma ? (
+              <dl className="detail-grid">
+                <dt>Estado API</dt><dd>{data.salud_plataforma.status}</dd>
+                <dt>Base de datos</dt><dd>{data.salud_plataforma.database?.status ?? "—"}</dd>
+                <dt>Schedulers</dt><dd>{data.salud_plataforma.schedulers?.status ?? "—"}</dd>
+              </dl>
+            ) : (
+              <p className="muted">Sin información disponible</p>
+            )}
+          </section>
+        </>
+      )}
+    </div>
+  );
+}

@@ -225,9 +225,20 @@ def test_security_summary(client: TestClient, auth_headers):
 def test_password_reset_audit_no_secret(client: TestClient, auth_headers):
     db = TestingSessionLocal()
     try:
-        listed = client.get("/api/admin/users", headers=auth_headers).json()
-        target = next(u for u in listed if u["username"] != "admin")
-        user_id = target["id"]
+        admin = db.query(User).filter(User.username == "admin").one()
+        target_username = f"pwdreset-{uuid.uuid4().hex[:6]}"
+        db.add(
+            User(
+                organization_id=admin.organization_id,
+                username=target_username,
+                password_hash=hash_password("ResetMe*1"),
+                role="viewer",
+                status="ACTIVE",
+                is_active=True,
+            )
+        )
+        db.commit()
+        user_id = db.query(User).filter(User.username == target_username).one().id
     finally:
         db.close()
 
