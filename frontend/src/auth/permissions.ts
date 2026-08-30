@@ -36,6 +36,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
     "diagnosticos.view",
     "optimizacion.view",
     "support.view",
+    "communications.view",
   ],
   "/soporte": ["support.create", "support.view"],
   "/integraciones": ["integraciones.view"],

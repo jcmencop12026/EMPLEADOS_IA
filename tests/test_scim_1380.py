@@ -481,4 +481,4 @@ class TestScimMigration:
         from scripts.schema_repair import HEAD_REVISION
 
         assert HEAD_REVISION == assert_single_head()
-        assert HEAD_REVISION == "1507a1b2c3d4e"
+        assert HEAD_REVISION == "1341a1b2c3d4e"

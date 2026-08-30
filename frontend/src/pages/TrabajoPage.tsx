@@ -44,11 +44,15 @@ const TIPO_LABELS: Record<string, string> = {
   auditor_empleado_critico: "Auditor — crítico",
   auditor_empleado_intervencion: "Auditor — intervención",
   auditor_empleado_revision: "Auditor — revisión",
+  comunicacion_envio_critico: "Envío crítico",
+  comunicacion_canal_bloqueado: "Canal bloqueado",
+  comunicacion_configuracion_requerida: "Configuración requerida",
 };
 
 const MODULO_LABELS: Record<string, string> = {
   soporte: "Mesa de Ayuda",
   auditor_empleados: "Auditor de Empleados IA",
+  comunicaciones: "Centro de Información y Comunicaciones",
 };
 
 const ESTADO_LABELS: Record<string, string> = {

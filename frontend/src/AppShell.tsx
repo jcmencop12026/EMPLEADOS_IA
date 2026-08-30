@@ -66,6 +66,7 @@ const MENU: NavSection[] = [
       { to: "/mi-seguridad", label: "Mi seguridad" },
       { to: "/notificaciones", label: "Notificaciones" },
       { to: "/comunicaciones", label: "Comunicaciones" },
+      { to: "/trabajo", label: "Mi trabajo" },
       { to: "/auditoria", label: "Auditoría" },
     ],
   },

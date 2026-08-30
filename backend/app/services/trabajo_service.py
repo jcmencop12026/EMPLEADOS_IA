@@ -18,6 +18,7 @@ from app.optimization_models import OptimizacionRecomendacion
 from app.orchestration_models import ApprovalRequest, WorkPlan, AIEmployee
 from app.permissions import user_permissions
 from app.services import control_center_service as cc_svc
+from app.services import communications_service as comm_svc
 from app.services import finops_service
 from app.services import integration_service as integ_svc
 from app.services import support_service as support_svc
@@ -51,6 +52,7 @@ TRABAJO_VIEW_PERMISSIONS = frozenset(
         "support.create",
         "support.assign",
         "auditor_empleados.view",
+        "communications.view",
     }
 )
 
@@ -245,6 +247,8 @@ def collect_items(
     auditor_notification_ids: set[str] = set()
     auditor_correlation_keys: set[str] = set()
     auditor_employee_ids: set[str] = set()
+    pending_comm_msg_ids: set[str] = set()
+    pending_comm_correlation_ids: set[str] = set()
     now = _utcnow()
 
     if _has(permissions, "operations.view"):
@@ -845,6 +849,14 @@ def collect_items(
                 }
             )
 
+    if _has(permissions, "communications.view"):
+        comm_items, comm_msg_ids, comm_corr_ids = comm_svc.collect_trabajo_items(
+            db, org_id, user, organization_name=organization_name, now=now
+        )
+        pending_comm_msg_ids.update(comm_msg_ids)
+        pending_comm_correlation_ids.update(comm_corr_ids)
+        items.extend(comm_items)
+
     if _has(permissions, "notification.view"):
         notifications = (
             _notification_visible_query(db, user)
@@ -886,6 +898,15 @@ def collect_items(
                         continue
             if n.source_type == "employee_audit" and n.source_id and n.source_id in auditor_finding_ids:
                 continue
+            if n.source_type == "communication" and n.source_id and n.source_id in pending_comm_msg_ids:
+                continue
+            comm_id = str(meta.get("communication_id") or "")
+            if comm_id and comm_id in pending_comm_msg_ids:
+                continue
+            corr = meta.get("correlation_id") or n.event_id
+            if corr and corr in pending_comm_correlation_ids:
+                if n.source_type == "communication" or comm_id:
+                    continue
             requires = _notification_requires_action(n)
             prio_label, prio_order = _priority_label_and_order(n.severity)
             href = "/notificaciones"
@@ -965,6 +986,7 @@ def filter_items(
     vencimiento: str | None = None,
     requires_action: bool | None = None,
     case_id: str | None = None,
+    communication_id: str | None = None,
     sort: str = "prioridad",
     sort_dir: str = "desc",
 ) -> list[dict[str, Any]]:
@@ -995,6 +1017,13 @@ def filter_items(
             r
             for r in rows
             if r.get("source_id") == case_id or (r.get("metadata") or {}).get("case_id") == case_id
+        ]
+    if communication_id:
+        rows = [
+            r
+            for r in rows
+            if r.get("source_id") == communication_id
+            or (r.get("metadata") or {}).get("communication_id") == communication_id
         ]
     if requires_action is not None:
         rows = [r for r in rows if r.get("requires_action") == requires_action]
@@ -1044,6 +1073,7 @@ def list_items(
     vencimiento: str | None = None,
     requires_action: bool | None = None,
     case_id: str | None = None,
+    communication_id: str | None = None,
     sort: str = "prioridad",
     sort_dir: str = "desc",
     limit: int = 200,
@@ -1065,6 +1095,7 @@ def list_items(
         vencimiento=vencimiento,
         requires_action=requires_action,
         case_id=case_id,
+        communication_id=communication_id,
         sort=sort,
         sort_dir=sort_dir,
     )
@@ -1083,6 +1114,7 @@ def list_items(
             "vencimiento": vencimiento,
             "requires_action": requires_action,
             "case_id": case_id,
+            "communication_id": communication_id,
             "sort": sort,
             "sort_dir": sort_dir,
             "organization_id": org_id,
