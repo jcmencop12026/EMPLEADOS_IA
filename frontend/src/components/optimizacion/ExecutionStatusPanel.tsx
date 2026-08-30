@@ -38,7 +38,7 @@ export function ExecutionStatusPanel({ detail }: Props) {
         </div>
         <div>
           <span className="muted">
-            Correlation ID
+            ID de correlación
             <HelpTooltip text={TOOLTIPS.correlation_id} />
           </span>
           <span className="mono">{ej?.correlation_id?.slice(0, 12) ?? "—"}</span>

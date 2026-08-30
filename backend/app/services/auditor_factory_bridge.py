@@ -308,6 +308,52 @@ def _require_factory_permission(user: User, permission: str, db: Session) -> str
         return f"Permiso requerido: {permission}"
 
 
+def _recommended_factory_operation(trace: EmployeeImprovementTrace) -> str | None:
+    nav = resolve_factory_navigation(trace.recommendation)
+    if nav:
+        return nav.get("factory_op")
+    return trace.factory_operation
+
+
+def _validate_human_factory_decision(
+    trace: EmployeeImprovementTrace,
+    user: User,
+    operation: str,
+    payload: dict[str, Any],
+) -> tuple[dict[str, Any] | None, str | None]:
+    """RECOMENDACIÓN ≠ DECISIÓN HUMANA; decisión explícita obligatoria si hay desviación."""
+    recommended = _recommended_factory_operation(trace)
+    authorized = str(payload.get("authorized_operation") or operation or "").strip()
+    if not authorized:
+        return None, "Debe especificar la operación autorizada."
+
+    is_deviation = bool(recommended and authorized != recommended)
+    if is_deviation:
+        if not payload.get("authorize_deviation"):
+            return None, (
+                f"La operación autorizada '{authorized}' difiere de la recomendación '{recommended}'. "
+                "Requiere authorize_deviation=true y justificación explícita."
+            )
+        justification = str(payload.get("deviation_justification") or "").strip()
+        if len(justification) < 5:
+            return None, "Debe registrar una justificación para la desviación de la recomendación."
+
+    evidence = _json_loads(trace.evidence_json) or {}
+    prior = evidence.get("human_decision")
+    if prior and prior.get("authorized_operation") != authorized:
+        return None, "Ya existe una decisión humana distinta registrada para esta traza."
+
+    decision = {
+        "recommended_operation": recommended,
+        "authorized_operation": authorized,
+        "decided_by_id": user.id,
+        "decided_at": _utcnow().isoformat(),
+        "is_deviation": is_deviation,
+        "deviation_justification": payload.get("deviation_justification") if is_deviation else None,
+    }
+    return decision, None
+
+
 def ejecutar_operacion_fabrica(
     db: Session,
     org_id: str,
@@ -336,13 +382,13 @@ def ejecutar_operacion_fabrica(
     if trace.status == "IN_PROGRESS" and trace.executed_by_id and trace.executed_by_id != user.id:
         return {"error": "Otra acción incompatible está en curso sobre este hallazgo"}
 
-    op = operation or trace.factory_operation
+    body = dict(payload or {})
+    op = operation or body.get("authorized_operation") or trace.factory_operation
     if not op:
         return {"error": "Operación de fábrica no especificada"}
 
-    trace.factory_operation = op
     nav = resolve_factory_navigation(trace.recommendation) or {}
-    if operation:
+    if operation or body.get("authorized_operation"):
         op_permissions = {
             "capacitar": "employee.train",
             "probar": "employee.test",
@@ -373,6 +419,48 @@ def ejecutar_operacion_fabrica(
             if denied:
                 return {"error": denied}
 
+    decision, decision_err = _validate_human_factory_decision(trace, user, op, body)
+    if decision_err:
+        return {"error": decision_err}
+
+    evidence = _json_loads(trace.evidence_json) or {}
+    if not evidence.get("human_decision"):
+        evidence["human_decision"] = decision
+        trace.evidence_json = _json_dumps(evidence)
+        trace.updated_at = _utcnow()
+        db.commit()
+        write_audit(
+            db,
+            action="auditor.factory_decision_recorded",
+            organization_id=org_id,
+            user_id=user.id,
+            detail=_json_dumps({
+                "trace_id": trace.id,
+                "finding_id": trace.finding_id,
+                "decision": decision,
+                "auto_execution_blocked": True,
+            }),
+        )
+        if decision.get("is_deviation"):
+            write_audit(
+                db,
+                action="auditor.factory_decision_deviation",
+                organization_id=org_id,
+                user_id=user.id,
+                detail=_json_dumps({
+                    "trace_id": trace.id,
+                    "finding_id": trace.finding_id,
+                    "recommended_operation": decision.get("recommended_operation"),
+                    "authorized_operation": decision.get("authorized_operation"),
+                    "justification": decision.get("deviation_justification"),
+                }),
+            )
+    else:
+        decision = evidence["human_decision"]
+
+    op = decision["authorized_operation"]
+    trace.factory_operation = op
+
     exec_key = idempotency_key or f"exec:{trace.id}:{op}"
     evidence = _json_loads(trace.evidence_json) or {}
     if evidence.get("exec_keys", {}).get(exec_key):
@@ -388,7 +476,6 @@ def ejecutar_operacion_fabrica(
     trace.updated_at = _utcnow()
     db.commit()
 
-    body = payload or {}
     result: dict[str, Any]
     employee_id = trace.employee_id
 
@@ -436,6 +523,17 @@ def ejecutar_operacion_fabrica(
                 raise ValueError(result["error"])
             trace.approval_id = result.get("approval_request_id")
             trace.factory_result_ref = trace.approval_id
+            finding_for_approval = _get_finding(db, org_id, trace.finding_id)
+            if finding_for_approval:
+                prior_evidence = _json_loads(finding_for_approval.evidence_json) or {}
+                finding_for_approval.evidence_json = _json_dumps({
+                    **prior_evidence,
+                    "workflow_stage": "SOLICITUD_APROBACION",
+                    "approval_id": trace.approval_id,
+                    "approval_requested_at": _utcnow().isoformat(),
+                    "approval_requested_by": user.id,
+                    "trace_id": trace.id,
+                })
         elif op == "publicar":
             result = employee_lifecycle_service.publish_with_guards(db, org_id, user.id, employee_id)
             if result.get("error"):
@@ -528,6 +626,8 @@ def ejecutar_operacion_fabrica(
         "factory_result_ref": trace.factory_result_ref,
         "result": result,
         "correlation_id": trace.correlation_id,
+        "human_decision": decision,
+        "auto_execution_blocked": True,
     }
 
 

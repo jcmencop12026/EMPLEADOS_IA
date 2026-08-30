@@ -199,6 +199,8 @@ def test_authorized_train_and_traceability(client: TestClient, token: str):
         json={
             "operation": "capacitar",
             "payload": {
+                "authorize_deviation": True,
+                "deviation_justification": "Capacitación autorizada explícitamente en prueba de trazabilidad",
                 "training_type": "INSTRUCTIONS",
                 "reason": "Capacitación test ciclo",
                 "source": "test",

@@ -793,20 +793,12 @@ def ejecutar_recomendacion(
             if opp.estado in ("DESCARTADA", "NO_PERTINENTE", "CERRADA", "MATERIALIZADA"):
                 raise ValueError(f"Oportunidad {opp.codigo} no es ejecutable (estado {opp.estado})")
             if opp.estado == "PENDIENTE_APROBACION":
-                opp_svc.approve_opportunity(
-                    db,
-                    opp,
-                    user_id=user.id,
-                    aprobado=True,
-                    motivo=f"Aprobación automática por recomendación {rec.codigo}",
+                raise ValueError(
+                    f"Oportunidad {opp.codigo} requiere aprobación humana antes de ejecución automática"
                 )
-            elif opp.estado in ("PRIORIZADA", "PROPUESTA"):
-                opp_svc.approve_opportunity(
-                    db,
-                    opp,
-                    user_id=user.id,
-                    aprobado=True,
-                    motivo=f"Aprobación automática por recomendación {rec.codigo}",
+            if opp.estado not in ("APROBADA", "EN_EJECUCION", "EN_SEGUIMIENTO"):
+                raise ValueError(
+                    f"Oportunidad {opp.codigo} no está autorizada para ejecución automática (estado {opp.estado})"
                 )
             activacion = opp_svc.activate_opportunity(db, opp, user_id=user.id, auto_execute=False)
             resultados.append(
