@@ -33,6 +33,7 @@ from app import scim_models  # noqa: F401 — SCIM 1380
 from app import support_models  # noqa: F401 — mesa de ayuda MB-12
 from app import employee_audit_models  # noqa: F401 — auditor empleados MVP
 from app import consumption_planner_models  # noqa: F401 — planificador MB-07 portable
+from app import communications_models  # noqa: F401 — comunicaciones MB-11
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
@@ -75,12 +76,14 @@ from app.routers import (
     tools,
     trabajo,
     empleados_auditor,
+    comunicaciones,
 )
 from app.seed import bootstrap
 from app.security_config import validate_security_settings
 from app.services.automation_events import register_automation_event_handlers
 from app.services.employee_audit_events import register_employee_audit_event_handlers
 from app.services.automation_scheduler import start_scheduler, stop_scheduler
+from app.services.communications_service import register_communications_handlers
 from app.services.proactive_scheduler import start_proactive_scheduler, stop_proactive_scheduler
 from app.services.authorization import AuthorizationError
 
@@ -110,6 +113,7 @@ async def lifespan(_app: FastAPI):
         db.close()
     register_automation_event_handlers()
     register_employee_audit_event_handlers()
+    register_communications_handlers()
     start_scheduler()
     start_proactive_scheduler()
     yield
@@ -164,6 +168,7 @@ app.include_router(automations.router)
 app.include_router(automations.runs_router)
 app.include_router(notification_routes.notifications_router)
 app.include_router(notification_routes.rules_router)
+app.include_router(comunicaciones.router)
 app.include_router(finops.router)
 app.include_router(salud.router)
 app.include_router(experience.router)

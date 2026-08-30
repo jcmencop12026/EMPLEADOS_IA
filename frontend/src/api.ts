@@ -3641,3 +3641,123 @@ export async function addSupportComment(id: string, data: { cuerpo: string; es_i
 export async function fetchSupportTipos(): Promise<{ tipos: string[]; estados: string[]; prioridades: string[] }> {
   return api("/api/soporte/tipos");
 }
+
+// —— Comunicaciones MB-11 ——
+
+export type CommChannel = {
+  id: string;
+  organization_id: string;
+  tipo: string;
+  nombre: string;
+  activo: boolean;
+  config?: Record<string, unknown> | null;
+  secret_configured: boolean;
+  estado: string;
+  prioridad: number;
+  uso_permitido?: string | null;
+};
+
+export type CommTemplate = {
+  id: string;
+  organization_id: string;
+  codigo: string;
+  nombre: string;
+  tipo_comunicacion: string;
+  canal_tipo: string;
+  idioma: string;
+  current_version_id?: string | null;
+  current_version?: number | null;
+};
+
+export type CommRule = {
+  id: string;
+  organization_id: string;
+  nombre: string;
+  event_type: string;
+  condicion?: Record<string, unknown> | null;
+  destinatario_tipo: string;
+  destinatario_regla: string;
+  template_version_id: string;
+  channel_id: string;
+  accion: string;
+  activo: boolean;
+  antispam_minutos: number;
+  obligatoria: boolean;
+};
+
+export type CommMessage = {
+  id: string;
+  organization_id: string;
+  estado: string;
+  tipo_comunicacion: string;
+  channel_id?: string | null;
+  channel_tipo?: string | null;
+  template_version_id?: string | null;
+  template_version?: number | null;
+  rule_id?: string | null;
+  destinatario_tipo: string;
+  destinatario_id?: string | null;
+  destinatario_externo?: string | null;
+  asunto?: string | null;
+  contenido?: string | null;
+  idioma: string;
+  programada_para?: string | null;
+  correlation_id?: string | null;
+  event_id?: string | null;
+  origen: string;
+  origen_id?: string | null;
+  intentos: number;
+  max_intentos: number;
+  proximo_intento?: string | null;
+  created_at?: string | null;
+  enviada_at?: string | null;
+  historial_intentos?: Array<Record<string, unknown>>;
+};
+
+export async function fetchCommChannels(): Promise<CommChannel[]> {
+  return api("/api/comunicaciones/canales");
+}
+
+export async function createCommChannel(data: Record<string, unknown>): Promise<CommChannel> {
+  return api("/api/comunicaciones/canales", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchCommTemplates(): Promise<CommTemplate[]> {
+  return api("/api/comunicaciones/plantillas");
+}
+
+export async function createCommTemplate(data: Record<string, unknown>): Promise<CommTemplate> {
+  return api("/api/comunicaciones/plantillas", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function createCommTemplateVersion(templateId: string, data: Record<string, unknown>) {
+  return api(`/api/comunicaciones/plantillas/${templateId}/versiones`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchCommRules(): Promise<CommRule[]> {
+  return api("/api/comunicaciones/reglas");
+}
+
+export async function createCommRule(data: Record<string, unknown>): Promise<CommRule> {
+  return api("/api/comunicaciones/reglas", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchCommMessages(params = ""): Promise<CommMessage[]> {
+  return api(`/api/comunicaciones/mensajes${params ? `?${params}` : ""}`);
+}
+
+export async function fetchCommMessage(id: string): Promise<CommMessage> {
+  return api(`/api/comunicaciones/mensajes/${id}`);
+}
+
+export async function createCommMessage(data: Record<string, unknown>): Promise<CommMessage> {
+  return api("/api/comunicaciones/mensajes", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function cancelCommMessage(id: string): Promise<CommMessage> {
+  return api(`/api/comunicaciones/mensajes/${id}/cancelar`, { method: "POST" });
+}
+
+export async function fetchCommCatalog() {
+  return api<{ variables: string[]; canales: string[]; estados: string[] }>("/api/comunicaciones/catalogo/variables");
+}
