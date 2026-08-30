@@ -142,3 +142,50 @@ class EmployeeAuditFinding(Base):
     correlation_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     notification_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("notifications.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, index=True)
+
+
+OUTCOME_CLASSIFICATIONS = frozenset(
+    {
+        "PENDIENTE_VALIDACION",
+        "MEJORADO",
+        "SIN_CAMBIO",
+        "EMPEORADO",
+        "NO_DETERMINADO",
+    }
+)
+
+TRACE_STATUSES = frozenset({"PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"})
+
+
+class EmployeeImprovementTrace(Base):
+    """Puente mínimo Auditor → decisión humana → Fábrica → resultado."""
+
+    __tablename__ = "employee_improvement_traces"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "idempotency_key", name="uq_emp_improvement_idempotency"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
+    employee_id: Mapped[str] = mapped_column(String(36), ForeignKey("ai_employees.id"), nullable=False, index=True)
+    audit_run_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("employee_audit_runs.id"), nullable=True)
+    finding_id: Mapped[str] = mapped_column(String(36), ForeignKey("employee_audit_findings.id"), nullable=False, index=True)
+    correlation_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    recommendation: Mapped[str] = mapped_column(String(80), nullable=False)
+    work_item_ref: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    status: Mapped[str] = mapped_column(String(30), default="PENDING", index=True)
+    outcome_classification: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    requested_by_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    executed_by_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    factory_operation: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    factory_result_ref: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    version_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("employee_versions.id"), nullable=True)
+    approval_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("approval_requests.id"), nullable=True)
+    test_run_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("employee_test_runs.id"), nullable=True)
+    before_snapshot_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    after_snapshot_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evidence_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    idempotency_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

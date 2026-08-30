@@ -768,6 +768,32 @@ def collect_items(
                         href=f"/empleados/auditoria?employee_id={finding.employee_id}",
                     )
                 )
+            from app.services.auditor_factory_bridge import (
+                build_factory_href,
+                resolve_factory_navigation,
+            )
+
+            nav = resolve_factory_navigation(finding.recommended_action)
+            if nav:
+                acciones.append(
+                    _action(
+                        "revisar_fabrica",
+                        "Revisar en Fábrica",
+                        nav["permission"],
+                        href=build_factory_href(
+                            finding.employee_id,
+                            tab=nav["tab"],
+                            finding_id=finding.id,
+                            audit_run_id=finding.run_id,
+                            correlation_id=finding.correlation_id,
+                        ),
+                        payload={
+                            "finding_id": finding.id,
+                            "recommended_action": finding.recommended_action,
+                            "factory_operation": nav["factory_op"],
+                        },
+                    )
+                )
             detalle_parts = []
             if finding.detail:
                 detalle_parts.append(finding.detail)

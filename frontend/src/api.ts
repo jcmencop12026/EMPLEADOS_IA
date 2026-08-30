@@ -603,6 +603,34 @@ export async function executeEmployeeAudit(body: {
   });
 }
 
+export async function iniciarMejoraAuditor(findingId: string, idempotencyKey?: string): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-auditor/hallazgos/${findingId}/iniciar-mejora`, {
+    method: "POST",
+    body: JSON.stringify({ idempotency_key: idempotencyKey }),
+  });
+}
+
+export async function ejecutarMejoraFabrica(
+  traceId: string,
+  data: { operation?: string; payload?: Record<string, unknown>; idempotency_key?: string },
+): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-auditor/mejoras/${traceId}/ejecutar`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function reauditarMejora(traceId: string, idempotencyKey?: string): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-auditor/mejoras/${traceId}/reauditar`, {
+    method: "POST",
+    body: JSON.stringify({ idempotency_key: idempotencyKey }),
+  });
+}
+
+export async function fetchMejoraTrazabilidad(traceId: string): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-auditor/mejoras/${traceId}/trazabilidad`);
+}
+
 export type EmployeeTemplate = { code: string; name: string; description?: string; specialty: string };
 export type CapabilityItem = { id: string; code: string; name: string; risk_level: string };
 export type ToolItem = { id: string; code: string; name: string; executor_type: string; risk_level: string };

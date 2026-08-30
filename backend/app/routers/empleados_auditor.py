@@ -184,3 +184,127 @@ def contrato_trabajo(
     org_id = resolve_organization_id(db, user, organization_id)
     return list_trabajo_contract(db, org_id)
 
+
+@router.get("/contrato-fabrica")
+def contrato_fabrica(user: User = Depends(require_permission("auditor_empleados.view"))):
+    from app.services.auditor_factory_bridge import portable_control_center_contract
+    from app.services import employee_lifecycle_service
+
+    return {
+        "auditor_factory_cycle": portable_control_center_contract(),
+        "factory": employee_lifecycle_service.auditor_contract(),
+        "auto_execution_blocked": True,
+    }
+
+
+@router.get("/hallazgos/{finding_id}/accion-fabrica")
+def hallazgo_accion_fabrica(
+    finding_id: str,
+    organization_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("auditor_empleados.view")),
+):
+    from app.services.auditor_factory_bridge import get_finding_factory_action
+    from app.services.employee_audit_service import resolve_organization_id
+
+    org_id = resolve_organization_id(db, user, organization_id)
+    result = get_finding_factory_action(db, org_id, user, finding_id)
+    if result.get("error"):
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+@router.post("/hallazgos/{finding_id}/iniciar-mejora")
+def iniciar_mejora_hallazgo(
+    finding_id: str,
+    body: dict | None = None,
+    organization_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("auditor_empleados.view")),
+):
+    from app.services.auditor_factory_bridge import iniciar_mejora
+    from app.services.employee_audit_service import resolve_organization_id
+
+    org_id = resolve_organization_id(db, user, organization_id)
+    payload = body or {}
+    result = iniciar_mejora(
+        db,
+        org_id,
+        user,
+        finding_id,
+        idempotency_key=payload.get("idempotency_key"),
+    )
+    if result.get("error"):
+        code = 409 if "en curso" in result["error"].lower() else 400
+        raise HTTPException(status_code=code, detail=result["error"])
+    return result
+
+
+@router.post("/mejoras/{trace_id}/ejecutar")
+def ejecutar_mejora_fabrica(
+    trace_id: str,
+    body: dict | None = None,
+    organization_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    from app.services.auditor_factory_bridge import ejecutar_operacion_fabrica
+    from app.services.employee_audit_service import resolve_organization_id
+
+    org_id = resolve_organization_id(db, user, organization_id)
+    payload = body or {}
+    result = ejecutar_operacion_fabrica(
+        db,
+        org_id,
+        user,
+        trace_id,
+        operation=payload.get("operation"),
+        payload=payload.get("payload"),
+        idempotency_key=payload.get("idempotency_key"),
+    )
+    if result.get("error"):
+        code = 403 if "Permiso" in result["error"] else 400
+        raise HTTPException(status_code=code, detail=result["error"])
+    return result
+
+
+@router.post("/mejoras/{trace_id}/reauditar")
+def reauditar_mejora(
+    trace_id: str,
+    body: dict | None = None,
+    organization_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("auditor_empleados.execute")),
+):
+    from app.services.auditor_factory_bridge import solicitar_reauditoria
+    from app.services.employee_audit_service import resolve_organization_id
+
+    org_id = resolve_organization_id(db, user, organization_id)
+    payload = body or {}
+    result = solicitar_reauditoria(
+        db,
+        org_id,
+        user,
+        trace_id,
+        idempotency_key=payload.get("idempotency_key"),
+    )
+    if result.get("error"):
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+@router.get("/mejoras/{trace_id}/trazabilidad")
+def trazabilidad_mejora(
+    trace_id: str,
+    organization_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("auditor_empleados.view")),
+):
+    from app.services.auditor_factory_bridge import get_traceability
+    from app.services.employee_audit_service import resolve_organization_id
+
+    org_id = resolve_organization_id(db, user, organization_id)
+    result = get_traceability(db, org_id, trace_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Trazabilidad no encontrada")
+    return result

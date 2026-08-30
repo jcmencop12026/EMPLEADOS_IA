@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   activateEmployee,
   ApiError,
@@ -8,6 +8,7 @@ import {
   assignEmployeeTool,
   certifyEmployee,
   decideEmployeeApproval,
+  ejecutarMejoraFabrica,
   fetchEmployeeApprovals,
   fetchEmployeeCapabilities,
   fetchEmployeeDetail,
@@ -16,7 +17,10 @@ import {
   fetchEmployeeKnowledge,
   fetchEmployeeTools,
   fetchEmployeeVersions,
+  fetchMejoraTrazabilidad,
+  iniciarMejoraAuditor,
   publishEmployee,
+  reauditarMejora,
   removeEmployeeCapability,
   removeEmployeeKnowledge,
   removeEmployeeTool,
@@ -50,10 +54,19 @@ const TABS = [
 
 export function EmployeeDetailPage() {
   const { employeeId } = useParams<{ employeeId: string }>();
+  const [searchParams] = useSearchParams();
   const { has } = usePermissions();
   const canEdit = has("employee.edit");
   const canApprove = has("employee.approve");
+  const canTrain = has("employee.train");
+  const findingId = searchParams.get("finding_id");
+  const auditRunId = searchParams.get("audit_run_id");
+  const correlationId = searchParams.get("correlation_id");
+  const traceIdParam = searchParams.get("trace_id");
+  const tabParam = searchParams.get("tab");
   const [tab, setTab] = useState<(typeof TABS)[number]>("Resumen");
+  const [auditContext, setAuditContext] = useState<Record<string, unknown> | null>(null);
+  const [traceId, setTraceId] = useState<string | null>(traceIdParam);
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
   const [inventory, setInventory] = useState<Record<string, unknown> | null>(null);
   const [health, setHealth] = useState<Record<string, unknown> | null>(null);
@@ -95,6 +108,34 @@ export function EmployeeDetailPage() {
   }
 
   useEffect(() => { load(); }, [employeeId]);
+
+  useEffect(() => {
+    if (tabParam && TABS.includes(tabParam as (typeof TABS)[number])) {
+      setTab(tabParam as (typeof TABS)[number]);
+    }
+  }, [tabParam]);
+
+  useEffect(() => {
+    if (!findingId) return;
+    if (traceIdParam) {
+      setTraceId(traceIdParam);
+      return;
+    }
+    iniciarMejoraAuditor(findingId, `ui:${findingId}`)
+      .then((res) => {
+        setTraceId(String(res.trace_id || ""));
+        setAuditContext(res);
+      })
+      .catch(() => {
+        /* el usuario puede continuar en fábrica sin traza */
+      });
+  }, [findingId, traceIdParam]);
+
+  useEffect(() => {
+    if (traceId) {
+      fetchMejoraTrazabilidad(traceId).then(setAuditContext).catch(() => undefined);
+    }
+  }, [traceId]);
 
   async function runAction(action: "test" | "certify" | "publish" | "activate" | "validate") {
     if (!employeeId) return;
@@ -222,12 +263,101 @@ export function EmployeeDetailPage() {
     <div className="ops-page">
       <header className="page-header">
         <Link to="/directorio" className="muted">← Directorio</Link>
+        {findingId && <Link to="/trabajo" className="muted"> · Mi Trabajo</Link>}
         <h1>{String(detail?.name || "Empleado")}</h1>
         <span className={`badge status-${lifecycle}`} title={lifecycle}>
           {label(LIFECYCLE_STATUS, lifecycle)}
         </span>
         {phase && <span className="badge muted">{label(LIFECYCLE_PHASE, phase) || phase}</span>}
       </header>
+
+      {findingId && (
+        <section className="panel muted auditor-context-banner">
+          <p><strong>Contexto Auditor</strong> — hallazgo vinculado desde Mi Trabajo.</p>
+          <p className="mono small">
+            finding: {findingId.slice(0, 8)}…
+            {auditRunId ? ` · run: ${auditRunId.slice(0, 8)}…` : ""}
+            {correlationId ? ` · cid: ${correlationId.slice(0, 8)}…` : ""}
+            {traceId ? ` · trace: ${traceId.slice(0, 8)}…` : ""}
+          </p>
+          {auditContext?.outcome_classification ? (
+            <p>Resultado: {String(auditContext.outcome_classification)}</p>
+          ) : (
+            <p className="muted">Las acciones de fábrica aplican guardas RBAC y aprobación existentes. El Auditor no ejecuta cambios automáticamente.</p>
+          )}
+          {traceId && canTrain && tab === "Resumen" && (
+            <div className="ops-actions">
+              <button
+                type="button"
+                className="btn"
+                disabled={loading}
+                onClick={async () => {
+                  if (!traceId) return;
+                  setLoading(true);
+                  try {
+                    await ejecutarMejoraFabrica(traceId, {
+                      operation: "capacitar",
+                      payload: {
+                        training_type: "INSTRUCTIONS",
+                        reason: "Capacitación desde contexto Auditor",
+                        source: "auditor-fabrica-ui",
+                        config_delta: { instructions: { operating_rules: "Procedimiento actualizado tras hallazgo Auditor" } },
+                      },
+                      idempotency_key: `train:${traceId}`,
+                    });
+                    await load();
+                    await fetchMejoraTrazabilidad(traceId).then(setAuditContext);
+                  } catch (e) {
+                    setError(e instanceof ApiError ? e.message : "No se pudo capacitar");
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                Capacitar (autorizado)
+              </button>
+              <button
+                type="button"
+                className="btn"
+                disabled={loading}
+                onClick={async () => {
+                  if (!traceId) return;
+                  setLoading(true);
+                  try {
+                    await ejecutarMejoraFabrica(traceId, { operation: "probar", idempotency_key: `test:${traceId}` });
+                    await load();
+                  } catch (e) {
+                    setError(e instanceof ApiError ? e.message : "No se pudieron ejecutar pruebas");
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                Ejecutar pruebas
+              </button>
+              <button
+                type="button"
+                className="btn"
+                disabled={loading}
+                onClick={async () => {
+                  if (!traceId) return;
+                  setLoading(true);
+                  try {
+                    await reauditarMejora(traceId, `reaudit:${traceId}`);
+                    await fetchMejoraTrazabilidad(traceId).then(setAuditContext);
+                  } catch (e) {
+                    setError(e instanceof ApiError ? e.message : "No se pudo reauditar");
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                Solicitar reauditoría
+              </button>
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="tab-bar compact-tab-bar">
         {TABS.map((t) => (
