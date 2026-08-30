@@ -146,7 +146,7 @@ export function OptimizacionPage() {
                 <th>Valor</th>
                 <th>ROI</th>
                 <th>Riesgo</th>
-                <th>Correlation</th>
+                <th>Correlación</th>
               </tr>
             </thead>
             <tbody>
