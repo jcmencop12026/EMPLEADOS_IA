@@ -12,7 +12,7 @@
 | Campo | Valor |
 |-------|-------|
 | **BASE central certificada (Tramo 6C)** | `82c1ec273f920c33fe2ea8b073d7f9c9d30e8b8` |
-| **HEAD Tramo 6D** | `a2e5425cb4738443dd3d28a82e4bc01662753a48` |
+| **HEAD Tramo 6D** | `31c1991f` (docs + fix App.tsx) |
 | **Fuente MB-11** | `cursor/mb11-centro-informacion-comunicaciones` @ `9d697f0c1755d4e836adc7219e43092ddd2aee37` (commit funcional `e3fb206`) |
 | **Fuente Mi Trabajo** | `cursor/mb11-integracion-mi-trabajo` @ `c0fe2549990fe4c8aa63ab898bb0a22ca9395039` |
 | **Método** | Cherry-pick selectivo + reparent migración `1341` sobre `1507`; delta Mi Trabajo aplicado manualmente sobre `trabajo_service` central |
@@ -24,6 +24,7 @@
 | `bf713ea` | feat(mb-11): centro de información y comunicaciones reparentado sobre 1507 |
 | `1795d8e` | feat(mb-11): integración Mi Trabajo sobre bandeja central |
 | `a2e5425` | fix(frontend): eliminar duplicados Mi Trabajo en api.ts |
+| `31c1991` | docs(tramo6d): entregable MB-11 comunicaciones + Mi Trabajo |
 
 ### Archivos portados (26 archivos, +3552 líneas netas)
 
@@ -246,7 +247,7 @@
 EMPLEADOS IA — FASE 2 CENTRAL TRAMO 6D TERMINADO
 
 BASE: 82c1ec273f920c33fe2ea8b073d7f9c9d30e8b8
-HEAD: a2e5425cb4738443dd3d28a82e4bc01662753a48
+HEAD: 31c1991f
 
 MB-11: PASS
 BANDEJA: PASS
