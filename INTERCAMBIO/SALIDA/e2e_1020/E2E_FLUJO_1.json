@@ -1,8 +1,8 @@
 {
-  "analysis_id": "f7cab19b-2083-4326-bb45-36ad93876198",
+  "analysis_id": "7c2a7f53-18ff-4717-8190-2108bd30a179",
   "trace": {
-    "solicitud": "f7cab19b-2083-4326-bb45-36ad93876198",
-    "orquestacion": "7df3a2ca-d430-4d28-a6a2-6c2d152cb282",
+    "solicitud": "7c2a7f53-18ff-4717-8190-2108bd30a179",
+    "orquestacion": "d2cbff3f-2625-414c-9a8c-b55a92d9eb1e",
     "equipo": {
       "lider": "Analista de Radicación IA",
       "razon": "Seleccionado Analista de Radicación IA como líder porque capacidades alineadas con radicacion; especialidad Radicación IPS relevante en dominio principal 'radicacion' (tipo: radicacion_tardia)",
@@ -14,15 +14,15 @@
       "fuentes": [
         {
           "tipo": "CONOCIMIENTO",
-          "document_id": "e4b11eae-1aca-4a14-8f91-4facfdcf614a",
-          "chunk_id": "74d2ba5c-7623-4ea4-b87f-0440f4f6f916",
+          "document_id": "a0f2b7fc-5c31-437c-96c3-02041a0bb957",
+          "chunk_id": "a7f68f7d-e777-48b1-b650-aa08ca0deda6",
           "titulo": "Política radicación IPS E2E",
           "categoria": null,
           "consulta": "radicación",
-          "especialista_id": "03ce999c-6963-4f2d-8fc0-914a002e319a",
-          "analysis_id": "f7cab19b-2083-4326-bb45-36ad93876198",
+          "especialista_id": "03aabb3c-22b9-4432-acae-38c3d4839a50",
+          "analysis_id": "7c2a7f53-18ff-4717-8190-2108bd30a179",
           "dominio": "radicacion",
-          "fecha": "2026-08-27T18:51:56.346603+00:00",
+          "fecha": "2026-08-29T22:27:49.859352+00:00",
           "relevancia": 1.0,
           "extracto": "El plazo máximo de radicación es de 10 días hábiles desde la emisión de la factura."
         }
@@ -92,7 +92,7 @@
       "especialistas_involucrados": 4,
       "solicitud": "Analiza radicación y cumplimiento contractual. Analiza por qué estamos demorando la recuperación de cartera, qué está afectando el flujo de caja y qué debemos hacer primero."
     },
-    "work_plan_id": "7cdf622f-fde8-424d-ba19-a421f3ce882f",
+    "work_plan_id": "743b2a5d-acad-4ca6-855f-30b44e1b1a06",
     "finops": [
       {
         "referencia": "Incumplimiento contractual de radicación (+29 días)",
@@ -160,6 +160,6 @@
   "diag_resumen": {
     "lider": "Analista de Radicación IA",
     "hallazgos": 5,
-    "work_plan_id": "7cdf622f-fde8-424d-ba19-a421f3ce882f"
+    "work_plan_id": "743b2a5d-acad-4ca6-855f-30b44e1b1a06"
   }
 }
