@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { CentroControlResumen } from "../api";
 import { fetchCentroControlResumen } from "../api";
 import { usePermissions } from "../hooks/usePermissions";
+import { formatAuditAction, formatHealthStatus } from "../lib/labels";
 
 const SECCIONES_DEFAULT = [
   { id: "resumen", label: "Resumen" },
@@ -586,9 +587,9 @@ export function CentroControlPage() {
                   <h2 className="section-title">Salud de la plataforma</h2>
                   {data.salud_plataforma ? (
                     <dl className="detail-grid">
-                      <dt>Estado API</dt><dd>{data.salud_plataforma.status as string}</dd>
-                      <dt>Base de datos</dt><dd>{(data.salud_plataforma.database as { status?: string })?.status ?? "—"}</dd>
-                      <dt>Schedulers</dt><dd>{(data.salud_plataforma.schedulers as { status?: string })?.status ?? "—"}</dd>
+                      <dt>Estado API</dt><dd>{formatHealthStatus(data.salud_plataforma.status as string)}</dd>
+                      <dt>Base de datos</dt><dd>{formatHealthStatus((data.salud_plataforma.database as { status?: string })?.status)}</dd>
+                      <dt>Schedulers</dt><dd>{formatHealthStatus((data.salud_plataforma.schedulers as { status?: string })?.status)}</dd>
                     </dl>
                   ) : (
                     <p className="muted">Sin información disponible</p>
@@ -652,7 +653,7 @@ export function CentroControlPage() {
                       <tbody>
                         {data.auditoria_reciente.slice(0, 6).map((row) => (
                           <tr key={row.id}>
-                            <td>{row.accion}</td>
+                            <td>{formatAuditAction(row.accion)}</td>
                             <td>{row.actor ?? "—"}</td>
                             <td>{row.fecha ? new Date(row.fecha).toLocaleString("es-CO") : "—"}</td>
                           </tr>
