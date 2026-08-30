@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from app.audit import write_audit
@@ -308,6 +309,66 @@ def _require_factory_permission(user: User, permission: str, db: Session) -> str
         return f"Permiso requerido: {permission}"
 
 
+def _atomic_claim_trace_execution(
+    db: Session,
+    trace_id: str,
+    org_id: str,
+    user_id: str,
+) -> tuple[bool, EmployeeImprovementTrace | None]:
+    """CAS transaccional: una sola transición efectiva PENDING|FAILED → IN_PROGRESS por traza."""
+    now = _utcnow()
+    result = db.execute(
+        update(EmployeeImprovementTrace)
+        .where(
+            EmployeeImprovementTrace.id == trace_id,
+            EmployeeImprovementTrace.organization_id == org_id,
+            EmployeeImprovementTrace.status.in_(("PENDING", "FAILED")),
+        )
+        .values(
+            status="IN_PROGRESS",
+            executed_by_id=user_id,
+            updated_at=now,
+        )
+    )
+    db.commit()
+    trace = (
+        db.query(EmployeeImprovementTrace)
+        .filter(
+            EmployeeImprovementTrace.id == trace_id,
+            EmployeeImprovementTrace.organization_id == org_id,
+        )
+        .first()
+    )
+    return result.rowcount == 1, trace
+
+
+def _response_for_unclaimed_trace(trace: EmployeeImprovementTrace | None) -> dict[str, Any]:
+    if trace is None:
+        return {"error": "Trazabilidad no encontrada"}
+    if trace.status == "COMPLETED":
+        return {
+            "trace_id": trace.id,
+            "status": trace.status,
+            "outcome_classification": trace.outcome_classification,
+            "idempotent": True,
+            "factory_result_ref": trace.factory_result_ref,
+            "conflict": False,
+        }
+    if trace.status == "IN_PROGRESS":
+        return {
+            "error": "Otra acción incompatible está en curso sobre este hallazgo",
+            "trace_id": trace.id,
+            "status": trace.status,
+            "conflict": True,
+        }
+    return {
+        "error": "La obligación causal ya fue reclamada por otra solicitud concurrente",
+        "trace_id": trace.id,
+        "status": trace.status,
+        "conflict": True,
+    }
+
+
 def _recommended_factory_operation(trace: EmployeeImprovementTrace) -> str | None:
     nav = resolve_factory_navigation(trace.recommendation)
     if nav:
@@ -379,8 +440,6 @@ def ejecutar_operacion_fabrica(
             "idempotent": True,
             "factory_result_ref": trace.factory_result_ref,
         }
-    if trace.status == "IN_PROGRESS" and trace.executed_by_id and trace.executed_by_id != user.id:
-        return {"error": "Otra acción incompatible está en curso sobre este hallazgo"}
 
     body = dict(payload or {})
     op = operation or body.get("authorized_operation") or trace.factory_operation
@@ -419,11 +478,29 @@ def ejecutar_operacion_fabrica(
             if denied:
                 return {"error": denied}
 
-    decision, decision_err = _validate_human_factory_decision(trace, user, op, body)
-    if decision_err:
-        return {"error": decision_err}
+    exec_key = idempotency_key or f"exec:{trace.id}:{op}"
+    evidence = _json_loads(trace.evidence_json) or {}
+    if evidence.get("exec_keys", {}).get(exec_key):
+        return {
+            "trace_id": trace.id,
+            "status": trace.status,
+            "idempotent": True,
+            "factory_result_ref": trace.factory_result_ref,
+        }
+
+    claimed, trace = _atomic_claim_trace_execution(db, trace_id, org_id, user.id)
+    if not claimed:
+        return _response_for_unclaimed_trace(trace)
 
     evidence = _json_loads(trace.evidence_json) or {}
+    decision, decision_err = _validate_human_factory_decision(trace, user, op, body)
+    if decision_err:
+        trace.status = "FAILED"
+        trace.evidence_json = _json_dumps({**evidence, "error": decision_err})
+        trace.updated_at = _utcnow()
+        db.commit()
+        return {"error": decision_err, "trace_id": trace.id}
+
     if not evidence.get("human_decision"):
         evidence["human_decision"] = decision
         trace.evidence_json = _json_dumps(evidence)
@@ -461,21 +538,6 @@ def ejecutar_operacion_fabrica(
     op = decision["authorized_operation"]
     trace.factory_operation = op
 
-    exec_key = idempotency_key or f"exec:{trace.id}:{op}"
-    evidence = _json_loads(trace.evidence_json) or {}
-    if evidence.get("exec_keys", {}).get(exec_key):
-        return {
-            "trace_id": trace.id,
-            "status": trace.status,
-            "idempotent": True,
-            "factory_result_ref": trace.factory_result_ref,
-        }
-
-    trace.status = "IN_PROGRESS"
-    trace.executed_by_id = user.id
-    trace.updated_at = _utcnow()
-    db.commit()
-
     result: dict[str, Any]
     employee_id = trace.employee_id
 
@@ -510,18 +572,34 @@ def ejecutar_operacion_fabrica(
                 trace.test_run_id = last_run.id
                 trace.factory_result_ref = last_run.id
         elif op == "solicitar_aprobacion":
-            result = employee_lifecycle_service.request_approval(
-                db,
-                org_id,
-                user.id,
-                employee_id,
-                kind=body.get("kind", "PUBLISH"),
-                reason=body.get("reason", f"Aprobación por hallazgo {trace.finding_id}"),
-                target_version=body.get("target_version"),
-            )
-            if result.get("error"):
-                raise ValueError(result["error"])
-            trace.approval_id = result.get("approval_request_id")
+            if trace.approval_id:
+                result = {
+                    "approval_request_id": trace.approval_id,
+                    "status": "PENDING",
+                    "idempotent": True,
+                }
+            else:
+                result = employee_lifecycle_service.request_approval(
+                    db,
+                    org_id,
+                    user.id,
+                    employee_id,
+                    kind=body.get("kind", "PUBLISH"),
+                    reason=body.get("reason", f"Aprobación por hallazgo {trace.finding_id}"),
+                    target_version=body.get("target_version"),
+                )
+                if result.get("error"):
+                    existing_id = result.get("approval_request_id") or result.get("approval_id")
+                    if existing_id:
+                        result = {
+                            "approval_request_id": existing_id,
+                            "status": "PENDING",
+                            "idempotent": True,
+                            "note": result.get("error"),
+                        }
+                    else:
+                        raise ValueError(result["error"])
+            trace.approval_id = result.get("approval_request_id") or trace.approval_id
             trace.factory_result_ref = trace.approval_id
             finding_for_approval = _get_finding(db, org_id, trace.finding_id)
             if finding_for_approval:

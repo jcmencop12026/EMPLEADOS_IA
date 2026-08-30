@@ -13,7 +13,7 @@ from app.employee_audit_models import EmployeeAuditFinding, EmployeeImprovementT
 from app.models import Organization, User
 from app.opportunity_models import Opportunity
 from app.optimization_models import OptimizacionItem, OptimizacionRecomendacion
-from app.orchestration_models import AIEmployee, EmployeeLimits, WorkPlan
+from app.orchestration_models import AIEmployee, EmployeeFactoryApproval, EmployeeLimits, WorkPlan
 from app.security import hash_password
 from app.config import settings
 from conftest import TestingSessionLocal, auth_header
@@ -299,8 +299,68 @@ def test_g8_support_assignable_agents(client: TestClient, token: str):
     assert all("nombre" in a and "username" in a and "id" in a for a in agents)
 
 
+def _start_improvement_trace(client: TestClient, token: str, finding_id: str) -> str:
+    res = client.post(
+        f"/api/empleados-auditor/hallazgos/{finding_id}/iniciar-mejora",
+        headers=auth_header(token),
+        json={},
+    )
+    assert res.status_code == 200
+    return res.json()["trace_id"]
+
+
+def _concurrent_solicitar_aprobacion(
+    client: TestClient,
+    token: str,
+    trace_id: str,
+    *,
+    keys: tuple[str, str],
+) -> list[dict]:
+    results: list[dict] = []
+    lock = threading.Lock()
+
+    def _exec(key: str):
+        r = client.post(
+            f"/api/empleados-auditor/mejoras/{trace_id}/ejecutar",
+            headers=auth_header(token),
+            json={
+                "operation": "solicitar_aprobacion",
+                "payload": {"kind": "PUBLISH", "reason": f"conc {key}"},
+                "idempotency_key": key,
+            },
+        )
+        body = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
+        with lock:
+            results.append({"status_code": r.status_code, "body": body})
+
+    t1 = threading.Thread(target=_exec, args=(keys[0],))
+    t2 = threading.Thread(target=_exec, args=(keys[1],))
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+    return results
+
+
+def _assert_single_effective_approval(db, org_id: str, employee_id: str, trace_id: str) -> None:
+    trace = db.query(EmployeeImprovementTrace).filter(EmployeeImprovementTrace.id == trace_id).one()
+    approvals = (
+        db.query(EmployeeFactoryApproval)
+        .filter(
+            EmployeeFactoryApproval.organization_id == org_id,
+            EmployeeFactoryApproval.employee_id == employee_id,
+            EmployeeFactoryApproval.status == "PENDING",
+        )
+        .all()
+    )
+    assert len(approvals) <= 1
+    if trace.approval_id:
+        assert len(approvals) == 1
+        assert trace.approval_id == approvals[0].approval_request_id
+
+
 def test_concurrency_auditor_factory_no_double_execution(client: TestClient, token: str):
-    """P2-C: acciones simultáneas no generan doble ejecución."""
+    """P1-C-01: misma obligación causal — máximo una transición efectiva (claves distintas)."""
     db = TestingSessionLocal()
     try:
         admin = _admin_user(db)
@@ -316,45 +376,173 @@ def test_concurrency_auditor_factory_no_double_execution(client: TestClient, tok
     finally:
         db.close()
 
-    trace_id = client.post(
-        f"/api/empleados-auditor/hallazgos/{finding_id}/iniciar-mejora",
-        headers=auth_header(token),
-        json={},
-    ).json()["trace_id"]
+    trace_id = _start_improvement_trace(client, token, finding_id)
+    results = _concurrent_solicitar_aprobacion(client, token, trace_id, keys=("conc-a", "conc-b"))
 
+    assert len(results) == 2
+    success = [r for r in results if r["status_code"] == 200]
+    assert len(success) <= 2  # idempotente puede devolver 200 al perdedor si ya completó
+    assert sum(1 for r in results if r["status_code"] == 200 and not r["body"].get("idempotent")) <= 1
+
+    db = TestingSessionLocal()
+    try:
+        _assert_single_effective_approval(db, org_id, emp_id, trace_id)
+        trace = db.query(EmployeeImprovementTrace).filter(EmployeeImprovementTrace.id == trace_id).first()
+        assert trace is not None
+        assert trace.status in ("COMPLETED", "IN_PROGRESS", "FAILED")
+    finally:
+        db.close()
+
+
+@pytest.mark.parametrize("idem_keys", [("same-key", "same-key"), ("conc-x", "conc-y")])
+def test_concurrency_same_obligation_idempotency_keys(client: TestClient, token: str, idem_keys):
+    """P1-C-01: claves iguales o distintas — una sola aprobación efectiva."""
+    db = TestingSessionLocal()
+    try:
+        admin = _admin_user(db)
+        emp_id = _employee_with_failures(db, admin.organization_id, admin.id, f"ck-{uuid.uuid4().hex[:4]}")
+        org_id = admin.organization_id
+    finally:
+        db.close()
+
+    _run_audit(client, token, emp_id)
+    db = TestingSessionLocal()
+    try:
+        finding_id = _open_finding(db, org_id, emp_id).id
+    finally:
+        db.close()
+
+    trace_id = _start_improvement_trace(client, token, finding_id)
+    _concurrent_solicitar_aprobacion(client, token, trace_id, keys=idem_keys)
+
+    db = TestingSessionLocal()
+    try:
+        _assert_single_effective_approval(db, org_id, emp_id, trace_id)
+    finally:
+        db.close()
+
+
+def test_concurrency_different_obligations_both_succeed(client: TestClient, token: str):
+    """Obligaciones distintas pueden ejecutarse en paralelo sin interferencia."""
+    db = TestingSessionLocal()
+    try:
+        admin = _admin_user(db)
+        org_id = admin.organization_id
+        emp_a = _employee_with_failures(db, org_id, admin.id, f"da-{uuid.uuid4().hex[:4]}")
+        emp_b = _employee_with_failures(db, org_id, admin.id, f"db-{uuid.uuid4().hex[:4]}")
+    finally:
+        db.close()
+
+    _run_audit(client, token, emp_a)
+    _run_audit(client, token, emp_b)
+    db = TestingSessionLocal()
+    try:
+        finding_a = _open_finding(db, org_id, emp_a).id
+        finding_b = _open_finding(db, org_id, emp_b).id
+    finally:
+        db.close()
+
+    trace_a = _start_improvement_trace(client, token, finding_a)
+    trace_b = _start_improvement_trace(client, token, finding_b)
     results: list[int] = []
-    errors: list[str] = []
+    lock = threading.Lock()
 
-    def _exec(key: str):
+    def _exec(trace_id: str, key: str):
         r = client.post(
             f"/api/empleados-auditor/mejoras/{trace_id}/ejecutar",
             headers=auth_header(token),
             json={
                 "operation": "solicitar_aprobacion",
-                "payload": {"kind": "PUBLISH", "reason": f"conc {key}"},
+                "payload": {"kind": "PUBLISH", "reason": key},
                 "idempotency_key": key,
             },
         )
-        results.append(r.status_code)
-        if r.status_code >= 400:
-            errors.append(str(r.json().get("detail", "")))
+        with lock:
+            results.append(r.status_code)
 
-    t1 = threading.Thread(target=_exec, args=("conc-a",))
-    t2 = threading.Thread(target=_exec, args=("conc-b",))
+    t1 = threading.Thread(target=_exec, args=(trace_a, "obl-a"))
+    t2 = threading.Thread(target=_exec, args=(trace_b, "obl-b"))
     t1.start()
     t2.start()
     t1.join()
     t2.join()
 
-    assert len(results) == 2
-    assert results.count(200) <= 1
-    assert all(code in (200, 400) for code in results)
+    assert results.count(200) == 2
 
     db = TestingSessionLocal()
     try:
-        trace = db.query(EmployeeImprovementTrace).filter(EmployeeImprovementTrace.id == trace_id).first()
-        assert trace is not None
-        assert trace.status in ("COMPLETED", "IN_PROGRESS", "FAILED")
+        _assert_single_effective_approval(db, org_id, emp_a, trace_a)
+        _assert_single_effective_approval(db, org_id, emp_b, trace_b)
+    finally:
+        db.close()
+
+
+def test_concurrency_unauthorized_user_denied(client: TestClient, token: str):
+    """Usuario sin permisos no puede ejecutar mejora concurrente."""
+    db = TestingSessionLocal()
+    try:
+        admin = _admin_user(db)
+        org_id = admin.organization_id
+        viewer = User(
+            organization_id=org_id,
+            username=f"viewer-{uuid.uuid4().hex[:8]}",
+            password_hash=hash_password("Viewer2026*"),
+            role="viewer",
+            full_name="Viewer",
+        )
+        db.add(viewer)
+        emp_id = _employee_with_failures(db, org_id, admin.id, f"unauth-{uuid.uuid4().hex[:4]}")
+        viewer_name = viewer.username
+    finally:
+        db.close()
+
+    _run_audit(client, token, emp_id)
+    db = TestingSessionLocal()
+    try:
+        finding_id = _open_finding(db, org_id, emp_id).id
+    finally:
+        db.close()
+
+    trace_id = _start_improvement_trace(client, token, finding_id)
+    vtoken = client.post(
+        "/api/auth/login",
+        json={"username": viewer_name, "password": "Viewer2026*"},
+    ).json()["access_token"]
+    denied = client.post(
+        f"/api/empleados-auditor/mejoras/{trace_id}/ejecutar",
+        headers=auth_header(vtoken),
+        json={
+            "operation": "solicitar_aprobacion",
+            "payload": {"kind": "PUBLISH", "reason": "no auth"},
+        },
+    )
+    assert denied.status_code in (403, 400)
+
+
+@pytest.mark.parametrize("run_idx", range(5))
+def test_concurrency_repeated_adversarial(client: TestClient, token: str, run_idx: int):
+    """Repetición adversarial post-ciclo auditor/fábrica."""
+    db = TestingSessionLocal()
+    try:
+        admin = _admin_user(db)
+        emp_id = _employee_with_failures(db, admin.organization_id, admin.id, f"rep{run_idx}-{uuid.uuid4().hex[:4]}")
+        org_id = admin.organization_id
+    finally:
+        db.close()
+
+    _run_audit(client, token, emp_id)
+    db = TestingSessionLocal()
+    try:
+        finding_id = _open_finding(db, org_id, emp_id).id
+    finally:
+        db.close()
+
+    trace_id = _start_improvement_trace(client, token, finding_id)
+    _concurrent_solicitar_aprobacion(client, token, trace_id, keys=(f"r{run_idx}-a", f"r{run_idx}-b"))
+
+    db = TestingSessionLocal()
+    try:
+        _assert_single_effective_approval(db, org_id, emp_id, trace_id)
     finally:
         db.close()
 
