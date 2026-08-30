@@ -41,10 +41,14 @@ const TIPO_LABELS: Record<string, string> = {
   soporte_asignacion: "Asignación soporte",
   soporte_sla_riesgo: "SLA en riesgo",
   soporte_sla_vencido: "SLA vencido",
+  auditor_empleado_critico: "Auditor — crítico",
+  auditor_empleado_intervencion: "Auditor — intervención",
+  auditor_empleado_revision: "Auditor — revisión",
 };
 
 const MODULO_LABELS: Record<string, string> = {
   soporte: "Mesa de Ayuda",
+  auditor_empleados: "Auditor de Empleados IA",
 };
 
 const ESTADO_LABELS: Record<string, string> = {
@@ -350,6 +354,30 @@ export function TrabajoPage() {
                 <dd>{selected.asunto}</dd>
                 <dt>Módulo</dt>
                 <dd>{MODULO_LABELS[selected.modulo] ?? selected.modulo}</dd>
+                {selected.metadata?.employee_name && (
+                  <>
+                    <dt>Empleado</dt>
+                    <dd>{String(selected.metadata.employee_name)}</dd>
+                  </>
+                )}
+                {selected.metadata?.health_status && (
+                  <>
+                    <dt>Salud empleado</dt>
+                    <dd>{String(selected.metadata.health_status)}</dd>
+                  </>
+                )}
+                {selected.metadata?.severity && (
+                  <>
+                    <dt>Severidad hallazgo</dt>
+                    <dd>{String(selected.metadata.severity)}</dd>
+                  </>
+                )}
+                {selected.metadata?.recommended_action && (
+                  <>
+                    <dt>Recomendación</dt>
+                    <dd>{String(selected.metadata.recommended_action)}</dd>
+                  </>
+                )}
                 <dt>Estado dominio</dt>
                 <dd>{selected.estado_dominio}</dd>
                 <dt>Estado</dt>
