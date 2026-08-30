@@ -114,6 +114,7 @@ def test_subscriber_failure_isolated_logged_and_later_subscriber_runs():
 
     db = TestingSessionLocal()
     admin = db.query(User).filter(User.username == "admin").one()
+    original_role = admin.role
     handlers = [subscriber_a, failing_notifications, subscriber_c]
     bus._subscribers.extend(handlers)
     try:
@@ -127,7 +128,7 @@ def test_subscriber_failure_isolated_logged_and_later_subscriber_runs():
         failure = db.query(AuditLog).filter(AuditLog.action == "event.subscriber_failed").order_by(AuditLog.created_at.desc()).first()
         assert failure and "notifications unavailable" in (failure.detail or "")
     finally:
-        admin.role = "admin"
+        admin.role = original_role
         db.commit()
         for handler in handlers:
             bus._subscribers.remove(handler)

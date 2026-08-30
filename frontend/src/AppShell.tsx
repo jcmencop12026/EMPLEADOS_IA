@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { fetchUnreadCount } from "./api";
+import { fetchTrabajoResumen, fetchUnreadCount } from "./api";
+import { filterMenuByPermissions, canAccessRoute } from "./auth/permissions";
 import { getCachedUser, logout } from "./auth/session";
 
 type NavItem = { to: string; label: string; end?: boolean };
@@ -10,13 +11,15 @@ const MENU: NavSection[] = [
   {
     id: "inicio",
     label: "Inicio",
-    items: [{ to: "/", label: "Panel de control", end: true }],
+    items: [{ to: "/", label: "Centro de Control", end: true }],
   },
   {
     id: "operaciones",
     label: "Operaciones",
     items: [
+      { to: "/trabajo", label: "Mi trabajo" },
       { to: "/operaciones", label: "Centro de operaciones" },
+      { to: "/operaciones/solicitud", label: "Nueva solicitud" },
       { to: "/ejecuciones", label: "Ejecuciones" },
       { to: "/aprobaciones", label: "Aprobaciones" },
       { to: "/automatizaciones", label: "Automatizaciones" },
@@ -32,20 +35,38 @@ const MENU: NavSection[] = [
     label: "Empleados IA",
     items: [
       { to: "/directorio", label: "Directorio" },
+      { to: "/empleados/auditoria", label: "Auditoría empleados" },
       { to: "/empleados/nuevo", label: "Crear empleado" },
       { to: "/capacidades", label: "Capacidades" },
       { to: "/herramientas", label: "Herramientas" },
       { to: "/conocimiento", label: "Conocimiento" },
-      { to: "/test-lab", label: "Test Lab" },
+      { to: "/test-lab", label: "Laboratorio de pruebas" },
     ],
   },
   {
     id: "analisis",
     label: "Análisis y control",
     items: [
+      { to: "/lineas-base", label: "Líneas base e impacto" },
+      { to: "/comercial", label: "Comercial y valor" },
+      { to: "/tco", label: "TCO y aliados" },
+      { to: "/implementacion", label: "Implementación" },
+      { to: "/comercial/segmentacion", label: "Segmentación y planes" },
       { to: "/oportunidades", label: "Centro de oportunidades" },
+      { to: "/senales", label: "Señales y fuentes" },
+      { to: "/diagnosticos", label: "Diagnósticos" },
+      { to: "/inteligencia-externa", label: "Inteligencia externa" },
+      { to: "/continuidad", label: "Continuidad" },
+      { to: "/soporte", label: "Mesa de Ayuda" },
+      { to: "/integraciones", label: "Integraciones" },
+      { to: "/aprendizaje", label: "Aprendizaje" },
+      { to: "/optimizacion", label: "Optimización" },
       { to: "/costos-valor", label: "Costos y valor" },
+      { to: "/gobernanza-datos", label: "Gobierno de datos" },
+      { to: "/mi-seguridad", label: "Mi seguridad" },
       { to: "/notificaciones", label: "Notificaciones" },
+      { to: "/comunicaciones", label: "Comunicaciones" },
+      { to: "/trabajo", label: "Mi trabajo" },
       { to: "/auditoria", label: "Auditoría" },
     ],
   },
@@ -53,12 +74,14 @@ const MENU: NavSection[] = [
     id: "admin",
     label: "Administración",
     items: [
-      ...(canViewCompanies ? [{ to: "/administracion/empresas", label: "Empresas" }] : []),
+      { to: "/administracion/empresas", label: "Empresas" },
       { to: "/administracion/usuarios", label: "Usuarios" },
       { to: "/administracion/roles", label: "Roles y permisos" },
       { to: "/administracion/organizacion", label: "Organización" },
       { to: "/administracion/configuracion", label: "Configuración" },
+      { to: "/administracion/proveedores-ia", label: "Proveedores IA" },
       { to: "/administracion/seguridad", label: "Seguridad" },
+      { to: "/administracion/identidad", label: "Identidad empresarial" },
     ],
   },
 ];
@@ -78,8 +101,21 @@ export function AppShell() {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
   const [sections, setSections] = useState<Record<string, boolean>>(loadSections);
   const [unread, setUnread] = useState(0);
+  const [trabajoPendientes, setTrabajoPendientes] = useState(0);
   const user = getCachedUser();
-  const canViewCompanies = user?.permissions?.includes("platform.organization.view");
+  const permissionSet = useMemo(
+    () => new Set(user?.permissions ?? []),
+    [user?.permissions],
+  );
+
+  const visibleMenu = useMemo(
+    () =>
+      MENU.map((section) => ({
+        ...section,
+        items: filterMenuByPermissions(section.items, permissionSet),
+      })).filter((section) => section.items.length > 0),
+    [permissionSet],
+  );
 
   useEffect(() => {
     localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0");
@@ -90,7 +126,17 @@ export function AppShell() {
   }, [sections]);
 
   useEffect(() => {
-    const refresh = () => fetchUnreadCount().then(setUnread).catch(() => undefined);
+    const refreshNotif = () => fetchUnreadCount().then(setUnread).catch(() => undefined);
+    const refreshTrabajo = () => {
+      if (!canAccessRoute("/trabajo", permissionSet)) return;
+      fetchTrabajoResumen()
+        .then((r) => setTrabajoPendientes(r.pendientes))
+        .catch(() => undefined);
+    };
+    const refresh = () => {
+      refreshNotif();
+      refreshTrabajo();
+    };
     refresh();
     const timer = window.setInterval(refresh, 60000);
     window.addEventListener("notifications-changed", refresh);
@@ -98,7 +144,7 @@ export function AppShell() {
       window.clearInterval(timer);
       window.removeEventListener("notifications-changed", refresh);
     };
-  }, []);
+  }, [permissionSet]);
 
   function toggleSection(id: string) {
     setSections((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }));
@@ -136,7 +182,12 @@ export function AppShell() {
                   className={section.id === "admin" ? "nav-sub" : undefined}
                 >
                   <span className="nav-icon">{section.id === "admin" ? "○" : "●"}</span>
-                  <span className="nav-label">{item.label}</span>
+                  <span className="nav-label">
+                    {item.label}
+                    {item.to === "/trabajo" && trabajoPendientes > 0 && (
+                      <span className="notification-badge">{trabajoPendientes > 99 ? "99+" : trabajoPendientes}</span>
+                    )}
+                  </span>
                 </NavLink>
               ),
             )}
@@ -150,7 +201,7 @@ export function AppShell() {
     <div className={`layout ${collapsed ? "sidebar-collapsed" : ""}`}>
       <aside className="sidebar" title="Navegación principal">
         <div className="brand-row">
-          <div className="brand">Enterprise AI OS</div>
+          <div className="brand">Sistema empresarial de IA</div>
           <button
             type="button"
             className="btn-icon"
@@ -161,7 +212,7 @@ export function AppShell() {
           </button>
         </div>
         <nav className="nav-hierarchical">
-          {MENU.map(renderSection)}
+          {visibleMenu.map(renderSection)}
         </nav>
         <div className="sidebar-footer">
           {user && (
@@ -178,7 +229,7 @@ export function AppShell() {
       </aside>
       <div className="main">
         <header className="topbar">
-          <span>EMPLEADOS_IA · Orquestador E2E · Workspace Salud</span>
+          <span>EMPLEADOS_IA · Centro de operaciones · Módulo Salud</span>
           <NavLink className="notification-bell" to="/notificaciones" title="Centro de notificaciones">
             🔔{unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}
           </NavLink>

@@ -79,6 +79,7 @@ class AIEmployee(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     certified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_training_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 
@@ -220,11 +221,51 @@ class EmployeeVersion(Base):
     __tablename__ = "employee_versions"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
     employee_id: Mapped[str] = mapped_column(String(36), ForeignKey("ai_employees.id"), nullable=False, index=True)
     version: Mapped[int] = mapped_column(Integer, nullable=False)
+    previous_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     configuration_json: Mapped[str] = mapped_column(Text, nullable=False)
+    changed_fields_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    change_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(30), default="DRAFT")
+    test_summary_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    approved_by_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class EmployeeTraining(Base):
+    __tablename__ = "employee_trainings"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
+    employee_id: Mapped[str] = mapped_column(String(36), ForeignKey("ai_employees.id"), nullable=False, index=True)
+    training_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    source: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    version_before: Mapped[int] = mapped_column(Integer, nullable=False)
+    version_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    config_delta_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    test_before_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("employee_test_runs.id"), nullable=True)
+    test_after_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("employee_test_runs.id"), nullable=True)
+    approved_by_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    created_by_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class EmployeeFactoryApproval(Base):
+    __tablename__ = "employee_factory_approvals"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
+    employee_id: Mapped[str] = mapped_column(String(36), ForeignKey("ai_employees.id"), nullable=False, index=True)
+    approval_request_id: Mapped[str] = mapped_column(String(36), ForeignKey("approval_requests.id"), nullable=False, index=True)
+    approval_kind: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    target_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String(30), default="PENDING", index=True)
+    created_by_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 
@@ -232,13 +273,16 @@ class EmployeeTestCase(Base):
     __tablename__ = "employee_test_cases"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
     employee_id: Mapped[str] = mapped_column(String(36), ForeignKey("ai_employees.id"), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     test_type: Mapped[str] = mapped_column(String(30), default="SMOKE")
+    test_category: Mapped[str] = mapped_column(String(20), default="TECHNICAL")
     input_json: Mapped[str] = mapped_column(Text, nullable=False)
     expected_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     validation_rules_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    criterion: Mapped[str | None] = mapped_column(Text, nullable=True)
     severity: Mapped[str] = mapped_column(String(20), default="medium")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
@@ -385,6 +429,7 @@ class FinOpsRecord(Base):
     employee_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("ai_employees.id"), nullable=True)
     work_plan_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("work_plans.id"), nullable=True)
     task_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("employee_tasks.id"), nullable=True)
+    opportunity_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("opportunities.id"), nullable=True, index=True)
     execution_ref: Mapped[str | None] = mapped_column(String(80), nullable=True)
     model_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     provider: Mapped[str | None] = mapped_column(String(80), nullable=True)
