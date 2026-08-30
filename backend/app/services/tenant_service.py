@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.audit import write_audit
@@ -101,26 +102,39 @@ def create_organization(
         timezone=timezone,
     )
     db.add(org)
-    db.flush()
+    try:
+        db.flush()
 
-    bootstrap_orchestration(db, org.id)
-    bootstrap_salud(db, org.id)
+        bootstrap_orchestration(db, org.id, commit=False)
+        bootstrap_salud(db, org.id, commit=False)
 
-    temp_password = admin_password or _generate_temp_password()
-    admin_user = User(
-        organization_id=org.id,
-        username=admin_username.strip(),
-        password_hash=hash_password(temp_password),
-        email=admin_email.strip() if admin_email else None,
-        full_name=admin_full_name.strip() if admin_full_name else None,
-        role="admin",
-        status="ACTIVE",
-        is_active=True,
-        created_by_id=actor_id,
-        updated_by_id=actor_id,
-    )
-    db.add(admin_user)
-    db.commit()
+        temp_password = admin_password or _generate_temp_password()
+        admin_user = User(
+            organization_id=org.id,
+            username=admin_username.strip(),
+            password_hash=hash_password(temp_password),
+            email=admin_email.strip() if admin_email else None,
+            full_name=admin_full_name.strip() if admin_full_name else None,
+            role="admin",
+            status="ACTIVE",
+            is_active=True,
+            created_by_id=actor_id,
+            updated_by_id=actor_id,
+        )
+        db.add(admin_user)
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        if "slug" in str(exc).lower() or "organizations" in str(exc).lower():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="El identificador de empresa ya existe",
+            ) from exc
+        raise
+    except Exception:
+        db.rollback()
+        raise
+
     db.refresh(org)
     db.refresh(admin_user)
 

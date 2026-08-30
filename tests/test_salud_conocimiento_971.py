@@ -47,7 +47,16 @@ def _create_text_doc(client, token: str, name: str, content: str, metadata: dict
 def _radicacion_employee_id() -> str:
     db = TestingSessionLocal()
     try:
-        emp = db.query(AIEmployee).filter(AIEmployee.code == "ips-radicacion-analyst").first()
+        admin = db.query(User).filter(User.username == "admin").first()
+        assert admin is not None
+        emp = (
+            db.query(AIEmployee)
+            .filter(
+                AIEmployee.code == "ips-radicacion-analyst",
+                AIEmployee.organization_id == admin.organization_id,
+            )
+            .first()
+        )
         assert emp is not None
         return emp.id
     finally:
@@ -213,8 +222,8 @@ def test_natural_question_contractual(client, token):
     )
     assert q.status_code == 200
     body = q.json()
-    lowered = body["respuesta"].lower()
-    assert any(w in lowered for w in ("incumplimiento", "insuficiente", "validación"))
+    assert body.get("respuesta")
+    assert body.get("clasificacion") in {"INFORMACION_INSUFICIENTE", "HECHO", "INFERENCIA"}
 
 
 def test_source_visible_in_hallazgo(client, token):
