@@ -1,20 +1,32 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import type { SupportCaseDetail } from "../api";
+import type { SupportAssignee, SupportCaseDetail } from "../api";
 import {
   addSupportComment,
   assignSupportCase,
   closeSupportCase,
+  fetchSupportAssignees,
   fetchSupportCase,
   resolveSupportCase,
   updateSupportCaseStatus,
 } from "../api";
 import { usePermissions } from "../hooks/usePermissions";
 
+function formatHistorialDetalle(detalle: Record<string, unknown> | null | undefined): string {
+  if (!detalle) return "—";
+  const parts: string[] = [];
+  if (detalle.responsable_id) parts.push(`Responsable: ${String(detalle.responsable_id).slice(0, 8)}…`);
+  if (detalle.grupo) parts.push(`Grupo: ${String(detalle.grupo)}`);
+  if (detalle.estado) parts.push(`Estado: ${String(detalle.estado)}`);
+  if (detalle.nota) parts.push(String(detalle.nota));
+  return parts.length ? parts.join(" · ") : Object.entries(detalle).map(([k, v]) => `${k}: ${String(v)}`).join(" · ");
+}
+
 export function SoporteCasoDetailPage() {
   const { caseId } = useParams<{ caseId: string }>();
   const { has } = usePermissions();
   const [data, setData] = useState<SupportCaseDetail | null>(null);
+  const [agents, setAgents] = useState<SupportAssignee[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [comment, setComment] = useState("");
   const [resolucion, setResolucion] = useState("");
@@ -23,13 +35,23 @@ export function SoporteCasoDetailPage() {
   const load = useCallback(() => {
     if (!caseId) return;
     fetchSupportCase(caseId)
-      .then(setData)
+      .then((d) => {
+        setData(d);
+        setResponsableId(d.responsable_id ?? "");
+      })
       .catch((e) => setError(e instanceof Error ? e.message : "Error al cargar"));
   }, [caseId]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!has("support.assign")) return;
+    fetchSupportAssignees()
+      .then(setAgents)
+      .catch(() => setAgents([]));
+  }, [has]);
 
   if (!caseId) return null;
   if (error) return <p className="error">{error}</p>;
@@ -46,15 +68,30 @@ export function SoporteCasoDetailPage() {
       <section className="panel">
         <h2>Resumen</h2>
         <p>{data.descripcion}</p>
-        {data.correlation_id && <p className="muted">Correlation ID: {data.correlation_id}</p>}
+        {data.correlation_id && <p className="muted">ID de correlación: {data.correlation_id}</p>}
         {data.modulo_relacionado && <p className="muted">Módulo: {data.modulo_relacionado} · {data.entidad_relacionada ?? ""}</p>}
+        {data.responsable_nombre && (
+          <p><strong>Responsable:</strong> {data.responsable_nombre}{data.responsable_email ? ` (${data.responsable_email})` : ""}</p>
+        )}
         {data.resolucion && <p><strong>Resolución:</strong> {data.resolucion}</p>}
       </section>
 
       {has("support.assign") && (
         <section className="panel">
           <h2>Asignación</h2>
-          <input placeholder="ID responsable" value={responsableId} onChange={(e) => setResponsableId(e.target.value)} />
+          <label htmlFor="responsable-select">Responsable</label>
+          <select
+            id="responsable-select"
+            value={responsableId}
+            onChange={(e) => setResponsableId(e.target.value)}
+          >
+            <option value="">— Sin asignar —</option>
+            {agents.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.nombre} ({a.username}) — {a.rol}
+              </option>
+            ))}
+          </select>
           <button type="button" onClick={() => assignSupportCase(caseId, { responsable_id: responsableId || null }).then(load)}>
             Asignar
           </button>
@@ -107,7 +144,7 @@ export function SoporteCasoDetailPage() {
               <tr key={h.id}>
                 <td>{h.created_at ? new Date(h.created_at).toLocaleString() : "—"}</td>
                 <td>{h.accion}</td>
-                <td>{h.detalle ? JSON.stringify(h.detalle) : "—"}</td>
+                <td>{formatHistorialDetalle(h.detalle)}</td>
               </tr>
             ))}
           </tbody>

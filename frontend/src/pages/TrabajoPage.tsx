@@ -22,7 +22,7 @@ const COLUMNAS = [
   { key: "responsable_nombre", label: "Responsable" },
   { key: "created_at", label: "Creación" },
   { key: "fecha_limite", label: "Límite" },
-  { key: "correlation_id", label: "Correlation" },
+  { key: "correlation_id", label: "Correlación" },
 ] as const;
 
 const COLS_KEY = "trabajo_cols_v1";
@@ -402,7 +402,7 @@ export function TrabajoPage() {
                 )}
                 {selected.correlation_id && (
                   <>
-                    <dt>Correlation ID</dt>
+                    <dt>ID de correlación</dt>
                     <dd className="mono">{selected.correlation_id}</dd>
                   </>
                 )}

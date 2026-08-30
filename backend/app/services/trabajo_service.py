@@ -249,7 +249,55 @@ def collect_items(
     auditor_employee_ids: set[str] = set()
     pending_comm_msg_ids: set[str] = set()
     pending_comm_correlation_ids: set[str] = set()
+    auditor_finding_ids_pending_approval: set[str] = set()
+    auditor_approval_context: dict[str, dict[str, Any]] = {}
     now = _utcnow()
+
+    from app.employee_audit_models import EmployeeImprovementTrace
+
+    approval_traces = (
+        db.query(EmployeeImprovementTrace)
+        .filter(
+            EmployeeImprovementTrace.organization_id == org_id,
+            EmployeeImprovementTrace.approval_id.isnot(None),
+        )
+        .all()
+    )
+    for tr in approval_traces:
+        ap = db.query(ApprovalRequest).filter(ApprovalRequest.id == tr.approval_id).first()
+        if ap and ap.status == "PENDING":
+            auditor_finding_ids_pending_approval.add(tr.finding_id)
+            auditor_approval_context[ap.id] = {
+                "finding_id": tr.finding_id,
+                "employee_id": tr.employee_id,
+                "trace_id": tr.id,
+                "correlation_id": tr.correlation_id,
+            }
+
+    opp_ids_human_exec_pending: set[str] = set()
+    if _has(permissions, "optimizacion.view"):
+        recs_scan = (
+            db.query(OptimizacionRecomendacion)
+            .filter(
+                OptimizacionRecomendacion.organization_id == org_id,
+                OptimizacionRecomendacion.estado == "APROBADA",
+                OptimizacionRecomendacion.es_simulacion.is_(False),
+            )
+            .limit(100)
+            .all()
+        )
+        for rec in recs_scan:
+            try:
+                traz_scan = json.loads(rec.trazabilidad_json) if rec.trazabilidad_json else {}
+            except json.JSONDecodeError:
+                traz_scan = {}
+            ejec_scan = traz_scan.get("ejecucion") or {}
+            if ejec_scan.get("execution_status") != "PENDIENTE_EJECUCION_HUMANA":
+                continue
+            for opp_ref in ejec_scan.get("oportunidades") or []:
+                oid = opp_ref.get("opportunity_id") if isinstance(opp_ref, dict) else opp_ref
+                if oid:
+                    opp_ids_human_exec_pending.add(str(oid))
 
     if _has(permissions, "operations.view"):
         approvals = (
@@ -269,12 +317,32 @@ def collect_items(
             ]
             plan = db.query(WorkPlan).filter(WorkPlan.id == ap.work_plan_id).first()
             corr = plan.correlation_id if plan else None
+            auditor_ctx = auditor_approval_context.get(ap.id)
+            asunto = ap.action or "Aprobación pendiente"
+            metadata: dict[str, Any] = {"work_plan_id": ap.work_plan_id, "task_id": ap.task_id}
+            if auditor_ctx:
+                asunto = f"Aprobación fábrica (hallazgo auditor): {asunto}"
+                metadata.update({
+                    "auditor_finding_id": auditor_ctx["finding_id"],
+                    "auditor_employee_id": auditor_ctx["employee_id"],
+                    "auditor_trace_id": auditor_ctx["trace_id"],
+                    "workflow_origen": "Auditor → Fábrica",
+                    "workflow_stage": "SOLICITUD_APROBACION",
+                })
+                acciones.append(
+                    _action(
+                        "ver_hallazgo",
+                        "Ver hallazgo auditor",
+                        "auditor_empleados.view",
+                        href=f"/empleados/auditoria?finding_id={auditor_ctx['finding_id']}",
+                    )
+                )
             items.append(
                 {
                     "id": f"aprobacion:{ap.id}",
                     "source_id": ap.id,
                     "tipo": "aprobacion",
-                    "asunto": ap.action or "Aprobación pendiente",
+                    "asunto": asunto,
                     "modulo": "operaciones",
                     "organization_id": org_id,
                     "organization_name": organization_name,
@@ -296,7 +364,7 @@ def collect_items(
                     "enlace": "/aprobaciones",
                     "trazabilidad_enlace": _trazabilidad_link(corr, "operaciones"),
                     "acciones": acciones,
-                    "metadata": {"work_plan_id": ap.work_plan_id, "task_id": ap.task_id},
+                    "metadata": metadata,
                 }
             )
 
@@ -442,6 +510,8 @@ def collect_items(
             .all()
         )
         for opp in opps:
+            if opp.id in opp_ids_human_exec_pending:
+                continue
             pending_opp_ids.add(opp.id)
             urg = opp.urgencia or "MEDIA"
             prio_label, prio_order = _priority_label_and_order(urg)
@@ -749,6 +819,8 @@ def collect_items(
         )
         emp_map = {e.id: e for e in employees}
         for finding, assessment, health, _policy in human_findings:
+            if finding.id in auditor_finding_ids_pending_approval:
+                continue
             auditor_finding_ids.add(finding.id)
             auditor_employee_ids.add(finding.employee_id)
             if finding.notification_id:

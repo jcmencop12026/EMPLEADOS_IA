@@ -43,6 +43,15 @@ class SupportCaseAssign(BaseModel):
     grupo: str | None = None
 
 
+class SupportAssigneeOut(BaseModel):
+    id: str
+    nombre: str
+    username: str
+    email: str | None = None
+    rol: str
+    etiqueta: str
+
+
 class SupportCaseStatusUpdate(BaseModel):
     estado: str
     nota: str | None = None
@@ -122,6 +131,8 @@ class SupportCommentOut(BaseModel):
 
 
 class SupportCaseDetailOut(SupportCaseOut):
+    responsable_nombre: str | None = None
+    responsable_email: str | None = None
     historial: list[SupportHistoryOut] = Field(default_factory=list)
     comentarios: list[SupportCommentOut] = Field(default_factory=list)
 
