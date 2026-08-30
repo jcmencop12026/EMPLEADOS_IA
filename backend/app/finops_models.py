@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -67,7 +67,29 @@ class FinOpsBudget(Base):
     amount_limit: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
     currency: Mapped[str] = mapped_column(String(8), nullable=False, default="USD")
     policy: Mapped[str] = mapped_column(String(30), nullable=False, default="Solo informar")
+    alert_threshold_pct: Mapped[int] = mapped_column(Integer, nullable=False, default=90)
     name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+
+class FinOpsBudgetAlertState(Base):
+    """Evita alertas duplicadas por presupuesto/período/estado."""
+
+    __tablename__ = "finops_budget_alert_states"
+    __table_args__ = (
+        UniqueConstraint(
+            "budget_id",
+            "state_alerted",
+            "period_start",
+            name="uq_finops_budget_alert_period_state",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    budget_id: Mapped[str] = mapped_column(String(36), ForeignKey("finops_budgets.id"), nullable=False, index=True)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False)
+    state_alerted: Mapped[str] = mapped_column(String(30), nullable=False)
+    period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    alerted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
