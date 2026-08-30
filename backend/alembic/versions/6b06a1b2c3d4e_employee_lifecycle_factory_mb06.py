@@ -1,7 +1,7 @@
 """MB-06 fábrica empleados IA — ciclo de vida, versionado, capacitación.
 
-Revision ID: mb06a1b2c3d4e
-Revises: 1330b1b2c3d4f
+Revision ID: 6b06a1b2c3d4e
+Revises: 1391a1b2c3d4e (Mesa de Ayuda central; reparentado sobre cadena Fase 2)
 Create Date: 2026-08-29
 """
 

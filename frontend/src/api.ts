@@ -3593,9 +3593,24 @@ export type SupportCase = {
 };
 
 export type SupportCaseDetail = SupportCase & {
+  responsable_nombre?: string | null;
+  responsable_email?: string | null;
   historial: Array<{ id: string; accion: string; detalle?: Record<string, unknown> | null; created_at?: string | null }>;
   comentarios: Array<{ id: string; usuario_id: string; cuerpo: string; es_interno: boolean; created_at?: string | null }>;
 };
+
+export type SupportAssignee = {
+  id: string;
+  nombre: string;
+  username: string;
+  email?: string | null;
+  rol: string;
+  etiqueta: string;
+};
+
+export async function fetchSupportAssignees(): Promise<SupportAssignee[]> {
+  return api("/api/soporte/agentes-asignables");
+}
 
 export async function fetchSupportCases(params?: {
   estado?: string;
