@@ -99,6 +99,7 @@ def test_cc_1240_degradacion_segura(cc_db):
         modulos = svc._fetch_module_adapters(
             cc_db,
             admin.organization_id,
+            user=admin,
             permissions={"inteligencia_externa.view", "control_center.view"},
             period_start=None,
             adapter_instances=[adapter],

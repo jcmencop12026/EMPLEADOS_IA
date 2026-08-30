@@ -222,6 +222,7 @@ def test_p1_degradacion_1220(cc_db):
         modulos = svc._fetch_module_adapters(
             cc_db,
             admin.organization_id,
+            user=admin,
             permissions={"diagnosticos.view", "control_center.view"},
             period_start=None,
             adapter_instances=[adapter],
