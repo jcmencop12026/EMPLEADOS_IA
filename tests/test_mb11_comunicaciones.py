@@ -9,12 +9,17 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.communications_models import CommChannel, CommMessage, CommTemplateVersion
+from app.config import settings
 from app.events.bus import EventMessage, publish
 from app.models import AuditLog, Notification, Organization, User
 from app.security import hash_password
 from app.services import communications_service as svc
 from app.services.automation_scheduler import _tick
 from conftest import TestingSessionLocal, auth_header
+
+
+def _bootstrap_admin(db) -> User:
+    return db.query(User).filter(User.username == settings.bootstrap_admin_username).one()
 
 
 def _org_user(db, prefix: str = "mb11") -> tuple[Organization, User]:
@@ -64,11 +69,12 @@ def _template(db, org, user) -> dict:
 
 
 def test_template_create_version_and_variables(client: TestClient, auth_headers):
+    codigo = f"SLA_RIESGO_{uuid.uuid4().hex[:6].upper()}"
     tpl = client.post(
         "/api/comunicaciones/plantillas",
         headers=auth_headers,
         json={
-            "codigo": "SLA_RIESGO",
+            "codigo": codigo,
             "nombre": "SLA en riesgo",
             "tipo_comunicacion": "ALERTA",
             "canal_tipo": "INTERNO_PLATAFORMA",
@@ -88,7 +94,7 @@ def test_template_create_version_and_variables(client: TestClient, auth_headers)
         "/api/comunicaciones/plantillas",
         headers=auth_headers,
         json={
-            "codigo": "MALA",
+            "codigo": f"MALA_{uuid.uuid4().hex[:6].upper()}",
             "nombre": "Mala",
             "tipo_comunicacion": "X",
             "canal_tipo": "INTERNO_PLATAFORMA",
@@ -101,7 +107,7 @@ def test_template_create_version_and_variables(client: TestClient, auth_headers)
 def test_rule_event_condition_idempotency_and_dedup(client: TestClient, auth_headers):
     db = TestingSessionLocal()
     try:
-        admin = db.query(User).filter(User.username == "admin").one()
+        admin = _bootstrap_admin(db)
         org_id = admin.organization_id
         org = db.query(Organization).filter(Organization.id == org_id).one()
         ch = _channel(db, org_id)
@@ -115,7 +121,7 @@ def test_rule_event_condition_idempotency_and_dedup(client: TestClient, auth_hea
         "/api/comunicaciones/reglas",
         headers=auth_headers,
         json={
-            "nombre": "SLA riesgo",
+            "nombre": f"SLA riesgo {uuid.uuid4().hex[:6]}",
             "event_type": "SUPPORT_SLA_RISK",
             "condicion": {"match": {"prioridad": "alta"}},
             "destinatario_tipo": "USUARIO",
@@ -130,7 +136,7 @@ def test_rule_event_condition_idempotency_and_dedup(client: TestClient, auth_hea
 
     db = TestingSessionLocal()
     try:
-        admin = db.query(User).filter(User.username == "admin").one()
+        admin = _bootstrap_admin(db)
         before = db.query(CommMessage).filter(CommMessage.organization_id == admin.organization_id).count()
         publish(
             EventMessage(
@@ -175,10 +181,11 @@ def test_rule_event_condition_idempotency_and_dedup(client: TestClient, auth_hea
 
 
 def test_channels_adapters_manual_schedule_cancel(client: TestClient, auth_headers):
+    suffix = uuid.uuid4().hex[:6]
     ch = client.post(
         "/api/comunicaciones/canales",
         headers=auth_headers,
-        json={"tipo": "CORREO_ELECTRONICO", "nombre": "Correo simulado"},
+        json={"tipo": "CORREO_ELECTRONICO", "nombre": f"Correo simulado {suffix}"},
     )
     assert ch.status_code == 201
     assert ch.json()["secret_configured"] is False
@@ -187,14 +194,14 @@ def test_channels_adapters_manual_schedule_cancel(client: TestClient, auth_heade
     wh = client.post(
         "/api/comunicaciones/canales",
         headers=auth_headers,
-        json={"tipo": "WEBHOOK", "nombre": "Webhook", "config": {"webhook_url": "https://example.com/hook"}},
+        json={"tipo": "WEBHOOK", "nombre": f"Webhook {suffix}", "config": {"webhook_url": "https://example.com/hook"}},
     )
     assert wh.status_code == 201
 
     interno = client.post(
         "/api/comunicaciones/canales",
         headers=auth_headers,
-        json={"tipo": "INTERNO_PLATAFORMA", "nombre": "Bandeja"},
+        json={"tipo": "INTERNO_PLATAFORMA", "nombre": f"Bandeja {suffix}"},
     )
     channel_id = interno.json()["id"]
 
@@ -202,7 +209,7 @@ def test_channels_adapters_manual_schedule_cancel(client: TestClient, auth_heade
         "/api/comunicaciones/plantillas",
         headers=auth_headers,
         json={
-            "codigo": "MANUAL",
+            "codigo": f"MANUAL_{uuid.uuid4().hex[:6].upper()}",
             "nombre": "Manual",
             "tipo_comunicacion": "MANUAL",
             "canal_tipo": "INTERNO_PLATAFORMA",
@@ -212,7 +219,7 @@ def test_channels_adapters_manual_schedule_cancel(client: TestClient, auth_heade
     ver_id = tpl.json()["current_version_id"]
     db = TestingSessionLocal()
     try:
-        admin = db.query(User).filter(User.username == "admin").one()
+        admin = _bootstrap_admin(db)
         dest = admin.id
     finally:
         db.close()
@@ -252,11 +259,11 @@ def test_channels_adapters_manual_schedule_cancel(client: TestClient, auth_heade
 def test_retries_max_and_scheduler_810c(client: TestClient, auth_headers):
     db = TestingSessionLocal()
     try:
-        admin = db.query(User).filter(User.username == "admin").one()
+        admin = _bootstrap_admin(db)
         ch = CommChannel(
             organization_id=admin.organization_id,
             tipo="WEBHOOK",
-            nombre="Roto",
+            nombre=f"Roto-{uuid.uuid4().hex[:6]}",
             activo=True,
             config_json='{"webhook_url":""}',
         )
@@ -356,7 +363,7 @@ def test_preferences_language_contracts_rbac_multiorg(client: TestClient, auth_h
 def test_820_not_duplicated_by_communication_event(client: TestClient, auth_headers):
     db = TestingSessionLocal()
     try:
-        admin = db.query(User).filter(User.username == "admin").one()
+        admin = _bootstrap_admin(db)
         before = db.query(Notification).filter(Notification.organization_id == admin.organization_id).count()
         ch = _channel(db, admin.organization_id)
         tpl = _template(db, db.query(Organization).filter(Organization.id == admin.organization_id).one(), admin)
