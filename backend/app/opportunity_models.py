@@ -26,23 +26,56 @@ class ProactiveSignal(Base):
     __tablename__ = "proactive_signals"
     __table_args__ = (
         Index("ix_signal_dedupe", "organization_id", "dedupe_key"),
+        Index("ix_signal_source_ref", "organization_id", "source_id"),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
+    source_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("signal_sources.id"), nullable=True)
     tipo: Mapped[str] = mapped_column(String(60), nullable=False, index=True)
     dominio: Mapped[str] = mapped_column(String(60), nullable=False, index=True)
     origen: Mapped[str] = mapped_column(String(60), nullable=False)
+    modo_ingesta: Mapped[str] = mapped_column(String(20), nullable=False, default="REAL", index=True)
     source_reference: Mapped[str | None] = mapped_column(String(200), nullable=True)
     evento: Mapped[str] = mapped_column(String(120), nullable=False)
+    proceso: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    metrica: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    valor_metrica: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    unidad: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    dimension: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    evidencia_resumen: Mapped[str | None] = mapped_column(String(500), nullable=True)
     payload_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     severidad: Mapped[str] = mapped_column(String(20), nullable=False, default="MEDIA")
     confianza: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, default=0.5)
     dedupe_key: Mapped[str] = mapped_column(String(200), nullable=False)
+    estado_procesamiento: Mapped[str] = mapped_column(String(30), nullable=False, default="RECIBIDA", index=True)
+    rejection_reason: Mapped[str | None] = mapped_column(String(300), nullable=True)
     procesada: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     correlation_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    signal_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class SignalSource(Base):
+    """Fuente parametrizable de señales reales — sin conector específico."""
+
+    __tablename__ = "signal_sources"
+    __table_args__ = (
+        Index("ix_signal_sources_org_code", "organization_id", "code", unique=True),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
+    code: Mapped[str] = mapped_column(String(80), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    tipo_fuente: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    descripcion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    configuracion_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 
 
 class Opportunity(Base):
