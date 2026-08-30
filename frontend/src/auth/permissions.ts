@@ -9,6 +9,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/salud/diagnostico": ["salud.consultar_diagnostico"],
   "/directorio": ["employee.view"],
   "/empleados/nuevo": ["employee.create"],
+  "/empleados/auditoria": ["auditor_empleados.view"],
   "/capacidades": ["capability.view"],
   "/herramientas": ["tool.view"],
   "/conocimiento": ["knowledge.view"],

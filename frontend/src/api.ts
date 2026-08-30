@@ -535,6 +535,74 @@ export async function fetchTrabajoResumen(): Promise<TrabajoResumen> {
   return api<TrabajoResumen>("/api/trabajo/resumen");
 }
 
+export type EmployeeAuditHealthRow = {
+  employee_id: string;
+  employee_name: string;
+  organization_id: string;
+  health_status: string;
+  score?: number | null;
+  lifecycle_status?: string | null;
+  last_audit_at?: string | null;
+  open_findings: number;
+  critical_findings: number;
+};
+
+export type EmployeeAuditFinding = {
+  id: string;
+  run_id: string;
+  assessment_id: string;
+  employee_id: string;
+  rule_code: string;
+  metric_name: string;
+  observed_value?: string | null;
+  threshold_value?: string | null;
+  severity: string;
+  semantic_kind: string;
+  title: string;
+  detail?: string | null;
+  evidence?: Record<string, unknown>;
+  recommended_action?: string | null;
+  status: string;
+  correlation_id: string;
+  created_at: string;
+};
+
+export type EmployeeAuditRun = {
+  id: string;
+  organization_id: string;
+  trigger_type: string;
+  status: string;
+  correlation_id: string;
+  employee_count: number;
+  findings_count: number;
+  cost_usd: number;
+  started_at: string;
+  finished_at?: string | null;
+};
+
+export async function fetchEmployeeAuditHealth(): Promise<EmployeeAuditHealthRow[]> {
+  return api<EmployeeAuditHealthRow[]>("/api/empleados-auditor/salud");
+}
+
+export async function fetchEmployeeAuditFindings(
+  params: Record<string, string> = {},
+): Promise<EmployeeAuditFinding[]> {
+  const qs = new URLSearchParams(params).toString();
+  const suffix = qs ? `?${qs}` : "";
+  return api<EmployeeAuditFinding[]>(`/api/empleados-auditor/hallazgos${suffix}`);
+}
+
+export async function executeEmployeeAudit(body: {
+  employee_id?: string;
+  employee_ids?: string[];
+  scope?: string;
+}): Promise<EmployeeAuditRun> {
+  return api<EmployeeAuditRun>("/api/empleados-auditor/ejecutar", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export type EmployeeTemplate = { code: string; name: string; description?: string; specialty: string };
 export type CapabilityItem = { id: string; code: string; name: string; risk_level: string };
 export type ToolItem = { id: string; code: string; name: string; executor_type: string; risk_level: string };

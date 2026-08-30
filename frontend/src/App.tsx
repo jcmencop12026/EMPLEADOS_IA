@@ -52,6 +52,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
+import { EmployeeAuditorPage } from "./pages/EmployeeAuditorPage";
 import { EmployeeWizardPage } from "./pages/EmployeeWizardPage";
 import { ExecutionDetailPage } from "./pages/ExecutionDetailPage";
 import { ExecutionsPage } from "./pages/ExecutionsPage";
@@ -116,6 +117,7 @@ export default function App() {
           <Route path="conocimiento" element={<KnowledgePage />} />
           <Route path="conocimiento/:documentId" element={<KnowledgeDetailPage />} />
           <Route path="empleados/nuevo" element={<EmployeeWizardPage />} />
+          <Route path="empleados/auditoria" element={<EmployeeAuditorPage />} />
           <Route path="empleados/:employeeId/editar" element={<EmployeeWizardPage />} />
           <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />
           <Route path="capacidades" element={<CapabilitiesPage />} />
