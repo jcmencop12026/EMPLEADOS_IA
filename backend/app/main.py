@@ -17,6 +17,7 @@ from app import baseline_models  # noqa: F401 — línea base e impacto 1200
 from app import valuation_models  # noqa: F401 — valoración económica 1210
 from app import diagnostic_models  # noqa: F401 — diagnóstico transversal 1220
 from app import evaluacion_models  # noqa: F401 — expediente evaluación 1405
+from app import partner_models  # noqa: F401 — partners MB-03 1410
 from app import external_models  # noqa: F401 — inteligencia externa 1240
 from app import continuidad_models  # noqa: F401 — continuidad operativa 1360
 from app import governance_models  # noqa: F401 — gobierno de datos 1350
@@ -60,6 +61,7 @@ from app.routers import (
     valoracion,
     diagnosticos,
     evaluaciones,
+    partners,
     inteligencia_externa,
     continuidad,
     governance,
@@ -181,6 +183,7 @@ app.include_router(linea_base.router)
 app.include_router(valoracion.router)
 app.include_router(diagnosticos.router)
 app.include_router(evaluaciones.router)
+app.include_router(partners.router)
 app.include_router(inteligencia_externa.router)
 app.include_router(continuidad.router)
 app.include_router(control_center.router)

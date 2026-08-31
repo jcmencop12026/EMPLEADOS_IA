@@ -1,0 +1,2 @@
+SHA_INICIAL=7e9abba11f4c4f216142c6c70d662229ffc585bb
+BASE=BP1 certificado

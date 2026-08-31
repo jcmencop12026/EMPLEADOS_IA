@@ -36,6 +36,8 @@ import { SenalDetailPage } from "./pages/SenalDetailPage";
 import { DiagnosticosPage } from "./pages/DiagnosticosPage";
 import { DiagnosticoDetailPage } from "./pages/DiagnosticoDetailPage";
 import { EvaluacionesPage } from "./pages/EvaluacionesPage";
+import { PartnersPage } from "./pages/PartnersPage";
+import { PartnerDetailPage } from "./pages/PartnerDetailPage";
 import { EvaluacionConsolePage } from "./pages/EvaluacionConsolePage";
 import { InteligenciaExternaPage } from "./pages/InteligenciaExternaPage";
 import { InteligenciaExternaDetailPage } from "./pages/InteligenciaExternaDetailPage";
@@ -148,6 +150,10 @@ export default function App() {
           <Route element={<RequirePermission anyOf={["evaluacion.view"]} />}>
             <Route path="evaluaciones" element={<EvaluacionesPage />} />
             <Route path="evaluaciones/:evaluacionId" element={<EvaluacionConsolePage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["partners.view"]} />}>
+            <Route path="partners" element={<PartnersPage />} />
+            <Route path="partners/:partnerId" element={<PartnerDetailPage />} />
           </Route>
           <Route path="inteligencia-externa" element={<InteligenciaExternaPage />} />
           <Route path="inteligencia-externa/senales/:signalId" element={<InteligenciaExternaDetailPage />} />

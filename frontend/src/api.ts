@@ -3970,3 +3970,124 @@ export async function preguntarEiaax(
     body: JSON.stringify({ mensaje, accion }),
   });
 }
+
+// —— MB-03 Partners / Aliados ——
+
+export type PartnerSummary = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  razon_social?: string | null;
+  estado: string;
+  tipo_relacion: string;
+  contacto_nombre?: string | null;
+  contacto_email?: string | null;
+  contacto_telefono?: string | null;
+  alcance_descripcion?: string | null;
+  valid_from?: string | null;
+  valid_until?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type PartnerGrant = {
+  id: string;
+  partner_id: string;
+  organization_id: string;
+  organization_name?: string | null;
+  estado: string;
+  alcance: string[];
+  valid_from?: string | null;
+  valid_until?: string | null;
+  notas?: string | null;
+  created_at?: string | null;
+};
+
+export type PartnerMembership = {
+  id: string;
+  partner_id: string;
+  user_id: string;
+  username?: string | null;
+  full_name?: string | null;
+  rol: string;
+  is_active: boolean;
+  assigned_at?: string | null;
+};
+
+export type PartnerDetail = PartnerSummary & {
+  organizaciones: PartnerGrant[];
+  usuarios: PartnerMembership[];
+};
+
+export type PartnerListResponse = { items: PartnerSummary[]; total: number };
+
+export async function fetchPartners(params = ""): Promise<PartnerListResponse> {
+  return api(`/api/partners${params ? `?${params}` : ""}`);
+}
+
+export async function fetchPartner(id: string): Promise<PartnerDetail> {
+  return api(`/api/partners/${id}`);
+}
+
+export async function createPartner(data: {
+  nombre: string;
+  codigo?: string;
+  razon_social?: string;
+  tipo_relacion?: string;
+  contacto_nombre?: string;
+  contacto_email?: string;
+  contacto_telefono?: string;
+  alcance_descripcion?: string;
+}): Promise<PartnerSummary> {
+  return api("/api/partners", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function setPartnerEstado(id: string, estado: string): Promise<PartnerSummary> {
+  return api(`/api/partners/${id}/estado`, { method: "POST", body: JSON.stringify({ estado }) });
+}
+
+export async function grantPartnerOrganization(
+  partnerId: string,
+  data: { organization_id: string; alcance?: string[]; notas?: string },
+): Promise<PartnerGrant> {
+  return api(`/api/partners/${partnerId}/organizaciones`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function revokePartnerGrant(partnerId: string, grantId: string): Promise<PartnerGrant> {
+  return api(`/api/partners/${partnerId}/organizaciones/${grantId}/revocar`, { method: "POST" });
+}
+
+export async function updatePartnerGrantAlcance(
+  partnerId: string,
+  grantId: string,
+  alcance: string[],
+): Promise<PartnerGrant> {
+  return api(`/api/partners/${partnerId}/organizaciones/${grantId}/alcance`, {
+    method: "PATCH",
+    body: JSON.stringify({ alcance }),
+  });
+}
+
+export async function assignPartnerUser(
+  partnerId: string,
+  data: { user_id: string; rol?: string },
+): Promise<PartnerMembership> {
+  return api(`/api/partners/${partnerId}/usuarios`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function revokePartnerUser(partnerId: string, membershipId: string): Promise<PartnerMembership> {
+  return api(`/api/partners/${partnerId}/usuarios/${membershipId}/revocar`, { method: "POST" });
+}
+
+export async function fetchPartnerAuditoria(partnerId: string): Promise<{ items: Array<Record<string, unknown>>; total: number }> {
+  return api(`/api/partners/${partnerId}/auditoria`);
+}
+
+export async function fetchPartnerCatalogo(): Promise<{
+  estados: string[];
+  roles_usuario: string[];
+  alcances: string[];
+  tipos_relacion: string[];
+}> {
+  return api("/api/partners/meta/catalogo");
+}

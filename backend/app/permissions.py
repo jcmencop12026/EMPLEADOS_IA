@@ -195,6 +195,14 @@ EVALUACION_PERMISSIONS = {
     "evaluacion.vista_entidad",
 }
 
+PARTNER_PERMISSIONS = {
+    "partners.view",
+    "partners.manage",
+    "partners.org.grant",
+    "partners.user.assign",
+    "partners.audit",
+}
+
 INTELIGENCIA_EXTERNA_PERMISSIONS = {
     "inteligencia_externa.view",
     "inteligencia_externa.manage",
@@ -433,6 +441,11 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "evaluacion.evaluate": ("Evaluación EIAAX", "Ejecutar evaluaciones y registrar hallazgos"),
     "evaluacion.visibility": ("Evaluación EIAAX", "Gestionar visibilidad para entidad"),
     "evaluacion.vista_entidad": ("Evaluación EIAAX", "Ver vista entidad del expediente"),
+    "partners.view": ("Partners", "Consultar partners y aliados comerciales"),
+    "partners.manage": ("Partners", "Crear y administrar partners"),
+    "partners.org.grant": ("Partners", "Asociar organizaciones a partners"),
+    "partners.user.assign": ("Partners", "Asignar usuarios a partners"),
+    "partners.audit": ("Partners", "Consultar auditoría de partners"),
     "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
     "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
     "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
@@ -533,6 +546,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | VALORACION_PERMISSIONS
         | DIAGNOSTICOS_PERMISSIONS
         | EVALUACION_PERMISSIONS
+        | PARTNER_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
@@ -571,6 +585,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | VALORACION_PERMISSIONS
         | DIAGNOSTICOS_PERMISSIONS
         | EVALUACION_PERMISSIONS
+        | PARTNER_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
