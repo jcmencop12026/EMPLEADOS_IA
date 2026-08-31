@@ -24,3 +24,5 @@ data/empleados_ia.pids
 data/backend.log
 data/frontend.log
 data/knowledge/
+data/backups/
+data/backups/**

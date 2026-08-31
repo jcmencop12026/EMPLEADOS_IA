@@ -1,7 +1,30 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { OpportunityItem, OpportunitySummary } from "../api";
-import { fetchOpportunities, fetchOpportunitySummary } from "../api";
+import { fetchOpportunities, fetchOpportunitySummary, prioritizeOpportunities } from "../api";
+import { usePermissions } from "../hooks/usePermissions";
+
+const ESTADOS_FILTRO = [
+  "", "DETECTADA", "EN_EVALUACION", "PRIORIZADA", "PROPUESTA", "PENDIENTE_APROBACION",
+  "APROBADA", "EN_EJECUCION", "EN_SEGUIMIENTO", "MATERIALIZADA", "CERRADA", "DESCARTADA",
+  "DATOS_INSUFICIENTES", "FALLIDA",
+] as const;
+
+const ESTADO_LABELS: Record<string, string> = {
+  DETECTADA: "Detectada",
+  EN_EVALUACION: "En evaluación",
+  PRIORIZADA: "Priorizada",
+  PROPUESTA: "Propuesta",
+  PENDIENTE_APROBACION: "Pend. aprobación",
+  APROBADA: "Aprobada",
+  EN_EJECUCION: "En ejecución",
+  EN_SEGUIMIENTO: "En seguimiento",
+  MATERIALIZADA: "Materializada",
+  CERRADA: "Cerrada",
+  DESCARTADA: "Descartada",
+  DATOS_INSUFICIENTES: "Datos insuficientes",
+  FALLIDA: "Fallida",
+};
 
 const COLUMNAS = [
   { key: "codigo", label: "Código" },
@@ -34,9 +57,12 @@ function formatMoney(v: number | null): string {
 }
 
 export function OportunidadesPage() {
+  const { has } = usePermissions();
   const [items, setItems] = useState<OpportunityItem[]>([]);
   const [summary, setSummary] = useState<OpportunitySummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState("");
   const [filtroDominio, setFiltroDominio] = useState("");
   const [busqueda, setBusqueda] = useState("");
@@ -51,6 +77,7 @@ export function OportunidadesPage() {
     if (filtroEstado) params.set("estado", filtroEstado);
     if (filtroDominio) params.set("dominio", filtroDominio);
     if (busqueda) params.set("q", busqueda);
+    setLoading(true);
     Promise.all([
       fetchOpportunities(params.toString()),
       fetchOpportunitySummary(),
@@ -58,9 +85,20 @@ export function OportunidadesPage() {
       .then(([list, sum]) => {
         setItems(list.items);
         setSummary(sum);
+        setError(null);
       })
-      .catch((e) => setError(e instanceof Error ? e.message : "Error al cargar oportunidades"));
+      .catch((e) => setError(e instanceof Error ? e.message : "Error al cargar oportunidades"))
+      .finally(() => setLoading(false));
   }, [filtroEstado, filtroDominio, busqueda]);
+
+  async function onPriorizar() {
+    try {
+      await prioritizeOpportunities();
+      setMsg("Priorización global actualizada");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al priorizar");
+    }
+  }
 
   function toggleCol(key: string) {
     setVisibleCols((prev) => {
@@ -96,6 +134,8 @@ export function OportunidadesPage() {
       </header>
 
       {error && <p className="error">{error}</p>}
+      {msg && <p className="success">{msg}</p>}
+      {loading && <p className="muted">Cargando oportunidades…</p>}
 
       {summary && (
         <div className="panel metrics-grid">
@@ -141,14 +181,9 @@ export function OportunidadesPage() {
           />
           <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} title="Filtrar por estado">
             <option value="">Todos los estados</option>
-            <option value="DETECTADA">Detectada</option>
-            <option value="EN_EVALUACION">En evaluación</option>
-            <option value="PRIORIZADA">Priorizada</option>
-            <option value="PENDIENTE_APROBACION">Pendiente aprobación</option>
-            <option value="EN_EJECUCION">En ejecución</option>
-            <option value="EN_SEGUIMIENTO">En seguimiento</option>
-            <option value="MATERIALIZADA">Materializada</option>
-            <option value="DATOS_INSUFICIENTES">Datos insuficientes</option>
+            {ESTADOS_FILTRO.filter(Boolean).map((e) => (
+              <option key={e} value={e}>{ESTADO_LABELS[e] ?? e}</option>
+            ))}
           </select>
           <select value={filtroDominio} onChange={(e) => setFiltroDominio(e.target.value)} title="Filtrar por dominio">
             <option value="">Todos los dominios</option>
@@ -158,6 +193,9 @@ export function OportunidadesPage() {
             <option value="cumplimiento">Cumplimiento</option>
             <option value="salud">Salud</option>
           </select>
+          {has("oportunidades.evaluate") && (
+            <button type="button" onClick={onPriorizar} title="Recalcular priorización global">Priorizar</button>
+          )}
           <details>
             <summary title="Mostrar u ocultar columnas">Columnas</summary>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem" }}>
