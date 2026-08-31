@@ -2,21 +2,30 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   approveNegocioLevel,
+  avanzarCambioAlcance,
+  confirmarCierreContrato,
   convertirAImplementacion,
+  crearCambioAlcance,
   decidirPrecioNegocio,
+  fetchCambiosAlcance,
   fetchCentroNegociosDetalle,
+  fetchContinuidadVistaPorPropuesta,
   generarPropuestaPdf,
+  iniciarCierreContrato,
   openCentroNegociosDocumentPdf,
   registrarNegociacion,
   sincronizarNegocioOportunidad,
   transicionPropuestaNegocio,
+  type CambioAlcance,
   type CentroNegociosDetalle,
+  type ContinuidadVista,
 } from "../api";
+import { ContinuidadVistaPanel } from "../components/continuidad/ContinuidadVistaPanel";
 import { usePermissions } from "../hooks/usePermissions";
 import { formatMoney } from "../lib/comercialLabels";
 import { labelApprovalLevel, labelProposalStatus, PRICE_PHASE_LABELS } from "../lib/negocioLabels";
 
-type Tab = "resumen" | "economia" | "versiones" | "aprobaciones" | "negociacion" | "trazabilidad";
+type Tab = "resumen" | "economia" | "versiones" | "aprobaciones" | "negociacion" | "trazabilidad" | "continuidad";
 
 export function CentroNegociosDetailPage() {
   const { proposalId } = useParams<{ proposalId: string }>();
@@ -26,14 +35,33 @@ export function CentroNegociosDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [vista, setVista] = useState<ContinuidadVista | null>(null);
+  const [cambios, setCambios] = useState<CambioAlcance[]>([]);
+  const [proyectoId, setProyectoId] = useState<string | null>(null);
+  const [contractId, setContractId] = useState<string | null>(null);
+  const [cierreId, setCierreId] = useState<string | null>(null);
 
   function reload() {
     if (!proposalId) return;
     setLoading(true);
     fetchCentroNegociosDetalle(proposalId)
-      .then(setDetail)
+      .then((d) => {
+        setDetail(d);
+        const neg = d.negocio ?? {};
+        setProyectoId((neg.implementacion_proyecto_id as string) ?? null);
+      })
       .catch((e) => setError(e instanceof Error ? e.message : "Error"))
       .finally(() => setLoading(false));
+    if (has("continuidad_comercial.view")) {
+      fetchContinuidadVistaPorPropuesta(proposalId)
+        .then((v) => {
+          setVista(v);
+          setContractId(v.referencias?.contract_id ?? null);
+          setProyectoId(v.referencias?.proyecto_id ?? null);
+        })
+        .catch(() => setVista(null));
+      fetchCambiosAlcance(proposalId).then(setCambios).catch(() => setCambios([]));
+    }
   }
 
   useEffect(() => {
@@ -126,7 +154,8 @@ export function CentroNegociosDetailPage() {
               onClick={async () => {
                 setBusy(true);
                 try {
-                  await convertirAImplementacion(proposalId);
+                  const res = await convertirAImplementacion(proposalId) as { proyecto_id?: string };
+                  if (res.proyecto_id) setProyectoId(res.proyecto_id);
                   reload();
                 } finally {
                   setBusy(false);
@@ -136,6 +165,9 @@ export function CentroNegociosDetailPage() {
               Contratar e implementar
             </button>
           )}
+          {proyectoId && (
+            <Link to={`/implementacion/${proyectoId}`} className="btn primary">Ver implementación →</Link>
+          )}
           <Link to={`/comercial/propuestas/${proposalId}`} className="btn">Vista comercial →</Link>
         </div>
       </header>
@@ -143,9 +175,9 @@ export function CentroNegociosDetailPage() {
       {error && <p className="error-text">{error}</p>}
 
       <nav className="tab-nav compact-tabs">
-        {(["resumen", "economia", "versiones", "aprobaciones", "negociacion", "trazabilidad"] as Tab[]).map((t) => (
+        {(["resumen", "economia", "versiones", "aprobaciones", "negociacion", "trazabilidad", "continuidad"] as Tab[]).map((t) => (
           <button key={t} type="button" className={tab === t ? "active" : ""} onClick={() => setTab(t)}>
-            {t === "resumen" ? "Resumen" : t === "economia" ? "Economía" : t === "versiones" ? "Versiones" : t === "aprobaciones" ? "Aprobaciones" : t === "negociacion" ? "Negociación" : "Trazabilidad"}
+            {t === "resumen" ? "Resumen" : t === "economia" ? "Economía" : t === "versiones" ? "Versiones" : t === "aprobaciones" ? "Aprobaciones" : t === "negociacion" ? "Negociación" : t === "trazabilidad" ? "Trazabilidad" : "Continuidad"}
           </button>
         ))}
       </nav>
@@ -285,6 +317,40 @@ export function CentroNegociosDetailPage() {
           </ul>
           {detail.nota_potencial && <p className="small-note">{detail.nota_potencial}</p>}
         </section>
+      )}
+
+      {tab === "continuidad" && has("continuidad_comercial.view") && (
+        <ContinuidadVistaPanel
+          vista={vista}
+          cambios={cambios}
+          cierreId={cierreId}
+          canManage={has("continuidad_comercial.manage")}
+          canClose={has("continuidad_comercial.close")}
+          onSolicitarCambio={async (solicitud) => {
+            if (!proposalId) return;
+            await crearCambioAlcance({
+              proposal_id: proposalId,
+              proyecto_id: proyectoId,
+              contract_id: contractId,
+              solicitud,
+            });
+            reload();
+          }}
+          onAvanzarCambio={async (cambioId, accion, extra) => {
+            await avanzarCambioAlcance(cambioId, { accion, ...extra });
+            reload();
+          }}
+          onIniciarCierre={async (motivo) => {
+            if (!contractId) return;
+            const cierre = await iniciarCierreContrato(contractId, { motivo, pendientes: [] });
+            setCierreId(cierre.id);
+            reload();
+          }}
+          onConfirmarCierre={async (id) => {
+            await confirmarCierreContrato(id);
+            reload();
+          }}
+        />
       )}
     </div>
   );

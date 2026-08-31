@@ -12,6 +12,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.commercial_models import CommercialProposal
+from app.continuidad_comercial_enums import AceptacionEntregable, EstadoEntregable
 from app.implementacion_enums import (
     CausaDesviacion,
     EstadoImplementacion,
@@ -36,6 +37,7 @@ from app.implementacion_models import (
     ImplementacionAuditoria,
     ImplementacionBloqueador,
     ImplementacionCapacitacion,
+    ImplementacionEntregable,
     ImplementacionFase,
     ImplementacionHito,
     ImplementacionPiloto,
@@ -156,11 +158,16 @@ def create_proyecto(db: Session, org_id: str, data: dict[str, Any], user_id: str
 def proyecto_to_dict(row: ImplementacionProyecto) -> dict[str, Any]:
     return {
         "id": row.id, "codigo": row.codigo, "titulo": row.titulo, "estado": row.estado,
-        "proposal_id": row.proposal_id, "plan_id": row.plan_id, "responsable_id": row.responsable_id,
+        "proposal_id": row.proposal_id, "opportunity_id": row.opportunity_id,
+        "evaluacion_id": row.evaluacion_id, "contract_id": row.contract_id,
+        "version_contratada": row.version_contratada, "documento_contrato_id": row.documento_contrato_id,
+        "finops_budget_id": row.finops_budget_id,
+        "plan_id": row.plan_id, "responsable_id": row.responsable_id,
         "fecha_inicio": row.fecha_inicio.isoformat() if row.fecha_inicio else None,
         "fecha_objetivo": row.fecha_objetivo.isoformat() if row.fecha_objetivo else None,
         "alcance": row.alcance, "objetivos": row.objetivos, "avance_pct": float(row.avance_pct),
         "valor_compromiso": _parse(row.valor_compromiso_json),
+        "compromiso_contractual": _parse(row.compromiso_contractual_json),
         "go_live_aprobado": row.go_live_aprobado,
         "go_live_fecha": row.go_live_fecha.isoformat() if row.go_live_fecha else None,
     }
@@ -234,6 +241,19 @@ def completar_hito(db: Session, org_id: str, hito_id: str, data: dict[str, Any],
     if not row:
         raise HTTPException(status_code=404, detail="Hito no encontrado")
     _ensure_scope(db, org_id, row.organization_id)
+    deps = _parse(row.dependencias_json) or []
+    if deps:
+        pending = (
+            db.query(ImplementacionHito)
+            .filter(
+                ImplementacionHito.proyecto_id == row.proyecto_id,
+                ImplementacionHito.codigo.in_(deps),
+                ImplementacionHito.estado != "COMPLETADO",
+            )
+            .count()
+        )
+        if pending:
+            raise ImplementacionValidationError(f"Dependencias pendientes: {deps}")
     row.estado = "COMPLETADO"
     row.evidencia = data.get("evidencia")
     row.fecha_real = data.get("fecha_real") or _utcnow()
@@ -272,7 +292,23 @@ def create_tarea(db: Session, org_id: str, proyecto_id: str, data: dict[str, Any
 
 
 def tarea_to_dict(r: ImplementacionTarea) -> dict[str, Any]:
-    return {"id": r.id, "titulo": r.titulo, "estado": r.estado, "prioridad": r.prioridad, "responsabilidad": r.responsabilidad}
+    return {
+        "id": r.id, "titulo": r.titulo, "estado": r.estado, "prioridad": r.prioridad,
+        "responsabilidad": r.responsabilidad, "evidencia": r.evidencia,
+    }
+
+
+def completar_tarea(db: Session, org_id: str, tarea_id: str, data: dict[str, Any], user_id: str | None) -> ImplementacionTarea:
+    row = db.query(ImplementacionTarea).filter(ImplementacionTarea.id == tarea_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    _ensure_scope(db, org_id, row.organization_id)
+    row.estado = "COMPLETADA"
+    row.evidencia = data.get("evidencia") or row.evidencia
+    row.resultado = data.get("resultado") or row.resultado
+    db.flush()
+    _audit(db, org_id, "COMPLETAR_TAREA", "tarea", row.id, user_id, {"titulo": row.titulo})
+    return row
 
 
 # --- Requisitos ---
@@ -294,6 +330,18 @@ def create_requisito(db: Session, org_id: str, proyecto_id: str, data: dict[str,
 
 def requisito_to_dict(r: ImplementacionRequisito) -> dict[str, Any]:
     return {"id": r.id, "tipo": r.tipo, "descripcion": r.descripcion, "estado": r.estado, "bloqueante": r.bloqueante}
+
+
+def completar_requisito(db: Session, org_id: str, requisito_id: str, user_id: str | None) -> ImplementacionRequisito:
+    row = db.query(ImplementacionRequisito).filter(ImplementacionRequisito.id == requisito_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Requisito no encontrado")
+    _ensure_scope(db, org_id, row.organization_id)
+    row.estado = "COMPLETADO"
+    row.fecha_recibida = _utcnow()
+    db.flush()
+    _audit(db, org_id, "COMPLETAR_REQUISITO", "requisito", row.id, user_id, {})
+    return row
 
 
 # --- Readiness ---
@@ -350,6 +398,20 @@ def create_bloqueador(db: Session, org_id: str, proyecto_id: str, data: dict[str
 
 def bloqueador_to_dict(r: ImplementacionBloqueador) -> dict[str, Any]:
     return {"id": r.id, "tipo": r.tipo, "descripcion": r.descripcion, "estado": r.estado, "critico": r.critico}
+
+
+def resolver_bloqueador(db: Session, org_id: str, bloqueador_id: str, user_id: str | None, observaciones: str | None = None) -> ImplementacionBloqueador:
+    row = db.query(ImplementacionBloqueador).filter(ImplementacionBloqueador.id == bloqueador_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Bloqueador no encontrado")
+    _ensure_scope(db, org_id, row.organization_id)
+    row.estado = "RESUELTO"
+    row.resuelto_at = _utcnow()
+    if observaciones:
+        row.accion = observaciones
+    db.flush()
+    _audit(db, org_id, "RESOLVER_BLOQUEADOR", "bloqueador", row.id, user_id, {})
+    return row
 
 
 # --- Riesgos ---
@@ -664,31 +726,134 @@ def calcular_salud(db: Session, org_id: str, proyecto_id: str, user_id: str | No
     return {"resultado": resultado, "puntuacion": float(puntuacion), "factores": factores, "explicacion": explicacion}
 
 
-# --- Renovación / Expansión ---
+# --- Entregables ---
 
-def create_renovacion(db: Session, org_id: str, data: dict[str, Any], user_id: str | None) -> ExitoClienteRenovacion:
-    _get_proyecto(db, org_id, data["proyecto_id"])
-    salud = db.query(ExitoClienteSalud).filter(ExitoClienteSalud.proyecto_id == data["proyecto_id"]).order_by(ExitoClienteSalud.created_at.desc()).first()
-    row = ExitoClienteRenovacion(
-        organization_id=org_id, proyecto_id=data["proyecto_id"], plan_id=data.get("plan_id"),
-        fecha_renovacion=data.get("fecha_renovacion"), estado=EstadoRenovacion.PENDIENTE,
-        salud=salud.resultado if salud else None,
+def create_entregable(db: Session, org_id: str, proyecto_id: str, data: dict[str, Any], user_id: str | None) -> ImplementacionEntregable:
+    _get_proyecto(db, org_id, proyecto_id)
+    row = ImplementacionEntregable(
+        proyecto_id=proyecto_id,
+        organization_id=org_id,
+        nombre=data["nombre"],
+        descripcion=data.get("descripcion"),
+        responsable_id=data.get("responsable_id") or user_id,
+        fecha_objetivo=data.get("fecha_objetivo"),
+        estado=data.get("estado", EstadoEntregable.PENDIENTE),
+        documento_id=data.get("documento_id"),
+        version_referencia=data.get("version_referencia"),
     )
     db.add(row)
     db.flush()
-    _audit(db, org_id, "RENOVACION", "renovacion", row.id, user_id, {})
+    _audit(db, org_id, "CREAR_ENTREGABLE", "entregable", row.id, user_id, {"nombre": row.nombre})
+    return row
+
+
+def entregable_to_dict(r: ImplementacionEntregable) -> dict[str, Any]:
+    return {
+        "id": r.id,
+        "nombre": r.nombre,
+        "descripcion": r.descripcion,
+        "responsable_id": r.responsable_id,
+        "fecha_objetivo": r.fecha_objetivo.isoformat() if r.fecha_objetivo else None,
+        "estado": r.estado,
+        "evidencia": r.evidencia,
+        "documento_id": r.documento_id,
+        "aceptacion": r.aceptacion,
+        "observaciones": r.observaciones,
+        "version_referencia": r.version_referencia,
+    }
+
+
+def update_entregable(db: Session, org_id: str, entregable_id: str, data: dict[str, Any], user_id: str | None) -> ImplementacionEntregable:
+    row = db.query(ImplementacionEntregable).filter(ImplementacionEntregable.id == entregable_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Entregable no encontrado")
+    _ensure_scope(db, org_id, row.organization_id)
+    for field in ("nombre", "descripcion", "responsable_id", "fecha_objetivo", "estado", "evidencia", "documento_id", "observaciones", "version_referencia"):
+        if field in data and data[field] is not None:
+            setattr(row, field, data[field])
+    if data.get("aceptacion") in AceptacionEntregable.ALL:
+        row.aceptacion = data["aceptacion"]
+        if row.aceptacion == AceptacionEntregable.ACEPTADO:
+            row.estado = EstadoEntregable.ACEPTADO
+        elif row.aceptacion == AceptacionEntregable.RECHAZADO:
+            row.estado = EstadoEntregable.RECHAZADO
+    row.updated_at = _utcnow()
+    db.flush()
+    _audit(db, org_id, "ACTUALIZAR_ENTREGABLE", "entregable", row.id, user_id, {"estado": row.estado})
+    return row
+
+
+def list_entregables(db: Session, org_id: str, proyecto_id: str) -> list[dict[str, Any]]:
+    _get_proyecto(db, org_id, proyecto_id)
+    rows = db.query(ImplementacionEntregable).filter(ImplementacionEntregable.proyecto_id == proyecto_id).all()
+    return [entregable_to_dict(r) for r in rows]
+
+
+# --- Renovación / Expansión ---
+
+def create_renovacion(db: Session, org_id: str, data: dict[str, Any], user_id: str | None) -> ExitoClienteRenovacion:
+    proj = _get_proyecto(db, org_id, data["proyecto_id"])
+    salud = db.query(ExitoClienteSalud).filter(ExitoClienteSalud.proyecto_id == data["proyecto_id"]).order_by(ExitoClienteSalud.created_at.desc()).first()
+    row = ExitoClienteRenovacion(
+        organization_id=org_id, proyecto_id=data["proyecto_id"], plan_id=data.get("plan_id"),
+        fecha_renovacion=data.get("fecha_renovacion"), estado=data.get("estado", EstadoRenovacion.PENDIENTE),
+        salud=salud.resultado if salud else None, notas=data.get("notas"),
+        opportunity_id=data.get("opportunity_id"),
+    )
+    if data.get("crear_oportunidad"):
+        from app.services import continuidad_comercial_service as cont_svc
+
+        opp = cont_svc.create_opportunity_from_continuidad(
+            db, org_id,
+            titulo=data.get("titulo_oportunidad") or f"Renovación — {proj.titulo}",
+            descripcion=data.get("notas") or "Renovación detectada desde implementación",
+            tipo="RENOVACION",
+            proyecto_id=proj.id,
+            proposal_id=proj.proposal_id,
+            origen="RENOVACION",
+        )
+        row.opportunity_id = opp.id
+    db.add(row)
+    db.flush()
+    _audit(db, org_id, "RENOVACION", "renovacion", row.id, user_id, {"opportunity_id": row.opportunity_id})
     return row
 
 
 def create_expansion(db: Session, org_id: str, data: dict[str, Any], user_id: str | None) -> ExitoClienteExpansion:
-    _get_proyecto(db, org_id, data["proyecto_id"])
+    proj = _get_proyecto(db, org_id, data["proyecto_id"])
     row = ExitoClienteExpansion(
         organization_id=org_id, proyecto_id=data["proyecto_id"], tipo=data["tipo"],
         descripcion=data["descripcion"], recomendacion=data.get("recomendacion"),
+        opportunity_id=data.get("opportunity_id"),
     )
+    if data.get("crear_oportunidad"):
+        from app.services import continuidad_comercial_service as cont_svc
+
+        opp = cont_svc.create_opportunity_from_continuidad(
+            db, org_id,
+            titulo=data.get("titulo_oportunidad") or f"Ampliación — {data['tipo']}",
+            descripcion=data["descripcion"],
+            tipo="EXPANSION",
+            proyecto_id=proj.id,
+            proposal_id=proj.proposal_id,
+            origen="EXPANSION",
+        )
+        row.opportunity_id = opp.id
     db.add(row)
     db.flush()
-    _audit(db, org_id, "EXPANSION", "expansion", row.id, user_id, {"tipo": data["tipo"]})
+    _audit(db, org_id, "EXPANSION", "expansion", row.id, user_id, {"tipo": data["tipo"], "opportunity_id": row.opportunity_id})
+    return row
+
+
+def update_renovacion_estado(db: Session, org_id: str, renovacion_id: str, estado: str, user_id: str | None) -> ExitoClienteRenovacion:
+    row = db.query(ExitoClienteRenovacion).filter(
+        ExitoClienteRenovacion.id == renovacion_id,
+        ExitoClienteRenovacion.organization_id == org_id,
+    ).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Renovación no encontrada")
+    row.estado = estado
+    db.flush()
     return row
 
 
@@ -755,6 +920,7 @@ def detalle_proyecto(db: Session, org_id: str, proyecto_id: str) -> dict[str, An
         "fases": [fase_to_dict(f) for f in db.query(ImplementacionFase).filter(ImplementacionFase.proyecto_id == proyecto_id).order_by(ImplementacionFase.orden).all()],
         "hitos": [{"id": h.id, "codigo": h.codigo, "nombre": h.nombre, "estado": h.estado, "proveedor_id": h.proveedor_id} for h in db.query(ImplementacionHito).filter(ImplementacionHito.proyecto_id == proyecto_id).all()],
         "tareas": [tarea_to_dict(t) for t in db.query(ImplementacionTarea).filter(ImplementacionTarea.proyecto_id == proyecto_id).all()],
+        "entregables": list_entregables(db, org_id, proyecto_id),
         "requisitos": [requisito_to_dict(r) for r in db.query(ImplementacionRequisito).filter(ImplementacionRequisito.proyecto_id == proyecto_id).all()],
         "tablero": tablero_proyecto(db, org_id, proyecto_id),
     }

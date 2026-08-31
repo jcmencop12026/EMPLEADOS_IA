@@ -42,6 +42,8 @@ from app.services import proactive_service as opp_svc
 from app.services.negocio_approval_adapter import get_approval_adapter, list_approval_status
 from app.services.negocio_pdf_service import generate_and_store_pdf
 from app.services import negocio_sync_service as sync_svc
+from app.services import continuidad_finops_bridge as cont_finops
+from app.services import continuidad_comercial_service as cont_svc
 
 POTENCIAL_NOTE = "POTENCIAL no cuenta como beneficio realizado ni en ROI/payback realizado."
 
@@ -581,27 +583,37 @@ def convert_to_implementacion(db: Session, user: User, org_id: str, proposal_id:
         contracted = contract_proposal(db, user, org_id, proposal_id, condiciones=condiciones, version_id=last_version.id if last_version else None)
         contract_id = contracted["contract_id"]
         proposal = com_svc._get_proposal(db, org_id, proposal_id)
+        contract = db.query(NegocioContractRecord).filter(NegocioContractRecord.id == contract_id).first()
     else:
-        existing = (
-            db.query(NegocioContractRecord)
-            .filter(NegocioContractRecord.proposal_id == proposal_id)
-            .order_by(NegocioContractRecord.fecha_contratacion.desc())
-            .first()
-        )
-        contract_id = existing.id if existing else None
+        contract = cont_svc.ensure_contract_record(db, user, org_id, proposal_id, condiciones=condiciones)
+        contract_id = contract.id if contract else None
     if ext.implementacion_proyecto_id:
-        return {"proyecto_id": ext.implementacion_proyecto_id, "ya_existia": True}
+        return {
+            "proyecto_id": ext.implementacion_proyecto_id,
+            "ya_existia": True,
+            "contract_id": contract_id,
+            "referencias": {
+                "evaluacion_id": ext.evaluacion_id,
+                "opportunity_id": ext.opportunity_id,
+                "version_number": last_version.version_number if last_version else ext.version_actual,
+                "document_id": last_version.pdf_document_id if last_version else None,
+            },
+        }
     proyecto = impl_svc.create_proyecto(
         db,
         org_id,
         {
             "titulo": proposal.titulo,
             "proposal_id": proposal.id,
-            "alcance": f"Implementación derivada de {proposal.codigo}",
+            "alcance": None,
             "objetivos": ext.proximo_paso,
         },
         user.id,
     )
+    if contract:
+        cont_svc.enrich_proyecto_from_contrato(
+            db, proyecto, proposal=proposal, ext=ext, contract=contract, version=last_version,
+        )
     ext.implementacion_proyecto_id = proyecto.id
     ext.proximo_paso = "Levantamiento e implementación — datos transferidos desde propuesta"
     create_version_snapshot(db, user, org_id, proposal_id, trigger=ProposalVersionTrigger.CONTRATACION)
@@ -618,14 +630,16 @@ def convert_to_implementacion(db: Session, user: User, org_id: str, proposal_id:
         "proyecto_id": proyecto.id,
         "proposal_id": proposal_id,
         "contract_id": contract_id,
+        "finops_budget_id": proyecto.finops_budget_id,
         "flujo": "PROSPECTO→DIAGNÓSTICO→PROPUESTA→NEGOCIACIÓN→CONTRATADO→LEVANTAMIENTO",
-        "datos_reutilizados": True,
+        "datos_reutilizados": bool(proyecto.compromiso_contractual_json),
         "referencias": {
             "evaluacion_id": ext.evaluacion_id,
             "opportunity_id": ext.opportunity_id,
             "version_number": last_version.version_number if last_version else ext.version_actual,
-            "document_id": last_version.pdf_document_id if last_version else None,
+            "document_id": proyecto.documento_contrato_id or (last_version.pdf_document_id if last_version else None),
         },
+        "compromiso": _parse(proyecto.compromiso_contractual_json),
     }
 
 
@@ -671,6 +685,8 @@ def update_ia_consumo(db: Session, org_id: str, proposal_id: str, data: dict[str
     payload = {
         "consumo_incluido_tokens": data.get("consumo_incluido_tokens"),
         "consumo_incluido_usd": data.get("consumo_incluido_usd"),
+        "presupuesto_operacional": data.get("presupuesto_operacional"),
+        "periodicidad": data.get("periodicidad"),
         "consumo_variable": data.get("consumo_variable", True),
         "proveedor": data.get("proveedor"),
         "modelo": data.get("modelo"),
@@ -844,6 +860,9 @@ def contract_proposal(
     db.add(contract)
     ext.precio_contratado = precio
     _record_price_phase(db, org_id, proposal_id, PricePhase.CONTRATADO, precio, user.id, version_number=ver.version_number)
+    budget = cont_finops.ensure_operational_budget_from_contract(
+        db, org_id=org_id, contract=contract, ext=ext, proposal=proposal,
+    )
     if proposal.estado != ProposalStatus.ACEPTADA:
         proposal.estado = ProposalStatus.ACEPTADA
     write_audit(
@@ -855,7 +874,12 @@ def contract_proposal(
         commit=False,
     )
     db.flush()
-    return {"contract_id": contract.id, "version_number": ver.version_number, "precio_contratado": precio}
+    return {
+        "contract_id": contract.id,
+        "version_number": ver.version_number,
+        "precio_contratado": precio,
+        "finops_budget_id": budget.id if budget else contract.finops_budget_id,
+    }
 
 
 def get_proposal_detail(db: Session, org_id: str, proposal_id: str, *, include_internal: bool = False) -> dict[str, Any]:

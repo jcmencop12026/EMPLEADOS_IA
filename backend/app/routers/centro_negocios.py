@@ -22,6 +22,7 @@ from app.schemas_negocio import (
     PropuestaTransicionIn,
     SyncIn,
 )
+from app.schemas_continuidad_comercial import ConvertirImplementacionIn
 from app.services import negocio_service as svc
 from app.services.negocio_approval_adapter import set_org_approval_policy
 
@@ -416,14 +417,16 @@ def configurar_politica_aprobacion(
 @router.post("/propuestas/{proposal_id}/convertir-implementacion")
 def convertir_implementacion(
     proposal_id: str,
+    body: ConvertirImplementacionIn | None = None,
     organization_id: str | None = Query(None),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     check_permission(user, "negocio.contract", db)
     org_id = _org(db, user, organization_id)
+    condiciones = body.condiciones if body else None
     try:
-        result = svc.convert_to_implementacion(db, user, org_id, proposal_id)
+        result = svc.convert_to_implementacion(db, user, org_id, proposal_id, condiciones=condiciones)
         db.commit()
         return result
     except HTTPException:

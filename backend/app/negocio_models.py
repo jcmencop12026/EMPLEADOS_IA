@@ -165,6 +165,7 @@ class NegocioContractRecord(Base):
     responsable_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
     proximo_paso: Mapped[str | None] = mapped_column(String(500), nullable=True)
     fecha_contratacion: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    finops_budget_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("finops_budgets.id"), nullable=True)
     created_by_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
 
 
