@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.deps import get_current_user
 from app.database import get_db
 from app.models import User
+from app.permissions import check_permission
 from app.schemas_orchestration import AssistantAskRequest, PlanResponse
 from app.services.coordinator import route_task
 
@@ -16,6 +17,9 @@ def assistant_ask(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    check_permission(user, "operations.execute", db)
+    if body.auto_execute:
+        check_permission(user, "operations.manage", db)
     result = route_task(
         db,
         organization_id=user.organization_id,
