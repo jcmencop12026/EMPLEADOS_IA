@@ -10,7 +10,7 @@
 | Referencia | SHA |
 |---|---|
 | **SHA inicial C1** | `1dcc6569b9cc8511d07aa6dd9fb770b3b875e2ce` |
-| **SHA candidato C1** | `c8ed79116b806d7eb6446ce9e98e1f7183bcf5b2` |
+| **SHA candidato C1** | `25ad1021ee6ea0322aceb0622252e7b748706d32` |
 
 > Nota: reemplazar línea anterior con `git rev-parse HEAD` tras pull.
 
