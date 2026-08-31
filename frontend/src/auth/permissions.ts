@@ -48,6 +48,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/optimizacion": ["optimizacion.view"],
   "/costos-valor": ["finops.view"],
   "/gobernanza-datos": ["datos.view"],
+  "/centro-confianza": ["gobierno.confianza.view"],
   "/notificaciones": ["notification.view"],
   "/comunicaciones": ["communications.view"],
   "/mi-seguridad": [],

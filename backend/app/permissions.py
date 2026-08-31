@@ -289,6 +289,17 @@ CONTROL_CENTER_PERMISSIONS = {
     "control_center.view",
 }
 
+GOBIERNO_OPERACIONAL_PERMISSIONS = {
+    "gobierno.view",
+    "gobierno.manage",
+    "gobierno.execute",
+    "gobierno.approve",
+    "gobierno.visibility",
+    "gobierno.ia_policy",
+    "gobierno.audit",
+    "gobierno.confianza.view",
+}
+
 CONTINUIDAD_PERMISSIONS = {
     "continuidad.view",
     "continuidad.manage",
@@ -433,6 +444,14 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "evaluacion.evaluate": ("Evaluación EIAAX", "Ejecutar evaluaciones y registrar hallazgos"),
     "evaluacion.visibility": ("Evaluación EIAAX", "Gestionar visibilidad para entidad"),
     "evaluacion.vista_entidad": ("Evaluación EIAAX", "Ver vista entidad del expediente"),
+    "gobierno.view": ("Gobierno operacional", "Consultar políticas y solicitudes de acción"),
+    "gobierno.manage": ("Gobierno operacional", "Gestionar políticas de acción"),
+    "gobierno.execute": ("Gobierno operacional", "Solicitar acciones operacionales"),
+    "gobierno.approve": ("Gobierno operacional", "Aprobar o rechazar solicitudes"),
+    "gobierno.visibility": ("Gobierno operacional", "Gestionar visibilidad generalizada"),
+    "gobierno.ia_policy": ("Gobierno operacional", "Gestionar políticas de gobierno IA"),
+    "gobierno.audit": ("Gobierno operacional", "Consultar eventos de gobierno operacional"),
+    "gobierno.confianza.view": ("Gobierno operacional", "Ver Centro de Confianza"),
     "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
     "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
     "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
@@ -550,6 +569,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | IMPLEMENTACION_PERMISSIONS
         | SEGMENTATION_PERMISSIONS
         | EMPLOYEE_AUDIT_PERMISSIONS
+        | GOBIERNO_OPERACIONAL_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -589,6 +609,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | SECURITY_PERMISSIONS
         | IDENTITY_PERMISSIONS
         | EMPLOYEE_AUDIT_PERMISSIONS
+        | GOBIERNO_OPERACIONAL_PERMISSIONS
     ),
     "operator": {
         "employee.view",
@@ -714,6 +735,13 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "support.update",
         "support.resolve",
         "support.close",
+        "gobierno.view",
+        "gobierno.execute",
+        "gobierno.approve",
+        "gobierno.visibility",
+        "gobierno.ia_policy",
+        "gobierno.audit",
+        "gobierno.confianza.view",
     },
     "viewer": {
         "employee.view",
@@ -756,6 +784,8 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "planes.view",
         "support.view",
         "support.create",
+        "gobierno.view",
+        "gobierno.confianza.view",
     },
 }
 

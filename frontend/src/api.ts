@@ -3970,3 +3970,68 @@ export async function preguntarEiaax(
     body: JSON.stringify({ mensaje, accion }),
   });
 }
+
+export type ConfianzaControl = {
+  id: string;
+  nombre: string;
+  estado: string;
+  evidencia?: string | null;
+  detalle?: Record<string, unknown> | null;
+};
+
+export type ConfianzaCentro = {
+  organization_id: string;
+  generado_en: string;
+  controles: ConfianzaControl[];
+  resumen: {
+    controles_activos: number;
+    eventos_gobierno: number;
+    solo_evidencia_real: boolean;
+  };
+};
+
+export type GobiernoSolicitud = {
+  id: string;
+  tipo_accion: string;
+  recurso_tipo: string;
+  estado: string;
+  descripcion: string;
+  correlation_id: string;
+};
+
+export async function fetchCentroConfianza(): Promise<ConfianzaCentro> {
+  return api("/api/gobierno-operacional/confianza");
+}
+
+export async function fetchGobiernoSolicitudes(estado?: string): Promise<GobiernoSolicitud[]> {
+  const q = estado ? `?estado=${encodeURIComponent(estado)}` : "";
+  return api(`/api/gobierno-operacional/solicitudes${q}`);
+}
+
+export async function fetchGobiernoEventos(): Promise<Array<Record<string, unknown>>> {
+  return api("/api/gobierno-operacional/eventos");
+}
+
+export async function evaluarAccionGobierno(body: {
+  tipo_accion: string;
+  recurso_tipo?: string;
+  criticidad?: string;
+}): Promise<Record<string, unknown>> {
+  return api("/api/gobierno-operacional/acciones/evaluar", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function crearSolicitudGobierno(body: {
+  tipo_accion: string;
+  recurso_tipo: string;
+  descripcion: string;
+  criticidad?: string;
+  motivo_solicitud?: string;
+}): Promise<GobiernoSolicitud> {
+  return api("/api/gobierno-operacional/solicitudes", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}

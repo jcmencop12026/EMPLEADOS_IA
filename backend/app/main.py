@@ -35,6 +35,7 @@ from app import support_models  # noqa: F401 — mesa de ayuda MB-12
 from app import employee_audit_models  # noqa: F401 — auditor empleados MVP
 from app import consumption_planner_models  # noqa: F401 — planificador MB-07 portable
 from app import communications_models  # noqa: F401 — comunicaciones MB-11
+from app import gobierno_operacional_models  # noqa: F401 — gobierno operacional EIAAX
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
@@ -79,6 +80,7 @@ from app.routers import (
     trabajo,
     empleados_auditor,
     comunicaciones,
+    gobierno_operacional,
 )
 from app.seed import bootstrap
 from app.security_config import validate_security_settings
@@ -195,6 +197,7 @@ app.include_router(segmentacion.router)
 app.include_router(llm_providers.router)
 app.include_router(soporte.router)
 app.include_router(empleados_auditor.router)
+app.include_router(gobierno_operacional.router)
 
 
 @app.get("/health")

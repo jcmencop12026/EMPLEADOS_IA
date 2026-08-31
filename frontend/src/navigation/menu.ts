@@ -59,6 +59,7 @@ export const MENU: NavSection[] = [
       { to: "/optimizacion", label: "Optimización" },
       { to: "/costos-valor", label: "Costos y valor" },
       { to: "/gobernanza-datos", label: "Gobierno de datos" },
+      { to: "/centro-confianza", label: "Centro de Confianza" },
       { to: "/mi-seguridad", label: "Mi seguridad" },
       { to: "/notificaciones", label: "Notificaciones" },
       { to: "/comunicaciones", label: "Comunicaciones" },

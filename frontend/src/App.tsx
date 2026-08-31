@@ -20,6 +20,7 @@ import { CapabilitiesPage } from "./pages/CapabilitiesPage";
 import { HomePage } from "./pages/HomePage";
 import { CostosValorPage } from "./pages/CostosValorPage";
 import { GobernanzaDatosPage } from "./pages/GobernanzaDatosPage";
+import { CentroConfianzaPage } from "./pages/CentroConfianzaPage";
 import { LineasBasePage } from "./pages/LineasBasePage";
 import { LineaBaseDetailPage } from "./pages/LineaBaseDetailPage";
 import { OportunidadesPage } from "./pages/OportunidadesPage";
@@ -130,6 +131,7 @@ export default function App() {
           <Route path="test-lab" element={<TestLabPage />} />
           <Route path="costos-valor" element={<CostosValorPage />} />
           <Route path="gobernanza-datos" element={<GobernanzaDatosPage />} />
+          <Route path="centro-confianza" element={<CentroConfianzaPage />} />
           <Route path="lineas-base" element={<LineasBasePage />} />
           <Route path="lineas-base/:lineaBaseId" element={<LineaBaseDetailPage />} />
           <Route path="comercial" element={<ComercialPage />} />
