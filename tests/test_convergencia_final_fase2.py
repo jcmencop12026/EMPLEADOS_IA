@@ -19,7 +19,8 @@ pytestmark = [pytest.mark.auth, pytest.mark.tenant]
 def test_convergencia_ruta_centro_control_alias():
     app = APP_TSX.read_text(encoding="utf-8")
     perms = PERMISSIONS.read_text(encoding="utf-8")
-    assert 'path="centro-control" element={<CentroControlPage />}' in app
+    assert '<Route index element={<HomePage />} />' in app
+    assert 'path="centro-control" element={<HomePage />}' in app
     assert '"/centro-control": ["control_center.view"]' in perms
 
 

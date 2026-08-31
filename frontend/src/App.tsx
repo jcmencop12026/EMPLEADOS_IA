@@ -17,7 +17,7 @@ import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { AdminUserDetailPage } from "./pages/admin/AdminUserDetailPage";
 import { AuditPage } from "./pages/AuditPage";
 import { CapabilitiesPage } from "./pages/CapabilitiesPage";
-import { CentroControlPage } from "./pages/CentroControlPage";
+import { HomePage } from "./pages/HomePage";
 import { CostosValorPage } from "./pages/CostosValorPage";
 import { GobernanzaDatosPage } from "./pages/GobernanzaDatosPage";
 import { LineasBasePage } from "./pages/LineasBasePage";
@@ -78,8 +78,8 @@ export default function App() {
       />
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route index element={<CentroControlPage />} />
-          <Route path="centro-control" element={<CentroControlPage />} />
+          <Route index element={<HomePage />} />
+          <Route path="centro-control" element={<HomePage />} />
           <Route path="panel" element={<Navigate to="/" replace />} />
           <Route path="operaciones" element={<OperationsHubPage />} />
           <Route path="operaciones/solicitud" element={<OperationsCenterPage />} />
