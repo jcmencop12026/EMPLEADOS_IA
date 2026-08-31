@@ -41,8 +41,11 @@ function parseDetail(text: string): string {
   return text;
 }
 
-function userMessage(status: number, detail: string): string {
-  if (status === 401) return "Su sesión ha vencido. Inicie sesión nuevamente.";
+function userMessage(status: number, detail: string, path?: string): string {
+  if (status === 401) {
+    if (path === "/api/auth/login") return detail || "Credenciales incorrectas";
+    return "Su sesión ha vencido. Inicie sesión nuevamente.";
+  }
   if (status === 403) return "No tiene permisos para realizar esta acción.";
   if (status === 404) return "El recurso solicitado no fue encontrado.";
   if (status === 409) return detail || "La operación no puede completarse por un conflicto de estado.";
@@ -69,9 +72,15 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     throw new ApiError(0, "No se pudo conectar con el servidor. Verifique que el backend esté en ejecución.");
   }
 
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
+  const text = await res.text();
+
   if (!res.ok) {
     const detail = parseDetail(text);
-    const message = userMessage(res.status, detail);
+    const message = userMessage(res.status, detail, path);
     console.error("[api]", res.status, path, detail);
     if (res.status === 401) {
       const isLoginAttempt = path === "/api/auth/login";
@@ -85,14 +94,6 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     }
     throw new ApiError(res.status, message, detail);
   }
-
-  if (res.status === 204) {
-    return undefined as T;
-  }
-  if (res.status === 204) {
-    return undefined as T;
-  }
-  const text = await res.text();
   if (!text) {
     return undefined as T;
   }
@@ -109,6 +110,8 @@ export type UserMe = {
   full_name?: string | null;
   status?: string;
   permissions: string[];
+  auth_via_sso?: boolean;
+  identity_provider_name?: string | null;
 };
 
 export type Organization = {
@@ -176,6 +179,108 @@ export type SecuritySummary = {
   users_blocked: number;
   roles_total: number;
   recent_events: Array<{ action: string; detail: string | null; created_at: string }>;
+  mfa_enabled_count?: number;
+  scim_metrics?: {
+    users_provisioned: number;
+    users_active: number;
+    users_deactivated: number;
+    errors_count: number;
+    conflicts_count: number;
+    rate_limited_count: number;
+    requests_total: number;
+    last_sync_at: string | null;
+    last_latency_ms: number | null;
+  } | null;
+  scim_rate_limit_note?: string | null;
+};
+
+export type AdminUserMfaOverview = {
+  enabled: boolean;
+  enrollment_pending: boolean;
+  confirmed_at?: string | null;
+  updated_at?: string | null;
+  mfa_required_by_policy: boolean;
+  policy_mfa_mode?: string | null;
+  allowed_method: string;
+};
+
+export type AdminUserIdentityOrigin = {
+  source: string;
+  provider_code?: string | null;
+  provider_name?: string | null;
+  external_subject_ref?: string | null;
+};
+
+export type AdminUserProvisionOverview = {
+  status: string;
+  external_id?: string | null;
+  scim_resource_id?: string | null;
+  updated_at?: string | null;
+};
+
+export type AdminUserOverview = {
+  id: string;
+  username: string;
+  email: string | null;
+  full_name: string | null;
+  role: string;
+  role_name?: string | null;
+  status: string;
+  is_active: boolean;
+  organization_id: string;
+  organization_name?: string | null;
+  last_login_at: string | null;
+  created_at: string;
+  updated_at: string | null;
+  mfa: AdminUserMfaOverview;
+  identity_origin: AdminUserIdentityOrigin;
+  provisioning: AdminUserProvisionOverview;
+};
+
+export type AdminUserPermissionEffective = {
+  code: string;
+  source: string;
+  role_code?: string | null;
+  organization_id: string;
+};
+
+export type AdminUserAuditEntry = {
+  stream: string;
+  action: string;
+  result?: string | null;
+  actor_id?: string | null;
+  organization_id?: string | null;
+  detail?: string | null;
+  correlation_id?: string | null;
+  created_at: string;
+};
+
+export type AdminUserIdentityDetail = {
+  user: AdminUser;
+  organization_name?: string | null;
+  role_name?: string | null;
+  mfa: AdminUserMfaOverview;
+  identity_origin: AdminUserIdentityOrigin;
+  provisioning: AdminUserProvisionOverview;
+  permissions_effective: AdminUserPermissionEffective[];
+  sessions: Array<{
+    id: string;
+    ip_address?: string | null;
+    user_agent?: string | null;
+    created_at: string;
+    last_activity_at: string;
+    expires_at: string;
+    mfa_verified: boolean;
+    auth_method?: string | null;
+  }>;
+  audit_entries: AdminUserAuditEntry[];
+  scim_user_events: Array<{
+    action: string;
+    result: string;
+    detail?: string | null;
+    correlation_id?: string | null;
+    created_at: string;
+  }>;
 };
 
 export type AuditLog = {
@@ -365,6 +470,169 @@ export async function transitionNotification(id: string, action: "read" | "ackno
   return api<NotificationItem>(`/api/notifications/${id}/${action}`, { method: "POST" });
 }
 
+export type TrabajoAccion = {
+  codigo: string;
+  etiqueta: string;
+  permiso?: string | null;
+  href?: string | null;
+  payload?: Record<string, unknown> | null;
+};
+
+export type TrabajoItem = {
+  id: string;
+  source_id: string;
+  tipo: string;
+  asunto: string;
+  modulo: string;
+  organization_id: string;
+  organization_name?: string | null;
+  prioridad: string;
+  prioridad_orden: number;
+  estado_dominio: string;
+  estado_presentacion: string;
+  responsable_id?: string | null;
+  responsable_nombre?: string | null;
+  created_at?: string | null;
+  fecha_limite?: string | null;
+  antiguedad_horas?: number | null;
+  vencida: boolean;
+  correlation_id?: string | null;
+  requires_action: boolean;
+  informativa: boolean;
+  semantic_kind?: string | null;
+  detalle?: string | null;
+  enlace: string;
+  trazabilidad_enlace?: string | null;
+  acciones: TrabajoAccion[];
+  metadata?: Record<string, unknown>;
+};
+
+export type TrabajoResumen = {
+  organization_id: string;
+  pendientes: number;
+  vencidas: number;
+  requieren_aprobacion: number;
+  total_visible: number;
+};
+
+export type TrabajoItemsResponse = {
+  items: TrabajoItem[];
+  total: number;
+  filtros_aplicados: Record<string, unknown>;
+};
+
+export async function fetchTrabajoItems(params: Record<string, string | boolean | undefined> = {}): Promise<TrabajoItemsResponse> {
+  const qs = new URLSearchParams();
+  for (const [key, val] of Object.entries(params)) {
+    if (val !== undefined && val !== "") {
+      qs.set(key, String(val));
+    }
+  }
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return api<TrabajoItemsResponse>(`/api/trabajo/items${suffix}`);
+}
+
+export async function fetchTrabajoResumen(organizationId?: string): Promise<TrabajoResumen> {
+  const suffix = organizationId ? `?organization_id=${encodeURIComponent(organizationId)}` : "";
+  return api<TrabajoResumen>(`/api/trabajo/resumen${suffix}`);
+}
+
+export type EmployeeAuditHealthRow = {
+  employee_id: string;
+  employee_name: string;
+  organization_id: string;
+  health_status: string;
+  score?: number | null;
+  lifecycle_status?: string | null;
+  last_audit_at?: string | null;
+  open_findings: number;
+  critical_findings: number;
+};
+
+export type EmployeeAuditFinding = {
+  id: string;
+  run_id: string;
+  assessment_id: string;
+  employee_id: string;
+  rule_code: string;
+  metric_name: string;
+  observed_value?: string | null;
+  threshold_value?: string | null;
+  severity: string;
+  semantic_kind: string;
+  title: string;
+  detail?: string | null;
+  evidence?: Record<string, unknown>;
+  recommended_action?: string | null;
+  status: string;
+  correlation_id: string;
+  created_at: string;
+};
+
+export type EmployeeAuditRun = {
+  id: string;
+  organization_id: string;
+  trigger_type: string;
+  status: string;
+  correlation_id: string;
+  employee_count: number;
+  findings_count: number;
+  cost_usd: number;
+  started_at: string;
+  finished_at?: string | null;
+};
+
+export async function fetchEmployeeAuditHealth(): Promise<EmployeeAuditHealthRow[]> {
+  return api<EmployeeAuditHealthRow[]>("/api/empleados-auditor/salud");
+}
+
+export async function fetchEmployeeAuditFindings(
+  params: Record<string, string> = {},
+): Promise<EmployeeAuditFinding[]> {
+  const qs = new URLSearchParams(params).toString();
+  const suffix = qs ? `?${qs}` : "";
+  return api<EmployeeAuditFinding[]>(`/api/empleados-auditor/hallazgos${suffix}`);
+}
+
+export async function executeEmployeeAudit(body: {
+  employee_id?: string;
+  employee_ids?: string[];
+  scope?: string;
+}): Promise<EmployeeAuditRun> {
+  return api<EmployeeAuditRun>("/api/empleados-auditor/ejecutar", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function iniciarMejoraAuditor(findingId: string, idempotencyKey?: string): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-auditor/hallazgos/${findingId}/iniciar-mejora`, {
+    method: "POST",
+    body: JSON.stringify({ idempotency_key: idempotencyKey }),
+  });
+}
+
+export async function ejecutarMejoraFabrica(
+  traceId: string,
+  data: { operation?: string; payload?: Record<string, unknown>; idempotency_key?: string },
+): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-auditor/mejoras/${traceId}/ejecutar`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function reauditarMejora(traceId: string, idempotencyKey?: string): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-auditor/mejoras/${traceId}/reauditar`, {
+    method: "POST",
+    body: JSON.stringify({ idempotency_key: idempotencyKey }),
+  });
+}
+
+export async function fetchMejoraTrazabilidad(traceId: string): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-auditor/mejoras/${traceId}/trazabilidad`);
+}
+
 export type EmployeeTemplate = { code: string; name: string; description?: string; specialty: string };
 export type CapabilityItem = { id: string; code: string; name: string; risk_level: string };
 export type ToolItem = { id: string; code: string; name: string; executor_type: string; risk_level: string };
@@ -413,6 +681,76 @@ export async function publishEmployee(id: string): Promise<Record<string, unknow
 
 export async function activateEmployee(id: string): Promise<Record<string, unknown>> {
   return api(`/api/agent-factory/employees/${id}/activate`, { method: "POST" });
+}
+
+export async function fetchEmployeeInventory(id: string): Promise<Record<string, unknown>> {
+  return api<Record<string, unknown>>(`/api/agent-factory/employees/${id}/inventory`);
+}
+
+export async function fetchEmployeeHealth(id: string): Promise<Record<string, unknown>> {
+  return api<Record<string, unknown>>(`/api/agent-factory/employees/${id}/health`);
+}
+
+export async function validateEmployee(id: string): Promise<Record<string, unknown>> {
+  return api<Record<string, unknown>>(`/api/agent-factory/employees/${id}/validate`);
+}
+
+export async function fetchEmployeeVersions(id: string): Promise<Array<Record<string, unknown>>> {
+  return api<Array<Record<string, unknown>>>(`/api/agent-factory/employees/${id}/versions`);
+}
+
+export async function rollbackEmployee(id: string, data: { target_version: number; reason: string; force?: boolean }): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${id}/rollback`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function trainEmployee(id: string, data: { training_type: string; reason: string; source?: string; config_delta?: Record<string, unknown> }): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${id}/train`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function retireEmployee(id: string, reason: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${id}/retire`, { method: "POST", body: JSON.stringify({ reason }) });
+}
+
+export async function requestEmployeeApproval(id: string, data: { kind: string; reason: string; target_version?: number }): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${id}/request-approval`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export type EmployeeApprovalRecord = {
+  factory_approval_id: string;
+  approval_request_id: string;
+  approval_kind: string;
+  status: string;
+  approval_status: string;
+  reason: string;
+  requested_by_id: string;
+  requested_by_name: string | null;
+  requester_id: string;
+  requester_name: string | null;
+  decided_by_id: string | null;
+  decided_by_name: string | null;
+  decision_comment: string | null;
+  target_version: number | null;
+  created_at: string;
+  requested_at: string;
+  decided_at: string | null;
+  can_decide: boolean;
+  work_plan_id: string;
+};
+
+export async function fetchEmployeeApprovals(id: string): Promise<EmployeeApprovalRecord[]> {
+  return api<EmployeeApprovalRecord[]>(`/api/agent-factory/employees/${id}/approvals`);
+}
+
+export async function decideEmployeeApproval(
+  employeeId: string,
+  approvalRequestId: string,
+  decision: "approve" | "reject",
+  comment?: string,
+): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${employeeId}/approvals/${approvalRequestId}/decide`, {
+    method: "POST",
+    body: JSON.stringify({ decision, comment }),
+  });
 }
 
 
@@ -518,6 +856,21 @@ export async function fetchAdminUsers(q?: string, status?: string): Promise<Admi
   return api<AdminUser[]>(`/api/admin/users${qs ? `?${qs}` : ""}`);
 }
 
+export async function fetchAdminUsersOverview(q?: string, status?: string): Promise<AdminUserOverview[]> {
+  const params = new URLSearchParams({ vista: "operativa" });
+  if (q) params.set("q", q);
+  if (status) params.set("status", status);
+  return api<AdminUserOverview[]>(`/api/admin/users?${params}`);
+}
+
+export async function fetchAdminUser(id: string): Promise<AdminUser> {
+  return api<AdminUser>(`/api/admin/users/${id}`);
+}
+
+export async function fetchAdminUserIdentityDetail(id: string): Promise<AdminUserIdentityDetail> {
+  return api<AdminUserIdentityDetail>(`/api/admin/users/${id}/identidad`);
+}
+
 export async function createAdminUser(data: Record<string, unknown>): Promise<AdminUser> {
   return api<AdminUser>("/api/admin/users", { method: "POST", body: JSON.stringify(data) });
 }
@@ -579,6 +932,257 @@ export async function updateOrgConfig(data: Partial<OrgConfig>): Promise<OrgConf
 
 export async function fetchSecuritySummary(): Promise<SecuritySummary> {
   return api<SecuritySummary>("/api/admin/security");
+}
+
+export type MfaStatus = {
+  enabled: boolean;
+  confirmed_at?: string | null;
+  recovery_codes_remaining: number;
+  enrollment_pending: boolean;
+  mfa_required_by_policy: boolean;
+};
+
+export type UserSession = {
+  id: string;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  created_at: string;
+  last_activity_at: string;
+  expires_at: string;
+  mfa_verified: boolean;
+  current: boolean;
+  user_id?: string | null;
+  username?: string | null;
+  auth_method?: string | null;
+};
+
+export type SecurityPolicy = {
+  mfa_mode: string;
+  mfa_required_roles: string[];
+  session_duration_minutes: number;
+  max_active_sessions: number;
+  login_max_attempts: number;
+  lockout_minutes: number;
+  revoke_sessions_on_password_change: boolean;
+  excess_session_policy: string;
+};
+
+export type SecurityEvent = {
+  id: string;
+  event_type: string;
+  user_id?: string | null;
+  detail?: string | null;
+  ip_address?: string | null;
+  created_at: string;
+};
+
+export async function fetchMfaStatus(): Promise<MfaStatus> {
+  return api<MfaStatus>("/api/security/mfa/status");
+}
+
+export async function startMfaEnrollment(): Promise<{ secret: string; provisioning_uri: string; qr_data_url: string }> {
+  return api("/api/security/mfa/enroll/start", { method: "POST" });
+}
+
+export async function confirmMfaEnrollment(code: string): Promise<{ recovery_codes: string[] }> {
+  return api("/api/security/mfa/enroll/confirm", { method: "POST", body: JSON.stringify({ code }) });
+}
+
+export async function disableMfa(password: string): Promise<void> {
+  await api("/api/security/mfa/disable", { method: "POST", body: JSON.stringify({ password }) });
+}
+
+export async function regenerateMfaRecovery(password: string): Promise<{ recovery_codes: string[] }> {
+  return api("/api/security/mfa/recovery/regenerate", { method: "POST", body: JSON.stringify({ password }) });
+}
+
+export async function fetchMySessions(): Promise<UserSession[]> {
+  return api<UserSession[]>("/api/security/sessions");
+}
+
+export async function revokeMySession(sessionId: string): Promise<void> {
+  await api(`/api/security/sessions/${sessionId}`, { method: "DELETE" });
+}
+
+export async function revokeOtherSessions(): Promise<void> {
+  await api("/api/security/sessions/revoke-others", { method: "POST" });
+}
+
+export async function changePassword(current: string, newPassword: string, revokeOthers = true): Promise<void> {
+  await api("/api/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({
+      current_password: current,
+      new_password: newPassword,
+      revoke_other_sessions: revokeOthers,
+    }),
+  });
+}
+
+export async function verifyMfaLogin(code: string, mfaToken: string): Promise<{ access_token: string }> {
+  return api("/api/auth/mfa/verify", {
+    method: "POST",
+    body: JSON.stringify({ code, mfa_token: mfaToken }),
+  });
+}
+
+export async function fetchSecurityPolicy(): Promise<SecurityPolicy> {
+  return api<SecurityPolicy>("/api/security/policy");
+}
+
+export async function updateSecurityPolicy(data: Partial<SecurityPolicy>): Promise<SecurityPolicy> {
+  return api<SecurityPolicy>("/api/security/policy", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function fetchSecurityEvents(limit = 50): Promise<SecurityEvent[]> {
+  return api<SecurityEvent[]>(`/api/security/events?limit=${limit}`);
+}
+
+export async function fetchAdminSessions(): Promise<UserSession[]> {
+  return api<UserSession[]>("/api/security/admin/sessions");
+}
+
+export async function revokeAdminSession(sessionId: string): Promise<void> {
+  await api(`/api/security/admin/sessions/${sessionId}`, { method: "DELETE" });
+}
+
+export type IdentityPolicy = {
+  auth_mode: string;
+  mfa_sso_mode: string;
+  auto_provision_enabled: boolean;
+  default_role_on_provision: string;
+  allowed_domains: string[];
+  org_discovery_code: string | null;
+  attribute_mapping: Record<string, unknown>;
+  break_glass_enabled: boolean;
+  break_glass_configured: boolean;
+  scim_prepared: boolean;
+  scim_enabled?: boolean;
+};
+
+export type ScimStatus = {
+  scim_enabled: boolean;
+  scim_base_url: string;
+  metrics: Record<string, number>;
+  tokens: {
+    id: string;
+    name: string;
+    token_prefix: string;
+    masked: string;
+    active: boolean;
+    expires_at: string | null;
+    last_used_at: string | null;
+    created_at: string;
+  }[];
+  conflicts_pending: number;
+  recent_events: { action: string; result: string; detail: string | null; created_at: string }[];
+};
+
+export type ScimRoleMapping = { id: string; external_group: string; role_code: string };
+
+export type ScimConflict = {
+  id: string;
+  conflict_type: string;
+  external_id: string | null;
+  detail: string | null;
+  created_at: string;
+};
+
+export type IdentityProvider = {
+  id: string;
+  code: string;
+  name: string;
+  provider_type: string;
+  vendor_hint: string | null;
+  status: string;
+  is_default: boolean;
+  secret_configured: boolean;
+  config: Record<string, unknown>;
+  health: Record<string, string | null>;
+};
+
+export type IdentityLoginEvent = {
+  id: string;
+  login_method: string;
+  result: string;
+  detail: string | null;
+  created_at: string;
+};
+
+export async function fetchIdentityPolicy(): Promise<IdentityPolicy> {
+  return api<IdentityPolicy>("/api/identidad/politica");
+}
+
+export async function updateIdentityPolicy(data: Partial<IdentityPolicy>): Promise<IdentityPolicy> {
+  return api<IdentityPolicy>("/api/identidad/politica", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function fetchIdentityProviders(): Promise<IdentityProvider[]> {
+  return api<IdentityProvider[]>("/api/identidad/proveedores");
+}
+
+export async function createIdentityProvider(data: Record<string, unknown>): Promise<IdentityProvider> {
+  return api<IdentityProvider>("/api/identidad/proveedores", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function testIdentityProvider(id: string): Promise<{ resultado: string; mensaje: string }> {
+  return api(`/api/identidad/proveedores/${id}/probar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function activateIdentityProvider(id: string): Promise<IdentityProvider> {
+  return api<IdentityProvider>(`/api/identidad/proveedores/${id}/activar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function upsertGroupRoleMapping(providerId: string, data: { external_group: string; role_code: string }) {
+  return api(`/api/identidad/proveedores/${providerId}/mapeos-roles`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchIdentityEvents(limit = 50): Promise<IdentityLoginEvent[]> {
+  return api<IdentityLoginEvent[]>(`/api/identidad/eventos?limit=${limit}`);
+}
+
+export async function discoverLogin(orgCode: string): Promise<{ auth_mode: string | null; providers: { id: string; name: string; provider_type: string }[] }> {
+  return api("/api/identidad/descubrir", { method: "POST", body: JSON.stringify({ org_code: orgCode }) });
+}
+
+export async function beginPublicOidc(providerId: string, orgCode: string): Promise<{ authorization_url: string; state: string }> {
+  return api(`/api/identidad/public/oidc/${providerId}/iniciar`, { method: "POST", body: JSON.stringify({ org_code: orgCode }) });
+}
+
+export async function completeOidcCallback(state: string, code: string): Promise<{ access_token: string }> {
+  return api("/api/identidad/oidc/callback", { method: "POST", body: JSON.stringify({ state, code }) });
+}
+
+export async function fetchScimStatus(): Promise<ScimStatus> {
+  return api<ScimStatus>("/api/identidad/scim/estado");
+}
+
+export async function configureScim(data: { scim_enabled: boolean }): Promise<{ scim_enabled: boolean; message: string }> {
+  return api("/api/identidad/scim/configuracion", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function createScimToken(data?: { name?: string; expires_days?: number }): Promise<{ id: string; token: string; message: string }> {
+  return api("/api/identidad/scim/tokens", { method: "POST", body: JSON.stringify(data ?? {}) });
+}
+
+export async function rotateScimToken(tokenId: string): Promise<{ id: string; token: string; message: string }> {
+  return api(`/api/identidad/scim/tokens/${tokenId}/rotar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function revokeScimToken(tokenId: string): Promise<{ message: string }> {
+  return api(`/api/identidad/scim/tokens/${tokenId}/revocar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchScimRoleMappings(): Promise<ScimRoleMapping[]> {
+  return api<ScimRoleMapping[]>("/api/identidad/scim/mapeos-roles");
+}
+
+export async function upsertScimRoleMapping(data: { external_group: string; role_code: string }): Promise<ScimRoleMapping> {
+  return api<ScimRoleMapping>("/api/identidad/scim/mapeos-roles", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchScimConflicts(): Promise<ScimConflict[]> {
+  return api<ScimConflict[]>("/api/identidad/scim/conflictos");
 }
 
 export async function fetchPlatformOrganizations(): Promise<PlatformOrganization[]> {
@@ -775,17 +1379,298 @@ export type FinOpsConsumption = {
   category?: string;
   provider?: string;
   model_name?: string;
+  employee_id?: string | null;
+  work_plan_id?: string | null;
+  opportunity_id?: string | null;
+  tokens_in?: number | null;
+  tokens_out?: number | null;
   cost_label: string;
   currency?: string;
   created_at: string;
 };
 
-export async function fetchFinOpsDashboard(): Promise<FinOpsDashboard> {
-  return api<FinOpsDashboard>("/api/finops/dashboard");
+export type FinOpsBudget = {
+  id: string;
+  name?: string | null;
+  scope_type: string;
+  amount_limit: string;
+  currency: string;
+  policy: string;
+  alert_threshold_pct: number;
+  spent: string;
+  balance: string;
+  state: string;
+  blocks_execution: boolean;
+  period_start: string;
+  period_end: string;
+  active: boolean;
+};
+
+export type FinOpsRate = {
+  id: string;
+  provider?: string | null;
+  model_service?: string | null;
+  category: string;
+  price_input?: string | null;
+  price_output?: string | null;
+  currency: string;
+  active: boolean;
+};
+
+export type FinOpsOpportunityEconomics = {
+  opportunity_id: string;
+  opportunity_codigo: string;
+  total_cost_label: string;
+  valor_potencial?: string | null;
+  valor_materializado?: string | null;
+  consumption_count: number;
+  consumptions: FinOpsConsumption[];
+  finops_reference?: string | null;
+  atribucion_nivel?: string | null;
+};
+
+export async function fetchFinOpsDashboard(params?: {
+  period_start?: string;
+  period_end?: string;
+}): Promise<FinOpsDashboard> {
+  const qs = new URLSearchParams();
+  if (params?.period_start) qs.set("period_start", params.period_start);
+  if (params?.period_end) qs.set("period_end", params.period_end);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return api<FinOpsDashboard>(`/api/finops/dashboard${suffix}`);
 }
 
-export async function fetchFinOpsConsumptions(): Promise<FinOpsConsumption[]> {
-  return api<FinOpsConsumption[]>("/api/finops/consumptions");
+export async function fetchFinOpsConsumptions(params?: {
+  employee_id?: string;
+  opportunity_id?: string;
+  provider?: string;
+  model_name?: string;
+  category?: string;
+  period_start?: string;
+  period_end?: string;
+}): Promise<FinOpsConsumption[]> {
+  const qs = new URLSearchParams();
+  if (params?.employee_id) qs.set("employee_id", params.employee_id);
+  if (params?.opportunity_id) qs.set("opportunity_id", params.opportunity_id);
+  if (params?.provider) qs.set("provider", params.provider);
+  if (params?.model_name) qs.set("model_name", params.model_name);
+  if (params?.category) qs.set("category", params.category);
+  if (params?.period_start) qs.set("period_start", params.period_start);
+  if (params?.period_end) qs.set("period_end", params.period_end);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return api<FinOpsConsumption[]>(`/api/finops/consumptions${suffix}`);
+}
+
+export async function fetchFinOpsBudgets(): Promise<FinOpsBudget[]> {
+  return api<FinOpsBudget[]>("/api/finops/budgets");
+}
+
+export async function createFinOpsBudget(data: Record<string, unknown>): Promise<FinOpsBudget> {
+  return api<FinOpsBudget>("/api/finops/budgets", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchFinOpsRates(): Promise<FinOpsRate[]> {
+  return api<FinOpsRate[]>("/api/finops/rates");
+}
+
+export async function createFinOpsRate(data: Record<string, unknown>): Promise<FinOpsRate> {
+  return api<FinOpsRate>("/api/finops/rates", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchOpportunityEconomics(opportunityId: string): Promise<FinOpsOpportunityEconomics> {
+  return api<FinOpsOpportunityEconomics>(`/api/finops/opportunities/${opportunityId}/economics`);
+}
+
+export type PlannerResumen = {
+  organization_id: string;
+  currency: string;
+  credential_mode: string;
+  consumo_incluido: number;
+  consumo_real: number;
+  consumo_estimado_mensual: number;
+  consumo_proyectado_mes: number;
+  sobreconsumo_estimado: number;
+  real_by_class: Record<
+    string,
+    { cost_ia: number; cost_other: number; cost_total: number; tokens_in: number; tokens_out: number; executions: number }
+  >;
+  estimated_direct: Record<string, unknown>;
+  estimated_transversal: Record<string, unknown>;
+  valor_realizado_mes: number;
+  potencial_excluido_roi: boolean;
+  margin: Record<string, unknown>;
+};
+
+export type PlannerSimulation = {
+  kind: string;
+  directo: Record<string, unknown>;
+  transversal: Record<string, unknown>;
+  plataforma_cost_monthly: number;
+  cost_total: number;
+  consumo_incluido: number;
+  sobreconsumo: number;
+  capacity: Record<string, unknown>;
+  budget: Record<string, unknown>;
+  demo_notice?: string;
+};
+
+export type PlannerPresupuesto = {
+  currency: string;
+  presupuesto_ia: number;
+  consumo_incluido: number;
+  consumo_real: number;
+  consumo_proyectado: number;
+  sobreconsumo: number;
+  porcentaje_utilizado: number | null;
+  proyeccion_cierre_mes: number;
+  alert_thresholds: number[];
+};
+
+export type PlannerCompareRow = {
+  provider: string | null;
+  model: string | null;
+  cost_estimated: number;
+  currency: string;
+  rate_configured: boolean;
+  note?: string;
+};
+
+export async function fetchPlannerResumen(): Promise<PlannerResumen> {
+  return api<PlannerResumen>("/api/finops/planner/resumen");
+}
+
+export async function fetchPlannerPresupuesto(): Promise<PlannerPresupuesto> {
+  return api<PlannerPresupuesto>("/api/finops/planner/presupuesto");
+}
+
+export async function fetchPlannerCapacidad(): Promise<Record<string, unknown>> {
+  return api<Record<string, unknown>>("/api/finops/planner/capacidad");
+}
+
+export async function simulatePlannerConsumption(data: Record<string, unknown>): Promise<PlannerSimulation> {
+  return api<PlannerSimulation>("/api/finops/planner/simular", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function comparePlannerProviders(data: Record<string, unknown>): Promise<PlannerCompareRow[]> {
+  return api<PlannerCompareRow[]>("/api/finops/planner/comparar", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchPlannerMargen(): Promise<Record<string, unknown>> {
+  return api<Record<string, unknown>>("/api/finops/planner/margen");
+}
+
+export type ValuationSummary = {
+  has_valuation: boolean;
+  opportunity_id: string;
+  valuation?: {
+    id: string;
+    value_type: string;
+    scope: string;
+    currency: string;
+    status: string;
+    version: number;
+  };
+  expected?: {
+    gross_value?: string | null;
+    probability?: string | null;
+    adjusted_expected?: string | null;
+    execution_cost_expected?: string | null;
+    period_days?: number | null;
+    value_nature?: string;
+    assumptions?: string | null;
+    source?: string | null;
+    evidence?: string | null;
+  };
+  scenarios?: Array<{
+    scenario_type: string;
+    value_amount?: string | null;
+    probability?: string | null;
+    cost?: string | null;
+    period_days?: number | null;
+    adjusted_value?: string | null;
+    assumptions?: string | null;
+  }>;
+  real?: {
+    materialized_value?: string | null;
+    attributable_value?: string | null;
+    value_nature?: string;
+    attribution_level?: string;
+    attribution_pct?: string | null;
+    source?: string | null;
+    evidence?: string | null;
+    justification?: string | null;
+  };
+  execution_costs?: Array<{ id: string; cost_type: string; amount: string; currency: string }>;
+  finops_ia_cost_label?: string;
+  total_execution_cost?: string | null;
+  gross_expected?: string | null;
+  adjusted_expected?: string | null;
+  materialized_value?: string | null;
+  attributable_value?: string | null;
+  net_benefit?: string | null;
+  return_label?: string;
+  payback_label?: string;
+  missing_for_calculation?: string[];
+  history?: Array<{ version: number; action: string; change_summary?: string; changed_at: string }>;
+};
+
+export async function fetchValuationSummary(opportunityId: string): Promise<ValuationSummary> {
+  return api<ValuationSummary>(`/api/valoracion/opportunities/${opportunityId}`);
+}
+
+export async function createValuation(
+  opportunityId: string,
+  data: { value_type: string; scope: string; currency?: string }
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateValuationExpected(
+  opportunityId: string,
+  data: Record<string, unknown>
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/expected`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateValuationScenario(
+  opportunityId: string,
+  scenarioType: string,
+  data: Record<string, unknown>
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/scenarios/${scenarioType}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function registerValuationReal(
+  opportunityId: string,
+  data: Record<string, unknown>
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/real`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function registerValuationCost(
+  opportunityId: string,
+  data: Record<string, unknown>
+): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/costs`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function validateValuation(opportunityId: string): Promise<unknown> {
+  return api(`/api/valoracion/opportunities/${opportunityId}/validate`, { method: "POST" });
 }
 
 export type OperationSummary = {
@@ -944,6 +1829,49 @@ export async function deactivateKnowledgeDocument(id: string): Promise<Knowledge
   return api<KnowledgeDocumentItem>(`/api/knowledge/${id}/deactivate`, { method: "POST" });
 }
 
+function parseContentDispositionFilename(header: string | null): string | null {
+  if (!header) return null;
+  const match = /filename\*?=(?:UTF-8''|")?([^";]+)/i.exec(header);
+  if (!match?.[1]) return null;
+  try {
+    return decodeURIComponent(match[1].replace(/"/g, ""));
+  } catch {
+    return match[1].replace(/"/g, "");
+  }
+}
+
+/** Descarga autenticada vía Bearer — no expone token en URL. */
+export async function downloadKnowledgeDocument(id: string, fallbackFilename?: string): Promise<void> {
+  const headers = new Headers();
+  const token = getToken();
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  const res = await fetch(`/api/knowledge/${id}/download`, { headers });
+  if (!res.ok) {
+    const text = await res.text();
+    const detail = parseDetail(text);
+    throw new ApiError(res.status, userMessage(res.status, detail), detail);
+  }
+  const blob = await res.blob();
+  const filename =
+    parseContentDispositionFilename(res.headers.get("Content-Disposition")) ||
+    fallbackFilename ||
+    `documento-${id}`;
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    anchor.rel = "noopener";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 export async function uploadKnowledgeFile(file: File, name?: string): Promise<KnowledgeDocumentItem> {
   const form = new FormData();
   form.append("file", file);
@@ -985,18 +1913,47 @@ export type OpportunityItem = {
   tipo: string;
   dominio: string;
   titulo: string;
+  descripcion?: string | null;
   estado: string;
   urgencia: string;
+  riesgo?: string | null;
   impacto_estimado: number | null;
   valor_potencial: number | null;
   valor_potencial_certidumbre: string;
   valor_materializado: number | null;
   confianza: number;
   pertinencia: string | null;
+  pertinencia_razon?: string | null;
   momento: string | null;
   prioridad_score: number | null;
   siguiente_accion: Record<string, unknown> | null;
+  equipo?: Record<string, unknown> | null;
+  work_plan_id?: string | null;
+  finops_reference?: string | null;
+  atribucion_nivel?: string | null;
+  correlation_id?: string | null;
+  contexto?: Record<string, unknown> | null;
+  evidencia?: Record<string, unknown> | unknown[] | null;
+  resultado?: Record<string, unknown> | null;
   fecha_deteccion: string | null;
+};
+
+export type OpportunityTrackingItem = {
+  id?: string;
+  accion: string;
+  resultado?: string | null;
+  responsable_id?: string | null;
+  bloqueo?: string | null;
+  fecha?: string | null;
+};
+
+export type OpportunityTrace = {
+  opportunity_id: string;
+  correlation_id: string;
+  estado: string;
+  trazas: Array<{ etapa: string; detalle: unknown; fecha: string }>;
+  transiciones: Array<{ de: string; a: string; motivo?: string | null; actor_id?: string | null; fecha?: string | null }>;
+  seguimiento: OpportunityTrackingItem[];
 };
 
 export type OpportunitySummary = {
@@ -1032,14 +1989,2184 @@ export async function approveOpportunity(id: string, aprobado = true, motivo?: s
   });
 }
 
-export async function activateOpportunity(id: string): Promise<Record<string, unknown>> {
-  return api(`/api/oportunidades/${id}/activar`, { method: "POST", body: JSON.stringify({}) });
+export async function activateOpportunity(
+  id: string,
+  autoExecute = false,
+): Promise<Record<string, unknown>> {
+  return api(`/api/oportunidades/${id}/activar`, {
+    method: "POST",
+    body: JSON.stringify({ auto_execute: autoExecute }),
+  });
 }
 
-export async function fetchOpportunityTrace(id: string): Promise<Record<string, unknown>> {
+export async function addOpportunityTracking(
+  id: string,
+  data: { accion: string; bloqueo?: string; kpi_inicial?: Record<string, unknown>; kpi_objetivo?: Record<string, unknown> },
+): Promise<{ tracking_id: string }> {
+  return api(`/api/oportunidades/${id}/seguimiento`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function registerOpportunityResult(
+  id: string,
+  data: {
+    valor_real?: number;
+    valor_esperado?: number;
+    evidencia?: Record<string, unknown>;
+    estado_resultado?: string;
+  },
+): Promise<{ resultado: Record<string, unknown>; oportunidad: OpportunityItem }> {
+  return api(`/api/oportunidades/${id}/resultado`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchOpportunityTrace(id: string): Promise<OpportunityTrace> {
   return api(`/api/oportunidades/${id}/trazabilidad`);
 }
 
 export async function prioritizeOpportunities(): Promise<Record<string, unknown>> {
   return api("/api/oportunidades/priorizar", { method: "POST", body: JSON.stringify({}) });
+}
+
+// --- Señales reales (1120) ---
+
+export type SignalSourceItem = {
+  id: string;
+  code: string;
+  name: string;
+  tipo_fuente: string;
+  descripcion: string | null;
+  is_active: boolean;
+  configuracion: Record<string, unknown> | null;
+  created_at: string | null;
+};
+
+export type SignalItem = {
+  id: string;
+  tipo: string;
+  dominio: string;
+  origen: string;
+  modo_ingesta: string;
+  proceso: string | null;
+  metrica: string | null;
+  valor_metrica: string | null;
+  unidad: string | null;
+  referencia: string | null;
+  evidencia_resumen: string | null;
+  estado_procesamiento: string;
+  procesada: boolean;
+  opportunity_id?: string | null;
+  signal_at: string | null;
+  created_at: string | null;
+};
+
+export async function fetchSignalSources(): Promise<SignalSourceItem[]> {
+  return api("/api/senales/fuentes");
+}
+
+export async function fetchRecentSignals(modo?: string): Promise<SignalItem[]> {
+  const q = modo ? `?modo=${encodeURIComponent(modo)}` : "";
+  return api(`/api/senales${q}`);
+}
+
+export async function fetchSignalTrace(signalId: string): Promise<Record<string, unknown>> {
+  return api(`/api/senales/${signalId}/trazabilidad`);
+}
+
+// --- Diagnósticos transversales (1220) ---
+
+export type DiagnosticSummary = {
+  id: string;
+  codigo: string;
+  version: number;
+  estado: string;
+  periodo_inicio: string | null;
+  periodo_fin: string | null;
+  dominios: string[] | null;
+  resumen: string | null;
+  prioridad_score: number | null;
+  created_at: string | null;
+  validated_at: string | null;
+};
+
+export type DiagnosticFinding = {
+  id: string;
+  codigo: string;
+  tipo_contenido: string;
+  que_ocurre: string;
+  dominio: string;
+  severidad: string;
+  confianza: number;
+  signal_ids?: string[] | null;
+};
+
+export type DiagnosticCause = {
+  id: string;
+  tipo: string;
+  descripcion: string;
+  justificacion: string | null;
+};
+
+export type DiagnosticDetail = DiagnosticSummary & {
+  procesos: string[] | null;
+  explicacion: {
+    que_esta_pasando?: string;
+    donde?: string;
+    desde_cuando?: string;
+    que_deberia_hacerse?: string;
+    nota_evidencia?: string;
+  } | null;
+  hallazgos: DiagnosticFinding[];
+  causas: DiagnosticCause[];
+  correlaciones: Array<{ id: string; titulo: string; nota_causalidad: string }>;
+  items_estructurados: Array<{
+    hallazgo: DiagnosticFinding | null;
+    prioridad: number | null;
+    accion_recomendada: { accion?: string } | null;
+    opportunity_id: string | null;
+  }>;
+  oportunidades: Array<{ opportunity_id: string; finding_id: string | null; signal_id: string | null }>;
+};
+
+export async function fetchDiagnostics(): Promise<DiagnosticSummary[]> {
+  return api("/api/diagnosticos");
+}
+
+export async function fetchDiagnostic(id: string): Promise<DiagnosticDetail> {
+  return api(`/api/diagnosticos/${id}`);
+}
+
+export async function generateDiagnostic(body: {
+  periodo_inicio?: string;
+  periodo_fin?: string;
+  dominios?: string[];
+}): Promise<DiagnosticDetail> {
+  return api("/api/diagnosticos/generar", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function validateDiagnostic(id: string): Promise<DiagnosticDetail> {
+  return api(`/api/diagnosticos/${id}/validar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchDiagnosticTrace(id: string): Promise<Record<string, unknown>> {
+  return api(`/api/diagnosticos/${id}/trazabilidad`);
+}
+
+// --- Inteligencia externa (1240) ---
+
+export type ExternalSourceItem = {
+  id: string;
+  code: string;
+  name: string;
+  source_type: string;
+  ingestion_channel: string;
+  url_reference?: string | null;
+  sector?: string | null;
+  pais_region?: string | null;
+  confiabilidad: number;
+  is_active: boolean;
+  ultima_actualizacion?: string | null;
+};
+
+export type ExternalSignalItem = {
+  signal: SignalItem;
+  external: {
+    classification: string;
+    relevance: string;
+    freshness_status: string;
+    hecho_observado?: string;
+    interpretacion?: string;
+    hipotesis?: string;
+    is_risk: boolean;
+    confidence_level: number;
+    validated_at?: string | null;
+  };
+  source?: ExternalSourceItem | null;
+};
+
+export async function fetchExternalSources(): Promise<ExternalSourceItem[]> {
+  return api("/api/inteligencia-externa/fuentes");
+}
+
+export async function fetchExternalSignals(params?: {
+  classification?: string;
+  relevance?: string;
+  source_type?: string;
+}): Promise<{ items: ExternalSignalItem[]; message?: string }> {
+  const qs = new URLSearchParams();
+  if (params?.classification) qs.set("classification", params.classification);
+  if (params?.relevance) qs.set("relevance", params.relevance);
+  if (params?.source_type) qs.set("source_type", params.source_type);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return api(`/api/inteligencia-externa/senales${suffix}`);
+}
+
+export async function fetchExternalSignalDetail(signalId: string): Promise<Record<string, unknown>> {
+  return api(`/api/inteligencia-externa/senales/${signalId}`);
+}
+
+export async function createExternalSource(data: Record<string, unknown>): Promise<ExternalSourceItem> {
+  return api("/api/inteligencia-externa/fuentes", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function ingestExternalSignal(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return api("/api/inteligencia-externa/ingesta", { method: "POST", body: JSON.stringify(data) });
+}
+
+export type LlmProvider = {
+  id: string;
+  organization_id: string;
+  name: string;
+  provider_type: string;
+  provider_label?: string | null;
+  adapter_mode?: string | null;
+  model_default: string | null;
+  endpoint: string | null;
+  timeout_seconds: number;
+  priority: number;
+  is_enabled: boolean;
+  is_fallback: boolean;
+  secret_ref: string | null;
+  secret_configured: boolean;
+  secret_masked: string | null;
+  health_status?: string | null;
+  health_detail?: string | null;
+  config_json: Record<string, unknown> | null;
+};
+
+export type LlmProviderHealth = {
+  provider_id: string;
+  provider_type: string;
+  nombre: string;
+  etiqueta: string;
+  modo?: string | null;
+  estado: string;
+  detalle: string;
+  habilitado: boolean;
+  configurado: boolean;
+  es_fallback: boolean;
+  prioridad: number;
+};
+
+export type LlmObservabilitySummary = {
+  periodo?: string | null;
+  total_inferencias: number;
+  exitosas: number;
+  errores: number;
+  tasa_exito: number | null;
+  latencia_promedio_ms: number | null;
+  tokens_total: number | null;
+  costo_total: number | null;
+  fallbacks: number;
+  por_proveedor: Record<string, number>;
+  errores_por_categoria: Record<string, number>;
+};
+
+export type LlmRoutingPolicy = {
+  id: string;
+  name: string;
+  preferred_provider: string | null;
+  preferred_model: string | null;
+  required_capability: string | null;
+  fallback_allowed: boolean;
+  max_cost_per_1k_tokens: number | null;
+  credential_scope: string;
+  priority: number;
+  is_active: boolean;
+};
+
+export type LlmRoutingExplain = {
+  seleccionado: Record<string, unknown> | null;
+  razones: string[];
+};
+
+export type LlmTestResult = {
+  success: boolean;
+  status: string;
+  message: string;
+  provider?: string;
+  model?: string;
+  latency_ms?: number;
+  error_category?: string;
+};
+
+export async function fetchLlmProviders(): Promise<LlmProvider[]> {
+  return api("/api/llm/providers");
+}
+
+export async function createLlmProvider(data: Record<string, unknown>): Promise<LlmProvider> {
+  return api("/api/llm/providers", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateLlmProvider(id: string, data: Record<string, unknown>): Promise<LlmProvider> {
+  return api(`/api/llm/providers/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function testLlmProvider(id: string): Promise<LlmTestResult> {
+  return api(`/api/llm/providers/${id}/test`, { method: "POST", body: JSON.stringify({}) });
+}
+
+
+// --- Línea base e impacto (1200) ---
+
+export type LineaBaseItem = {
+  id: string;
+  indicador: string;
+  descripcion?: string | null;
+  unidad: string;
+  valor_base: number;
+  fecha_inicio_base: string;
+  fecha_fin_base: string;
+  fuente: string;
+  metodo_calculo?: string | null;
+  evidencia?: Record<string, unknown> | null;
+  direccion_indicador: string;
+  impacto_esperado?: number | null;
+  estado: string;
+  responsable_id?: string | null;
+  proceso?: string | null;
+  opportunity_id?: string | null;
+  work_plan_id?: string | null;
+  employee_id?: string | null;
+  accion_referencia?: string | null;
+  valor_economico_tipo?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type LineaBaseImpacto = {
+  id: string;
+  medicion_id: string;
+  valor_base: number;
+  valor_posterior: number;
+  variacion_absoluta: number;
+  variacion_porcentual?: number | null;
+  evaluacion: string;
+  tipo_impacto: string;
+  atribucion_nivel: string;
+  atribucion_porcentaje?: number | null;
+  atribucion_justificacion?: string | null;
+  impacto_esperado?: number | null;
+  impacto_real?: number | null;
+  congelado: boolean;
+};
+
+export type LineaBaseMedicion = {
+  id: string;
+  valor_posterior: number;
+  periodo_inicio: string;
+  periodo_fin: string;
+  fuente: string;
+  evidencia?: Record<string, unknown> | null;
+  responsable_id?: string | null;
+  estado: string;
+  created_at?: string;
+  validated_at?: string | null;
+  impacto?: LineaBaseImpacto | null;
+};
+
+export type LineaBaseDetail = {
+  linea_base: LineaBaseItem;
+  mediciones: LineaBaseMedicion[];
+  evolucion: { linea_base_id: string; puntos: Array<{ fecha: string; valor: number; evaluacion?: string; estado: string }> };
+  historial: Array<{ id: string; accion: string; actor_id?: string; fecha?: string }>;
+};
+
+export async function fetchLineasBase(params = ""): Promise<{ items: LineaBaseItem[]; total: number }> {
+  return api(`/api/lineas-base${params ? `?${params}` : ""}`);
+}
+
+export async function fetchLineaBase(id: string): Promise<LineaBaseDetail> {
+  return api(`/api/lineas-base/${id}`);
+}
+
+export async function createLineaBase(data: Record<string, unknown>): Promise<LineaBaseItem> {
+  return api("/api/lineas-base", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateLineaBase(id: string, data: Record<string, unknown>): Promise<LineaBaseItem> {
+  return api(`/api/lineas-base/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function addLineaBaseMedicion(id: string, data: Record<string, unknown>): Promise<{ medicion: LineaBaseMedicion; comparacion: LineaBaseImpacto }> {
+  return api(`/api/lineas-base/${id}/mediciones`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function validateLineaBaseMedicion(lineaBaseId: string, medicionId: string): Promise<Record<string, unknown>> {
+  return api(`/api/lineas-base/${lineaBaseId}/mediciones/${medicionId}/validar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function updateLineaBaseAtribucion(
+  lineaBaseId: string,
+  medicionId: string,
+  data: Record<string, unknown>,
+): Promise<LineaBaseImpacto> {
+  return api(`/api/lineas-base/${lineaBaseId}/mediciones/${medicionId}/atribucion`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function fetchLineasBaseByOpportunity(opportunityId: string): Promise<{ items: LineaBaseItem[] }> {
+  return api(`/api/lineas-base/oportunidad/${opportunityId}`);
+}
+
+// --- Centro de Control ejecutivo (1230) ---
+
+export type CentroControlIndicador = {
+  id: string;
+  label: string;
+  valor: unknown;
+  disponible: boolean;
+  estado?: string | null;
+  enlace: string;
+};
+
+export type CentroControlAtencion = {
+  prioridad: number;
+  tipo: string;
+  titulo: string;
+  detalle?: string | null;
+  fecha?: string | null;
+  enlace: string;
+  origen: string;
+};
+
+export type CentroControlValorConsolidado = {
+  verificado?: number | null;
+  estimado?: number | null;
+  potencial?: number | null;
+  realizado?: number | null;
+  materializado?: number | null;
+  roi_porcentaje?: number | null;
+  payback_meses?: number | null;
+  nota_potencial?: string;
+  semantica?: Record<string, string>;
+};
+
+export type CentroControlModuloResumen = {
+  disponible: boolean;
+  estado?: string;
+  enlace?: string;
+  tipo_contenido?: string;
+  [key: string]: unknown;
+};
+
+export type CentroControlResumen = {
+  generated_at: string;
+  organization_id: string;
+  semantica?: Record<string, unknown>;
+  secciones?: Array<{ id: string; label: string }>;
+  resumen_ejecutivo: {
+    indicadores: CentroControlIndicador[];
+    operaciones?: Record<string, number> | null;
+    valor?: CentroControlValorConsolidado | null;
+  };
+  valor_consolidado?: CentroControlValorConsolidado | null;
+  atencion_requerida: CentroControlAtencion[];
+  empleados_ia?: {
+    total: number;
+    activos: number;
+    items: Array<{
+      id: string;
+      nombre: string;
+      estado: string;
+      ultima_actividad?: string | null;
+      enlace: string;
+    }>;
+  } | null;
+  oportunidades?: Record<string, unknown> | null;
+  impacto?: Record<string, unknown> | null;
+  finops?: {
+    disponible: boolean;
+    dashboard?: Record<string, unknown>;
+    tokens_periodo?: number;
+    presupuestos?: Array<Record<string, unknown>>;
+  } | null;
+  finops_extendido?: {
+    disponible: boolean;
+    estado?: string;
+    consumos_periodo?: number;
+    tokens_periodo?: number;
+    costo_periodo?: number | null;
+    presupuestos?: Array<Record<string, unknown>>;
+    alertas_registradas?: number;
+    presupuestos_con_bloqueo?: number;
+    oportunidades_con_costo?: number;
+    enlace?: string;
+  } | null;
+  valor_retorno?: CentroControlModuloResumen | null;
+  comercial?: CentroControlModuloResumen | null;
+  tco?: CentroControlModuloResumen | null;
+  implementacion?: CentroControlModuloResumen | null;
+  aprendizaje?: CentroControlModuloResumen | null;
+  optimizacion?: CentroControlModuloResumen | null;
+  multiproveedor?: CentroControlModuloResumen | null;
+  mb07_planificador?: CentroControlModuloResumen | null;
+  mb11_comunicaciones?: CentroControlModuloResumen | null;
+  mb12_soporte?: CentroControlModuloResumen | null;
+  auditor_empleados?: CentroControlModuloResumen | null;
+  mi_trabajo?: CentroControlModuloResumen | null;
+  continuidad?: CentroControlModuloResumen | null;
+  integraciones_futuras?: Record<string, string>;
+  inteligencia_externa?: {
+    disponible: boolean;
+    estado?: string;
+    fuentes_activas?: number;
+    total_senales?: number;
+    sin_validar?: number;
+    riesgos_abiertos?: number;
+    oportunidades_detectadas?: number;
+    tendencias?: number;
+    recientes?: Array<{
+      id: string;
+      titulo: string;
+      clasificacion?: string;
+      relevancia?: string;
+      es_riesgo?: boolean;
+      validada?: boolean;
+      enlace: string;
+    }>;
+    enlace?: string;
+  } | null;
+  llm?: {
+    disponible?: boolean;
+    total?: number;
+    degradados?: number;
+    proveedores?: Array<{
+      id: string;
+      nombre: string;
+      proveedor: string;
+      modelo?: string | null;
+      habilitado: boolean;
+      errores_24h: number;
+      latencia_media_ms?: number | null;
+      tokens_24h?: number;
+      estado?: string;
+      enlace: string;
+    }>;
+    enlace?: string;
+  } | null;
+  auditoria_reciente?: Array<{
+    id: string;
+    accion: string;
+    detalle?: string | null;
+    actor?: string | null;
+    modulo?: string | null;
+    fecha?: string | null;
+    enlace: string;
+  }> | null;
+  actividad_reciente?: Array<{
+    id: string;
+    tipo: string;
+    plan_id?: string | null;
+    fecha?: string | null;
+    enlace?: string | null;
+  }>;
+  cadena_ejecutiva?: Array<Record<string, unknown>> | null;
+  salud_plataforma?: Record<string, unknown> | null;
+  explicacion?: {
+    disponible: boolean;
+    estado?: string;
+    nota_causalidad?: string;
+    enlace?: string;
+    elementos?: Array<{
+      id: string;
+      tipo_entrada: string;
+      situacion?: string | null;
+      indicador_origen?: string | null;
+      causa?: string | null;
+      certeza?: string | null;
+      certeza_codigo?: string | null;
+      tipo_contenido: string;
+      confianza?: number | null;
+      evidencia?: {
+        fuente?: string | null;
+        identificador?: string | null;
+        correlation_id?: string | null;
+        periodo?: { inicio?: string | null; fin?: string | null } | null;
+        valor?: unknown;
+        comparacion?: unknown;
+        resumen?: string | null;
+      } | null;
+      fuente_ambito?: string | null;
+      correlation_id?: string | null;
+      magnitud?: number | null;
+      impacto?: Record<string, unknown> | null;
+      enlace?: string | null;
+      nota?: string | null;
+    }>;
+  } | null;
+};
+
+export async function fetchCentroControlResumen(periodo = "mtd", organizationId?: string): Promise<CentroControlResumen> {
+  const qs = new URLSearchParams({ periodo });
+  if (organizationId) {
+    qs.set("organization_id", organizationId);
+  }
+  return api(`/api/centro-control/resumen-ejecutivo?${qs.toString()}`);
+}
+
+// --- Modelo comercial (1280) ---
+
+export type CommercialPlanItem = {
+  id: string;
+  code: string;
+  name: string;
+  descripcion?: string | null;
+  margen_minimo_pct: number;
+  fraccion_valor_sugerida?: number | null;
+  consumo_ia_incluido_tokens?: number | null;
+  presupuesto_ia_incluido?: number | null;
+  excedente_ia_por_millon?: number | null;
+  alerta_consumo_pct?: number | null;
+  bloqueo_excedente?: boolean;
+  credential_mode: string;
+  precio_base_mensual?: number | null;
+  precio_minimo?: number | null;
+  precio_maximo?: number | null;
+  limits?: Record<string, unknown> | null;
+  currency?: string;
+};
+
+export type CommercialProposalSummary = {
+  id: string;
+  codigo: string;
+  titulo: string;
+  estado: string;
+  valor_atribuible_total?: number | null;
+  precio_sugerido?: number | null;
+  precio_final?: number | null;
+};
+
+export type CommercialProposalDetail = CommercialProposalSummary & {
+  escenario_recomendado: string;
+  credential_mode?: string;
+  currency?: string;
+  valor_total_esperado?: number | null;
+  costo_total?: number | null;
+  beneficio_neto_cliente?: number | null;
+  roi_pct?: number | null;
+  payback_meses?: number | null;
+  margen_pct?: number | null;
+  pct_valor_conservado_cliente?: number | null;
+  pct_valor_capturado_empleados_ia?: number | null;
+  desglose_naturaleza?: Record<string, number> | null;
+  valor_potencial_atribuible?: number | null;
+  contrato_centro_control?: Record<string, unknown> | null;
+  plan?: CommercialPlanItem | null;
+  vigencia_hasta?: string | null;
+  valores: Array<{
+    id: string;
+    categoria: string;
+    alcance?: string;
+    naturaleza: string;
+    valor_bruto: number;
+    atribucion_pct: number;
+    valor_atribuible: number;
+    external_intelligence_ref?: string | null;
+  }>;
+  escenarios: Array<{
+    scenario_type: string;
+    valor_esperado?: number | null;
+    valor_atribuible?: number | null;
+    probabilidad?: number | null;
+    es_recomendado: boolean;
+  }>;
+  costos: Array<{ id: string; categoria: string; clase_costo: string; monto: number; finops_record_id?: string | null; descripcion?: string | null }>;
+  alertas_doble_conteo: Array<{ id: string; severidad: string; mensaje: string }>;
+  trazabilidad: Record<string, unknown>;
+};
+
+export async function fetchCommercialPlans(): Promise<CommercialPlanItem[]> {
+  return api("/api/comercial/planes");
+}
+
+export async function createCommercialPlan(data: Record<string, unknown>): Promise<CommercialPlanItem> {
+  return api("/api/comercial/planes", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchCommercialProposals(): Promise<CommercialProposalSummary[]> {
+  return api("/api/comercial/propuestas");
+}
+
+export async function createCommercialProposal(data: Record<string, unknown>): Promise<CommercialProposalDetail> {
+  return api("/api/comercial/propuestas", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchCommercialProposal(id: string): Promise<CommercialProposalDetail> {
+  return api(`/api/comercial/propuestas/${id}`);
+}
+
+export async function addCommercialValue(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/valores`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function addCommercialScenario(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/escenarios`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function addCommercialCost(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/costos`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function suggestCommercialPrice(proposalId: string, scenario_type = "BASE") {
+  return api(`/api/comercial/propuestas/${proposalId}/precio-sugerido`, {
+    method: "POST",
+    body: JSON.stringify({ scenario_type }),
+  });
+}
+
+export async function setCommercialFinalPrice(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/precio-final`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function approveCommercialProposal(proposalId: string) {
+  return api(`/api/comercial/propuestas/${proposalId}/aprobar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function detectCommercialDoubleCount(proposalId: string) {
+  return api(`/api/comercial/propuestas/${proposalId}/detectar-doble-conteo`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchCommercialTraceability(proposalId: string): Promise<Record<string, unknown>> {
+  return api(`/api/comercial/propuestas/${proposalId}/trazabilidad`);
+}
+
+export async function fetchCommercialPlan(id: string): Promise<CommercialPlanItem> {
+  return api(`/api/comercial/planes/${id}`);
+}
+
+export async function simulateCommercialValue(data: Record<string, unknown>) {
+  return api("/api/comercial/simular", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function simulateCommercialProposal(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/comercial/propuestas/${proposalId}/simular`, { method: "POST", body: JSON.stringify(data) });
+}
+
+// --- TCO y ecosistema de aliados (1320) ---
+
+export type TcoProveedorItem = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  tipo: string;
+  riesgo_nivel: string;
+  estado: string;
+};
+
+export type TcoTablero = {
+  tco_total: number;
+  desglose: Record<string, number>;
+  margen_pct?: number | null;
+  desviacion?: { estimado: number; real: number; desviacion_pct: number };
+  proveedores_criticos?: Array<{ nombre: string; pct: number }>;
+  concentracion?: { max_proveedor_pct: number; advertencia: boolean };
+  alertas?: Array<{ tipo: string; mensaje: string; severidad: string }>;
+};
+
+export async function fetchTcoCategorias(): Promise<Array<Record<string, unknown>>> {
+  return api("/api/tco/categorias");
+}
+
+export async function fetchTcoProveedores(): Promise<TcoProveedorItem[]> {
+  return api("/api/tco/proveedores");
+}
+
+export async function createTcoProveedor(data: Record<string, unknown>): Promise<TcoProveedorItem> {
+  return api("/api/tco/proveedores", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchTcoCostos(): Promise<Array<Record<string, unknown>>> {
+  return api("/api/tco/costos");
+}
+
+export async function createTcoCosto(data: Record<string, unknown>) {
+  return api("/api/tco/costos", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function calcularTco(data: Record<string, unknown>) {
+  return api("/api/tco/calcular", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchTcoTablero(): Promise<TcoTablero> {
+  return api("/api/tco/tablero");
+}
+
+export async function fetchTcoRentabilidad(data: Record<string, unknown>) {
+  return api("/api/tco/rentabilidad", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function simularTco(data: { tipo: string; parametros?: Record<string, unknown> }) {
+  return api("/api/tco/simular", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function simularMakeOrBuy(data: Record<string, unknown>) {
+  return api("/api/tco/simular/make-or-buy", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function compararProveedoresTco(data: { proveedor_ids: string[]; unidades?: number }) {
+  return api("/api/tco/comparar-proveedores", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchTcoAlianzas(): Promise<Array<Record<string, unknown>>> {
+  return api("/api/tco/alianzas");
+}
+
+export async function createTcoAlianza(data: Record<string, unknown>) {
+  return api("/api/tco/alianzas", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchTcoHistorial() {
+  return api("/api/tco/historial");
+}
+
+// --- Implementación y éxito del cliente (1340) ---
+
+export type ImplProyectoSummary = {
+  id: string;
+  codigo: string;
+  titulo: string;
+  estado: string;
+  avance_pct: number;
+  proposal_id?: string | null;
+  valor_compromiso?: Record<string, unknown> | null;
+};
+
+export type ImplTablero = {
+  proyecto?: ImplProyectoSummary;
+  fase_actual?: string | null;
+  avance_pct?: number;
+  salud?: { resultado: string; puntuacion: number };
+  tco?: { total: number; margen_pct?: number };
+  bloqueadores?: Array<{ descripcion: string }>;
+  trazabilidad?: Record<string, unknown>;
+};
+
+export type ImplProyectoDetalle = ImplProyectoSummary & {
+  hitos?: Array<{ id: string; nombre: string; estado: string }>;
+  tareas?: Array<Record<string, unknown>>;
+  requisitos?: Array<Record<string, unknown>>;
+  tablero?: ImplTablero;
+};
+
+export async function fetchImplProyectos(): Promise<ImplProyectoSummary[]> {
+  return api("/api/implementacion/proyectos");
+}
+
+export async function createImplProyecto(data: Record<string, unknown>): Promise<ImplProyectoSummary> {
+  return api("/api/implementacion/proyectos", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchImplProyectoDetalle(id: string): Promise<ImplProyectoDetalle> {
+  return api(`/api/implementacion/proyectos/${id}`);
+}
+
+export async function fetchImplTablero(id: string): Promise<ImplTablero> {
+  return api(`/api/implementacion/proyectos/${id}/tablero`);
+}
+
+export async function createImplHito(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/hitos`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function completarImplHito(hitoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/hitos/${hitoId}/completar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function createImplRequisito(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/requisitos`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function evaluarImplReadiness(proyectoId: string, dimensiones: Record<string, number>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/readiness`, { method: "POST", body: JSON.stringify({ dimensiones }) });
+}
+
+export async function createImplBloqueador(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/bloqueadores`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function createImplPiloto(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/pilotos`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function registrarImplPilotoResultado(pilotoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/pilotos/${pilotoId}/resultado`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function aprobarImplPiloto(pilotoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/pilotos/${pilotoId}/aprobar-produccion`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function aprobarImplGoLive(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/go-live`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function registrarImplAdopcion(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/adopcion`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function createImplExitoPlan(data: Record<string, unknown>) {
+  return api("/api/implementacion/exito/planes", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function medirImplObjetivo(objetivoId: string, valor_medido: number) {
+  return api(`/api/implementacion/exito/objetivos/${objetivoId}/medir`, { method: "POST", body: JSON.stringify({ valor_medido }) });
+}
+
+export async function calcularImplSalud(proyectoId: string) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/salud`, { method: "POST", body: JSON.stringify({}) });
+}
+
+// --- Segmentación y planes verticales (1310) ---
+
+export type PackageItem = {
+  id: string;
+  code: string;
+  name: string;
+  empleados_ia_incluidos?: number | null;
+  usuarios_incluidos?: number | null;
+  precio_estimado?: number | null;
+  is_custom?: boolean;
+  capabilities?: Record<string, unknown>;
+};
+
+export type RecommendationResult = {
+  plan_sugerido?: { id: string; code: string; name: string } | null;
+  paquete_sugerido?: { id: string; code: string; name: string } | null;
+  nivel_ajuste: string;
+  razones: string[];
+  advertencias: string[];
+  alternativas?: unknown[];
+  plan_personalizado_recomendado?: boolean;
+};
+
+export async function fetchSectors() {
+  return api("/api/segmentacion/sectores");
+}
+
+export async function fetchSegments() {
+  return api("/api/segmentacion/segmentos");
+}
+
+export async function fetchCommercialProfile() {
+  return api("/api/segmentacion/perfil");
+}
+
+export async function upsertCommercialProfile(data: Record<string, unknown>) {
+  return api("/api/segmentacion/perfil", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function fetchPackages(): Promise<PackageItem[]> {
+  return api("/api/segmentacion/paquetes");
+}
+
+export async function createPackage(data: Record<string, unknown>): Promise<PackageItem> {
+  return api("/api/segmentacion/paquetes", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchRecommendation(): Promise<RecommendationResult> {
+  return api("/api/segmentacion/recomendar");
+}
+
+export async function comparePackages(package_ids: string[]) {
+  return api("/api/segmentacion/comparar", { method: "POST", body: JSON.stringify({ package_ids }) });
+}
+
+export type ContinuidadServicio = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  tipo: string;
+  criticidad: string;
+  rto_valor: number | null;
+  rto_unidad: string | null;
+  rpo_valor: number | null;
+  rpo_unidad: string | null;
+  estado_operacional: string;
+  proveedor_ref?: string | null;
+};
+
+export type ContinuidadTablero = {
+  servicios_criticos: ContinuidadServicio[];
+  servicios_degradados: ContinuidadServicio[];
+  incidentes_abiertos: number;
+  backups_recientes: Array<{ recurso: string; resultado: string; estado_registro: string }>;
+  backups_fallidos: number;
+  restauraciones_verificadas: number;
+  acciones_pendientes: number;
+  alertas: Array<{
+    id?: string;
+    tipo: string;
+    mensaje: string;
+    severidad?: string;
+    entidad_ref?: string | null;
+    created_at?: string | null;
+    resuelta?: boolean;
+  }>;
+  centro_control_adapter?: Record<string, unknown>;
+  integracion_1330_prep?: Record<string, unknown>;
+  integracion_1260_prep?: Record<string, unknown>;
+};
+
+export async function fetchContinuidadTablero(): Promise<ContinuidadTablero> {
+  return api("/api/continuidad/tablero");
+}
+
+// --- Gobierno de datos (1350) ---
+
+export type GovDashboard = {
+  fuentes_catalogadas: number;
+  sin_clasificar: number;
+  riesgo_alto: number;
+  retencion_vencida: number;
+  exportaciones: number;
+  solicitudes_abiertas: number;
+  hallazgos_abiertos: number;
+  acciones_pendientes: number;
+};
+
+export type GovClassification = {
+  id: string;
+  code: string;
+  name: string;
+  sensitivity_rank: number;
+};
+
+export type GovDataCategory = {
+  id: string;
+  code: string;
+  name: string;
+};
+
+export type GovCatalogEntry = {
+  id: string;
+  name: string;
+  classification_name?: string | null;
+  classification_level_id?: string | null;
+  data_environment: string;
+  status: string;
+  functional_owner?: string | null;
+  secret_status?: string | null;
+};
+
+export type GovRetentionPolicy = {
+  id: string;
+  name: string;
+  scope_type: string;
+  duration_unit: string;
+  duration_value?: number | null;
+  disposition: string;
+};
+
+export type GovSubjectRequest = {
+  id: string;
+  request_type: string;
+  status: string;
+  subject_ref?: string | null;
+  created_at?: string | null;
+};
+
+export type GovFinding = {
+  id: string;
+  finding_type: string;
+  severity: string;
+  description: string;
+  status: string;
+};
+
+export type GovProviderPolicy = {
+  id: string;
+  organization_id: string | null;
+  classification_level_id: string | null;
+  category_id: string | null;
+  decision: string;
+  minimization_action: string | null;
+  provider_scope: string | null;
+  is_mandatory_global: boolean;
+};
+
+export async function fetchGovProviderPolicies(): Promise<GovProviderPolicy[]> {
+  return api("/api/gobierno-datos/politicas-proveedor");
+}
+
+export async function evaluateGovProvider(data: Record<string, unknown>): Promise<{
+  result: string;
+  reasons: string[];
+  minimization_action?: string | null;
+}> {
+  return api("/api/gobierno-datos/evaluar-proveedor", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchGovLineage(entryId: string): Promise<Array<Record<string, unknown>>> {
+  return api(`/api/gobierno-datos/catalogo/${entryId}/linaje`);
+}
+
+export async function fetchGovDashboard(): Promise<GovDashboard> {
+  return api("/api/gobierno-datos/dashboard");
+}
+
+export async function fetchGovCatalog(): Promise<GovCatalogEntry[]> {
+  return api("/api/gobierno-datos/catalogo");
+}
+
+export async function createGovCatalogEntry(data: Record<string, unknown>): Promise<GovCatalogEntry> {
+  return api("/api/gobierno-datos/catalogo", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchGovClassifications(): Promise<GovClassification[]> {
+  return api("/api/gobierno-datos/clasificaciones");
+}
+
+export async function fetchGovCategories(): Promise<GovDataCategory[]> {
+  return api("/api/gobierno-datos/categorias");
+}
+
+export async function fetchGovRetentionPolicies(): Promise<GovRetentionPolicy[]> {
+  return api("/api/gobierno-datos/retencion");
+}
+
+export async function fetchGovAccessLogs(): Promise<Array<Record<string, unknown>>> {
+  return api("/api/gobierno-datos/accesos");
+}
+
+export async function fetchGovSubjectRequests(): Promise<GovSubjectRequest[]> {
+  return api("/api/gobierno-datos/solicitudes");
+}
+
+export async function fetchGovFindings(): Promise<GovFinding[]> {
+  return api("/api/gobierno-datos/hallazgos");
+}
+
+export async function scanGovFindings(): Promise<GovFinding[]> {
+  return api("/api/gobierno-datos/hallazgos/escanear", { method: "POST", body: JSON.stringify({}) });
+}
+
+// --- Integraciones reales y conectores (1330) ---
+
+export type IntegrationCatalogItem = {
+  type: string;
+  name: string;
+  descripcion: string;
+};
+
+export type IntegrationConnector = {
+  id: string;
+  code: string;
+  name: string;
+  descripcion: string | null;
+  connector_type: string;
+  status: string;
+  auth_type: string;
+  secret_configured: boolean;
+  config: Record<string, unknown> | null;
+  mapping: unknown[] | null;
+  schema: Record<string, unknown> | null;
+  destination_type: string | null;
+  signal_source_code: string | null;
+  trigger_mode: string;
+  health: {
+    last_success_at: string | null;
+    last_error_at: string | null;
+    last_error_message: string | null;
+    last_latency_ms: number | null;
+    consecutive_failures: number;
+    circuit_open: boolean;
+  };
+  gov_catalog_entry_id?: string | null;
+  webhook_token?: string;
+  webhook_url_hint?: string;
+  created_at: string | null;
+};
+
+export type IntegrationConnectorOverview = IntegrationConnector & {
+  organization_name?: string;
+  proveedor_ref?: string;
+  continuidad_estado?: string | null;
+  continuidad_servicio_id?: string | null;
+  politica_decision?: string | null;
+  politica_restricciones?: string[];
+  ultima_ejecucion?: {
+    id: string;
+    status: string;
+    started_at: string | null;
+    correlation_id?: string | null;
+  } | null;
+};
+
+export type IntegrationExecution = {
+  id: string;
+  status: string;
+  started_at: string | null;
+  latency_ms: number | null;
+  records_processed: number;
+  records_valid: number;
+  records_rejected: number;
+  error_category: string | null;
+  error_message: string | null;
+  correlation_id?: string | null;
+};
+
+export type IntegrationHealth = {
+  connector_id: string;
+  status: string;
+  circuit_open: boolean;
+  consecutive_failures: number;
+  last_success_at: string | null;
+  last_error_at: string | null;
+  last_latency_ms: number | null;
+  total_executions: number;
+  success_rate: number | null;
+};
+
+export async function fetchIntegrationCatalog(): Promise<IntegrationCatalogItem[]> {
+  return api("/api/integraciones/catalogo");
+}
+
+export async function fetchIntegrationConnectors(): Promise<IntegrationConnector[]> {
+  return api("/api/integraciones/conectores");
+}
+
+export async function fetchIntegrationConnectorsOverview(): Promise<IntegrationConnectorOverview[]> {
+  return api("/api/integraciones/conectores?vista=operativa");
+}
+
+export type IntegrationWiringDetail = {
+  connector: IntegrationConnector;
+  catalog_entry: Record<string, unknown> | null;
+  policy: Record<string, unknown> | null;
+  preflight: {
+    allowed: boolean;
+    decision: string;
+    reasons: string[];
+    minimization_action?: string | null;
+  } | null;
+  executions: IntegrationExecution[];
+  health: IntegrationHealth;
+  lineage: Array<Record<string, unknown>>;
+  access_logs: Array<Record<string, unknown>>;
+  continuidad: {
+    proveedor_ref: string;
+    servicio_id: string | null;
+    servicio_nombre: string | null;
+    estado_operacional: string | null;
+  };
+  eventos: Array<{
+    id: string;
+    tipo: string;
+    mensaje: string;
+    severidad: string;
+    entidad_ref: string | null;
+    created_at: string | null;
+    resuelta: boolean;
+  }>;
+  auditoria: Array<{
+    id: string;
+    action: string;
+    detail: string | null;
+    user_id: string | null;
+    created_at: string | null;
+  }>;
+};
+
+export type IntegrationTraceStep = {
+  etapa: string;
+  origen: string;
+  referencia: string;
+  estado: string;
+  detalle: string;
+  timestamp: string | null;
+};
+
+export async function fetchIntegrationWiringDetail(id: string): Promise<IntegrationWiringDetail> {
+  return api(`/api/integraciones/conectores/${id}/cableado`);
+}
+
+export async function fetchIntegrationTrace(correlationId: string): Promise<{
+  correlation_id: string;
+  pasos: IntegrationTraceStep[];
+}> {
+  return api(`/api/integraciones/trazabilidad/${encodeURIComponent(correlationId)}`);
+}
+
+export async function fetchIntegrationConnector(id: string): Promise<IntegrationConnector> {
+  return api(`/api/integraciones/conectores/${id}`);
+}
+
+export async function createIntegrationConnector(data: Record<string, unknown>): Promise<IntegrationConnector> {
+  return api("/api/integraciones/conectores", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateIntegrationConnector(id: string, data: Record<string, unknown>): Promise<IntegrationConnector> {
+  return api(`/api/integraciones/conectores/${id}`, { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function testIntegrationConnector(id: string): Promise<{ resultado: string; mensaje: string; latencia_ms?: number }> {
+  return api(`/api/integraciones/conectores/${id}/probar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function executeIntegrationConnector(
+  id: string,
+  data: { idempotency_key?: string; payload?: Record<string, unknown> },
+): Promise<{
+  execution_id?: string;
+  status: string;
+  records_processed: number;
+  records_valid: number;
+  records_rejected: number;
+  signals_created?: number;
+  idempotent?: boolean;
+  correlation_id?: string;
+}> {
+  return api(`/api/integraciones/conectores/${id}/ejecutar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchIntegrationExecutions(id: string): Promise<IntegrationExecution[]> {
+  return api(`/api/integraciones/conectores/${id}/ejecuciones`);
+}
+
+export async function fetchIntegrationHealth(id: string): Promise<IntegrationHealth> {
+  return api(`/api/integraciones/conectores/${id}/salud`);
+}
+
+// —— Aprendizaje y repriorización (1260) ——
+
+export type CicloAprendizajeItem = {
+  id: string;
+  organization_id?: string;
+  opportunity_id: string;
+  work_plan_id?: string | null;
+  signal_id?: string | null;
+  estado: string;
+  impacto_esperado?: number | null;
+  valor_esperado?: number | null;
+  costo_esperado?: number | null;
+  tiempo_esperado_dias?: number | null;
+  impacto_real?: number | null;
+  valor_real?: number | null;
+  costo_real?: number | null;
+  tiempo_real_dias?: number | null;
+  desviaciones?: Record<string, unknown> | null;
+  calidad_recomendacion?: string | null;
+  prioridad_anterior?: number | null;
+  prioridad_propuesta?: number | null;
+  explicacion_prioridad?: Record<string, unknown> | null;
+  referencias?: Record<string, unknown> | null;
+  evaluado_at?: string | null;
+  created_at?: string | null;
+};
+
+export type RetroalimentacionItem = {
+  id: string;
+  ciclo_id: string;
+  opportunity_id: string;
+  tipo_explicacion: string;
+  calidad_recomendacion?: string | null;
+  resumen?: string | null;
+  detalle?: string | null;
+  lecciones?: unknown[] | null;
+  created_at?: string | null;
+};
+
+export type RecalibracionItem = {
+  id: string;
+  ciclo_id: string;
+  opportunity_id: string;
+  estado: string;
+  campo: string;
+  valor_anterior?: string | null;
+  valor_nuevo?: string | null;
+  justificacion: string;
+  factores?: Record<string, unknown> | null;
+  motivo_rechazo?: string | null;
+};
+
+export type PatronAprendizajeItem = {
+  id: string;
+  tipo_patron: string;
+  clave_patron: string;
+  dominio?: string | null;
+  tipo_oportunidad?: string | null;
+  ocurrencias: number;
+  resumen: string;
+};
+
+export async function fetchCiclosAprendizaje(opportunityId?: string): Promise<CicloAprendizajeItem[]> {
+  const params = opportunityId ? `?opportunity_id=${encodeURIComponent(opportunityId)}` : "";
+  return api(`/api/aprendizaje/ciclos${params}`);
+}
+
+export async function fetchCicloAprendizaje(id: string): Promise<CicloAprendizajeItem & {
+  retroalimentaciones?: RetroalimentacionItem[];
+  recalibraciones?: RecalibracionItem[];
+}> {
+  return api(`/api/aprendizaje/ciclos/${id}`);
+}
+
+export async function crearCicloAprendizaje(body: {
+  opportunity_id: string;
+  impacto_real?: number;
+  valor_real?: number;
+  costo_real?: number;
+  tiempo_real_dias?: number;
+}): Promise<CicloAprendizajeItem> {
+  return api("/api/aprendizaje/ciclos", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function evaluarCicloAprendizaje(
+  cicloId: string,
+  body: {
+    impacto_real?: number;
+    valor_real?: number;
+    costo_real?: number;
+    tiempo_real_dias?: number;
+    tipo_explicacion?: string;
+    notas?: string;
+  },
+): Promise<unknown> {
+  return api(`/api/aprendizaje/ciclos/${cicloId}/evaluar`, { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchRecalibraciones(cicloId?: string): Promise<RecalibracionItem[]> {
+  const params = cicloId ? `?ciclo_id=${encodeURIComponent(cicloId)}` : "";
+  return api(`/api/aprendizaje/recalibraciones${params}`);
+}
+
+export async function aprobarRecalibracion(id: string): Promise<RecalibracionItem> {
+  return api(`/api/aprendizaje/recalibraciones/${id}/aprobar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function rechazarRecalibracion(id: string, motivo: string): Promise<RecalibracionItem> {
+  return api(`/api/aprendizaje/recalibraciones/${id}/rechazar`, { method: "POST", body: JSON.stringify({ motivo }) });
+}
+
+export async function aplicarRecalibracion(id: string): Promise<RecalibracionItem> {
+  return api(`/api/aprendizaje/recalibraciones/${id}/aplicar`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchPatronesAprendizaje(): Promise<PatronAprendizajeItem[]> {
+  return api("/api/aprendizaje/patrones");
+}
+
+export async function fetchHistorialAprendizaje(cicloId?: string): Promise<unknown[]> {
+  const params = cicloId ? `?ciclo_id=${encodeURIComponent(cicloId)}` : "";
+  return api(`/api/aprendizaje/historial${params}`);
+}
+
+// —— Optimización y recomendaciones (1290) ——
+
+export type OptimizacionRecomendacion = {
+  id: string;
+  codigo: string;
+  estado: string;
+  objetivo: string;
+  factible: boolean;
+  valor_esperado_total: number;
+  costo_esperado_total: number;
+  impacto_esperado_total: number;
+  roi_esperado?: number | null;
+  riesgo_promedio?: number | null;
+  confianza_promedio?: number | null;
+  created_at?: string | null;
+  explicacion?: Record<string, unknown> | null;
+  conflictos?: string[] | null;
+  aprendizaje_influencia?: Record<string, unknown> | null;
+  ejecucion?: {
+    tipo?: string | null;
+    estado?: string | null;
+    correlation_id?: string | null;
+    execution_reference?: string | null;
+    referencia_externa?: string | null;
+    executed_at?: string | null;
+    executed_by?: string | null;
+    approved_at?: string | null;
+    error?: unknown;
+    idempotent?: boolean;
+    learning_refs?: Array<Record<string, unknown>>;
+    oportunidades?: Array<Record<string, unknown>>;
+  } | null;
+  items?: OptimizacionItem[];
+};
+
+export type OptimizacionItem = {
+  opportunity_id: string;
+  seleccionado: boolean;
+  orden?: number | null;
+  puntuacion_total?: number | null;
+  factores?: Record<string, unknown> | null;
+  exclusion_razon?: string | null;
+  valor_esperado?: number | null;
+  costo_esperado?: number | null;
+  riesgo?: number | null;
+  confianza?: number | null;
+  aprendizaje?: Record<string, unknown> | null;
+};
+
+export async function fetchOptimizacionRecomendaciones(): Promise<OptimizacionRecomendacion[]> {
+  return api("/api/optimizacion/recomendaciones");
+}
+
+export async function fetchOptimizacionRecomendacion(id: string): Promise<OptimizacionRecomendacion> {
+  return api(`/api/optimizacion/recomendaciones/${id}`);
+}
+
+export async function simularOptimizacion(body: Record<string, unknown>): Promise<unknown> {
+  return api("/api/optimizacion/simular", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function crearRecomendacionOptimizacion(body: Record<string, unknown>): Promise<OptimizacionRecomendacion> {
+  return api("/api/optimizacion/recomendaciones", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function compararEscenariosOptimizacion(body: Record<string, unknown>): Promise<unknown> {
+  return api("/api/optimizacion/comparar", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function aprobarRecomendacionOptimizacion(id: string, justificacion: string): Promise<OptimizacionRecomendacion> {
+  return api(`/api/optimizacion/recomendaciones/${id}/aprobar`, {
+    method: "POST",
+    body: JSON.stringify({ justificacion }),
+  });
+}
+
+export async function ejecutarRecomendacionOptimizacion(
+  id: string,
+  tipoEjecucion: "AUTOMATICA" | "HUMANA_EXTERNA" = "AUTOMATICA",
+): Promise<OptimizacionRecomendacion> {
+  return api(`/api/optimizacion/recomendaciones/${id}/ejecutar`, {
+    method: "POST",
+    body: JSON.stringify({ tipo_ejecucion: tipoEjecucion }),
+  });
+}
+
+export async function confirmarEjecucionHumanaOptimizacion(
+  id: string,
+  referenciaExterna: string,
+  notas?: string,
+): Promise<OptimizacionRecomendacion> {
+  return api(`/api/optimizacion/recomendaciones/${id}/confirmar-ejecucion`, {
+    method: "POST",
+    body: JSON.stringify({ referencia_externa: referenciaExterna, notas }),
+  });
+}
+
+export type LlmInferenceLog = {
+  id: string;
+  trace_id: string;
+  employee_id?: string | null;
+  provider?: string | null;
+  model?: string | null;
+  tokens_in?: number | null;
+  tokens_out?: number | null;
+  tokens_total?: number | null;
+  latency_ms?: number | null;
+  cost?: number | null;
+  status: string;
+  error_category?: string | null;
+  error_message?: string | null;
+  fallback_used: boolean;
+  initial_provider?: string | null;
+  fallback_provider?: string | null;
+  created_at?: string | null;
+};
+
+export type LlmModelCatalog = {
+  id: string;
+  provider_type: string;
+  model_id: string;
+  display_name: string;
+  estado: string;
+  capabilities: Record<string, unknown>;
+  context_window?: number | null;
+  priority: number;
+  is_enabled: boolean;
+};
+
+export async function fetchLlmInferenceLogs(limit = 50): Promise<LlmInferenceLog[]> {
+  return api(`/api/llm/inference-logs?limit=${limit}`);
+}
+
+export async function fetchLlmModels(): Promise<LlmModelCatalog[]> {
+  return api("/api/llm/models");
+}
+
+export async function fetchLlmObservability(periodo = "mtd"): Promise<LlmObservabilitySummary> {
+  return api(`/api/llm/observability?periodo=${encodeURIComponent(periodo)}`);
+}
+
+export async function fetchLlmProvidersHealth(): Promise<LlmProviderHealth[]> {
+  return api("/api/llm/health");
+}
+
+export async function fetchLlmRoutingPolicies(): Promise<LlmRoutingPolicy[]> {
+  return api("/api/llm/routing/policies");
+}
+
+export async function createLlmRoutingPolicy(data: Record<string, unknown>): Promise<LlmRoutingPolicy> {
+  return api("/api/llm/routing/policies", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchLlmRoutingExplain(preferredProvider?: string): Promise<LlmRoutingExplain> {
+  const q = preferredProvider ? `?preferred_provider=${encodeURIComponent(preferredProvider)}` : "";
+  return api(`/api/llm/routing/explain${q}`);
+}
+
+// --- Mesa de Ayuda y Soporte (MB-12) ---
+
+export type SupportCase = {
+  id: string;
+  organization_id: string;
+  numero: number;
+  referencia: string;
+  tipo: string;
+  categoria?: string | null;
+  asunto: string;
+  descripcion?: string | null;
+  prioridad: string;
+  impacto: string;
+  urgencia: string;
+  estado: string;
+  solicitante_id: string;
+  responsable_id?: string | null;
+  sla_estado?: string | null;
+  correlation_id?: string | null;
+  modulo_relacionado?: string | null;
+  entidad_relacionada?: string | null;
+  resolucion?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type SupportCaseDetail = SupportCase & {
+  responsable_nombre?: string | null;
+  responsable_email?: string | null;
+  historial: Array<{ id: string; accion: string; detalle?: Record<string, unknown> | null; created_at?: string | null }>;
+  comentarios: Array<{ id: string; usuario_id: string; cuerpo: string; es_interno: boolean; created_at?: string | null }>;
+};
+
+export type SupportAssignee = {
+  id: string;
+  nombre: string;
+  username: string;
+  email?: string | null;
+  rol: string;
+  etiqueta: string;
+};
+
+export async function fetchSupportAssignees(): Promise<SupportAssignee[]> {
+  return api("/api/soporte/agentes-asignables");
+}
+
+export async function fetchSupportCases(params?: {
+  estado?: string;
+  q?: string;
+  solo_mios?: boolean;
+}): Promise<SupportCase[]> {
+  const qs = new URLSearchParams();
+  if (params?.estado) qs.set("estado", params.estado);
+  if (params?.q) qs.set("q", params.q);
+  if (params?.solo_mios) qs.set("solo_mios", "true");
+  const query = qs.toString();
+  return api(`/api/soporte/casos${query ? `?${query}` : ""}`);
+}
+
+export async function fetchSupportCase(id: string): Promise<SupportCaseDetail> {
+  return api(`/api/soporte/casos/${id}`);
+}
+
+export async function createSupportCase(data: Record<string, unknown>): Promise<SupportCase> {
+  return api("/api/soporte/casos", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function assignSupportCase(id: string, data: { responsable_id?: string | null; grupo?: string | null }): Promise<SupportCase> {
+  return api(`/api/soporte/casos/${id}/asignar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateSupportCaseStatus(id: string, data: { estado: string; nota?: string }): Promise<SupportCase> {
+  return api(`/api/soporte/casos/${id}/estado`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function resolveSupportCase(id: string, data: { resolucion: string; cerrar?: boolean }): Promise<SupportCase> {
+  return api(`/api/soporte/casos/${id}/resolver`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function closeSupportCase(id: string, data: { nota?: string }): Promise<SupportCase> {
+  return api(`/api/soporte/casos/${id}/cerrar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function addSupportComment(id: string, data: { cuerpo: string; es_interno?: boolean }): Promise<unknown> {
+  return api(`/api/soporte/casos/${id}/comentarios`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchSupportTipos(): Promise<{ tipos: string[]; estados: string[]; prioridades: string[] }> {
+  return api("/api/soporte/tipos");
+}
+
+// —— Comunicaciones MB-11 ——
+
+export type CommChannel = {
+  id: string;
+  organization_id: string;
+  tipo: string;
+  nombre: string;
+  activo: boolean;
+  config?: Record<string, unknown> | null;
+  secret_configured: boolean;
+  estado: string;
+  prioridad: number;
+  uso_permitido?: string | null;
+};
+
+export type CommTemplate = {
+  id: string;
+  organization_id: string;
+  codigo: string;
+  nombre: string;
+  tipo_comunicacion: string;
+  canal_tipo: string;
+  idioma: string;
+  current_version_id?: string | null;
+  current_version?: number | null;
+};
+
+export type CommRule = {
+  id: string;
+  organization_id: string;
+  nombre: string;
+  event_type: string;
+  condicion?: Record<string, unknown> | null;
+  destinatario_tipo: string;
+  destinatario_regla: string;
+  template_version_id: string;
+  channel_id: string;
+  accion: string;
+  activo: boolean;
+  antispam_minutos: number;
+  obligatoria: boolean;
+};
+
+export type CommMessage = {
+  id: string;
+  organization_id: string;
+  estado: string;
+  tipo_comunicacion: string;
+  channel_id?: string | null;
+  channel_tipo?: string | null;
+  template_version_id?: string | null;
+  template_version?: number | null;
+  rule_id?: string | null;
+  destinatario_tipo: string;
+  destinatario_id?: string | null;
+  destinatario_externo?: string | null;
+  asunto?: string | null;
+  contenido?: string | null;
+  idioma: string;
+  programada_para?: string | null;
+  correlation_id?: string | null;
+  event_id?: string | null;
+  origen: string;
+  origen_id?: string | null;
+  intentos: number;
+  max_intentos: number;
+  proximo_intento?: string | null;
+  created_at?: string | null;
+  enviada_at?: string | null;
+  historial_intentos?: Array<Record<string, unknown>>;
+};
+
+export async function fetchCommChannels(): Promise<CommChannel[]> {
+  return api("/api/comunicaciones/canales");
+}
+
+export async function createCommChannel(data: Record<string, unknown>): Promise<CommChannel> {
+  return api("/api/comunicaciones/canales", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchCommTemplates(): Promise<CommTemplate[]> {
+  return api("/api/comunicaciones/plantillas");
+}
+
+export async function createCommTemplate(data: Record<string, unknown>): Promise<CommTemplate> {
+  return api("/api/comunicaciones/plantillas", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function createCommTemplateVersion(templateId: string, data: Record<string, unknown>) {
+  return api(`/api/comunicaciones/plantillas/${templateId}/versiones`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchCommRules(): Promise<CommRule[]> {
+  return api("/api/comunicaciones/reglas");
+}
+
+export async function createCommRule(data: Record<string, unknown>): Promise<CommRule> {
+  return api("/api/comunicaciones/reglas", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchCommMessages(params = ""): Promise<CommMessage[]> {
+  return api(`/api/comunicaciones/mensajes${params ? `?${params}` : ""}`);
+}
+
+export async function fetchCommMessage(id: string): Promise<CommMessage> {
+  return api(`/api/comunicaciones/mensajes/${id}`);
+}
+
+export async function createCommMessage(data: Record<string, unknown>): Promise<CommMessage> {
+  return api("/api/comunicaciones/mensajes", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function cancelCommMessage(id: string): Promise<CommMessage> {
+  return api(`/api/comunicaciones/mensajes/${id}/cancelar`, { method: "POST" });
+}
+
+export async function fetchCommCatalog() {
+  return api<{ variables: string[]; canales: string[]; estados: string[] }>("/api/comunicaciones/catalogo/variables");
+}
+
+// --- Evaluación EIAAX (Bloque Producto 1) ---
+
+export type EvaluacionInfoItem = {
+  id: string;
+  campo: string;
+  etiqueta: string;
+  estado: string;
+  obligatorio: boolean;
+  explicacion: string | null;
+  por_que: string | null;
+  impacto_precision: string | null;
+  respuesta: string | null;
+  evidencia_ref: string | null;
+  orden: number;
+};
+
+export type EvaluacionHallazgo = {
+  id: string;
+  titulo: string;
+  descripcion: string | null;
+  tipo_contenido: string;
+  confianza: string;
+  explicacion_confianza: string | null;
+  evidencia: string | null;
+  origen: string | null;
+  impacto_resumen: string | null;
+  visible_entidad: boolean;
+  es_problema_original: boolean;
+  opportunity_id: string | null;
+  created_at: string | null;
+};
+
+export type EvaluacionExpedienteSummary = {
+  id: string;
+  codigo: string;
+  titulo: string;
+  entidad_nombre: string;
+  estado: string;
+  nivel: string;
+  porcentaje_informacion: number;
+  confianza_global: string;
+  valor_potencial: string | null;
+  area_proceso: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type EvaluacionExpedienteDetail = EvaluacionExpedienteSummary & {
+  entidad_ref: string | null;
+  necesidad: string | null;
+  objetivo: string | null;
+  diagnostic_id: string | null;
+  correlation_id: string | null;
+  notas_internas?: string | null;
+  informacion: EvaluacionInfoItem[];
+  hallazgos: EvaluacionHallazgo[];
+  oportunidades_vinculadas: string[];
+};
+
+export type EvaluacionListResponse = {
+  items: EvaluacionExpedienteSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export async function fetchEvaluaciones(params = ""): Promise<EvaluacionListResponse> {
+  return api(`/api/evaluaciones${params ? `?${params}` : ""}`);
+}
+
+export async function fetchEvaluacion(id: string): Promise<EvaluacionExpedienteDetail> {
+  return api(`/api/evaluaciones/${id}`);
+}
+
+export async function createEvaluacion(data: {
+  titulo: string;
+  entidad_nombre: string;
+  entidad_ref?: string;
+  necesidad?: string;
+  objetivo?: string;
+  area_proceso?: string;
+  nivel?: string;
+}): Promise<EvaluacionExpedienteDetail> {
+  return api("/api/evaluaciones", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateEvaluacion(id: string, data: Record<string, unknown>): Promise<EvaluacionExpedienteDetail> {
+  return api(`/api/evaluaciones/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function updateEvaluacionInformacion(
+  expedienteId: string,
+  itemId: string,
+  data: { respuesta?: string; evidencia_ref?: string; estado?: string },
+): Promise<EvaluacionExpedienteDetail> {
+  return api(`/api/evaluaciones/${expedienteId}/informacion/${itemId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function evaluarExpediente(id: string): Promise<{ expediente: EvaluacionExpedienteDetail; hallazgos_creados: number }> {
+  return api(`/api/evaluaciones/${id}/evaluar`, { method: "POST" });
+}
+
+export async function setHallazgoVisibilidad(
+  expedienteId: string,
+  objetoId: string,
+  visible: boolean,
+): Promise<EvaluacionHallazgo> {
+  return api(`/api/evaluaciones/${expedienteId}/visibilidad`, {
+    method: "POST",
+    body: JSON.stringify({ objeto_tipo: "hallazgo", objeto_id: objetoId, visible_entidad: visible }),
+  });
+}
+
+export async function fetchVistaEntidad(expedienteId: string): Promise<Record<string, unknown>> {
+  return api(`/api/evaluaciones/${expedienteId}/vista-entidad`);
+}
+
+export async function fetchEvaluacionTrazabilidad(expedienteId: string): Promise<Record<string, unknown>> {
+  return api(`/api/evaluaciones/${expedienteId}/trazabilidad`);
+}
+
+export async function fetchEvaluacionImpacto(expedienteId: string): Promise<Record<string, unknown>> {
+  return api(`/api/evaluaciones/${expedienteId}/impacto`);
+}
+
+export async function crearOportunidadDesdeHallazgo(
+  expedienteId: string,
+  hallazgoId: string,
+  dominio = "operaciones",
+): Promise<Record<string, unknown>> {
+  return api(`/api/evaluaciones/${expedienteId}/oportunidades/crear`, {
+    method: "POST",
+    body: JSON.stringify({ hallazgo_id: hallazgoId, dominio }),
+  });
+}
+
+export async function preguntarEiaax(
+  expedienteId: string,
+  mensaje: string,
+  accion?: string,
+): Promise<Record<string, unknown>> {
+  return api(`/api/evaluaciones/${expedienteId}/preguntar`, {
+    method: "POST",
+    body: JSON.stringify({ mensaje, accion }),
+  });
+}
+
+// —— MB-03 Partners / Aliados ——
+
+export type PartnerSummary = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  razon_social?: string | null;
+  estado: string;
+  tipo_relacion: string;
+  contacto_nombre?: string | null;
+  contacto_email?: string | null;
+  contacto_telefono?: string | null;
+  alcance_descripcion?: string | null;
+  valid_from?: string | null;
+  valid_until?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type PartnerGrant = {
+  id: string;
+  partner_id: string;
+  organization_id: string;
+  organization_name?: string | null;
+  estado: string;
+  alcance: string[];
+  valid_from?: string | null;
+  valid_until?: string | null;
+  notas?: string | null;
+  created_at?: string | null;
+};
+
+export type PartnerMembership = {
+  id: string;
+  partner_id: string;
+  user_id: string;
+  username?: string | null;
+  full_name?: string | null;
+  rol: string;
+  is_active: boolean;
+  assigned_at?: string | null;
+};
+
+export type PartnerDetail = PartnerSummary & {
+  organizaciones: PartnerGrant[];
+  usuarios: PartnerMembership[];
+};
+
+export type PartnerListResponse = { items: PartnerSummary[]; total: number };
+
+export async function fetchPartners(params = ""): Promise<PartnerListResponse> {
+  return api(`/api/partners${params ? `?${params}` : ""}`);
+}
+
+export async function fetchPartner(id: string): Promise<PartnerDetail> {
+  return api(`/api/partners/${id}`);
+}
+
+export async function createPartner(data: {
+  nombre: string;
+  codigo?: string;
+  razon_social?: string;
+  tipo_relacion?: string;
+  contacto_nombre?: string;
+  contacto_email?: string;
+  contacto_telefono?: string;
+  alcance_descripcion?: string;
+}): Promise<PartnerSummary> {
+  return api("/api/partners", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function setPartnerEstado(id: string, estado: string): Promise<PartnerSummary> {
+  return api(`/api/partners/${id}/estado`, { method: "POST", body: JSON.stringify({ estado }) });
+}
+
+export async function grantPartnerOrganization(
+  partnerId: string,
+  data: { organization_id: string; alcance?: string[]; notas?: string },
+): Promise<PartnerGrant> {
+  return api(`/api/partners/${partnerId}/organizaciones`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function revokePartnerGrant(partnerId: string, grantId: string): Promise<PartnerGrant> {
+  return api(`/api/partners/${partnerId}/organizaciones/${grantId}/revocar`, { method: "POST" });
+}
+
+export async function updatePartnerGrantAlcance(
+  partnerId: string,
+  grantId: string,
+  alcance: string[],
+): Promise<PartnerGrant> {
+  return api(`/api/partners/${partnerId}/organizaciones/${grantId}/alcance`, {
+    method: "PATCH",
+    body: JSON.stringify({ alcance }),
+  });
+}
+
+export async function assignPartnerUser(
+  partnerId: string,
+  data: { user_id: string; rol?: string },
+): Promise<PartnerMembership> {
+  return api(`/api/partners/${partnerId}/usuarios`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function revokePartnerUser(partnerId: string, membershipId: string): Promise<PartnerMembership> {
+  return api(`/api/partners/${partnerId}/usuarios/${membershipId}/revocar`, { method: "POST" });
+}
+
+export async function fetchPartnerAuditoria(partnerId: string): Promise<{ items: Array<Record<string, unknown>>; total: number }> {
+  return api(`/api/partners/${partnerId}/auditoria`);
+}
+
+export async function fetchPartnerCatalogo(): Promise<{
+  estados: string[];
+  roles_usuario: string[];
+  alcances: string[];
+  tipos_relacion: string[];
+}> {
+  return api("/api/partners/meta/catalogo");
+}
+
+// —— Arquitecto de Transformación ——
+
+export type TransformacionDossier = {
+  id: string;
+  organization_id: string;
+  etapa_actual: string;
+  sector?: string | null;
+  resumen?: string | null;
+  confianza_global: string;
+  porcentaje_completitud: number;
+  expediente_activo_id?: string | null;
+  expediente_activo?: { id: string; codigo: string; titulo: string } | null;
+  conocimiento?: Array<{ campo: string; etiqueta: string; valor?: string; fuente: string; calidad: string }>;
+  mapa?: Array<{ id: string; tipo: string; nombre: string; parent_id?: string | null }>;
+  causas?: Array<{ id: string; tipo: string; titulo: string; confianza: string }>;
+  alternativas?: Array<Record<string, unknown>>;
+  iniciativas?: Array<Record<string, unknown>>;
+  escenarios?: Array<{ id: string; titulo: string; tipo: string; es_proyectado: boolean }>;
+};
+
+export type TransformacionRecorrido = {
+  pasos: Array<{ id: string; label: string; completo: boolean; detalle?: string }>;
+  dossier: TransformacionDossier;
+  suficiencia?: {
+    porcentaje_informacion: number;
+    confianza_global: string;
+    faltantes: Array<{ campo: string; etiqueta: string; impacto_precision?: string }>;
+    explicacion: string;
+  };
+};
+
+export async function fetchDossier(): Promise<TransformacionDossier> {
+  return api("/api/transformacion/dossier");
+}
+
+export async function fetchRecorridoTransformacion(expedienteId?: string): Promise<TransformacionRecorrido> {
+  const q = expedienteId ? `?expediente_id=${expedienteId}` : "";
+  return api(`/api/transformacion/recorrido${q}`);
+}
+
+export async function registrarNecesidadTransformacion(data: {
+  titulo: string;
+  necesidad: string;
+  objetivo?: string;
+  area_proceso?: string;
+  entidad_nombre?: string;
+  nivel?: string;
+}): Promise<Record<string, unknown>> {
+  return api("/api/transformacion/necesidad", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function diagnosticarTransformacion(expedienteId: string): Promise<Record<string, unknown>> {
+  return api(`/api/transformacion/expedientes/${expedienteId}/diagnosticar`, { method: "POST" });
+}
+
+export async function fetchRequerimientosEmpleadoIA(): Promise<{ items: Array<Record<string, unknown>> }> {
+  return api("/api/transformacion/requerimientos-empleado-ia");
+}
+
+export async function createEmployeeFromRequerimiento(requerimientoId: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/from-requerimiento/${requerimientoId}`, { method: "POST" });
+}
+
+export async function fetchBibliotecaEmpleados(params = ""): Promise<{ items: Array<Record<string, unknown>>; total: number }> {
+  return api(`/api/agent-factory/biblioteca${params ? `?${params}` : ""}`);
+}
+
+export async function cloneEmployee(employeeId: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${employeeId}/clone`, { method: "POST" });
+}
+
+export async function estimateEmployeeCapacity(employeeId: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${employeeId}/estimate-capacity`);
+}
+
+export async function validateEmployeeProvider(employeeId: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${employeeId}/validate-provider`);
 }
