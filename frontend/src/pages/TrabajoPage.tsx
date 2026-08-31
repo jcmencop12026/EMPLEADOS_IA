@@ -11,6 +11,7 @@ import {
   type TrabajoResumen,
 } from "../api";
 import { EmptyState, ErrorState, LoadingState } from "../components/AsyncState";
+import { useOrganizationContext } from "../hooks/useOrganizationContext";
 import { usePermissions } from "../hooks/usePermissions";
 
 const COLUMNAS = [
@@ -81,6 +82,8 @@ function formatTs(value?: string | null) {
 
 export function TrabajoPage() {
   const { has } = usePermissions();
+  const { organizationQueryParam, canSelectOrganization, effectiveOrganizationName, isViewingOtherOrganization } =
+    useOrganizationContext();
   const [items, setItems] = useState<TrabajoItem[]>([]);
   const [resumen, setResumen] = useState<TrabajoResumen | null>(null);
   const [total, setTotal] = useState(0);
@@ -116,8 +119,9 @@ export function TrabajoPage() {
       requires_action: soloAccion ? true : undefined,
       sort: sortKey,
       sort_dir: sortDir,
+      organization_id: organizationQueryParam,
     };
-    return Promise.all([fetchTrabajoItems(params), fetchTrabajoResumen()])
+    return Promise.all([fetchTrabajoItems(params), fetchTrabajoResumen(organizationQueryParam)])
       .then(([data, sum]) => {
         setItems(data.items);
         setTotal(data.total);
@@ -129,7 +133,7 @@ export function TrabajoPage() {
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Error al cargar la bandeja."))
       .finally(() => setLoading(false));
-  }, [busqueda, filtroEstado, filtroPrioridad, filtroTipo, filtroModulo, filtroVencimiento, soloAccion, sortKey, sortDir]);
+  }, [busqueda, filtroEstado, filtroPrioridad, filtroTipo, filtroModulo, filtroVencimiento, soloAccion, sortKey, sortDir, organizationQueryParam]);
 
   useEffect(() => {
     void load();
@@ -185,7 +189,12 @@ export function TrabajoPage() {
       <header className="page-header">
         <div>
           <h1>Mi trabajo</h1>
-          <p className="muted">Tareas, alertas, aprobaciones y notificaciones que requieren su atención</p>
+          <p className="muted">
+            Tareas, alertas, aprobaciones y notificaciones que requieren su atención
+            {(isViewingOtherOrganization || canSelectOrganization) && resumen && (
+              <> · <strong>Organización: {effectiveOrganizationName}</strong></>
+            )}
+          </p>
         </div>
         {resumen && (
           <div className="trabajo-counters" aria-label="Resumen bandeja">

@@ -192,8 +192,8 @@ def _support_requires_action(case: SupportCase, user: User) -> bool:
     return False
 
 
-def _notification_visible_query(db: Session, user: User) -> Any:
-    query = db.query(Notification).filter(Notification.organization_id == user.organization_id)
+def _notification_visible_query(db: Session, user: User, org_id: str) -> Any:
+    query = db.query(Notification).filter(Notification.organization_id == org_id)
     perms = user_permissions(user, db)
     if "notification.manage" not in perms:
         query = query.filter(
@@ -931,7 +931,7 @@ def collect_items(
 
     if _has(permissions, "notification.view"):
         notifications = (
-            _notification_visible_query(db, user)
+            _notification_visible_query(db, user, org_id)
             .filter(Notification.status == "NEW")
             .order_by(Notification.created_at.desc())
             .limit(100)

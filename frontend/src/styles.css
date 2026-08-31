@@ -79,6 +79,42 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.org-context-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.org-context-label {
+  color: #475569;
+  white-space: nowrap;
+}
+
+.org-context-bar select {
+  min-height: 28px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 2px 6px;
+  max-width: 220px;
+}
+
+.org-context-badge {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .notification-bell { position: relative; text-decoration: none; font-size: 16px; }

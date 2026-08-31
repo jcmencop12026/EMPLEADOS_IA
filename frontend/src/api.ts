@@ -532,8 +532,9 @@ export async function fetchTrabajoItems(params: Record<string, string | boolean 
   return api<TrabajoItemsResponse>(`/api/trabajo/items${suffix}`);
 }
 
-export async function fetchTrabajoResumen(): Promise<TrabajoResumen> {
-  return api<TrabajoResumen>("/api/trabajo/resumen");
+export async function fetchTrabajoResumen(organizationId?: string): Promise<TrabajoResumen> {
+  const suffix = organizationId ? `?organization_id=${encodeURIComponent(organizationId)}` : "";
+  return api<TrabajoResumen>(`/api/trabajo/resumen${suffix}`);
 }
 
 export type EmployeeAuditHealthRow = {
@@ -2596,8 +2597,12 @@ export type CentroControlResumen = {
   } | null;
 };
 
-export async function fetchCentroControlResumen(periodo = "mtd"): Promise<CentroControlResumen> {
-  return api(`/api/centro-control/resumen-ejecutivo?periodo=${encodeURIComponent(periodo)}`);
+export async function fetchCentroControlResumen(periodo = "mtd", organizationId?: string): Promise<CentroControlResumen> {
+  const qs = new URLSearchParams({ periodo });
+  if (organizationId) {
+    qs.set("organization_id", organizationId);
+  }
+  return api(`/api/centro-control/resumen-ejecutivo?${qs.toString()}`);
 }
 
 // --- Modelo comercial (1280) ---

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import { OrganizationContextBar } from "./components/OrganizationContextBar";
 import { fetchTrabajoResumen, fetchUnreadCount } from "./api";
 import { filterMenuByPermissions, canAccessRoute } from "./auth/permissions";
 import { getCachedUser, logout } from "./auth/session";
+import { OrganizationProvider, ORGANIZATION_CONTEXT_EVENT, useOrganizationContext } from "./hooks/useOrganizationContext";
 import { MENU } from "./navigation/menu";
 
 type NavSection = (typeof MENU)[number];
@@ -18,11 +20,20 @@ function loadSections(): Record<string, boolean> {
 }
 
 export function AppShell() {
+  return (
+    <OrganizationProvider>
+      <AppShellInner />
+    </OrganizationProvider>
+  );
+}
+
+function AppShellInner() {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
   const [sections, setSections] = useState<Record<string, boolean>>(loadSections);
   const [unread, setUnread] = useState(0);
   const [trabajoPendientes, setTrabajoPendientes] = useState(0);
   const user = getCachedUser();
+  const { organizationQueryParam } = useOrganizationContext();
   const permissionSet = useMemo(
     () => new Set(user?.permissions ?? []),
     [user?.permissions],
@@ -49,7 +60,7 @@ export function AppShell() {
     const refreshNotif = () => fetchUnreadCount().then(setUnread).catch(() => undefined);
     const refreshTrabajo = () => {
       if (!canAccessRoute("/trabajo", permissionSet)) return;
-      fetchTrabajoResumen()
+      fetchTrabajoResumen(organizationQueryParam)
         .then((r) => setTrabajoPendientes(r.pendientes))
         .catch(() => undefined);
     };
@@ -60,11 +71,13 @@ export function AppShell() {
     refresh();
     const timer = window.setInterval(refresh, 60000);
     window.addEventListener("notifications-changed", refresh);
+    window.addEventListener(ORGANIZATION_CONTEXT_EVENT, refresh);
     return () => {
       window.clearInterval(timer);
       window.removeEventListener("notifications-changed", refresh);
+      window.removeEventListener(ORGANIZATION_CONTEXT_EVENT, refresh);
     };
-  }, [permissionSet]);
+  }, [permissionSet, organizationQueryParam]);
 
   function toggleSection(id: string) {
     setSections((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }));
@@ -150,9 +163,12 @@ export function AppShell() {
       <div className="main">
         <header className="topbar">
           <span>EMPLEADOS IA · Plataforma empresarial</span>
-          <NavLink className="notification-bell" to="/notificaciones" title="Centro de notificaciones">
-            🔔{unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}
-          </NavLink>
+          <div className="topbar-actions">
+            <OrganizationContextBar />
+            <NavLink className="notification-bell" to="/notificaciones" title="Centro de notificaciones">
+              🔔{unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}
+            </NavLink>
+          </div>
         </header>
         <section className="content">
           <Outlet />

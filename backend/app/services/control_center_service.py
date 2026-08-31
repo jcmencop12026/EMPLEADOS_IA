@@ -919,12 +919,16 @@ def get_executive_summary(
 
 
 def resolve_organization_id(db: Session, user: User, requested_org_id: str | None) -> str:
+    from app.models import Organization
+    from app.tenant_scope import ensure_organization_active
+
     if not requested_org_id or requested_org_id == user.organization_id:
+        org = db.query(Organization).filter(Organization.id == user.organization_id).first()
+        ensure_organization_active(org)
         return user.organization_id
     check_permission(user, "platform.organization.view", db)
-    from app.models import Organization
-
     org = db.query(Organization).filter(Organization.id == requested_org_id).first()
     if not org:
         raise ValueError("Organización no encontrada")
+    ensure_organization_active(org)
     return org.id

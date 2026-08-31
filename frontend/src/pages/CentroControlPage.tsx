@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { CentroControlResumen } from "../api";
 import { fetchCentroControlResumen } from "../api";
+import { useOrganizationContext } from "../hooks/useOrganizationContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { formatAuditAction, formatHealthStatus } from "../lib/labels";
 
@@ -43,6 +44,7 @@ function SemanticBadge({ tipo }: { tipo: string }) {
 
 export function CentroControlPage() {
   const { has } = usePermissions();
+  const { organizationQueryParam, effectiveOrganizationName, isViewingOtherOrganization } = useOrganizationContext();
   const [data, setData] = useState<CentroControlResumen | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,11 +54,11 @@ export function CentroControlPage() {
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetchCentroControlResumen(periodo)
+    fetchCentroControlResumen(periodo, organizationQueryParam)
       .then(setData)
       .catch((e) => setError(e instanceof Error ? e.message : "Error al cargar"))
       .finally(() => setLoading(false));
-  }, [periodo]);
+  }, [periodo, organizationQueryParam]);
 
   useEffect(() => {
     load();
@@ -77,7 +79,12 @@ export function CentroControlPage() {
     <div className="ops-page centro-control-page">
       <header className="page-header compact">
         <h1>Centro de Control ejecutivo</h1>
-        <p className="muted">Consolidación operativa — qué pasa, qué requiere atención y qué valor se genera</p>
+        <p className="muted">
+          Consolidación operativa — qué pasa, qué requiere atención y qué valor se genera
+          {isViewingOtherOrganization && (
+            <> · <strong>Organización: {effectiveOrganizationName}</strong></>
+          )}
+        </p>
         <div className="toolbar compact-toolbar">
           <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} title="Periodo">
             <option value="mtd">Mes actual</option>
