@@ -119,6 +119,56 @@ body {
   gap: 10px;
 }
 
+.password-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.password-field input {
+  flex: 1;
+}
+
+.password-toggle {
+  padding: 4px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #f8fafc;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.password-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  text-align: left;
+}
+
+.login-forgot {
+  margin-top: -4px;
+}
+
+.login-forgot-panel {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 11px;
+}
+
+.login-forgot-panel code {
+  font-size: 10px;
+}
+
 .ops-indicators {
   display: flex;
   gap: 10px;

@@ -8,6 +8,8 @@ export function LoginPage() {
   const [searchParams] = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
   const [mfaToken, setMfaToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -169,15 +171,47 @@ export function LoginPage() {
         </label>
         <label>
           Contraseña
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            placeholder="Contraseña"
-            disabled={loading}
-          />
+          <span className="password-field">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              placeholder="Contraseña"
+              disabled={loading}
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              disabled={loading}
+            >
+              {showPassword ? "🙈" : "👁"}
+            </button>
+          </span>
         </label>
+        <button
+          type="button"
+          className="link-button login-forgot"
+          onClick={() => setShowForgot((v) => !v)}
+          disabled={loading}
+        >
+          ¿Olvidó su contraseña?
+        </button>
+        {showForgot && (
+          <div className="login-forgot-panel" role="region" aria-label="Recuperación de contraseña">
+            <p className="muted">
+              La recuperación automática por correo no está habilitada en esta instalación.
+              Solicite al administrador del sistema que restablezca su acceso de forma segura.
+            </p>
+            <p className="muted">
+              El administrador puede usar el script oficial <code>reset_admin_password</code> en el contenedor backend
+              sin exponer la contraseña en archivos ni registros.
+            </p>
+          </div>
+        )}
         {error && <p className="error" role="alert">{error}</p>}
         <button type="submit" disabled={loading}>
           {loading ? "Entrando…" : "Entrar"}
