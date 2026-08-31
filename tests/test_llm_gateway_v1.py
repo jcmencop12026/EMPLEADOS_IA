@@ -88,9 +88,9 @@ def test_secret_masking_and_sanitize():
 def test_is_llm_provider():
     assert is_llm_provider("openai")
     assert is_llm_provider("ollama")
-    assert not is_llm_provider("azure-openai")
-    assert not is_llm_provider("anthropic")
-    assert not is_llm_provider("gemini")
+    assert is_llm_provider("azure-openai")
+    assert is_llm_provider("anthropic")
+    assert is_llm_provider("gemini")
     assert not is_llm_provider("rule-engine")
     assert not is_llm_provider("docint")
     assert not is_llm_provider("custom")
