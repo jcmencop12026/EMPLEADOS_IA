@@ -6,17 +6,26 @@ import {
   calcularImplSalud,
   completarImplHito,
   createImplBloqueador,
+  createImplEntregable,
+  createImplExpansion,
   createImplExitoPlan,
   createImplHito,
   createImplPiloto,
+  createImplRenovacion,
   createImplRequisito,
   evaluarImplReadiness,
+  fetchContinuidadVistaPorProyecto,
+  fetchImplEntregables,
   fetchImplProyectoDetalle,
   medirImplObjetivo,
   registrarImplAdopcion,
   registrarImplPilotoResultado,
+  updateImplEntregable,
+  type ContinuidadVista,
+  type ImplEntregable,
   type ImplProyectoDetalle,
 } from "../api";
+import { ContinuidadVistaPanel } from "../components/continuidad/ContinuidadVistaPanel";
 import { ImplementationCycleBar } from "../components/comercial/ImplementationCycleBar";
 import { formatMoney } from "../lib/comercialLabels";
 import { usePermissions } from "../hooks/usePermissions";
@@ -33,10 +42,18 @@ export function ImplementacionDetailPage() {
   const [tab, setTab] = useState("resumen");
   const [salud, setSalud] = useState<Record<string, unknown> | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [entregables, setEntregables] = useState<ImplEntregable[]>([]);
+  const [vista, setVista] = useState<ContinuidadVista | null>(null);
 
   async function reload() {
     if (!proyectoId) return;
     setDetalle(await fetchImplProyectoDetalle(proyectoId));
+    if (has("implementacion.view")) {
+      fetchImplEntregables(proyectoId).then(setEntregables).catch(() => setEntregables([]));
+    }
+    if (has("continuidad_comercial.view")) {
+      fetchContinuidadVistaPorProyecto(proyectoId).then(setVista).catch(() => setVista(null));
+    }
   }
 
   useEffect(() => {
@@ -89,9 +106,9 @@ export function ImplementacionDetailPage() {
       </header>
       {msg && <p className="info-text">{msg}</p>}
       <nav className="tab-nav">
-        {["resumen", "hitos", "preparacion", "piloto", "adopcion", "exito", "salud"].map((x) => (
+        {["resumen", "hitos", "entregables", "preparacion", "piloto", "adopcion", "exito", "renovacion", "continuidad", "salud"].map((x) => (
           <button key={x} type="button" className={tab === x ? "active" : ""} onClick={() => setTab(x)}>
-            {x.charAt(0).toUpperCase() + x.slice(1)}
+            {x === "exito" ? "Éxito" : x === "renovacion" ? "Renovación" : x.charAt(0).toUpperCase() + x.slice(1)}
           </button>
         ))}
       </nav>
@@ -116,7 +133,46 @@ export function ImplementacionDetailPage() {
             </details>
           )}
           {detalle.proposal_id && (
-            <p><Link to={`/comercial/propuestas/${detalle.proposal_id}`}>Ver propuesta comercial vinculada →</Link></p>
+            <p>
+              <Link to={`/centro-negocios/propuestas/${detalle.proposal_id}`}>Ver expediente Centro de Negocios →</Link>
+            </p>
+          )}
+        </section>
+      )}
+      {tab === "entregables" && (
+        <section className="panel">
+          <h2>Entregables formales</h2>
+          {entregables.length === 0 ? (
+            <p className="muted">Sin entregables registrados.</p>
+          ) : (
+            <table className="data-table compact-table">
+              <thead><tr><th>Nombre</th><th>Estado</th><th>Aceptación</th><th>Evidencia</th></tr></thead>
+              <tbody>
+                {entregables.map((e) => (
+                  <tr key={e.id}>
+                    <td>{e.nombre}</td>
+                    <td>{e.estado}</td>
+                    <td>{e.aceptacion ?? "—"}</td>
+                    <td>{e.evidencia ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {has("implementacion.manage") && proyectoId && (
+            <button
+              type="button"
+              onClick={async () => {
+                const nombre = window.prompt("Nombre del entregable:");
+                if (!nombre) return;
+                const ent = await createImplEntregable(proyectoId, { nombre, descripcion: "Entrega formal" });
+                await updateImplEntregable(ent.id, { aceptacion: "PENDIENTE" });
+                setMsg(`Entregable creado: ${ent.nombre}`);
+                reload();
+              }}
+            >
+              Registrar entregable
+            </button>
           )}
         </section>
       )}
@@ -175,6 +231,46 @@ export function ImplementacionDetailPage() {
             setMsg(`Plan creado: ${plan.id}`);
           }}>Crear plan de éxito</button>
         </section>
+      )}
+      {tab === "renovacion" && has("exito_cliente.manage") && (
+        <section className="panel">
+          <h2>Renovación y ampliación</h2>
+          <p className="muted">Detecte oportunidades de renovación o expansión sin duplicar el CRM.</p>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!proyectoId) return;
+              const res = await createImplRenovacion({
+                proyecto_id: proyectoId,
+                notas: "Renovación próxima",
+                crear_oportunidad: true,
+                titulo_oportunidad: "Renovación contrato",
+              });
+              setMsg(res.opportunity_id ? `Oportunidad creada: ${res.opportunity_id}` : "Renovación registrada");
+            }}
+          >
+            Registrar renovación y crear oportunidad
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!proyectoId) return;
+              const res = await createImplExpansion({
+                proyecto_id: proyectoId,
+                tipo: "NUEVO_PROCESO",
+                descripcion: "Ampliación de alcance",
+                crear_oportunidad: true,
+                titulo_oportunidad: "Expansión capacidad",
+              });
+              setMsg(res.opportunity_id ? `Oportunidad expansión: ${res.opportunity_id}` : "Expansión registrada");
+            }}
+          >
+            Registrar ampliación
+          </button>
+        </section>
+      )}
+      {tab === "continuidad" && has("continuidad_comercial.view") && (
+        <ContinuidadVistaPanel vista={vista} canManage={false} canClose={false} />
       )}
       {tab === "salud" && (
         <section className="panel">

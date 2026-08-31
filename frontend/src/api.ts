@@ -2793,8 +2793,11 @@ export async function registrarNegociacion(proposalId: string, data: Record<stri
   return api(`/api/centro-negocios/propuestas/${proposalId}/negociacion`, { method: "POST", body: JSON.stringify(data) });
 }
 
-export async function convertirAImplementacion(proposalId: string) {
-  return api(`/api/centro-negocios/propuestas/${proposalId}/convertir-implementacion`, { method: "POST", body: JSON.stringify({}) });
+export async function convertirAImplementacion(proposalId: string, condiciones?: string | null) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/convertir-implementacion`, {
+    method: "POST",
+    body: JSON.stringify({ condiciones: condiciones ?? null }),
+  });
 }
 
 export type CentroNegociosDetalle = CentroNegociosPipelineItem & {
@@ -3035,6 +3038,109 @@ export async function medirImplObjetivo(objetivoId: string, valor_medido: number
 
 export async function calcularImplSalud(proyectoId: string) {
   return api(`/api/implementacion/proyectos/${proyectoId}/salud`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export type ImplEntregable = {
+  id: string;
+  nombre: string;
+  descripcion?: string | null;
+  estado: string;
+  fecha_objetivo?: string | null;
+  evidencia?: string | null;
+  aceptacion?: string | null;
+  observaciones?: string | null;
+};
+
+export async function fetchImplEntregables(proyectoId: string): Promise<ImplEntregable[]> {
+  return api(`/api/implementacion/proyectos/${proyectoId}/entregables`);
+}
+
+export async function createImplEntregable(proyectoId: string, data: Record<string, unknown>): Promise<ImplEntregable> {
+  return api(`/api/implementacion/proyectos/${proyectoId}/entregables`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateImplEntregable(entregableId: string, data: Record<string, unknown>): Promise<ImplEntregable> {
+  return api(`/api/implementacion/entregables/${entregableId}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function createImplRenovacion(data: Record<string, unknown>) {
+  return api("/api/implementacion/exito/renovaciones", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function createImplExpansion(data: Record<string, unknown>) {
+  return api("/api/implementacion/exito/expansiones", { method: "POST", body: JSON.stringify(data) });
+}
+
+// --- Continuidad comercial y operacional (1720) ---
+
+export type ContinuidadVista = {
+  diagnosticado?: Record<string, unknown> | null;
+  prometido?: Record<string, unknown>;
+  contratado?: Record<string, unknown>;
+  compromiso_snapshot?: Record<string, unknown>;
+  implementado?: Record<string, unknown>;
+  operando?: Record<string, unknown>;
+  proyectado?: Record<string, unknown>;
+  resultado_real?: Record<string, unknown>;
+  referencias?: {
+    proposal_id?: string;
+    opportunity_id?: string;
+    evaluacion_id?: string;
+    contract_id?: string;
+    proyecto_id?: string;
+  };
+};
+
+export type CambioAlcance = {
+  id: string;
+  codigo: string;
+  estado: string;
+  solicitud: string;
+  analisis?: string | null;
+  decision?: string | null;
+  impacto?: Record<string, unknown> | null;
+  proposal_id?: string;
+  proyecto_id?: string | null;
+  contract_id?: string | null;
+};
+
+export type CierreContrato = {
+  id: string;
+  contract_id: string;
+  proposal_id?: string;
+  proyecto_id?: string | null;
+  motivo: string;
+  estado: string;
+  confirmacion?: boolean;
+  pendientes?: string[];
+};
+
+export async function fetchContinuidadVistaPorPropuesta(proposalId: string): Promise<ContinuidadVista> {
+  return api(`/api/continuidad-comercial/propuestas/${proposalId}/vista`);
+}
+
+export async function fetchContinuidadVistaPorProyecto(proyectoId: string): Promise<ContinuidadVista> {
+  return api(`/api/continuidad-comercial/proyectos/${proyectoId}/vista`);
+}
+
+export async function fetchCambiosAlcance(proposalId: string): Promise<CambioAlcance[]> {
+  return api(`/api/continuidad-comercial/propuestas/${proposalId}/cambios-alcance`);
+}
+
+export async function crearCambioAlcance(data: Record<string, unknown>): Promise<CambioAlcance> {
+  return api("/api/continuidad-comercial/cambios-alcance", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function avanzarCambioAlcance(cambioId: string, data: Record<string, unknown>): Promise<CambioAlcance> {
+  return api(`/api/continuidad-comercial/cambios-alcance/${cambioId}/avanzar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function iniciarCierreContrato(contractId: string, data: Record<string, unknown>): Promise<CierreContrato> {
+  return api(`/api/continuidad-comercial/contratos/${contractId}/cierre`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function confirmarCierreContrato(closureId: string): Promise<CierreContrato> {
+  return api(`/api/continuidad-comercial/cierres/${closureId}/confirmar`, { method: "POST", body: JSON.stringify({ confirmacion: true }) });
 }
 
 // --- Segmentación y planes verticales (1310) ---

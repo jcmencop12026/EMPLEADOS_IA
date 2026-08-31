@@ -195,3 +195,30 @@ class ExpansionCreate(BaseModel):
     tipo: str
     descripcion: str
     recomendacion: str | None = None
+
+
+class EntregableCreate(BaseModel):
+    nombre: str
+    descripcion: str | None = None
+    responsable_id: str | None = None
+    fecha_objetivo: datetime | None = None
+    documento_id: str | None = None
+    version_referencia: str | None = None
+
+
+class EntregableUpdate(BaseModel):
+    nombre: str | None = None
+    descripcion: str | None = None
+    estado: str | None = None
+    evidencia: str | None = None
+    aceptacion: str | None = None
+    observaciones: str | None = None
+
+
+class TareaCompletar(BaseModel):
+    evidencia: str | None = None
+    resultado: str | None = None
+
+
+class BloqueadorResolver(BaseModel):
+    observaciones: str | None = None

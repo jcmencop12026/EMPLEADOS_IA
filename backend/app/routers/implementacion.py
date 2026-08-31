@@ -12,7 +12,10 @@ from app.permissions import check_permission
 from app.schemas_implementacion import (
     AdopcionCreate,
     BloqueadorCreate,
+    BloqueadorResolver,
     CapacitacionCreate,
+    EntregableCreate,
+    EntregableUpdate,
     ExitoObjetivoCreate,
     ExitoObjetivoMedir,
     ExitoPlanAccionCreate,
@@ -34,7 +37,9 @@ from app.schemas_implementacion import (
     RequisitoCreate,
     RiesgoCreate,
     TareaCreate,
+    TareaCompletar,
 )
+from app.schemas_continuidad_comercial import ExpansionContinuidadCreate, RenovacionContinuidadCreate
 from app.services import implementacion_service as svc
 
 router = APIRouter(prefix="/api/implementacion", tags=["implementacion"])
@@ -112,6 +117,52 @@ def create_tarea(proyecto_id: str, body: TareaCreate, user: User = Depends(get_c
     row = svc.create_tarea(db, user.organization_id, proyecto_id, body.model_dump(), user.id)
     db.commit()
     return svc.tarea_to_dict(row)
+
+
+@router.post("/tareas/{tarea_id}/completar")
+def completar_tarea(tarea_id: str, body: TareaCompletar, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "implementacion.manage", db)
+    row = svc.completar_tarea(db, user.organization_id, tarea_id, body.model_dump(), user.id)
+    db.commit()
+    return svc.tarea_to_dict(row)
+
+
+@router.post("/requisitos/{requisito_id}/completar")
+def completar_requisito(requisito_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "implementacion.manage", db)
+    row = svc.completar_requisito(db, user.organization_id, requisito_id, user.id)
+    db.commit()
+    return svc.requisito_to_dict(row)
+
+
+@router.post("/bloqueadores/{bloqueador_id}/resolver")
+def resolver_bloqueador(bloqueador_id: str, body: BloqueadorResolver, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "implementacion.manage", db)
+    row = svc.resolver_bloqueador(db, user.organization_id, bloqueador_id, user.id, body.observaciones)
+    db.commit()
+    return svc.bloqueador_to_dict(row)
+
+
+@router.get("/proyectos/{proyecto_id}/entregables")
+def list_entregables(proyecto_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "implementacion.view", db)
+    return svc.list_entregables(db, user.organization_id, proyecto_id)
+
+
+@router.post("/proyectos/{proyecto_id}/entregables", status_code=status.HTTP_201_CREATED)
+def create_entregable(proyecto_id: str, body: EntregableCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "implementacion.manage", db)
+    row = svc.create_entregable(db, user.organization_id, proyecto_id, body.model_dump(), user.id)
+    db.commit()
+    return svc.entregable_to_dict(row)
+
+
+@router.patch("/entregables/{entregable_id}")
+def patch_entregable(entregable_id: str, body: EntregableUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "implementacion.manage", db)
+    row = svc.update_entregable(db, user.organization_id, entregable_id, body.model_dump(exclude_unset=True), user.id)
+    db.commit()
+    return svc.entregable_to_dict(row)
 
 
 @router.post("/proyectos/{proyecto_id}/requisitos", status_code=status.HTTP_201_CREATED)
@@ -273,16 +324,16 @@ def salud(proyecto_id: str, user: User = Depends(get_current_user), db: Session 
 
 
 @router.post("/exito/renovaciones", status_code=status.HTTP_201_CREATED)
-def renovacion(body: RenovacionCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def renovacion(body: RenovacionContinuidadCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     check_permission(user, "exito_cliente.manage", db)
     row = svc.create_renovacion(db, user.organization_id, body.model_dump(), user.id)
     db.commit()
-    return {"id": row.id, "estado": row.estado}
+    return {"id": row.id, "estado": row.estado, "opportunity_id": row.opportunity_id}
 
 
 @router.post("/exito/expansiones", status_code=status.HTTP_201_CREATED)
-def expansion(body: ExpansionCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def expansion(body: ExpansionContinuidadCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     check_permission(user, "exito_cliente.manage", db)
     row = svc.create_expansion(db, user.organization_id, body.model_dump(), user.id)
     db.commit()
-    return {"id": row.id, "tipo": row.tipo, "recomendacion": row.recomendacion}
+    return {"id": row.id, "tipo": row.tipo, "recomendacion": row.recomendacion, "opportunity_id": row.opportunity_id}

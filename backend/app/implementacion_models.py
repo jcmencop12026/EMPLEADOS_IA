@@ -32,6 +32,13 @@ class ImplementacionProyecto(Base):
     titulo: Mapped[str] = mapped_column(String(300), nullable=False)
     estado: Mapped[str] = mapped_column(String(30), nullable=False, default="PLANIFICACION", index=True)
     proposal_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("commercial_proposals.id"), nullable=True)
+    opportunity_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("opportunities.id"), nullable=True, index=True)
+    evaluacion_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    contract_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("negocio_contract_records.id"), nullable=True, index=True)
+    version_contratada: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    documento_contrato_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("negocio_proposal_documents.id"), nullable=True)
+    compromiso_contractual_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    finops_budget_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("finops_budgets.id"), nullable=True)
     plan_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("commercial_plans.id"), nullable=True)
     responsable_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
     fecha_inicio: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -47,6 +54,28 @@ class ImplementacionProyecto(Base):
     go_live_checklist_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     go_live_observaciones: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+
+class ImplementacionEntregable(Base):
+    """Entregable formal de implementación."""
+
+    __tablename__ = "impl_entregables"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    proyecto_id: Mapped[str] = mapped_column(String(36), ForeignKey("impl_proyectos.id"), nullable=False, index=True)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False)
+    nombre: Mapped[str] = mapped_column(String(300), nullable=False)
+    descripcion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    responsable_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    fecha_objetivo: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    estado: Mapped[str] = mapped_column(String(20), nullable=False, default="PENDIENTE")
+    evidencia: Mapped[str | None] = mapped_column(Text, nullable=True)
+    documento_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("negocio_proposal_documents.id"), nullable=True)
+    aceptacion: Mapped[str] = mapped_column(String(20), nullable=False, default="PENDIENTE")
+    observaciones: Mapped[str | None] = mapped_column(Text, nullable=True)
+    version_referencia: Mapped[str | None] = mapped_column(String(40), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 
@@ -324,6 +353,7 @@ class ExitoClienteRenovacion(Base):
     salud: Mapped[str | None] = mapped_column(String(20), nullable=True)
     riesgos_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     notas: Mapped[str | None] = mapped_column(Text, nullable=True)
+    opportunity_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("opportunities.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 
@@ -337,6 +367,7 @@ class ExitoClienteExpansion(Base):
     descripcion: Mapped[str] = mapped_column(Text, nullable=False)
     recomendacion: Mapped[str | None] = mapped_column(Text, nullable=True)
     estado: Mapped[str] = mapped_column(String(20), nullable=False, default="PROPUESTA")
+    opportunity_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("opportunities.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 

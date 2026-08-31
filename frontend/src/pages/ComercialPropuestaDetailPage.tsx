@@ -86,6 +86,12 @@ export function ComercialPropuestaDetailPage() {
           {detail.vigencia_hasta && ` · Vigencia: ${detail.vigencia_hasta.slice(0, 10)}`}
         </p>
         <CredentialModeBadge mode={detail.credential_mode ?? detail.plan?.credential_mode} />
+        <div className="info-banner" style={{ marginTop: "0.75rem", padding: "0.75rem 1rem", background: "var(--surface-muted, #f4f6f8)", borderRadius: "6px" }}>
+          <strong>Gestión autoritativa:</strong>{" "}
+          Esta propuesta se gestiona en el{" "}
+          <Link to={`/centro-negocios/propuestas/${proposalId}`}>Centro de Negocios</Link>
+          {" "}(contrato, aprobaciones, implementación y continuidad).
+        </div>
       </header>
       {error && <p className="error-text">{error}</p>}
 
