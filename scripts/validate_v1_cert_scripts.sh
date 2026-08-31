@@ -117,6 +117,18 @@ for bad in Inspect-AdminUser-Inline-e8cb853.ps1 Reset-AdminPassword-Inline-e8cb8
   fi
 done
 
+# I. No fragile docker inspect Go templates in PowerShell
+echo ""
+echo "[I] No fragile docker inspect -f Go templates"
+for f in "$V1_DIR"/*.ps1; do
+  [ -f "$f" ] || continue
+  if grep -qE 'inspect\s+(-f|--format)\s+["'\'']?\{\{' "$f"; then
+    report "docker inspect Go template in $(basename "$f")"
+  else
+    ok "no docker Go template: $(basename "$f")"
+  fi
+done
+
 echo ""
 if [ "$fail" -eq 0 ]; then
   echo "=== VALIDATION: PASS ==="
