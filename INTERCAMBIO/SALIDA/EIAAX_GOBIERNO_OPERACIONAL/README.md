@@ -3,7 +3,7 @@
 **Agente:** A  
 **Tipo:** DESARROLLO  
 **SHA inicial (BP1):** `7e9abba11f4c4f216142c6c70d662229ffc585bb`  
-**SHA final:** _(ver commit de esta rama)_  
+**SHA final:** `26e78ca`  
 **Rama:** `cursor/gobierno-operacional-eiaax-3e3d`  
 **Migración:** `1410a1b2c3d4e`
 
