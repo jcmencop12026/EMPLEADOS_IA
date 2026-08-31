@@ -7,12 +7,14 @@ import { usePermissions } from "../hooks/usePermissions";
 import { formatAuditAction, formatHealthStatus } from "../lib/labels";
 
 const SECCIONES_DEFAULT = [
-  { id: "resumen", label: "Resumen" },
+  { id: "resumen", label: "Resumen operacional" },
+  { id: "empleados_ia", label: "Empleados IA" },
+  { id: "ejecuciones", label: "Ejecuciones" },
+  { id: "atencion", label: "Requiere atención" },
+  { id: "capacidad_consumo", label: "Capacidad y consumo" },
+  { id: "aprobaciones", label: "Aprobaciones" },
+  { id: "salud", label: "Salud de servicios" },
   { id: "valor", label: "Valor" },
-  { id: "operacion", label: "Operación" },
-  { id: "ia_costos", label: "IA y costos" },
-  { id: "implementacion", label: "Implementación" },
-  { id: "salud", label: "Salud" },
 ] as const;
 
 type SeccionId = (typeof SECCIONES_DEFAULT)[number]["id"];
@@ -74,13 +76,17 @@ export function CentroControlPage() {
 
   const secciones = data?.secciones?.length ? data.secciones : SECCIONES_DEFAULT;
   const valor = data?.valor_consolidado ?? data?.resumen_ejecutivo?.valor;
+  const op = data?.operacional;
 
   return (
     <div className="ops-page centro-control-page">
       <header className="page-header compact">
-        <h1>Centro de Control ejecutivo</h1>
+        <h1>Centro de Control operacional</h1>
         <p className="muted">
-          Consolidación operativa — qué pasa, qué requiere atención y qué valor se genera
+          Operación actual, salud, capacidad y atención — actualización bajo demanda
+          {op?.ultima_actualizacion && (
+            <> · Última actualización: {new Date(op.ultima_actualizacion).toLocaleString("es-CO")}</>
+          )}
           {isViewingOtherOrganization && (
             <> · <strong>Organización: {effectiveOrganizationName}</strong></>
           )}
@@ -115,8 +121,21 @@ export function CentroControlPage() {
 
           {seccion === "resumen" && (
             <>
+              {op?.resumen_operacional && (
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Panorama operacional</h2>
+                  <div className="metrics-grid">
+                    <div className="metric-card cc-metric-card"><span className="metric-label">Empleados activos</span><strong>{op.resumen_operacional.empleados_activos ?? "—"}</strong></div>
+                    <div className="metric-card cc-metric-card"><span className="metric-label">Ejecuciones en curso</span><strong>{op.resumen_operacional.ejecuciones_en_curso ?? "—"}</strong></div>
+                    <div className="metric-card cc-metric-card"><span className="metric-label">Requiere atención</span><strong>{op.resumen_operacional.requiere_atencion ?? "—"}</strong></div>
+                    <div className="metric-card cc-metric-card"><span className="metric-label">Aprobaciones pendientes</span><strong>{op.resumen_operacional.aprobaciones_pendientes ?? "—"}</strong></div>
+                    <div className="metric-card cc-metric-card"><span className="metric-label">Ejecuciones fallidas</span><strong>{op.resumen_operacional.ejecuciones_fallidas ?? "—"}</strong></div>
+                    <div className="metric-card cc-metric-card"><span className="metric-label">Concurrencia</span><strong>{op.resumen_operacional.concurrencia ?? "—"}</strong></div>
+                  </div>
+                </section>
+              )}
               <section className="panel compact-panel">
-                <h2 className="section-title">Resumen ejecutivo</h2>
+                <h2 className="section-title">Indicadores</h2>
                 <div className="metrics-grid">
                   {data.resumen_ejecutivo.indicadores.map((ind) => (
                     <Link key={ind.id} to={ind.enlace} className="metric-card cc-metric-card" title={ind.label}>
@@ -202,6 +221,166 @@ export function CentroControlPage() {
                 </section>
               )}
             </>
+          )}
+
+          {(seccion === "empleados_ia" || seccion === "operacion") && (
+            <section className="panel compact-panel">
+              <h2 className="section-title">Fuerza laboral IA</h2>
+              {!data.empleados_ia?.items?.length ? (
+                <p className="muted">Sin empleados IA registrados</p>
+              ) : (
+                <>
+                  <div className="metrics-grid compact">
+                    <div className="metric-card"><span className="metric-label">Activos</span><strong>{data.empleados_ia.activos ?? 0}</strong></div>
+                    <div className="metric-card"><span className="metric-label">En prueba</span><strong>{data.empleados_ia.en_prueba ?? 0}</strong></div>
+                    <div className="metric-card"><span className="metric-label">Pausados</span><strong>{data.empleados_ia.pausados ?? 0}</strong></div>
+                    <div className="metric-card"><span className="metric-label">Con error</span><strong>{data.empleados_ia.con_error ?? 0}</strong></div>
+                  </div>
+                  <table className="data-table compact-table">
+                    <thead><tr><th>Empleado</th><th>Estado</th><th>Actividad</th><th>Ejec.</th><th></th></tr></thead>
+                    <tbody>
+                      {data.empleados_ia.items.slice(0, 15).map((e) => (
+                        <tr key={e.id}>
+                          <td>{e.nombre}</td>
+                          <td>{(e as { lifecycle_label?: string }).lifecycle_label ?? e.estado}</td>
+                          <td>{e.ultima_actividad ? new Date(e.ultima_actividad).toLocaleString("es-CO") : "—"}</td>
+                          <td>{(e as { ejecuciones_activas?: number }).ejecuciones_activas ?? "—"}</td>
+                          <td><Link to={e.enlace}>Detalle</Link></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
+              <p><Link to="/directorio">Biblioteca de Empleados IA</Link></p>
+            </section>
+          )}
+
+          {seccion === "ejecuciones" && (
+            <section className="panel compact-panel">
+              <h2 className="section-title">Ejecuciones</h2>
+              {!op?.ejecuciones ? (
+                <p className="muted">Sin información de ejecuciones</p>
+              ) : (
+                <>
+                  <div className="metrics-grid compact">
+                    <div className="metric-card"><span className="metric-label">En ejecución</span><strong>{op.ejecuciones.resumen.en_ejecucion}</strong></div>
+                    <div className="metric-card"><span className="metric-label">Pendientes</span><strong>{op.ejecuciones.resumen.pendientes}</strong></div>
+                    <div className="metric-card"><span className="metric-label">Esperando aprobación</span><strong>{op.ejecuciones.resumen.esperando_aprobacion}</strong></div>
+                    <div className="metric-card"><span className="metric-label">Fallidas</span><strong>{op.ejecuciones.resumen.fallidas}</strong></div>
+                  </div>
+                  <table className="data-table compact-table">
+                    <thead><tr><th>Trabajo</th><th>Empleado</th><th>Estado</th><th>Progreso</th><th></th></tr></thead>
+                    <tbody>
+                      {op.ejecuciones.items.slice(0, 15).map((ex) => (
+                        <tr key={ex.id}>
+                          <td>{ex.trabajo}</td>
+                          <td>{ex.empleado ?? "—"}</td>
+                          <td>{ex.estado}</td>
+                          <td>{ex.progreso}</td>
+                          <td><Link to={ex.enlace}>Detalle</Link></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
+              <p><Link to="/ejecuciones">Ver todas las ejecuciones</Link></p>
+            </section>
+          )}
+
+          {seccion === "atencion" && (
+            <section className="panel compact-panel">
+              <h2 className="section-title">Requiere atención</h2>
+              {data.atencion_requerida.length === 0 ? (
+                <p className="muted">No hay asuntos prioritarios pendientes.</p>
+              ) : (
+                <table className="data-table compact-table">
+                  <thead><tr><th>Prioridad</th><th>Tipo</th><th>Asunto</th><th>Urgencia</th><th>Origen</th><th></th></tr></thead>
+                  <tbody>
+                    {data.atencion_requerida.map((item) => (
+                      <tr key={`${item.tipo}-${item.prioridad}-${item.titulo}`}>
+                        <td>{(item as { puntuacion?: number }).puntuacion ?? item.prioridad}</td>
+                        <td>{item.tipo}</td>
+                        <td>{item.titulo}</td>
+                        <td>{(item as { urgencia?: string }).urgencia ?? "—"}</td>
+                        <td>{item.origen}</td>
+                        <td><Link to={item.enlace}>Ver</Link></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </section>
+          )}
+
+          {(seccion === "capacidad_consumo" || seccion === "ia_costos") && (
+            <>
+              <div className="cc-grid-2">
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Capacidad</h2>
+                  {!op?.capacidad?.disponible ? (
+                    <p className="muted">{op?.capacidad?.estado ?? "Sin datos de capacidad"}</p>
+                  ) : (
+                    <dl className="detail-grid">
+                      <dt>Utilizada / concurrencia</dt><dd>{op.capacidad.capacidad_utilizada ?? "—"}</dd>
+                      <dt>Cola pendiente</dt><dd>{op.capacidad.cola_pendiente ?? "—"}</dd>
+                      <dt>Saturación</dt><dd>{op.capacidad.saturacion ?? "—"}</dd>
+                      <dt>Riesgo</dt><dd>{op.capacidad.riesgo_capacidad ?? "—"}</dd>
+                    </dl>
+                  )}
+                </section>
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Consumo (estimado vs real)</h2>
+                  {!op?.costo?.disponible ? (
+                    <p className="muted">{op?.costo?.estado ?? "Sin permiso FinOps"}</p>
+                  ) : (
+                    <dl className="detail-grid">
+                      <dt>Real (periodo)</dt><dd>{op.costo.real?.costo_label ?? op.costo.real?.costo_periodo ?? "—"}</dd>
+                      <dt>Proyectado</dt><dd>{fmtNum(op.costo.estimado?.consumo_proyectado)}</dd>
+                      <dt>Utilización presupuesto</dt><dd>{op.costo.estimado?.utilizacion_pct != null ? `${op.costo.estimado.utilizacion_pct}%` : "—"}</dd>
+                    </dl>
+                  )}
+                  <p><Link to="/costos-valor">Ver FinOps</Link></p>
+                </section>
+              </div>
+              {op?.dimensionamiento && (
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Dimensionamiento (30 días)</h2>
+                  <dl className="detail-grid">
+                    <dt>Volumen</dt><dd>{op.dimensionamiento.volumen_30d}</dd>
+                    <dt>Completadas</dt><dd>{op.dimensionamiento.completadas}</dd>
+                    <dt>Fallidas</dt><dd>{op.dimensionamiento.fallidas}</dd>
+                    <dt className="muted" colSpan={2}>{op.dimensionamiento.nota}</dt>
+                  </dl>
+                </section>
+              )}
+            </>
+          )}
+
+          {seccion === "aprobaciones" && (
+            <section className="panel compact-panel">
+              <h2 className="section-title">Aprobaciones pendientes</h2>
+              {!op?.aprobaciones?.items?.length ? (
+                <p className="muted">No hay aprobaciones pendientes.</p>
+              ) : (
+                <table className="data-table compact-table">
+                  <thead><tr><th>Tipo</th><th>Acción</th><th>Contexto</th><th>Desde</th><th></th></tr></thead>
+                  <tbody>
+                    {op.aprobaciones.items.map((ap) => (
+                      <tr key={ap.id}>
+                        <td>{ap.tipo}</td>
+                        <td>{ap.accion}</td>
+                        <td>{(ap as { empleado?: string }).empleado ?? ap.contexto ?? "—"}</td>
+                        <td>{ap.desde ? new Date(ap.desde).toLocaleString("es-CO") : "—"}</td>
+                        <td><Link to={ap.enlace}>Abrir</Link></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              <p className="muted">{op?.aprobaciones?.nota}</p>
+            </section>
           )}
 
           {seccion === "valor" && (

@@ -2462,14 +2462,21 @@ export type CentroControlResumen = {
   };
   valor_consolidado?: CentroControlValorConsolidado | null;
   atencion_requerida: CentroControlAtencion[];
+  operacional?: Record<string, unknown> | null;
   empleados_ia?: {
     total: number;
     activos: number;
+    en_prueba?: number;
+    pausados?: number;
+    con_error?: number;
+    pendientes_aprobacion?: number;
     items: Array<{
       id: string;
       nombre: string;
-      estado: string;
+      estado?: string;
+      lifecycle_label?: string;
       ultima_actividad?: string | null;
+      ejecuciones_activas?: number;
       enlace: string;
     }>;
   } | null;

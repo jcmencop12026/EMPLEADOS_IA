@@ -1528,3 +1528,88 @@ class ContinuidadAdapter:
             "alertas": resumen.get("alertas"),
             "enlace": "/continuidad",
         }
+
+
+class ConocimientoAdapter:
+    """Conocimiento 930 — fuentes y cobertura operacional."""
+
+    modulo = "conocimiento"
+    bloque = "930"
+
+    def fetch(
+        self,
+        db: Session,
+        organization_id: str,
+        *,
+        permissions: set[str],
+        period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
+    ) -> dict[str, Any]:
+        if "knowledge.view" not in permissions:
+            return {**_no_disponible(self.modulo, self.bloque, "Requiere knowledge.view"), "restringido": True}
+        from app.orchestration_models import KnowledgeSource
+        from app.knowledge_models import KnowledgeDocument
+
+        total_fuentes = (
+            db.query(KnowledgeSource)
+            .filter(KnowledgeSource.organization_id == organization_id)
+            .count()
+        )
+        activas = (
+            db.query(KnowledgeSource)
+            .filter(KnowledgeSource.organization_id == organization_id, KnowledgeSource.is_active.is_(True))
+            .count()
+        )
+        documentos = (
+            db.query(KnowledgeDocument)
+            .filter(KnowledgeDocument.organization_id == organization_id)
+            .count()
+        )
+        return {
+            "disponible": total_fuentes > 0 or documentos > 0,
+            "estado": "Integrado con conocimiento" if total_fuentes else "Sin fuentes registradas",
+            "modulo": self.modulo,
+            "bloque": self.bloque,
+            "tipo_contenido": "HECHO",
+            "fuentes_totales": total_fuentes,
+            "fuentes_activas": activas,
+            "documentos": documentos,
+            "enlace": "/conocimiento",
+        }
+
+
+class FabricaOperacionalAdapter:
+    """Fábrica MB-06 — fuerza laboral IA operativa."""
+
+    modulo = "fabrica_operacional"
+    bloque = "MB-06"
+
+    def fetch(
+        self,
+        db: Session,
+        organization_id: str,
+        *,
+        permissions: set[str],
+        period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
+    ) -> dict[str, Any]:
+        if "employee.view" not in permissions:
+            return {**_no_disponible(self.modulo, self.bloque, "Requiere employee.view"), "restringido": True}
+        from app.services import operational_control_service as ops
+
+        wf = ops._workforce_summary(db, organization_id)
+        return {
+            "disponible": wf["total"] > 0,
+            "estado": "Integrado con fábrica",
+            "modulo": self.modulo,
+            "bloque": self.bloque,
+            "tipo_contenido": "HECHO",
+            "activos": wf["activos"],
+            "en_prueba": wf["en_prueba"],
+            "pausados": wf["pausados"],
+            "con_error": wf["con_error"],
+            "pendientes_aprobacion": wf["pendientes_aprobacion"],
+            "enlace": "/directorio",
+        }
