@@ -1,0 +1,67 @@
+"""Enumeraciones — Centro de Negocios EIAAX."""
+
+from __future__ import annotations
+
+# Ciclo comercial conceptual → estados 1280 existentes
+CICLO_TO_PROPOSAL_STATUS = {
+    "OPORTUNIDAD": "BORRADOR",
+    "EN_EVALUACION": "BORRADOR",
+    "PROPUESTA_EN_PREPARACION": "BORRADOR",
+    "PROPUESTA_LISTA": "EN_REVISION",
+    "REVISADA": "EN_REVISION",
+    "APROBADA_INTERNA": "APROBADA",
+    "PRESENTADA": "ENVIADA",
+    "NEGOCIACION": "ENVIADA",
+    "CONTRATADA": "ACEPTADA",
+    "DESCARTADA": "RECHAZADA",
+    "PERDIDA": "RECHAZADA",
+    "SUSPENDIDA": "VENCIDA",
+}
+
+PROPOSAL_TRANSITIONS: dict[str, frozenset[str]] = {
+    "BORRADOR": frozenset({"EN_REVISION", "RECHAZADA"}),
+    "EN_REVISION": frozenset({"BORRADOR", "APROBADA", "RECHAZADA"}),
+    "APROBADA": frozenset({"ENVIADA", "BORRADOR"}),
+    "ENVIADA": frozenset({"ACEPTADA", "RECHAZADA", "VENCIDA"}),
+    "ACEPTADA": frozenset(),
+    "RECHAZADA": frozenset(),
+    "VENCIDA": frozenset({"BORRADOR"}),
+}
+
+
+class ModeloComercial:
+    IMPLEMENTACION_MENSUALIDAD = "IMPLEMENTACION_MENSUALIDAD"
+    PROYECTO_FIJO = "PROYECTO_FIJO"
+    SUSCRIPCION = "SUSCRIPCION"
+    VARIABLE_CONSUMO = "VARIABLE_CONSUMO"
+    EXITO_RESULTADOS = "EXITO_RESULTADOS"
+    HIBRIDO = "HIBRIDO"
+
+    ALL = (
+        IMPLEMENTACION_MENSUALIDAD,
+        PROYECTO_FIJO,
+        SUSCRIPCION,
+        VARIABLE_CONSUMO,
+        EXITO_RESULTADOS,
+        HIBRIDO,
+    )
+
+
+class PerspectivaPropuesta:
+    GERENCIA = "GERENCIA"
+    OPERACIONES = "OPERACIONES"
+    SISTEMAS = "SISTEMAS"
+    ALL = (GERENCIA, OPERACIONES, SISTEMAS)
+
+
+class PriceDecisionAction:
+    ACEPTAR = "ACEPTAR"
+    MODIFICAR = "MODIFICAR"
+    DESCARTAR = "DESCARTAR"
+
+
+class ProposalVersionTrigger:
+    REVISION_INTERNA = "REVISION_INTERNA"
+    PRESENTACION = "PRESENTACION"
+    NEGOCIACION = "NEGOCIACION"
+    CONTRATACION = "CONTRATACION"

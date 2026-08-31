@@ -250,6 +250,15 @@ COMMERCIAL_PERMISSIONS = {
     "comercial.manage_plans",
 }
 
+NEGOCIO_PERMISSIONS = {
+    "negocio.view",
+    "negocio.manage",
+    "negocio.economy.private",
+    "negocio.proposal.approve",
+    "negocio.proposal.present",
+    "negocio.contract",
+}
+
 TCO_PERMISSIONS = {
     "tco.view",
     "tco.manage",
@@ -472,6 +481,12 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "comercial.create": ("Comercial", "Crear y editar propuestas comerciales"),
     "comercial.approve": ("Comercial", "Aprobar precio final y propuestas"),
     "comercial.manage_plans": ("Comercial", "Administrar planes comerciales"),
+    "negocio.view": ("Centro de Negocios", "Consultar oportunidades y propuestas comerciales"),
+    "negocio.manage": ("Centro de Negocios", "Gestionar ciclo comercial y propuestas"),
+    "negocio.economy.private": ("Centro de Negocios", "Ver economía privada en propuestas"),
+    "negocio.proposal.approve": ("Centro de Negocios", "Aprobar propuestas y decidir precio"),
+    "negocio.proposal.present": ("Centro de Negocios", "Presentar propuestas al cliente"),
+    "negocio.contract": ("Centro de Negocios", "Contratar y convertir a implementación"),
     "tco.view": ("TCO", "Consultar costo total y tablero"),
     "tco.manage": ("TCO", "Gestionar costos y distribuciones"),
     "tco.simulate": ("TCO", "Simular escenarios de costo"),
@@ -553,6 +568,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | SECURITY_PERMISSIONS
         | IDENTITY_PERMISSIONS
         | COMMERCIAL_PERMISSIONS
+        | NEGOCIO_PERMISSIONS
         | TCO_PERMISSIONS
         | IMPLEMENTACION_PERMISSIONS
         | SEGMENTATION_PERMISSIONS
@@ -590,6 +606,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | APRENDIZAJE_PERMISSIONS
         | OPTIMIZACION_PERMISSIONS
         | COMMERCIAL_PERMISSIONS
+        | NEGOCIO_PERMISSIONS
         | TCO_PERMISSIONS
         | IMPLEMENTACION_PERMISSIONS
         | SEGMENTATION_PERMISSIONS
@@ -701,6 +718,10 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "comercial.view",
         "comercial.simulate",
         "comercial.create",
+        "negocio.view",
+        "negocio.manage",
+        "negocio.proposal.approve",
+        "negocio.proposal.present",
         "tco.view",
         "tco.manage",
         "tco.simulate",

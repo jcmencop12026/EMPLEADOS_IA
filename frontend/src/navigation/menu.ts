@@ -43,6 +43,7 @@ export const MENU: NavSection[] = [
     label: "Análisis y control",
     items: [
       { to: "/lineas-base", label: "Líneas base e impacto" },
+      { to: "/centro-negocios", label: "Centro de Negocios" },
       { to: "/comercial", label: "Comercial y valor" },
       { to: "/tco", label: "TCO y aliados" },
       { to: "/implementacion", label: "Implementación" },
