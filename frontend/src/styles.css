@@ -1630,6 +1630,122 @@ tr.row-selected {
   min-width: 180px;
 }
 
+.piiax-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.piiax-status-bar.compact {
+  margin-bottom: 8px;
+}
+
+.piiax-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+.piiax-dot.on { background: #16a34a; }
+.piiax-dot.off { background: #f59e0b; }
+
+.acciones-externas-panel {
+  margin: 8px 0 12px 16px;
+  padding-left: 10px;
+  border-left: 2px solid #e2e8f0;
+}
+
+.accion-externa-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.vista-entidad-view .vista-entidad-banner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.vista-entidad-section {
+  margin-bottom: 12px;
+}
+
+.vista-entidad-section h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.compact-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+.impacto-bars {
+  min-width: 140px;
+}
+
+.impacto-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+  font-size: 10px;
+}
+
+.impacto-bar-label {
+  width: 52px;
+  flex-shrink: 0;
+}
+
+.impacto-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.impacto-bar-fill {
+  height: 100%;
+  background: #3b82f6;
+}
+
+.impacto-bar-fill.proyectado {
+  background: #f59e0b;
+  opacity: 0.85;
+}
+
+.impacto-bar-value {
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.intencion-badge {
+  font-size: 12px;
+  padding: 4px 6px;
+  background: #eff6ff;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.impacto-form {
+  margin-bottom: 10px;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --eiaax-surface: #0f172a;

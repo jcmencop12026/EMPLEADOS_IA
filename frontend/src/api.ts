@@ -3970,3 +3970,80 @@ export async function preguntarEiaax(
     body: JSON.stringify({ mensaje, accion }),
   });
 }
+
+// --- Evaluación EIAAX (Bloque Producto 2) ---
+
+export type CapacidadExterna = { codigo: string; etiqueta: string; descripcion: string };
+
+export type AccionExterna = {
+  id: string;
+  expediente_id: string;
+  hallazgo_id: string | null;
+  capacidad: string;
+  capacidad_etiqueta?: string;
+  tipo_accion: string;
+  tipo_accion_etiqueta?: string;
+  titulo: string;
+  descripcion: string | null;
+  estado: string;
+  requiere_aprobacion: boolean;
+  resultado_resumen: string | null;
+  evidencia_ref: string | null;
+  error_mensaje: string | null;
+  detalle_tecnico_url: string | null;
+  correlation_id: string;
+};
+
+export type EvaluacionIndicador = {
+  id: string;
+  nombre: string;
+  unidad: string | null;
+  valor_antes: string | null;
+  valor_proyectado: string | null;
+  valor_real: string | null;
+  fuente: string;
+  visible_entidad: boolean;
+  grafico?: { puntos: { serie: string; valor: string; numerico: number | null; es_proyeccion: boolean }[] } | null;
+};
+
+export async function fetchCapacidades(): Promise<{ capacidades: CapacidadExterna[] }> {
+  return api("/api/evaluaciones/capacidades");
+}
+
+export async function fetchPiiaxStatus(): Promise<Record<string, unknown>> {
+  return api("/api/evaluaciones/integracion/piiax");
+}
+
+export async function fetchAccionesExternas(expedienteId: string): Promise<{ items: AccionExterna[] }> {
+  return api(`/api/evaluaciones/${expedienteId}/acciones`);
+}
+
+export async function crearAccionExterna(
+  expedienteId: string,
+  data: Record<string, unknown>,
+): Promise<AccionExterna> {
+  return api(`/api/evaluaciones/${expedienteId}/acciones`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function solicitarAccionExterna(expedienteId: string, accionId: string): Promise<AccionExterna> {
+  return api(`/api/evaluaciones/${expedienteId}/acciones/${accionId}/solicitar`, { method: "POST" });
+}
+
+export async function aprobarAccionExterna(
+  expedienteId: string,
+  accionId: string,
+  aprobado: boolean,
+  motivo?: string,
+): Promise<AccionExterna> {
+  return api(`/api/evaluaciones/${expedienteId}/acciones/${accionId}/aprobar`, {
+    method: "POST",
+    body: JSON.stringify({ aprobado, motivo }),
+  });
+}
+
+export async function crearIndicador(
+  expedienteId: string,
+  data: Record<string, unknown>,
+): Promise<EvaluacionIndicador> {
+  return api(`/api/evaluaciones/${expedienteId}/indicadores`, { method: "POST", body: JSON.stringify(data) });
+}

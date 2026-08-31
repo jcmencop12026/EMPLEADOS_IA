@@ -163,9 +163,17 @@ def test_bloque1_preguntar_sin_proveedor_estado_controlado(client: TestClient, a
     )
     assert res.status_code == 200
     body = res.json()
-    assert body["estado"] in ("sin_proveedor", "ok")
+    # BP2: intención B devuelve estado controlado sin ejecutar acciones externas
+    assert body["estado"] in (
+        "sin_proveedor",
+        "ok",
+        "informacion_adicional",
+        "respuesta_local",
+        "requiere_capacidad_externa",
+    )
+    assert body["respuesta"] is None
+    assert body.get("intencion", {}).get("intencion") in ("A", "B", "C", "D", "E", "F")
     if body["estado"] == "sin_proveedor":
-        assert body["respuesta"] is None
         assert "proveedor" in body["mensaje"].lower()
 
 

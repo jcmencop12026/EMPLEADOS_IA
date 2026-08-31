@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import { preguntarEiaax } from "../../api";
+import { INTENCION_AGENTE, label } from "../../lib/evaluacionLabels";
 
 const ACCIONES = [
   { id: "informacion_faltante", label: "¿Qué información falta?" },
@@ -40,13 +41,16 @@ export function EiaaxAskPanel({ expedienteId, open, onClose }: Props) {
     }
   }
 
+  const intencion = resultado?.intencion as Record<string, unknown> | undefined;
+  const codigoIntencion = intencion?.intencion as string | undefined;
+
   return (
     <aside className="eiaax-ask-panel" aria-label="Preguntar a EIAAX">
       <header className="eiaax-ask-header">
         <strong>Preguntar a EIAAX</strong>
         <button type="button" className="btn-icon" onClick={onClose} title="Cerrar panel">×</button>
       </header>
-      <p className="muted small">Asistente contextual del expediente. Sin proveedor IA configurado, se muestra estado controlado.</p>
+      <p className="muted small">Clasifica la intención (A–F) y orienta sin ejecutar acciones externas automáticamente.</p>
       <div className="eiaax-ask-actions">
         {ACCIONES.map((a) => (
           <button
@@ -72,20 +76,27 @@ export function EiaaxAskPanel({ expedienteId, open, onClose }: Props) {
         </label>
         {error && <p className="error">{error}</p>}
         <button type="submit" className="btn primary" disabled={loading}>
-          {loading ? "Consultando…" : "Enviar"}
+          {loading ? "Analizando…" : "Enviar"}
         </button>
       </form>
       {resultado && (
         <div className="eiaax-ask-result panel compact-panel">
-          {resultado.estado === "sin_proveedor" ? (
-            <>
-              <p className="warning-text">{String(resultado.mensaje)}</p>
-              {resultado.contexto_expediente && (
-                <pre className="code-block small">{JSON.stringify(resultado.contexto_expediente, null, 2)}</pre>
-              )}
-            </>
-          ) : (
-            <pre className="code-block small">{JSON.stringify(resultado.respuesta ?? resultado, null, 2)}</pre>
+          {codigoIntencion && (
+            <p className="intencion-badge">
+              Intención <strong>{codigoIntencion}</strong>: {label(INTENCION_AGENTE, codigoIntencion)}
+            </p>
+          )}
+          {resultado.mensaje && <p>{String(resultado.mensaje)}</p>}
+          {resultado.estado === "requiere_capacidad_externa" && (
+            <p className="muted small">Capacidad sugerida: {String((resultado as Record<string, unknown>).capacidad_sugerida ?? "—")}</p>
+          )}
+          {resultado.estado === "ok" && resultado.respuesta && (
+            <pre className="code-block small">{JSON.stringify(resultado.respuesta, null, 2)}</pre>
+          )}
+          {resultado.piiax && (
+            <p className="muted small piiax-inline">
+              PIIAX: {(resultado.piiax as Record<string, unknown>).disponible ? "disponible" : "no conectado"}
+            </p>
           )}
         </div>
       )}

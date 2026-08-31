@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://127.0.0.1:11434"
     llm_default_timeout_seconds: int = 60
 
+    piiax_bridge_enabled: bool = False
+    piiax_bridge_url: str | None = None
+
     @model_validator(mode="after")
     def assemble_database_url_from_postgres_components(self) -> Self:
         if self.database_url and self.database_url.strip():

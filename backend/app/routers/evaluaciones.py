@@ -13,6 +13,8 @@ from app.deps import get_current_user
 from app.models import User
 from app.permissions import require_permission
 from app.services import evaluacion_service as svc
+from app.services import evaluacion_accion_service as acc_svc
+from app.services.piiax_bridge_service import get_piiax_status, list_capacidades_catalog
 
 router = APIRouter(prefix="/api/evaluaciones", tags=["Evaluaciones"])
 
@@ -79,6 +81,51 @@ class CrearOportunidadBody(BaseModel):
 class PreguntarBody(BaseModel):
     mensaje: str = Field(..., min_length=2, max_length=2000)
     accion: str | None = None
+
+
+class AccionCreate(BaseModel):
+    capacidad: str
+    tipo_accion: str = "LECTURA"
+    titulo: str = Field(..., min_length=3, max_length=300)
+    descripcion: str | None = None
+    hallazgo_id: str | None = None
+    parametros: dict[str, Any] | None = None
+    solicitar: bool = False
+
+
+class AccionAprobarBody(BaseModel):
+    aprobado: bool = True
+    motivo: str | None = None
+
+
+class AccionResultadoBody(BaseModel):
+    resultado_resumen: str
+    evidencia_ref: str | None = None
+    referencia_externa: str | None = None
+    estado: str = "COMPLETADA"
+
+
+class IndicadorCreate(BaseModel):
+    nombre: str = Field(..., min_length=2, max_length=200)
+    unidad: str | None = None
+    valor_antes: str | None = None
+    valor_proyectado: str | None = None
+    valor_real: str | None = None
+    hallazgo_id: str | None = None
+    visible_entidad: bool = False
+
+
+@router.get("/capacidades")
+def list_capacidades(user: User = Depends(require_permission("evaluacion.view"))):
+    return {"capacidades": list_capacidades_catalog()}
+
+
+@router.get("/integracion/piiax")
+def estado_piiax(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.view")),
+):
+    return get_piiax_status(db, user.organization_id)
 
 
 @router.get("")
@@ -310,3 +357,115 @@ def preguntar_eiaax(
         mensaje=body.mensaje,
         accion=body.accion,
     )
+
+
+@router.get("/{expediente_id}/acciones")
+def list_acciones(
+    expediente_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.view")),
+):
+    return {"items": acc_svc.list_acciones(db, expediente_id, user.organization_id)}
+
+
+@router.post("/{expediente_id}/acciones", status_code=201)
+def crear_accion(
+    expediente_id: str,
+    body: AccionCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.accion.request")),
+):
+    accion = acc_svc.crear_accion(
+        db,
+        expediente_id,
+        user.organization_id,
+        user_id=user.id,
+        capacidad=body.capacidad,
+        tipo_accion=body.tipo_accion,
+        titulo=body.titulo,
+        descripcion=body.descripcion,
+        hallazgo_id=body.hallazgo_id,
+        parametros=body.parametros,
+        solicitar=body.solicitar,
+    )
+    db.commit()
+    return acc_svc._accion_dict(db, accion, user.organization_id)  # noqa: SLF001
+
+
+@router.post("/{expediente_id}/acciones/{accion_id}/solicitar")
+def solicitar_accion(
+    expediente_id: str,
+    accion_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.accion.request")),
+):
+    accion = acc_svc.solicitar_accion(db, accion_id, user.organization_id, user_id=user.id)
+    db.commit()
+    return acc_svc._accion_dict(db, accion, user.organization_id)  # noqa: SLF001
+
+
+@router.post("/{expediente_id}/acciones/{accion_id}/aprobar")
+def aprobar_accion(
+    expediente_id: str,
+    accion_id: str,
+    body: AccionAprobarBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.accion.approve")),
+):
+    accion = acc_svc.aprobar_accion(
+        db, accion_id, user.organization_id,
+        user_id=user.id, aprobado=body.aprobado, motivo=body.motivo,
+    )
+    db.commit()
+    return acc_svc._accion_dict(db, accion, user.organization_id)  # noqa: SLF001
+
+
+@router.post("/{expediente_id}/acciones/{accion_id}/resultado")
+def registrar_resultado_accion(
+    expediente_id: str,
+    accion_id: str,
+    body: AccionResultadoBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.accion.request")),
+):
+    accion = acc_svc.registrar_resultado_compatible(
+        db, accion_id, user.organization_id,
+        user_id=user.id,
+        resultado_resumen=body.resultado_resumen,
+        evidencia_ref=body.evidencia_ref,
+        referencia_externa=body.referencia_externa,
+        estado=body.estado,
+    )
+    db.commit()
+    return acc_svc._accion_dict(db, accion, user.organization_id)  # noqa: SLF001
+
+
+@router.get("/{expediente_id}/indicadores")
+def list_indicadores(
+    expediente_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.view")),
+):
+    return {"items": acc_svc.list_indicadores(db, expediente_id, user.organization_id)}
+
+
+@router.post("/{expediente_id}/indicadores", status_code=201)
+def crear_indicador(
+    expediente_id: str,
+    body: IndicadorCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.indicadores.manage")),
+):
+    ind = acc_svc.crear_indicador(
+        db, expediente_id, user.organization_id,
+        user_id=user.id,
+        nombre=body.nombre,
+        unidad=body.unidad,
+        valor_antes=body.valor_antes,
+        valor_proyectado=body.valor_proyectado,
+        valor_real=body.valor_real,
+        hallazgo_id=body.hallazgo_id,
+        visible_entidad=body.visible_entidad,
+    )
+    db.commit()
+    return acc_svc._indicador_dict(ind)  # noqa: SLF001

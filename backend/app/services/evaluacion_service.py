@@ -745,6 +745,8 @@ def _oportunidades_visibles(db: Session, exp: EvaluacionExpediente) -> list[dict
 
 
 def get_trazabilidad(db: Session, expediente_id: str, organization_id: str) -> dict[str, Any]:
+    from app.services import evaluacion_accion_service as acc_svc
+
     exp = _get_expediente(db, expediente_id, organization_id)
     vis_logs = (
         db.query(EvaluacionVisibilidadLog)
@@ -752,10 +754,16 @@ def get_trazabilidad(db: Session, expediente_id: str, organization_id: str) -> d
         .order_by(EvaluacionVisibilidadLog.created_at.desc())
         .all()
     )
+    acciones_eventos = acc_svc.get_trazabilidad_acciones(db, expediente_id, organization_id)
     return {
         "expediente_id": exp.id,
         "correlation_id": exp.correlation_id,
         "diagnostic_id": exp.diagnostic_id,
+        "cadena": {
+            "organizacion": organization_id,
+            "expediente": exp.id,
+            "correlation_id": exp.correlation_id,
+        },
         "visibilidad": [
             {
                 "id": v.id,
@@ -775,6 +783,7 @@ def get_trazabilidad(db: Session, expediente_id: str, organization_id: str) -> d
                 "tipo_contenido": h.tipo_contenido,
                 "confianza": h.confianza,
                 "visible_entidad": h.visible_entidad,
+                "correlation_id": h.correlation_id,
                 "fecha": h.created_at.isoformat() if h.created_at else None,
             }
             for h in db.query(EvaluacionHallazgo)
@@ -782,6 +791,7 @@ def get_trazabilidad(db: Session, expediente_id: str, organization_id: str) -> d
             .order_by(EvaluacionHallazgo.created_at)
             .all()
         ],
+        "acciones_externas": acciones_eventos,
     }
 
 
@@ -792,30 +802,72 @@ def get_impacto_resumen(
     *,
     vista_entidad: bool = False,
 ) -> dict[str, Any]:
+    from app.services import evaluacion_accion_service as acc_svc
+
     exp = _get_expediente(db, expediente_id, organization_id)
     hallazgos = db.query(EvaluacionHallazgo).filter(EvaluacionHallazgo.expediente_id == exp.id).all()
     if vista_entidad:
         hallazgos = [h for h in hallazgos if h.visible_entidad]
 
-    indicadores = []
+    indicadores_db = acc_svc.list_indicadores(db, expediente_id, organization_id, vista_entidad=vista_entidad)
+    indicadores: list[dict[str, Any]] = []
+
+    for ind in indicadores_db:
+        indicadores.append({
+            "id": ind["id"],
+            "nombre": ind["nombre"],
+            "unidad": ind.get("unidad"),
+            "antes": ind.get("valor_antes"),
+            "proyectado": ind.get("valor_proyectado"),
+            "real": ind.get("valor_real"),
+            "etiqueta_proyeccion": bool(ind.get("valor_proyectado") and not ind.get("valor_real")),
+            "fuente": ind.get("fuente"),
+            "grafico": _build_grafico_puntos(ind),
+        })
+
     for h in hallazgos:
         if not h.impacto_resumen:
             continue
+        if any(i["nombre"] == h.titulo for i in indicadores):
+            continue
         indicadores.append({
-            "hallazgo": h.titulo,
+            "id": h.id,
+            "nombre": h.titulo,
+            "unidad": None,
             "antes": None,
             "proyectado": h.impacto_resumen if h.tipo_contenido == "PROYECCION" else None,
             "real": h.impacto_resumen if h.tipo_contenido == "HECHO" else None,
             "etiqueta_proyeccion": h.tipo_contenido == "PROYECCION",
             "confianza": h.confianza,
+            "grafico": None,
         })
 
     return {
         "expediente_id": exp.id,
         "valor_potencial": exp.valor_potencial if not vista_entidad else None,
         "indicadores": indicadores,
+        "tiene_graficos": any(i.get("grafico") for i in indicadores),
         "nota": "PROYECTADO identifica estimaciones; REAL solo con evidencia verificada.",
     }
+
+
+def _build_grafico_puntos(ind: dict[str, Any]) -> dict[str, Any] | None:
+    mapping = [
+        ("antes", ind.get("valor_antes"), False),
+        ("proyectado", ind.get("valor_proyectado"), True),
+        ("real", ind.get("valor_real"), False),
+    ]
+    puntos = []
+    for serie, val, es_proy in mapping:
+        if val is not None and str(val).strip():
+            try:
+                numerico = float(str(val).replace(",", ".").replace("%", ""))
+            except ValueError:
+                numerico = None
+            puntos.append({"serie": serie, "valor": val, "numerico": numerico, "es_proyeccion": es_proy})
+    if len(puntos) < 2:
+        return None
+    return {"puntos": puntos, "unidad": ind.get("unidad")}
 
 
 def vincular_oportunidad(
@@ -945,59 +997,113 @@ def ask_eiaax(
     mensaje: str,
     accion: str | None = None,
 ) -> dict[str, Any]:
+    from app.services.evaluacion_intent_service import INTENCION_DESCRIPCIONES, classify_intent
+    from app.services.piiax_bridge_service import get_piiax_status
+
     exp = _get_expediente(db, expediente_id, organization_id)
-    context = {
-        "expediente_id": exp.id,
-        "expediente_codigo": exp.codigo,
-        "entidad": exp.entidad_nombre,
-        "estado": exp.estado,
-        "nivel": exp.nivel,
-        "porcentaje_informacion": exp.porcentaje_informacion,
-        "accion_sugerida": accion,
+    pendientes = [
+        i.etiqueta
+        for i in db.query(EvaluacionInformacionItem)
+        .filter(
+            EvaluacionInformacionItem.expediente_id == exp.id,
+            EvaluacionInformacionItem.estado.in_(("PENDIENTE", "INCOMPLETO")),
+        )
+        .all()
+    ]
+    tiene_llm = _has_usable_llm(db, organization_id)
+    piiax = get_piiax_status(db, organization_id)
+
+    intencion = classify_intent(
+        mensaje,
+        accion_sugerida=accion,
+        porcentaje_informacion=exp.porcentaje_informacion,
+        tiene_proveedor_llm=tiene_llm,
+        piiax_disponible=piiax["disponible"],
+        info_pendiente_count=len(pendientes),
+    )
+
+    base = {
+        "intencion": intencion,
+        "piiax": piiax,
+        "contexto_expediente": {
+            "codigo": exp.codigo,
+            "estado": exp.estado,
+            "confianza_global": exp.confianza_global,
+            "informacion_pendiente": pendientes[:8],
+        },
     }
-    if not _has_usable_llm(db, organization_id):
-        pendientes = [
-            i.etiqueta
-            for i in db.query(EvaluacionInformacionItem)
-            .filter(
-                EvaluacionInformacionItem.expediente_id == exp.id,
-                EvaluacionInformacionItem.estado.in_(("PENDIENTE", "INCOMPLETO")),
-            )
-            .all()
-        ]
+
+    codigo = intencion["intencion"]
+
+    if codigo == "A":
         return {
-            "estado": "sin_proveedor",
+            **base,
+            "estado": "respuesta_local",
             "mensaje": (
-                "No hay proveedor de IA configurado para esta organización. "
-                "Configure un proveedor en Administración → Proveedores IA."
+                f"Con la información actual ({exp.porcentaje_informacion}% completada), "
+                f"puede revisar el expediente {exp.codigo}: problema «{exp.necesidad or 'sin definir'}», "
+                f"objetivo «{exp.objetivo or 'sin definir'}»."
             ),
-            "contexto_expediente": {
-                "codigo": exp.codigo,
-                "informacion_pendiente": pendientes[:8],
-                "confianza_global": exp.confianza_global,
-            },
             "respuesta": None,
         }
 
-    prompt = mensaje
-    if accion:
-        prompts = {
-            "profundizar_hallazgo": f"Profundiza el hallazgo relacionado con: {mensaje}",
-            "informacion_faltante": "¿Qué información falta en este expediente y por qué?",
-            "buscar_causas": f"Busca posibles causas raíz para: {mensaje}",
-            "cuantificar_impacto": f"Cuantifica el impacto potencial de: {mensaje}",
-            "identificar_oportunidades": "Identifica oportunidades adicionales a partir del expediente.",
-            "explicar_indicador": f"Explica este indicador en contexto del expediente: {mensaje}",
-            "siguiente_analisis": "¿Qué deberíamos analizar después en este expediente?",
+    if codigo == "B":
+        return {
+            **base,
+            "estado": "informacion_adicional",
+            "mensaje": "Se requiere completar información en la pestaña Información antes de profundizar.",
+            "respuesta": None,
         }
-        prompt = prompts.get(accion, mensaje)
 
-    result = route_task(
-        db,
-        organization_id=organization_id,
-        user_id=user_id,
-        request=prompt,
-        context=context,
-        auto_execute=False,
-    )
-    return {"estado": "ok", "respuesta": result, "contexto_expediente": context}
+    if codigo in ("D", "E", "F"):
+        return {
+            **base,
+            "estado": "requiere_capacidad_externa",
+            "mensaje": (
+                f"{INTENCION_DESCRIPCIONES[codigo]} "
+                "Puede crear una solicitud de acción externa desde el hallazgo; no se ejecutará automáticamente."
+            ),
+            "capacidad_sugerida": intencion.get("capacidad_sugerida"),
+            "requiere_aprobacion": intencion.get("requiere_aprobacion"),
+            "respuesta": None,
+        }
+
+    if codigo == "C" and not tiene_llm:
+        return {
+            **base,
+            "estado": "sin_proveedor",
+            "mensaje": (
+                "Se requiere análisis IA pero no hay proveedor configurado. "
+                "Configure un proveedor en Administración → Proveedores IA."
+            ),
+            "respuesta": None,
+        }
+
+    if codigo == "C":
+        prompt = mensaje
+        if accion:
+            prompts = {
+                "profundizar_hallazgo": f"Profundiza el hallazgo relacionado con: {mensaje}",
+                "informacion_faltante": "¿Qué información falta en este expediente y por qué?",
+                "buscar_causas": f"Busca posibles causas raíz para: {mensaje}",
+                "cuantificar_impacto": f"Cuantifica el impacto potencial de: {mensaje}",
+                "identificar_oportunidades": "Identifica oportunidades adicionales a partir del expediente.",
+                "explicar_indicador": f"Explica este indicador en contexto del expediente: {mensaje}",
+                "siguiente_analisis": "¿Qué deberíamos analizar después en este expediente?",
+            }
+            prompt = prompts.get(accion, mensaje)
+        result = route_task(
+            db,
+            organization_id=organization_id,
+            user_id=user_id,
+            request=prompt,
+            context={
+                "expediente_id": exp.id,
+                "expediente_codigo": exp.codigo,
+                "intencion": codigo,
+            },
+            auto_execute=False,
+        )
+        return {**base, "estado": "ok", "respuesta": result}
+
+    return {**base, "estado": "ok", "respuesta": None}

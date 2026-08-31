@@ -154,3 +154,108 @@ class EvaluacionVisibilidadLog(Base):
     visible_entidad: Mapped[bool] = mapped_column(Boolean, nullable=False)
     changed_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+# --- Bloque Producto 2: capacidades externas e interacción PIIAX (preparación) ---
+
+CAPACIDADES_EXTERNAS = frozenset({
+    "consultar_datos",
+    "enviar_informacion",
+    "validar_registros",
+    "sincronizar",
+    "transformar",
+    "obtener_documento",
+    "ejecutar_proceso",
+    "notificar",
+    "consultar_estado",
+})
+
+ACCION_TIPOS = frozenset({"LECTURA", "ANALISIS", "PROPUESTA", "EJECUCION"})
+
+ACCION_ESTADOS = frozenset({
+    "BORRADOR",
+    "PENDIENTE_APROBACION",
+    "APROBADA",
+    "RECHAZADA",
+    "SOLICITADA",
+    "EN_PROCESO",
+    "PIIAX_NO_DISPONIBLE",
+    "COMPLETADA",
+    "ERROR",
+    "CANCELADA",
+})
+
+INTENCION_TIPOS = frozenset({"A", "B", "C", "D", "E", "F"})
+
+
+class EvaluacionAccionExterna(Base):
+    """Solicitud de capacidad externa desde expediente — resolución técnica en PIIAX."""
+
+    __tablename__ = "evaluaciones_acciones_externas"
+    __table_args__ = (
+        Index("ix_eval_acc_exp", "expediente_id", "created_at"),
+        Index("ix_eval_acc_corr", "correlation_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
+    expediente_id: Mapped[str] = mapped_column(String(36), ForeignKey("evaluaciones_expediente.id"), nullable=False, index=True)
+    hallazgo_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("evaluaciones_hallazgos.id"), nullable=True)
+    capacidad: Mapped[str] = mapped_column(String(40), nullable=False)
+    tipo_accion: Mapped[str] = mapped_column(String(20), nullable=False, default="LECTURA")
+    titulo: Mapped[str] = mapped_column(String(300), nullable=False)
+    descripcion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    estado: Mapped[str] = mapped_column(String(30), nullable=False, default="BORRADOR", index=True)
+    requiere_aprobacion: Mapped[bool] = mapped_column(Boolean, default=False)
+    aprobado_por: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    aprobado_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rechazo_motivo: Mapped[str | None] = mapped_column(Text, nullable=True)
+    correlation_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    referencia_externa: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    resultado_resumen: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evidencia_ref: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_mensaje: Mapped[str | None] = mapped_column(Text, nullable=True)
+    parametros_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+
+class EvaluacionAccionEvento(Base):
+    """Trazabilidad empresarial de acciones — sin duplicar logs técnicos PIIAX."""
+
+    __tablename__ = "evaluaciones_accion_eventos"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
+    accion_id: Mapped[str] = mapped_column(String(36), ForeignKey("evaluaciones_acciones_externas.id"), nullable=False, index=True)
+    expediente_id: Mapped[str] = mapped_column(String(36), ForeignKey("evaluaciones_expediente.id"), nullable=False)
+    tipo_evento: Mapped[str] = mapped_column(String(40), nullable=False)
+    detalle: Mapped[str | None] = mapped_column(Text, nullable=True)
+    actor_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    correlation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class EvaluacionIndicador(Base):
+    """Indicador de impacto ANTES / PROYECTADO / REAL."""
+
+    __tablename__ = "evaluaciones_indicadores"
+    __table_args__ = (
+        Index("ix_eval_ind_exp", "expediente_id", "nombre"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
+    expediente_id: Mapped[str] = mapped_column(String(36), ForeignKey("evaluaciones_expediente.id"), nullable=False, index=True)
+    hallazgo_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("evaluaciones_hallazgos.id"), nullable=True)
+    nombre: Mapped[str] = mapped_column(String(200), nullable=False)
+    unidad: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    valor_antes: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    valor_proyectado: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    valor_real: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    fuente: Mapped[str] = mapped_column(String(20), nullable=False, default="MANUAL")
+    visible_entidad: Mapped[bool] = mapped_column(Boolean, default=False)
+    notas: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)

@@ -193,6 +193,9 @@ EVALUACION_PERMISSIONS = {
     "evaluacion.evaluate",
     "evaluacion.visibility",
     "evaluacion.vista_entidad",
+    "evaluacion.accion.request",
+    "evaluacion.accion.approve",
+    "evaluacion.indicadores.manage",
 }
 
 INTELIGENCIA_EXTERNA_PERMISSIONS = {
@@ -433,6 +436,9 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "evaluacion.evaluate": ("Evaluación EIAAX", "Ejecutar evaluaciones y registrar hallazgos"),
     "evaluacion.visibility": ("Evaluación EIAAX", "Gestionar visibilidad para entidad"),
     "evaluacion.vista_entidad": ("Evaluación EIAAX", "Ver vista entidad del expediente"),
+    "evaluacion.accion.request": ("Evaluación EIAAX", "Solicitar capacidades externas desde expediente"),
+    "evaluacion.accion.approve": ("Evaluación EIAAX", "Aprobar acciones externas de ejecución"),
+    "evaluacion.indicadores.manage": ("Evaluación EIAAX", "Gestionar indicadores de impacto"),
     "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
     "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
     "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
@@ -657,6 +663,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "evaluacion.evaluate",
         "evaluacion.visibility",
         "evaluacion.vista_entidad",
+        "evaluacion.accion.request",
+        "evaluacion.accion.approve",
+        "evaluacion.indicadores.manage",
         "inteligencia_externa.view",
         "inteligencia_externa.manage",
         "inteligencia_externa.ingest",
