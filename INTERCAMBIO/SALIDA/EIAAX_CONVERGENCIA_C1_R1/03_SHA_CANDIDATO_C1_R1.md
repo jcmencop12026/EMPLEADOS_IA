@@ -11,7 +11,7 @@
 | Referencia | SHA |
 |---|---|
 | **SHA inicial C1-R1** (C1 certificado pre-corrección UX) | `25ad1021ee6ea0322aceb0622252e7b748706d32` |
-| **SHA candidato C1-R1** (único, post P1-D-UX-01) | `3450b08d5e88efd6bbac7c3958f49e06d1583a7e` |
+| **SHA candidato C1-R1** (único, post P1-D-UX-01) | `c3e5aa0f39eaf53fc6033cac08bcfe6b850d9f2e` |
 | V1 certificado (intacto) | `e8cb853a2c447fd5e136a0907e44d68ce2c8cf81` |
 | V2 certificado (intacto) | `dc1e6cda8d3de6695d9a052a2a13afdb5f431077` |
 | Tag Fase 2 (intacto) | `fase2-candidato-final-certificado` → `dc1e6cd` |
@@ -22,7 +22,7 @@
 
 ```
 25ad1021 — feat(c1): base segura convergencia V1+V2 con hotfix login selectivo  [SHA inicial]
-→ 3450b08d — fix(c1-r1): fallback determinístico ruta inicial / (P1-D-UX-01)   [SHA candidato]
+→ c3e5aa0f — fix(c1-r1): fallback determinístico ruta inicial / (P1-D-UX-01)   [SHA candidato]
 ```
 
 ---
