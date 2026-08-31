@@ -156,6 +156,11 @@ FINOPS_PERMISSIONS = {
     "finops.planner.simulate",
     "finops.planner.configure",
     "finops.margin.view",
+    "finops.economy.recommend",
+}
+
+FINOPS_ECONOMY_PRIVATE_PERMISSIONS = {
+    "finops.economy.private",
 }
 
 OPORTUNIDADES_PERMISSIONS = {
@@ -409,6 +414,8 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "finops.planner.simulate": ("FinOps", "Simular consumo y capacidad IA"),
     "finops.planner.configure": ("FinOps", "Configurar planificador de consumo IA"),
     "finops.margin.view": ("FinOps", "Ver margen comercial"),
+    "finops.economy.private": ("FinOps", "Ver economía privada operador"),
+    "finops.economy.recommend": ("FinOps", "Generar recomendaciones de precio (borrador)"),
     "llm.view": ("Proveedores IA", "Ver proveedores de inferencia"),
     "llm.manage": ("Proveedores IA", "Administrar proveedores de inferencia"),
     "llm.use": ("Proveedores IA", "Ejecutar inferencia LLM"),
@@ -564,6 +571,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | KNOWLEDGE_PERMISSIONS
         | TEST_LAB_PERMISSIONS
         | FINOPS_PERMISSIONS
+        | FINOPS_ECONOMY_PRIVATE_PERMISSIONS
         | LLM_PERMISSIONS
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS

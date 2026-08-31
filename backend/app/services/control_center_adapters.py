@@ -1528,3 +1528,44 @@ class ContinuidadAdapter:
             "alertas": resumen.get("alertas"),
             "enlace": "/continuidad",
         }
+
+
+class MotorEconomicoAdapter:
+    """Motor Económico EIAAX — indicadores ANTES/PROYECTADO/REAL unificados."""
+
+    modulo = "motor_economico"
+    bloque = "1600"
+
+    def fetch(
+        self,
+        db: Session,
+        organization_id: str,
+        *,
+        permissions: set[str],
+        period_start: datetime | None = None,
+        proceso: str | None = None,
+        estado: str | None = None,
+    ) -> dict[str, Any]:
+        if "finops.view" not in permissions:
+            return {**_no_disponible(self.modulo, self.bloque, "Requiere finops.view"), "restringido": True}
+        from app.services import economic_motor_service as motor
+
+        try:
+            indicators = motor.build_indicators(db, organization_id)
+            entity = motor.entity_view_summary(db, organization_id)
+        except Exception:
+            db.rollback()
+            return {**_no_disponible(self.modulo, self.bloque, "Motor económico no disponible"), "modulo": self.modulo}
+        return {
+            "disponible": True,
+            "estado": "Integrado con Motor Económico EIAAX",
+            "modulo": self.modulo,
+            "bloque": self.bloque,
+            "tipo_contenido": "INFERENCIA",
+            "fases": indicators.get("fases"),
+            "valor_realizado": entity.get("valores", {}).get("valor_realizado"),
+            "valor_potencial": entity.get("valores", {}).get("valor_potencial"),
+            "nota_potencial": SEMANTICA_VALOR.get("nota_potencial"),
+            "economia_privada_expuesta": False,
+            "enlace": "/costos-valor",
+        }
