@@ -1,32 +1,44 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Inspecciona usuario admin en PostgreSQL vía contenedor backend (sin exponer hash).
+  Inspect admin user in CERT PostgreSQL via backend container (no secrets printed).
+.DESCRIPTION
+  Copies backend/scripts/inspect_admin_user.py into the container and runs it.
+  Uses docker cp of a real Python file (avoids PowerShell encoding/quoting issues).
+.PARAMETER HotfixRoot
+  Path to hotfix worktree (default: auto from script location, e.g. D:\EMPLEADOS_IA_V1_HOTFIX)
 .PARAMETER Username
-  Usuario a inspeccionar (default: admin)
+  Username to inspect (default: admin)
 .PARAMETER BackendContainer
-  Nombre del contenedor backend (default: empleados_ia_cert-backend-1)
+  Backend container name (default: empleados_ia_cert-backend-1)
 #>
 param(
+    [string]$HotfixRoot = "",
     [string]$Username = "admin",
     [string]$BackendContainer = "empleados_ia_cert-backend-1"
 )
 
 $ErrorActionPreference = "Stop"
-$docker = "C:\Program Files\Docker\Docker\resources\bin\docker.exe"
+. "$PSScriptRoot\_V1CertCommon.ps1"
 
-if (-not (Test-Path $docker)) {
-    Write-Error "Docker no encontrado en: $docker"
-}
+$docker = Get-V1CertDockerExe
+$root = Resolve-V1CertHotfixRoot -HotfixRoot $HotfixRoot
+$pyFile = Join-Path $root "backend\scripts\inspect_admin_user.py"
 
-$running = & $docker inspect -f "{{.State.Running}}" $BackendContainer 2>$null
-if ($running -ne "true") {
-    Write-Error "Contenedor $BackendContainer no está en ejecución."
-}
+Assert-V1CertContainerRunning -Docker $docker -ContainerName $BackendContainer
 
-Write-Host "=== Inspección usuario (sin secretos) ===" -ForegroundColor Cyan
-& $docker exec -i $BackendContainer python -m scripts.inspect_admin_user $Username
+Write-Host "=== Admin inspection (no secrets) ===" -ForegroundColor Cyan
+Write-Host "HotfixRoot: $root"
+Write-Host "Container:  $BackendContainer"
+Write-Host "Username:   $Username"
+
+$code = Invoke-V1CertCopiedPython -Docker $docker -ContainerName $BackendContainer -LocalPythonFile $pyFile -PythonArgs @($Username)
+if ($code -ne 0) { exit $code }
+
+Write-Host ""
+Write-Host "=== Backend health ===" -ForegroundColor Cyan
+& $docker exec -i $BackendContainer curl -fsS http://127.0.0.1:8000/health/ready
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-Write-Host "`n=== Health backend ===" -ForegroundColor Cyan
-& $docker exec -i $BackendContainer curl -fsS http://127.0.0.1:8000/health/ready | Out-Host
+Write-Host ""
+Write-Host "INSPECT: PASS" -ForegroundColor Green

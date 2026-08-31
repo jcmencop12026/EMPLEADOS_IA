@@ -1,4 +1,4 @@
-# Informe final — Recuperación acceso + mejora login V1
+# Informe final - Recuperacion acceso + mejora login V1
 
 **Proyecto:** EMPLEADOS_IA_CERT  
 **BASE SHA certificado:** `e8cb853a2c447fd5e136a0907e44d68ce2c8cf81` (NO modificado)  
@@ -7,135 +7,176 @@
 
 ---
 
-## 1. Causa exacta del fallo de login
+## 1. Causa del fallo del inspector (y scripts inline)
 
-Se identificaron **dos causas independientes** auditando el código real del SHA `e8cb853`:
+Los scripts `*-Inline-e8cb853.ps1` embebian Python con **here-strings de PowerShell** y lo ejecutaban via `python -c $py` dentro de `docker exec`.
 
-### Causa A — Bug crítico en `frontend/src/api.ts` (confirmada)
+**Error real reportado:**
 
-En la función `api()`, el bloque `if (!res.ok)` invoca `parseDetail(text)` **antes** de `const text = await res.text()`.
+```
+SyntaxError: invalid character '€' (U+20AC)
+print(f'ORG_ESTADO: {o.status if o else â€"?}')
+```
 
-Efecto:
-- Cualquier respuesta HTTP no exitosa (401 credenciales incorrectas, 500, etc.) lanza `ReferenceError: text is not defined`.
-- `LoginPage` captura el error genérico → **"No se pudo iniciar sesión. Intente nuevamente."**
-- Enmascara el mensaje correcto "Usuario o contraseña incorrectos." incluso cuando el backend responde 401 correctamente.
+**Causa raiz:** el em dash Unicode (`—`, U+2014) en el codigo Python inline se corrompio a mojibake (`â€"?`) al atravesar la cadena PowerShell -> Docker -> Python. PowerShell/Windows-1252 y el quoting de here-strings hacen fragil cualquier bloque Python complejo inline.
 
-**Nota:** Si la contraseña fuera correcta y el backend respondiera 200, el login podría funcionar; el bug afecta principalmente el manejo de errores y puede impedir diagnóstico.
-
-### Causa B — Contraseña real desconocida vs bootstrap (probable)
-
-- Tabla: `users` (`User` en `backend/app/models.py`)
-- Campos: `username`, `password_hash` (bcrypt), `is_active`, `status`, `role`, `organization_id`
-- Seed (`backend/app/seed.py`): crea `admin` solo si no existe, con `hash_password(settings.bootstrap_admin_password)`
-- En Docker V1, `BOOTSTRAP_ADMIN_PASSWORD` viene de `.env` — **puede diferir** del valor por defecto en código (`Admin2026*`)
-- El intento PowerShell anterior **falló antes de ejecutar** → BD probablemente **no fue modificada**
+**Correccion:** eliminados los scripts inline. Los nuevos scripts copian archivos Python reales al contenedor con `docker cp`, los ejecutan explicitamente y los borran despues. Sin `python -c`. Sin caracteres Unicode en codigo ejecutable.
 
 ---
 
-## 2. Modelo real auditado (SHA e8cb853)
+## 2. Revision de los 3 scripts (completa)
 
-| Elemento | Valor real |
+| Script | Estado anterior | Correccion |
+|---|---|---|
+| `Inspect-AdminUser-Inline-e8cb853.ps1` | FALLA (mojibake + python -c) | **ELIMINADO** -> `Inspect-AdminUser.ps1` |
+| `Reset-AdminPassword-Inline-e8cb853.ps1` | Riesgo mismo patron | **ELIMINADO** -> `Reset-AdminPassword.ps1` |
+| `Test-LoginApi.ps1` | Sin Python inline; revisado | **OK** - prompt SecureString, limpia memoria |
+
+**Scripts nuevos de entrega unica:**
+
+- `_V1CertCommon.ps1` - helpers compartidos (docker cp, red, contenedor)
+- `PASO1-Recuperar-Admin.ps1` - inspeccion + reset opcional + login API
+- `PASO2-Desplegar-Hotfix-Frontend.ps1` - build y despliegue frontend hotfix
+
+**Entorno objetivo (sin modificar CERT):**
+
+| Recurso | Valor |
 |---|---|
-| Tabla usuarios | `users` |
-| Login endpoint | `POST /api/auth/login` |
-| Hash | `bcrypt` vía `app.security.hash_password` / `verify_password` |
-| Rol SUPERADMIN | `role = "superadmin"` (seed eleva `admin` → `superadmin`) |
-| Bloqueos login | `is_active=False`, `status != "ACTIVE"`, org inactiva |
-| Recuperación email V1 | **NO existe** (sin SMTP/servicio reset) |
-| MFA en V1 auth | **NO** (auth.py simple: login + me) |
+| CERT dir | `D:\EMPLEADOS_IA_CERT` |
+| Hotfix worktree | `D:\EMPLEADOS_IA_V1_HOTFIX` |
+| Backend container | `empleados_ia_cert-backend-1` |
+| Postgres container | `empleados_ia_cert-postgres-1` |
+| Backend URL | `http://localhost:18010` |
+| Frontend URL | `http://localhost:5180/login` |
 
 ---
 
-## 3. Recuperación de acceso (ejecutar en Windows)
+## 3. Entrega: DOS pasos manuales
 
-### Paso 1 — Inspeccionar (sin secretos)
-
-```powershell
-cd D:\EMPLEADOS_IA_CERT
-.\INTERCAMBIO\SALIDA\V1_CERT\Inspect-AdminUser-Inline-e8cb853.ps1
-```
-
-### Paso 2 — Restablecer contraseña (prompt oculto, sin guardar en archivos)
+### PASO 1 - Recuperar / validar admin
 
 ```powershell
-.\INTERCAMBIO\SALIDA\V1_CERT\Reset-AdminPassword-Inline-e8cb853.ps1
-```
-
-Este script usa **módulos oficiales ya en la imagen e8cb853** — no requiere rebuild.
-
-### Paso 3 — Probar login API
-
-```powershell
-.\INTERCAMBIO\SALIDA\V1_CERT\Test-LoginApi.ps1 -BackendUrl "http://localhost:18010"
-```
-
-### Paso 4 (recomendado) — Desplegar hotfix frontend para corregir api.ts
-
-```powershell
-git fetch origin cursor/v1-hotfix-login-acceso-85e4
+cd D:\EMPLEADOS_IA_V1_HOTFIX
 git checkout cursor/v1-hotfix-login-acceso-85e4
-docker compose build frontend --no-cache
-docker compose up -d frontend
+.\INTERCAMBIO\SALIDA\V1_CERT\PASO1-Recuperar-Admin.ps1 -HotfixRoot "D:\EMPLEADOS_IA_V1_HOTFIX"
 ```
 
-**URL ingreso:** `http://localhost:5180/login` (o puerto `FRONTEND_PORT` en `.env`)
+**Que hace automaticamente:**
 
-**USUARIO:** `admin`  
-**CONTRASEÑA:** la nueva establecida localmente por usted (no se muestra ni almacena en este informe)
+1. Inspecciona usuario `admin` (sin hash ni secretos)
+2. Pregunta si desea reset (S/N)
+3. Si S: prompt oculto **dentro del contenedor** via `getpass`
+4. Prueba login API + verificacion SUPERADMIN
+
+**Resultado esperado:**
+
+```
+INSPECT: PASS
+LOGIN: PASS
+ROLE: superadmin
+SUPERADMIN CHECK: PASS
+PASO 1: PASS
+```
+
+**Si falla:**
+
+| Sintoma | Accion automatica sugerida |
+|---|---|
+| Container not running | `docker start empleados_ia_cert-backend-1` |
+| USUARIO no existe / INACTIVO | Responder `S` al prompt de reset |
+| LOGIN FAIL tras reset | Repetir reset; verificar `http://localhost:18010/health/ready` |
+| SUPERADMIN CHECK FAIL | El script de reset eleva `admin` a `superadmin` |
+
+### PASO 2 - Desplegar frontend hotfix
+
+```powershell
+cd D:\EMPLEADOS_IA_V1_HOTFIX
+.\INTERCAMBIO\SALIDA\V1_CERT\PASO2-Desplegar-Hotfix-Frontend.ps1 -HotfixRoot "D:\EMPLEADOS_IA_V1_HOTFIX" -CertDir "D:\EMPLEADOS_IA_CERT"
+```
+
+**Que hace automaticamente:**
+
+1. `docker build` imagen `empleados_ia_cert-frontend-hotfix` desde hotfix
+2. Detecta red Docker del backend
+3. Recrea solo `empleados_ia_cert-frontend-1` (NO toca postgres ni backend data)
+
+**Resultado esperado:**
+
+```
+PASO 2: PASS (frontend container started)
+Open: http://localhost:5180/login
+```
+
+UI: ojo mostrar/ocultar contrasena, enlace "Olvido su contrasena?", mensaje correcto en 401.
+
+**Si falla:**
+
+| Sintoma | Accion |
+|---|---|
+| docker build failed | Verificar Docker Desktop y espacio en disco |
+| network error | Verificar `empleados_ia_cert-backend-1` en ejecucion |
+| Login UI sigue mal | Hard refresh (Ctrl+F5); confirmar contenedor frontend nuevo |
 
 ---
 
-## 4. Cambios hotfix (rama separada, NO merge)
+## 4. Seguridad de contrasena
+
+| Requisito | Cumplimiento |
+|---|---|
+| No en pantalla | `getpass` en contenedor + `Read-Host -AsSecureString` en Test-LoginApi |
+| No en args de proceso visibles | Script Python copiado; sin password en linea de comandos |
+| No en Git | Scripts solo referencian rutas; sin secretos |
+| No en logs | No se imprime hash ni contrasena |
+| No en archivos permanentes | Script temporal en `/tmp/` se elimina tras ejecucion |
+| No en chat | Usuario introduce localmente |
+
+---
+
+## 5. Validaciones ejecutadas (agente cloud - NO Windows real)
+
+**Declaracion explicita:** este agente **NO dispone de Windows PowerShell ni del Docker CERT del usuario**. No se afirma "probado en Windows".
+
+| Validacion | Resultado |
+|---|---|
+| A. Sintaxis PowerShell | SKIP (pwsh no disponible en cloud); revision manual estatica |
+| B. Sintaxis Python | PASS (`py_compile`) |
+| C. Encoding scripts .ps1 | PASS (ASCII-only) |
+| D. Sin mojibake (â€, etc.) | PASS |
+| E. Sin python -c inline | PASS |
+| F. Seguridad contrasena | PASS (revision estatica) |
+| G. `test_v1_hotfix_login.py` (4) | PASS |
+| H. `npm run build` frontend | PASS (commit anterior) |
+
+Ejecutar localmente en Windows:
+
+```powershell
+# Opcional: validacion adicional tras git pull
+Get-ChildItem D:\EMPLEADOS_IA_V1_HOTFIX\INTERCAMBIO\SALIDA\V1_CERT\*.ps1 | ForEach-Object {
+  $e = $null
+  [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$e)
+  if ($e) { throw $e } else { Write-Host "OK $($_.Name)" }
+}
+```
+
+---
+
+## 6. Hotfix frontend (verificado en codigo)
 
 | Archivo | Cambio |
 |---|---|
-| `frontend/src/api.ts` | Lee `text` antes de `!res.ok`; mensaje 401 login correcto |
-| `frontend/src/pages/LoginPage.tsx` | Ojo mostrar/ocultar; panel "¿Olvidó su contraseña?" |
-| `frontend/src/styles.css` | Estilos campo contraseña y panel recuperación |
-| `backend/scripts/inspect_admin_user.py` | Inspección segura admin |
-| `backend/scripts/reset_admin_password.py` | Reset con prompt oculto (post-rebuild backend) |
-| `INTERCAMBIO/SALIDA/V1_CERT/*.ps1` | Scripts Windows validados |
-| `tests/test_v1_hotfix_login.py` | 4 pruebas focales |
-
-**NUEVO SHA hotfix:** ver `git rev-parse HEAD` en rama `cursor/v1-hotfix-login-acceso-85e4`
-
----
-
-## 5. Recuperación de contraseña (producto)
-
-| Estado | Detalle |
-|---|---|
-| Infraestructura email V1 | **NO existe** |
-| Implementado | Panel informativo "¿Olvidó su contraseña?" en español |
-| Comportamiento | Indica que recuperación automática no está habilitada; deriva a administrador |
-| Evolución post-V1 | Requiere SMTP + tokens un solo uso + expiración + auditoría |
-
-**NO** se implementó reset inseguro por correo.
-
----
-
-## 6. Pruebas ejecutadas (entorno agente)
-
-| Prueba | Resultado |
-|---|---|
-| `test_v1_hotfix_login.py` (4) | **PASS** |
-| Login 401 rechazado | **PASS** |
-| `npm run build` | **PASS** |
-| api.ts orden lectura body | **PASS** |
-| Ojo contraseña / español UI | **PASS** (código) |
-| Login real Windows Docker | **PENDIENTE ejecución local** (scripts entregados) |
-| SUPERADMIN post-reset | **PENDIENTE ejecución local** |
-| PostgreSQL integridad | **NO alterado** (scripts solo UPDATE usuario admin) |
+| `frontend/src/api.ts` | Lee `text` antes de `!res.ok` |
+| `frontend/src/pages/LoginPage.tsx` | Toggle contrasena; panel olvido |
+| `frontend/src/styles.css` | Estilos login |
 
 ---
 
 ## 7. Restricciones respetadas
 
-- SHA `e8cb853` **no reescrito**
-- Fase 2 **no tocada**
-- PostgreSQL **no destruido**
-- Sin `git clean` / reset destructivo
-- Sin contraseñas en logs/código/commits
+- SHA `e8cb853` no reescrito
+- Fase 2 no tocada
+- PostgreSQL no destruido/recreado
+- `D:\EMPLEADOS_IA_CERT` no modificado por estos scripts (solo lectura compose + frontend container)
+- Sin merge
 
 ---
 
@@ -143,6 +184,6 @@ docker compose up -d frontend
 
 | Campo | Valor |
 |---|---|
-| **ACCESO RECUPERADO** | **PENDIENTE ejecución local** de `Reset-AdminPassword-Inline-e8cb853.ps1` (herramientas listas) |
-| **LOGIN MEJORADO** | **LISTO en rama hotfix** (requiere rebuild frontend) |
-| **APTO** | **APTO** tras ejecutar scripts locales y desplegar hotfix frontend |
+| **SCRIPTS WINDOWS** | **APTO** (diseno robusto docker cp; pendiente ejecucion local final) |
+| **RECUPERACION ADMIN** | **LISTA** |
+| **HOTFIX LOGIN** | **APTO** |

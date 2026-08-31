@@ -1,39 +1,54 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Restablece contraseña admin de forma segura (prompt oculto dentro del contenedor).
-  NO imprime la contraseña. NO la guarda en archivos.
+  Securely reset admin password (hidden prompt inside container).
+.DESCRIPTION
+  Copies backend/scripts/reset_admin_password.py into the container and runs it with -it.
+  Password is entered via getpass inside the container (not visible in process args).
+  Uses docker cp of a real Python file (no inline shell Python).
+.PARAMETER HotfixRoot
+  Path to hotfix worktree (default: auto)
 .PARAMETER Username
-  Usuario a restablecer (default: admin)
+  Username to reset (default: admin)
 .PARAMETER BackendContainer
-  Nombre del contenedor backend (default: empleados_ia_cert-backend-1)
+  Backend container name (default: empleados_ia_cert-backend-1)
 #>
 param(
+    [string]$HotfixRoot = "",
     [string]$Username = "admin",
     [string]$BackendContainer = "empleados_ia_cert-backend-1"
 )
 
 $ErrorActionPreference = "Stop"
-$docker = "C:\Program Files\Docker\Docker\resources\bin\docker.exe"
+. "$PSScriptRoot\_V1CertCommon.ps1"
 
-if (-not (Test-Path $docker)) {
-    Write-Error "Docker no encontrado en: $docker"
+$docker = Get-V1CertDockerExe
+$root = Resolve-V1CertHotfixRoot -HotfixRoot $HotfixRoot
+$pyFile = Join-Path $root "backend\scripts\reset_admin_password.py"
+
+Assert-V1CertContainerRunning -Docker $docker -ContainerName $BackendContainer
+
+Write-Host "=== Secure password reset ===" -ForegroundColor Cyan
+Write-Host "You will be prompted for a NEW password inside the container (hidden input)."
+Write-Host "Password is NOT stored in this script, Git, or logs."
+Write-Host "HotfixRoot: $root"
+Write-Host "Container:  $BackendContainer"
+Write-Host "Username:   $Username"
+Write-Host ""
+
+$code = Invoke-V1CertCopiedPython -Docker $docker -ContainerName $BackendContainer -LocalPythonFile $pyFile -PythonArgs @($Username) -Interactive
+if ($code -ne 0) {
+    Write-Host "RESET: FAIL (exit $code)" -ForegroundColor Red
+    exit $code
 }
 
-$running = & $docker inspect -f "{{.State.Running}}" $BackendContainer 2>$null
-if ($running -ne "true") {
-    Write-Error "Contenedor $BackendContainer no está en ejecución."
-}
+Write-Host ""
+Write-Host "=== Post-reset verification ===" -ForegroundColor Cyan
+$inspectFile = Join-Path $root "backend\scripts\inspect_admin_user.py"
+$vcode = Invoke-V1CertCopiedPython -Docker $docker -ContainerName $BackendContainer -LocalPythonFile $inspectFile -PythonArgs @($Username)
+if ($vcode -ne 0) { exit $vcode }
 
-Write-Host "Se solicitará la NUEVA contraseña dentro del contenedor (entrada oculta)." -ForegroundColor Yellow
-Write-Host "No se mostrará ni guardará en este script." -ForegroundColor Yellow
-
-& $docker exec -it $BackendContainer python -m scripts.reset_admin_password $Username
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-Write-Host "`n=== Verificación post-reset (sin contraseña) ===" -ForegroundColor Cyan
-& $docker exec -i $BackendContainer python -m scripts.inspect_admin_user $Username
-
-Write-Host "`nPruebe login en: http://localhost:5180/login (o puerto FRONTEND configurado)" -ForegroundColor Green
-Write-Host "USUARIO: $Username" -ForegroundColor Green
-Write-Host "CONTRASEÑA: la nueva que estableció localmente (no se muestra aquí)." -ForegroundColor Green
+Write-Host ""
+Write-Host "RESET: PASS" -ForegroundColor Green
+Write-Host "USER: $Username"
+Write-Host "PASSWORD: the new password you entered locally (not shown here)."

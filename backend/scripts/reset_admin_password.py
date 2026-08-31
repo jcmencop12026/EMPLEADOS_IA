@@ -1,4 +1,4 @@
-"""Restablecimiento seguro de contraseña administrativa (prompt oculto, hash oficial)."""
+"""Restablecimiento seguro de contrasena administrativa (prompt oculto, hash oficial)."""
 
 from __future__ import annotations
 
@@ -12,13 +12,13 @@ from app.security import hash_password
 
 
 def _read_password() -> str:
-    pw1 = getpass.getpass("Nueva contraseña: ")
-    pw2 = getpass.getpass("Confirmar contraseña: ")
+    pw1 = getpass.getpass("Nueva contrasena: ")
+    pw2 = getpass.getpass("Confirmar contrasena: ")
     if pw1 != pw2:
-        print("ERROR: las contraseñas no coinciden.", file=sys.stderr)
+        print("ERROR: las contrasenas no coinciden.", file=sys.stderr)
         raise SystemExit(2)
     if len(pw1) < 8:
-        print("ERROR: la contraseña debe tener al menos 8 caracteres.", file=sys.stderr)
+        print("ERROR: la contrasena debe tener al menos 8 caracteres.", file=sys.stderr)
         raise SystemExit(2)
     return pw1
 
@@ -32,7 +32,7 @@ def main() -> int:
         org = db.query(Organization).first()
         if not user:
             if not org:
-                print("ERROR: no hay organización en la base de datos.", file=sys.stderr)
+                print("ERROR: no hay organizacion en la base de datos.", file=sys.stderr)
                 return 1
             user = User(
                 organization_id=org.id,
@@ -44,7 +44,7 @@ def main() -> int:
             )
             db.add(user)
             action = "bootstrap.admin_created"
-            detail = f"Usuario {username} creado por script de recuperación"
+            detail = f"Usuario {username} creado por script de recuperacion"
         else:
             user.password_hash = hash_password(new_password)
             user.is_active = True
@@ -52,7 +52,7 @@ def main() -> int:
             if user.role == "admin":
                 user.role = "superadmin"
             action = "auth.password_reset"
-            detail = f"Contraseña restablecida para {username}"
+            detail = f"Contrasena restablecida para {username}"
         db.commit()
         write_audit(
             db,

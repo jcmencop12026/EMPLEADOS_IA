@@ -1,4 +1,4 @@
-"""Inspección segura de usuario administrativo (sin exponer hash ni secretos)."""
+"""Inspeccion segura de usuario administrativo (sin exponer hash ni secretos)."""
 
 from __future__ import annotations
 
@@ -23,9 +23,9 @@ def main() -> int:
         print(f"ACTIVO: {'SI' if user.is_active else 'NO'}")
         print(f"ESTADO: {user.status}")
         print(f"ROL: {user.role}")
-        print(f"EMAIL: {user.email or '—'}")
-        print(f"ORGANIZACION: {org.name if org else '—'}")
-        print(f"ORG_ESTADO: {org.status if org else '—'}")
+        print(f"EMAIL: {user.email or '-'}")
+        print(f"ORGANIZACION: {org.name if org else '-'}")
+        print(f"ORG_ESTADO: {org.status if org else '-'}")
         print(f"SUPERADMIN: {'SI' if user.role.lower() == 'superadmin' else 'NO'}")
         return 0
     finally:
