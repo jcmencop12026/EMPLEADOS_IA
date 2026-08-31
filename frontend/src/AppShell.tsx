@@ -6,6 +6,8 @@ import { filterMenuByPermissions, canAccessRoute } from "./auth/permissions";
 import { getCachedUser, logout } from "./auth/session";
 import { OrganizationProvider, ORGANIZATION_CONTEXT_EVENT, useOrganizationContext } from "./hooks/useOrganizationContext";
 import { MENU } from "./navigation/menu";
+import { BrandMark } from "./components/identity/BrandMark";
+import { ThemeToggle } from "./components/ThemeToggle";
 import { EIAAX_BRAND } from "./lib/brand";
 
 type NavSection = (typeof MENU)[number];
@@ -136,8 +138,7 @@ function AppShellInner() {
       <aside className="sidebar" title="Navegación principal">
         <div className="brand-row">
           <div className="brand">
-            <span className="brand-name">{EIAAX_BRAND.name}</span>
-            <span className="brand-descriptor">{EIAAX_BRAND.descriptor}</span>
+            <BrandMark level={collapsed ? "ex08" : "corporativo"} />
           </div>
           <button
             type="button"
@@ -166,8 +167,11 @@ function AppShellInner() {
       </aside>
       <div className="main">
         <header className="topbar">
-          <span>EMPLEADOS IA · Plataforma empresarial</span>
+          <span className="topbar-title">
+            {EIAAX_BRAND.productLine} · {EIAAX_BRAND.descriptor}
+          </span>
           <div className="topbar-actions">
+            <ThemeToggle />
             <OrganizationContextBar />
             <NavLink className="notification-bell" to="/notificaciones" title="Centro de notificaciones">
               🔔{unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}
