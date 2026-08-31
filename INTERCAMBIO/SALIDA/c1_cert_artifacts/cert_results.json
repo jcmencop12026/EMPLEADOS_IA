@@ -1,0 +1,67 @@
+{
+  "sha_c1": "25ad1021ee6ea0322aceb0622252e7b748706d32",
+  "timestamp_utc": "2026-08-31T12:37:42.505107+00:00",
+  "db_name": "empleados_ia_c1_b_cert",
+  "v1_head": "d1e2f3a4b5c6",
+  "v2_head_expected": "1341a1b2c3d4e",
+  "postgresql_client": "psql (PostgreSQL) 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)",
+  "postgresql_server": "16.15",
+  "alembic_inicial": "d1e2f3a4b5c6",
+  "pre_upgrade_counts": {
+    "organizations": 2,
+    "users": 2,
+    "ai_employees": 2,
+    "employee_versions": 2
+  },
+  "backup": {
+    "real": true,
+    "path": "/workspace/INTERCAMBIO/SALIDA/c1_cert_artifacts/c1_v1_pre_upgrade.dump",
+    "origen": "isolated_db:empleados_ia_c1_b_cert@V1:d1e2f3a4b5c6",
+    "size_bytes": 184845,
+    "sha256": "65d17b4cf846e4ba756f42c0402b5525974da4eb02790686e848bbae2fff0109",
+    "pg_restore_list_lines": 438,
+    "validado": true
+  },
+  "alembic_final": "1341a1b2c3d4e",
+  "alembic_heads_raw": "1341a1b2c3d4e (head)",
+  "head_unico": true,
+  "bootstrap_permissions": {
+    "ejecutado": true,
+    "permisos_tras_1": 181,
+    "permisos_tras_2": 181,
+    "roles_sistema_tras_1": 4,
+    "roles_sistema_tras_2": 4,
+    "idempotente": true
+  },
+  "post_upgrade_counts": {
+    "organizations": 2,
+    "users": 2,
+    "ai_employees": 2,
+    "employee_versions": 2,
+    "permissions": 181,
+    "roles": 4
+  },
+  "integridad_sin_perdida": true,
+  "backfill_6b06": {
+    "employee_versions_null_org": 0,
+    "employee_versions_total": 2,
+    "employee_test_cases_null_org": 0,
+    "ai_employees_has_last_training_at": true,
+    "backfill_ok": true
+  },
+  "multiempresa": {
+    "org_a_employees": 1,
+    "org_b_employees": 1,
+    "aislado": true
+  },
+  "v2_structures_sample": {
+    "employee_trainings": true,
+    "employee_factory_approvals": true,
+    "comm_channels": true,
+    "gov_classification_levels": true
+  },
+  "fk_ai_employees_org": true,
+  "validate_migrations": true,
+  "postgresql_real": true,
+  "veredicto": "C1 DATOS APTO"
+}
