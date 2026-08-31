@@ -1,0 +1,5 @@
+SHA_INICIAL=3b4397f
+SHA_FINAL=a293dfb
+RAMA=cursor/fabrica-empleados-ia-mb06-dec7
+BASE=cursor/arquitecto-transformacion-dec7
+MIGRACION=1430a1b2c3d4e

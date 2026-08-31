@@ -156,6 +156,12 @@ def list_employees(
             "risk_level": emp.risk_level,
             "status": emp.status,
             "version": emp.version,
+            "source_type": emp.source_type or "MANUAL",
+            "source_ref": emp.source_ref,
+            "requerimiento_id": emp.requerimiento_id,
+            "dossier_id": emp.dossier_id,
+            "autonomy_level": emp.autonomy_level,
+            "is_template": emp.is_template,
             "capabilities": [c.code for c in caps],
             "model_provider": emp.model_provider,
             "model_name": emp.model_name,
@@ -178,11 +184,25 @@ def get_employee_detail(db: Session, org_id: str, employee_id: str) -> dict[str,
     detail.update(_employee_config_snapshot(db, emp))
     detail["instructions_full"] = db.query(EmployeeInstructions).filter(EmployeeInstructions.employee_id == emp.id).first()
     detail["versions"] = [
-        {"id": v.id, "version": v.version, "status": v.status, "created_at": v.created_at.isoformat()}
+        {
+            "id": v.id,
+            "version": v.version,
+            "status": v.status,
+            "change_reason": getattr(v, "change_reason", None),
+            "changed_fields": json.loads(v.changed_fields_json) if getattr(v, "changed_fields_json", None) else [],
+            "created_at": v.created_at.isoformat(),
+        }
         for v in db.query(EmployeeVersion).filter(EmployeeVersion.employee_id == emp.id).order_by(EmployeeVersion.version.desc()).all()
     ]
     detail["test_cases"] = [
-        {"id": t.id, "name": t.name, "test_type": t.test_type, "is_active": t.is_active}
+        {
+            "id": t.id,
+            "name": t.name,
+            "test_type": t.test_type,
+            "test_category": getattr(t, "test_category", "TECHNICAL"),
+            "criterion": getattr(t, "criterion", None),
+            "is_active": t.is_active,
+        }
         for t in db.query(EmployeeTestCase).filter(EmployeeTestCase.employee_id == emp.id).all()
     ]
     detail["certifications"] = [
@@ -272,6 +292,18 @@ def update_employee(
     emp = db.query(AIEmployee).filter(AIEmployee.id == employee_id, AIEmployee.organization_id == org_id).first()
     if not emp:
         return {"error": "Empleado no encontrado"}
+
+    before_snapshot = _employee_config_snapshot(db, emp)
+    before_snapshot.update({
+        "capability_ids": [c["id"] for c in before_snapshot.get("capabilities", [])],
+        "tools": before_snapshot.get("tools", []),
+        "knowledge": before_snapshot.get("knowledge", []),
+        "model_policy": before_snapshot.get("model_policy", {}),
+        "limits": before_snapshot.get("limits", {}),
+        "instructions": before_snapshot.get("instructions", {}),
+        "risk_level": emp.risk_level,
+    })
+
     if emp.lifecycle_status in (EmployeeLifecycleStatus.ACTIVE, EmployeeLifecycleStatus.PUBLISHED):
         if payload.get("force_new_version"):
             emp.version += 1
@@ -370,6 +402,11 @@ def update_employee(
 
     emp.updated_at = _utcnow()
     db.commit()
+
+    from app.services import employee_lifecycle_service
+
+    employee_lifecycle_service.maybe_version_on_update(db, org_id, user_id, emp, payload, before_snapshot)
+
     _emit(db, org_id, user_id, EmployeeEventType.EMPLOYEE_UPDATED, emp.id)
     return get_employee_detail(db, org_id, emp.id) or {}
 
@@ -400,7 +437,7 @@ def run_employee_tests(db: Session, org_id: str, user_id: str, employee_id: str)
     if not cases:
         cases_data = _default_test_cases(emp)
         for c in cases_data:
-            db.add(EmployeeTestCase(employee_id=emp.id, **c))
+            db.add(EmployeeTestCase(employee_id=emp.id, organization_id=org_id, **c))
         db.flush()
         cases = db.query(EmployeeTestCase).filter(EmployeeTestCase.employee_id == emp.id).all()
 
