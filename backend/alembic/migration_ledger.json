@@ -1,5 +1,5 @@
 {
-  "baseline_head": "1420a1b2c3d4e",
+  "baseline_head": "1430a1b2c3d4e",
   "protected_revisions": [
     "4355c73adcb8",
     "5b2eb2437398",
@@ -56,7 +56,8 @@
     "1341a1b2c3d4e",
     "1405a1b2c3d4e",
     "1410a1b2c3d4e",
-    "1420a1b2c3d4e"
+    "1420a1b2c3d4e",
+    "1430a1b2c3d4e"
   ],
   "upgrade_from_baseline": {
     "enabled": false,

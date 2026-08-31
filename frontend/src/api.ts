@@ -4146,3 +4146,27 @@ export async function registrarNecesidadTransformacion(data: {
 export async function diagnosticarTransformacion(expedienteId: string): Promise<Record<string, unknown>> {
   return api(`/api/transformacion/expedientes/${expedienteId}/diagnosticar`, { method: "POST" });
 }
+
+export async function fetchRequerimientosEmpleadoIA(): Promise<{ items: Array<Record<string, unknown>> }> {
+  return api("/api/transformacion/requerimientos-empleado-ia");
+}
+
+export async function createEmployeeFromRequerimiento(requerimientoId: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/from-requerimiento/${requerimientoId}`, { method: "POST" });
+}
+
+export async function fetchBibliotecaEmpleados(params = ""): Promise<{ items: Array<Record<string, unknown>>; total: number }> {
+  return api(`/api/agent-factory/biblioteca${params ? `?${params}` : ""}`);
+}
+
+export async function cloneEmployee(employeeId: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${employeeId}/clone`, { method: "POST" });
+}
+
+export async function estimateEmployeeCapacity(employeeId: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${employeeId}/estimate-capacity`);
+}
+
+export async function validateEmployeeProvider(employeeId: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${employeeId}/validate-provider`);
+}

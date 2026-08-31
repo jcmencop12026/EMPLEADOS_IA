@@ -205,7 +205,11 @@ def validate_configuration(db: Session, org_id: str, employee_id: str) -> dict[s
     if provider and provider != "rule-engine":
         cfg = (
             db.query(LlmProviderConfig)
-            .filter(LlmProviderConfig.organization_id == org_id, LlmProviderConfig.provider_key == provider, LlmProviderConfig.is_active.is_(True))
+            .filter(
+                LlmProviderConfig.organization_id == org_id,
+                LlmProviderConfig.provider_type == provider,
+                LlmProviderConfig.is_enabled.is_(True),
+            )
             .first()
         )
         model_ok = cfg is not None

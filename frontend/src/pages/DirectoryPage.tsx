@@ -37,7 +37,7 @@ export function DirectoryPage() {
     <div className="ops-page">
       <header className="page-header">
         <h1>Directorio operacional</h1>
-        <p className="muted">Empleados IA · Fábrica de Empleados IA</p>
+        <p className="muted">Biblioteca de Empleados IA · Fábrica MB-06</p>
       </header>
       <div className="ops-actions">
         <Link className="btn primary" to="/empleados/nuevo" title="Crear empleado">

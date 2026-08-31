@@ -80,6 +80,12 @@ class AIEmployee(Base):
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     certified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_training_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    source_type: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
+    source_ref: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    requerimiento_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    dossier_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    autonomy_level: Mapped[str] = mapped_column(String(30), nullable=False, default="SUPERVISADO")
+    is_template: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 
@@ -443,4 +449,27 @@ class FinOpsRecord(Base):
     rate_source: Mapped[str | None] = mapped_column(String(120), nullable=True)
     rate_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+BUSINESS_CAPABILITY_CODES = frozenset({
+    "CONSULTAR_DATOS", "OBTENER_DOCUMENTO", "ENVIAR_INFORMACION", "NOTIFICAR",
+    "ACTUALIZAR_REGISTRO", "EJECUTAR_PROCESO", "ANALIZAR", "GENERAR_INFORME",
+})
+
+OPERATION_CLASSES = frozenset({"LECTURA", "ANALISIS", "PROPUESTA", "EJECUCION"})
+
+
+class EmployeeBusinessCapability(Base):
+    """Capacidades empresariales declaradas — no acoplamiento a conectores."""
+
+    __tablename__ = "employee_business_capabilities"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
+    employee_id: Mapped[str] = mapped_column(String(36), ForeignKey("ai_employees.id"), nullable=False, index=True)
+    code: Mapped[str] = mapped_column(String(40), nullable=False)
+    label: Mapped[str] = mapped_column(String(200), nullable=False)
+    operation_class: Mapped[str] = mapped_column(String(20), nullable=False, default="LECTURA")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)

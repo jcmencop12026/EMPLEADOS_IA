@@ -214,6 +214,8 @@ class EmpleadoIARequerimiento(Base):
     supervision: Mapped[str | None] = mapped_column(Text, nullable=True)
     indicadores_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     confianza: Mapped[str] = mapped_column(String(10), nullable=False, default="MEDIA")
+    employee_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("ai_employees.id"), nullable=True)
+    estado: Mapped[str] = mapped_column(String(20), nullable=False, default="PENDIENTE")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 

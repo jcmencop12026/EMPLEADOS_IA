@@ -12,6 +12,7 @@ from app.models import User
 from app.permissions import require_permission
 from app.services import evaluacion_service as eval_svc
 from app.services import transformacion_service as svc
+from app.services import factory_bridge_service as bridge_svc
 
 router = APIRouter(prefix="/api/transformacion", tags=["Transformación"])
 
@@ -96,3 +97,11 @@ def prefill_dossier(
     filled = svc.prefill_from_dossier(db, dossier, exp)
     db.commit()
     return {"items_rellenados": filled, "dossier": svc.get_dossier_completo(db, user.organization_id)}
+
+
+@router.get("/requerimientos-empleado-ia")
+def list_requerimientos_empleado_ia(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("transformacion.view")),
+):
+    return {"items": bridge_svc.list_requerimientos_pendientes(db, user.organization_id)}

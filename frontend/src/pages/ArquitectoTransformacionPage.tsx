@@ -1,9 +1,11 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  createEmployeeFromRequerimiento,
   diagnosticarTransformacion,
   fetchDossier,
   fetchRecorridoTransformacion,
+  fetchRequerimientosEmpleadoIA,
   registrarNecesidadTransformacion,
   type TransformacionDossier,
   type TransformacionRecorrido,
@@ -29,6 +31,7 @@ export function ArquitectoTransformacionPage() {
   const [resultado, setResultado] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [requerimientos, setRequerimientos] = useState<Array<Record<string, unknown>>>([]);
   const [form, setForm] = useState({
     titulo: "",
     necesidad: "",
@@ -36,6 +39,22 @@ export function ArquitectoTransformacionPage() {
     area_proceso: "",
     nivel: "PRELIMINAR",
   });
+
+  useEffect(() => {
+    if (paso === "transformacion" || paso === "accion") {
+      fetchRequerimientosEmpleadoIA().then((r) => setRequerimientos(r.items)).catch(() => undefined);
+    }
+  }, [paso]);
+
+  async function onCrearEmpleadoDesdeReq(reqId: string) {
+    try {
+      const r = await createEmployeeFromRequerimiento(reqId);
+      const empId = (r.employee as { id?: string })?.id;
+      if (empId) window.location.href = `/empleados/${empId}/editar`;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al crear empleado");
+    }
+  }
 
   const load = useCallback(() => {
     setLoading(true);
@@ -226,6 +245,26 @@ export function ArquitectoTransformacionPage() {
               {dossier.escenarios.map((e) => (
                 <p key={e.id}><strong>{e.titulo}</strong> {e.es_proyectado ? "(proyectado)" : ""}</p>
               ))}
+            </div>
+          )}
+          {requerimientos.length > 0 && has("employee.create") && (
+            <div>
+              <h3>Requerimientos Empleado IA (Arquitecto)</h3>
+              <ul>
+                {requerimientos.map((req) => (
+                  <li key={String(req.id)}>
+                    {String(req.objetivo)} — {String(req.estado)}
+                    {req.estado === "PENDIENTE" && (
+                      <button type="button" className="btn btn-sm" onClick={() => onCrearEmpleadoDesdeReq(String(req.id))}>
+                        Crear borrador en Fábrica
+                      </button>
+                    )}
+                    {req.employee_id ? (
+                      <Link to={`/empleados/${String(req.employee_id)}`}> Ver empleado</Link>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
