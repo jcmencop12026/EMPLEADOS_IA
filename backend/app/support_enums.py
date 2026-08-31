@@ -1,0 +1,56 @@
+"""Enumeraciones — Mesa de Ayuda y Soporte (MB-12)."""
+
+from __future__ import annotations
+
+# Tipos de caso configurables
+TIPOS_CASO = (
+    "INCIDENTE",
+    "SOLICITUD",
+    "PROBLEMA",
+    "CONSULTA",
+    "ACCESO",
+    "INTEGRACION",
+    "AUTOMATIZACION",
+    "EMPLEADO_IA",
+    "FACTURACION_COSTOS",
+    "SEGURIDAD",
+    "OTRO",
+)
+
+ESTADOS_CASO = (
+    "NUEVO",
+    "ASIGNADO",
+    "EN_PROCESO",
+    "PENDIENTE_USUARIO",
+    "PENDIENTE_TERCERO",
+    "RESUELTO",
+    "CERRADO",
+    "CANCELADO",
+)
+
+ESTADOS_ABIERTOS = frozenset({
+    "NUEVO",
+    "ASIGNADO",
+    "EN_PROCESO",
+    "PENDIENTE_USUARIO",
+    "PENDIENTE_TERCERO",
+})
+
+PRIORIDADES = ("CRITICA", "ALTA", "MEDIA", "BAJA")
+IMPACTOS = ("CRITICO", "ALTO", "MEDIO", "BAJO")
+URGENCIAS = ("CRITICA", "ALTA", "MEDIA", "BAJA")
+
+ORIGENES = ("MANUAL", "AUTOMATICO")
+
+ACCIONES_HISTORIAL = (
+    "CREACION",
+    "CAMBIO_ESTADO",
+    "ASIGNACION",
+    "COMENTARIO",
+    "ESCALAMIENTO",
+    "RESOLUCION",
+    "CIERRE",
+    "ACTUALIZACION",
+)
+
+SLA_ESTADOS = ("DENTRO", "PROXIMO", "VENCIDO", "NO_APLICA")
