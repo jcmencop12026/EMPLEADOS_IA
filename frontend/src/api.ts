@@ -3970,3 +3970,73 @@ export async function preguntarEiaax(
     body: JSON.stringify({ mensaje, accion }),
   });
 }
+
+// --- Inteligencia de resultados (1410) ---
+
+export type ResultadoIndicador = {
+  id: string;
+  nombre: string;
+  unidad: string;
+  antes: number | null;
+  proyectado: number | null;
+  real: number | null;
+  meta: number | null;
+  confianza: string;
+  fuente: string;
+  tipo_analitica: string;
+  expediente_id: string | null;
+  sin_medicion_posterior: boolean;
+  visible_entidad: boolean;
+};
+
+export type InformeImpacto = {
+  id: string;
+  titulo: string;
+  tipo: string;
+  version: number;
+  visibilidad: string;
+  narrativa: string;
+  contenido: Record<string, unknown>;
+  expediente_id: string | null;
+  created_at: string | null;
+};
+
+export async function fetchResultadosIndicadores(params?: string): Promise<{ items: ResultadoIndicador[]; total: number }> {
+  return api(`/api/resultados/indicadores${params ? `?${params}` : ""}`);
+}
+
+export async function fetchAntesProyectadoReal(expedienteId?: string): Promise<Record<string, unknown>> {
+  const q = expedienteId ? `?expediente_id=${expedienteId}` : "";
+  return api(`/api/resultados/antes-proyectado-real${q}`);
+}
+
+export async function generarInformeImpacto(expedienteId: string, tipo = "IMPACTO"): Promise<InformeImpacto> {
+  return api("/api/resultados/informes/generar", {
+    method: "POST",
+    body: JSON.stringify({ expediente_id: expedienteId, tipo }),
+  });
+}
+
+export async function fetchInformesImpacto(expedienteId?: string): Promise<{ items: InformeImpacto[]; total: number }> {
+  const q = expedienteId ? `?expediente_id=${expedienteId}` : "";
+  return api(`/api/resultados/informes${q}`);
+}
+
+export async function fetchInformeImpacto(id: string): Promise<InformeImpacto> {
+  return api(`/api/resultados/informes/${id}`);
+}
+
+export async function fetchResultadosTrazabilidad(expedienteId: string): Promise<Record<string, unknown>> {
+  return api(`/api/resultados/expediente/${expedienteId}/trazabilidad`);
+}
+
+export async function createIndicadorResultado(data: Record<string, unknown>): Promise<ResultadoIndicador> {
+  return api("/api/resultados/indicadores", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function registerMedicionReal(indicadorId: string, valorReal: number, evidenciaRef?: string): Promise<ResultadoIndicador> {
+  return api(`/api/resultados/indicadores/${indicadorId}/medicion-real`, {
+    method: "POST",
+    body: JSON.stringify({ valor_real: valorReal, evidencia_ref: evidenciaRef }),
+  });
+}

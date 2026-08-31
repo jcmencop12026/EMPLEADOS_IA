@@ -1623,6 +1623,21 @@ tr.row-selected {
   font-style: italic;
 }
 
+.informe-narrativa h2 {
+  font-size: 1rem;
+  margin: 1rem 0 0.35rem;
+  color: var(--text-primary, #0f172a);
+}
+
+.informe-narrativa p {
+  margin: 0.25rem 0;
+  line-height: 1.45;
+}
+
+[data-theme="dark"] .informe-narrativa h2 {
+  color: var(--text-primary, #f1f5f9);
+}
+
 .eiaax-ask-panel {
   width: 320px;
   border-left: 1px solid #e2e8f0;

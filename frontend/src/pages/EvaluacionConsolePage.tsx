@@ -292,7 +292,14 @@ export function EvaluacionConsolePage() {
 
         {tab === "impacto" && impacto && (
           <section className="panel compact-panel">
-            <h2>Impacto e indicadores</h2>
+            <div className="page-header-row">
+              <h2>Impacto e indicadores</h2>
+              {has("resultados.view") && (
+                <Link to={`/resultados?expediente_id=${exp.id}`} className="btn">
+                  Inteligencia de resultados →
+                </Link>
+              )}
+            </div>
             {impacto.nota && <p className="muted small">{String(impacto.nota)}</p>}
             <EiaaxTable
               columns={impactoColumns}
