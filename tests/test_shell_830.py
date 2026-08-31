@@ -1,5 +1,6 @@
 """CURSOR-830 — shell auth, session, API client contracts."""
 from datetime import datetime, timedelta, timezone
+import uuid
 
 from jose import jwt
 
@@ -90,15 +91,16 @@ def test_forbidden_returns_403_spanish_detail(client, token):
     db.add(
         User(
             organization_id=org.id,
-            username="viewer830",
+            username=f"viewer830-{uuid.uuid4().hex[:8]}",
             password_hash=hash_password("Viewer830*"),
             role="viewer",
         )
     )
     db.commit()
+    viewer_username = db.query(User).filter(User.organization_id == org.id).first().username
     db.close()
 
-    login = client.post("/api/auth/login", json={"username": "viewer830", "password": "Viewer830*"})
+    login = client.post("/api/auth/login", json={"username": viewer_username, "password": "Viewer830*"})
     assert login.status_code == 200
     viewer_token = login.json()["access_token"]
 

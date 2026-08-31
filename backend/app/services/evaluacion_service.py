@@ -1,0 +1,1003 @@
+"""Servicio expediente de evaluación empresarial EIAAX — Bloque Producto 1."""
+
+from __future__ import annotations
+
+import json
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+from fastapi import HTTPException
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from app.audit import write_audit
+from app.evaluacion_models import (
+    CONFIANZA_NIVELES,
+    EVALUACION_ESTADOS,
+    EVALUACION_NIVELES,
+    INFO_ESTADOS,
+    EvaluacionExpediente,
+    EvaluacionHallazgo,
+    EvaluacionInformacionItem,
+    EvaluacionOportunidadLink,
+    EvaluacionVisibilidadLog,
+)
+from app.llm_models import LlmProviderConfig
+from app.opportunity_models import Opportunity
+from app.services import proactive_service as opp_svc
+from app.services.coordinator import route_task
+from app.gateway.providers import is_executable_llm_provider
+from app.gateway.secrets import secret_configured
+
+# Catálogo adaptativo — campos por profundidad
+_INFO_CATALOGO: list[dict[str, Any]] = [
+    {
+        "campo": "contexto_negocio",
+        "etiqueta": "Contexto del negocio",
+        "explicacion": "Sector, tamaño y modelo operativo de la entidad.",
+        "por_que": "Permite contextualizar el análisis y calibrar expectativas.",
+        "impacto_precision": "Sin contexto, las inferencias pueden ser genéricas.",
+        "niveles": {"PRELIMINAR", "DIAGNOSTICA", "PROFUNDA"},
+        "obligatorio": True,
+    },
+    {
+        "campo": "problema_detalle",
+        "etiqueta": "Descripción del problema",
+        "explicacion": "Narrativa del dolor o necesidad principal.",
+        "por_que": "Define el foco de la evaluación.",
+        "impacto_precision": "Problemas vagos generan hallazgos de baja confianza.",
+        "niveles": {"PRELIMINAR", "DIAGNOSTICA", "PROFUNDA"},
+        "obligatorio": True,
+    },
+    {
+        "campo": "procesos_afectados",
+        "etiqueta": "Procesos o áreas afectadas",
+        "explicacion": "Procesos, departamentos o flujos involucrados.",
+        "por_que": "Delimita el alcance del análisis.",
+        "impacto_precision": "Sin alcance definido, el impacto es estimado.",
+        "niveles": {"PRELIMINAR", "DIAGNOSTICA", "PROFUNDA"},
+        "obligatorio": True,
+    },
+    {
+        "campo": "metricas_actuales",
+        "etiqueta": "Métricas o indicadores actuales",
+        "explicacion": "KPIs, volúmenes o mediciones disponibles.",
+        "por_que": "Sustenta el análisis cuantitativo.",
+        "impacto_precision": "Sin métricas, el impacto queda en proyección.",
+        "niveles": {"DIAGNOSTICA", "PROFUNDA"},
+        "obligatorio": True,
+    },
+    {
+        "campo": "sistemas_herramientas",
+        "etiqueta": "Sistemas y herramientas",
+        "explicacion": "ERP, hojas de cálculo, aplicaciones relevantes.",
+        "por_que": "Identifica fuentes de datos y restricciones técnicas.",
+        "impacto_precision": "Afecta la viabilidad de soluciones propuestas.",
+        "niveles": {"DIAGNOSTICA", "PROFUNDA"},
+        "obligatorio": False,
+    },
+    {
+        "campo": "restricciones",
+        "etiqueta": "Restricciones y dependencias",
+        "explicacion": "Presupuesto, plazos, regulación o dependencias críticas.",
+        "por_que": "Evita recomendaciones no viables.",
+        "impacto_precision": "Sin restricciones, las oportunidades pueden ser irreales.",
+        "niveles": {"DIAGNOSTICA", "PROFUNDA"},
+        "obligatorio": False,
+    },
+    {
+        "campo": "evidencias_documentales",
+        "etiqueta": "Evidencias y documentos",
+        "explicacion": "Informes, contratos, datos exportados u otras evidencias.",
+        "por_que": "Fundamenta hallazgos con hechos verificables.",
+        "impacto_precision": "Aumenta confianza de HECHO vs INFERENCIA.",
+        "niveles": {"PROFUNDA"},
+        "obligatorio": True,
+    },
+    {
+        "campo": "stakeholders",
+        "etiqueta": "Partes interesadas",
+        "explicacion": "Responsables, patrocinadores y usuarios clave.",
+        "por_que": "Facilita la siguiente acción y gobernanza.",
+        "impacto_precision": "Mejora priorización de oportunidades.",
+        "niveles": {"PROFUNDA"},
+        "obligatorio": False,
+    },
+]
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _new_correlation() -> str:
+    return str(uuid.uuid4())
+
+
+def _next_codigo(db: Session, organization_id: str) -> str:
+    year = _utcnow().year
+    prefix = f"EVA-{year}-"
+    count = (
+        db.query(func.count(EvaluacionExpediente.id))
+        .filter(
+            EvaluacionExpediente.organization_id == organization_id,
+            EvaluacionExpediente.codigo.like(f"{prefix}%"),
+        )
+        .scalar()
+        or 0
+    )
+    return f"{prefix}{count + 1:04d}"
+
+
+def _get_expediente(db: Session, expediente_id: str, organization_id: str) -> EvaluacionExpediente:
+    row = (
+        db.query(EvaluacionExpediente)
+        .filter(
+            EvaluacionExpediente.id == expediente_id,
+            EvaluacionExpediente.organization_id == organization_id,
+        )
+        .first()
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Expediente de evaluación no encontrado")
+    return row
+
+
+def _confianza_from_pct(pct: int) -> str:
+    if pct >= 75:
+        return "ALTA"
+    if pct >= 45:
+        return "MEDIA"
+    return "BAJA"
+
+
+def _item_estado(item: EvaluacionInformacionItem) -> str:
+    if item.respuesta and item.respuesta.strip():
+        return "RECIBIDO"
+    if not item.obligatorio:
+        return "OPCIONAL"
+    return "PENDIENTE"
+
+
+def _recalc_metrics(exp: EvaluacionExpediente, items: list[EvaluacionInformacionItem]) -> None:
+    obligatorios = [i for i in items if i.obligatorio]
+    if not obligatorios:
+        exp.porcentaje_informacion = 100
+    else:
+        recibidos = sum(1 for i in obligatorios if i.estado == "RECIBIDO")
+        exp.porcentaje_informacion = int(round(100 * recibidos / len(obligatorios)))
+    exp.confianza_global = _confianza_from_pct(exp.porcentaje_informacion)
+
+
+def _info_item_dict(item: EvaluacionInformacionItem) -> dict[str, Any]:
+    return {
+        "id": item.id,
+        "campo": item.campo,
+        "etiqueta": item.etiqueta,
+        "estado": item.estado,
+        "obligatorio": item.obligatorio,
+        "explicacion": item.explicacion,
+        "por_que": item.por_que,
+        "impacto_precision": item.impacto_precision,
+        "respuesta": item.respuesta,
+        "evidencia_ref": item.evidencia_ref,
+        "orden": item.orden,
+        "updated_at": item.updated_at.isoformat() if item.updated_at else None,
+    }
+
+
+def _hallazgo_dict(h: EvaluacionHallazgo, *, include_internal: bool = True) -> dict[str, Any]:
+    data = {
+        "id": h.id,
+        "titulo": h.titulo,
+        "descripcion": h.descripcion,
+        "tipo_contenido": h.tipo_contenido,
+        "confianza": h.confianza,
+        "explicacion_confianza": h.explicacion_confianza,
+        "evidencia": h.evidencia,
+        "origen": h.origen,
+        "impacto_resumen": h.impacto_resumen,
+        "visible_entidad": h.visible_entidad,
+        "es_problema_original": h.es_problema_original,
+        "opportunity_id": h.opportunity_id,
+        "created_at": h.created_at.isoformat() if h.created_at else None,
+    }
+    if include_internal:
+        data["diagnostic_finding_id"] = h.diagnostic_finding_id
+        data["correlation_id"] = h.correlation_id
+    return data
+
+
+def expediente_to_summary(exp: EvaluacionExpediente) -> dict[str, Any]:
+    return {
+        "id": exp.id,
+        "codigo": exp.codigo,
+        "titulo": exp.titulo,
+        "entidad_nombre": exp.entidad_nombre,
+        "estado": exp.estado,
+        "nivel": exp.nivel,
+        "porcentaje_informacion": exp.porcentaje_informacion,
+        "confianza_global": exp.confianza_global,
+        "valor_potencial": exp.valor_potencial,
+        "area_proceso": exp.area_proceso,
+        "created_at": exp.created_at.isoformat() if exp.created_at else None,
+        "updated_at": exp.updated_at.isoformat() if exp.updated_at else None,
+    }
+
+
+def expediente_to_detail(
+    db: Session,
+    exp: EvaluacionExpediente,
+    *,
+    include_internal: bool = True,
+) -> dict[str, Any]:
+    items = (
+        db.query(EvaluacionInformacionItem)
+        .filter(EvaluacionInformacionItem.expediente_id == exp.id)
+        .order_by(EvaluacionInformacionItem.orden)
+        .all()
+    )
+    hallazgos = (
+        db.query(EvaluacionHallazgo)
+        .filter(EvaluacionHallazgo.expediente_id == exp.id)
+        .order_by(EvaluacionHallazgo.created_at.desc())
+        .all()
+    )
+    links = (
+        db.query(EvaluacionOportunidadLink)
+        .filter(EvaluacionOportunidadLink.expediente_id == exp.id)
+        .all()
+    )
+    data: dict[str, Any] = {
+        **expediente_to_summary(exp),
+        "entidad_ref": exp.entidad_ref,
+        "necesidad": exp.necesidad,
+        "objetivo": exp.objetivo,
+        "diagnostic_id": exp.diagnostic_id,
+        "correlation_id": exp.correlation_id,
+        "informacion": [_info_item_dict(i) for i in items],
+        "hallazgos": [
+            _hallazgo_dict(h, include_internal=include_internal)
+            for h in hallazgos
+            if include_internal or h.visible_entidad
+        ],
+        "oportunidades_vinculadas": [l.opportunity_id for l in links],
+    }
+    if include_internal:
+        data["notas_internas"] = exp.notas_internas
+        data["responsable_id"] = exp.responsable_id
+    return data
+
+
+def list_expedientes(
+    db: Session,
+    organization_id: str,
+    *,
+    estado: str | None = None,
+    q: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> dict[str, Any]:
+    query = db.query(EvaluacionExpediente).filter(EvaluacionExpediente.organization_id == organization_id)
+    if estado:
+        query = query.filter(EvaluacionExpediente.estado == estado)
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            (EvaluacionExpediente.titulo.ilike(like))
+            | (EvaluacionExpediente.entidad_nombre.ilike(like))
+            | (EvaluacionExpediente.codigo.ilike(like))
+        )
+    total = query.count()
+    rows = query.order_by(EvaluacionExpediente.updated_at.desc()).offset(offset).limit(limit).all()
+    return {
+        "items": [expediente_to_summary(r) for r in rows],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+def create_expediente(
+    db: Session,
+    *,
+    organization_id: str,
+    user_id: str,
+    titulo: str,
+    entidad_nombre: str,
+    entidad_ref: str | None = None,
+    necesidad: str | None = None,
+    objetivo: str | None = None,
+    area_proceso: str | None = None,
+    nivel: str = "PRELIMINAR",
+) -> EvaluacionExpediente:
+    if nivel not in EVALUACION_NIVELES:
+        raise HTTPException(status_code=422, detail=f"Nivel inválido: {nivel}")
+    exp = EvaluacionExpediente(
+        organization_id=organization_id,
+        codigo=_next_codigo(db, organization_id),
+        titulo=titulo,
+        entidad_nombre=entidad_nombre,
+        entidad_ref=entidad_ref,
+        necesidad=necesidad,
+        objetivo=objetivo,
+        area_proceso=area_proceso,
+        nivel=nivel,
+        estado="BORRADOR",
+        correlation_id=_new_correlation(),
+        created_by=user_id,
+        responsable_id=user_id,
+    )
+    db.add(exp)
+    db.flush()
+    sync_informacion_adaptativa(db, exp, user_id=user_id)
+    write_audit(
+        db,
+        organization_id=organization_id,
+        user_id=user_id,
+        action="evaluacion.create",
+        detail=json.dumps({"codigo": exp.codigo, "entidad": entidad_nombre, "resource_id": exp.id}),
+        commit=False,
+    )
+    return exp
+
+
+def update_expediente(
+    db: Session,
+    expediente_id: str,
+    organization_id: str,
+    *,
+    user_id: str,
+    **fields: Any,
+) -> EvaluacionExpediente:
+    exp = _get_expediente(db, expediente_id, organization_id)
+    nivel_changed = False
+    allowed = {
+        "titulo", "entidad_nombre", "entidad_ref", "necesidad", "objetivo",
+        "area_proceso", "nivel", "estado", "notas_internas", "responsable_id", "valor_potencial",
+    }
+    for key, value in fields.items():
+        if key not in allowed or value is None:
+            continue
+        if key == "estado" and value not in EVALUACION_ESTADOS:
+            raise HTTPException(status_code=422, detail=f"Estado inválido: {value}")
+        if key == "nivel":
+            if value not in EVALUACION_NIVELES:
+                raise HTTPException(status_code=422, detail=f"Nivel inválido: {value}")
+            nivel_changed = value != exp.nivel
+        setattr(exp, key, value)
+    if nivel_changed:
+        sync_informacion_adaptativa(db, exp, user_id=user_id)
+    elif any(k in fields for k in ("necesidad", "objetivo", "area_proceso")):
+        sync_informacion_adaptativa(db, exp, user_id=user_id, preserve_responses=True)
+    exp.updated_at = _utcnow()
+    return exp
+
+
+def sync_informacion_adaptativa(
+    db: Session,
+    exp: EvaluacionExpediente,
+    *,
+    user_id: str | None = None,
+    preserve_responses: bool = True,
+) -> list[EvaluacionInformacionItem]:
+    existing = {
+        i.campo: i
+        for i in db.query(EvaluacionInformacionItem)
+        .filter(EvaluacionInformacionItem.expediente_id == exp.id)
+        .all()
+    }
+    applicable = [c for c in _INFO_CATALOGO if exp.nivel in c["niveles"]]
+    items: list[EvaluacionInformacionItem] = []
+    for orden, spec in enumerate(applicable):
+        prev = existing.get(spec["campo"])
+        if prev:
+            prev.etiqueta = spec["etiqueta"]
+            prev.explicacion = spec["explicacion"]
+            prev.por_que = spec["por_que"]
+            prev.impacto_precision = spec["impacto_precision"]
+            prev.obligatorio = spec["obligatorio"]
+            prev.orden = orden
+            if not preserve_responses:
+                prev.respuesta = None
+            prev.estado = _item_estado(prev)
+            items.append(prev)
+            continue
+        item = EvaluacionInformacionItem(
+            organization_id=exp.organization_id,
+            expediente_id=exp.id,
+            campo=spec["campo"],
+            etiqueta=spec["etiqueta"],
+            explicacion=spec["explicacion"],
+            por_que=spec["por_que"],
+            impacto_precision=spec["impacto_precision"],
+            obligatorio=spec["obligatorio"],
+            orden=orden,
+            estado="PENDIENTE",
+        )
+        db.add(item)
+        items.append(item)
+
+    # Marcar obsoletos como opcionales fuera de catálogo vigente
+    valid_campos = {s["campo"] for s in applicable}
+    for campo, item in existing.items():
+        if campo not in valid_campos:
+            item.obligatorio = False
+            item.estado = "OPCIONAL" if not item.respuesta else "RECIBIDO"
+            if item not in items:
+                items.append(item)
+
+    db.flush()
+    _recalc_metrics(exp, items)
+    if exp.estado == "BORRADOR" and exp.necesidad:
+        exp.estado = "EN_CURSO"
+    return items
+
+
+def update_informacion_item(
+    db: Session,
+    expediente_id: str,
+    organization_id: str,
+    item_id: str,
+    *,
+    respuesta: str | None = None,
+    evidencia_ref: str | None = None,
+    estado: str | None = None,
+) -> EvaluacionInformacionItem:
+    exp = _get_expediente(db, expediente_id, organization_id)
+    item = (
+        db.query(EvaluacionInformacionItem)
+        .filter(
+            EvaluacionInformacionItem.id == item_id,
+            EvaluacionInformacionItem.expediente_id == exp.id,
+        )
+        .first()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Ítem de información no encontrado")
+    if respuesta is not None:
+        item.respuesta = respuesta.strip() or None
+    if evidencia_ref is not None:
+        item.evidencia_ref = evidencia_ref.strip() or None
+    if estado and estado in INFO_ESTADOS:
+        item.estado = estado
+    else:
+        item.estado = _item_estado(item)
+    item.updated_at = _utcnow()
+    items = (
+        db.query(EvaluacionInformacionItem)
+        .filter(EvaluacionInformacionItem.expediente_id == exp.id)
+        .all()
+    )
+    _recalc_metrics(exp, items)
+    exp.updated_at = _utcnow()
+    return item
+
+
+def ejecutar_evaluacion_preliminar(
+    db: Session,
+    expediente_id: str,
+    organization_id: str,
+    *,
+    user_id: str,
+) -> dict[str, Any]:
+    """Genera hallazgos iniciales a partir de la información disponible."""
+    exp = _get_expediente(db, expediente_id, organization_id)
+    items = (
+        db.query(EvaluacionInformacionItem)
+        .filter(EvaluacionInformacionItem.expediente_id == exp.id)
+        .order_by(EvaluacionInformacionItem.orden)
+        .all()
+    )
+    _recalc_metrics(exp, items)
+    created: list[EvaluacionHallazgo] = []
+
+    if exp.necesidad:
+        h = EvaluacionHallazgo(
+            organization_id=organization_id,
+            expediente_id=exp.id,
+            titulo="Problema original identificado",
+            descripcion=exp.necesidad,
+            tipo_contenido="HECHO",
+            confianza="ALTA" if exp.porcentaje_informacion >= 50 else "MEDIA",
+            explicacion_confianza="Declarado explícitamente por el evaluador como necesidad principal.",
+            evidencia=exp.objetivo,
+            origen="expediente.necesidad",
+            es_problema_original=True,
+            visible_entidad=False,
+            correlation_id=exp.correlation_id,
+            created_by=user_id,
+        )
+        db.add(h)
+        created.append(h)
+
+    pendientes = [i for i in items if i.estado in ("PENDIENTE", "INCOMPLETO") and i.obligatorio]
+    if pendientes:
+        h = EvaluacionHallazgo(
+            organization_id=organization_id,
+            expediente_id=exp.id,
+            titulo="Información pendiente que limita precisión",
+            descripcion="; ".join(f"{i.etiqueta}" for i in pendientes[:5]),
+            tipo_contenido="INFERENCIA",
+            confianza="BAJA",
+            explicacion_confianza=f"Faltan {len(pendientes)} requisitos obligatorios para el nivel {exp.nivel}.",
+            evidencia=json.dumps([i.campo for i in pendientes], ensure_ascii=False),
+            origen="evaluacion.informacion_adaptativa",
+            impacto_resumen="La evaluación puede continuar de forma preliminar con menor certeza.",
+            visible_entidad=False,
+            correlation_id=exp.correlation_id,
+            created_by=user_id,
+        )
+        db.add(h)
+        created.append(h)
+
+    if exp.objetivo:
+        h = EvaluacionHallazgo(
+            organization_id=organization_id,
+            expediente_id=exp.id,
+            titulo="Objetivo de evaluación",
+            descripcion=exp.objetivo,
+            tipo_contenido="HECHO",
+            confianza=exp.confianza_global,
+            explicacion_confianza="Objetivo declarado en el expediente.",
+            origen="expediente.objetivo",
+            visible_entidad=False,
+            correlation_id=exp.correlation_id,
+            created_by=user_id,
+        )
+        db.add(h)
+        created.append(h)
+
+    if exp.porcentaje_informacion < 100:
+        h = EvaluacionHallazgo(
+            organization_id=organization_id,
+            expediente_id=exp.id,
+            titulo="Evaluación preliminar con información incompleta",
+            descripcion=(
+                f"Se completó el {exp.porcentaje_informacion}% de la información obligatoria. "
+                "Los hallazgos posteriores deben interpretarse como proyección hasta completar datos."
+            ),
+            tipo_contenido="PROYECCION",
+            confianza=exp.confianza_global,
+            explicacion_confianza="Proyección basada en cobertura parcial de información.",
+            origen="evaluacion.preliminar",
+            impacto_resumen="Completar información pendiente mejorará confianza y precisión.",
+            visible_entidad=False,
+            correlation_id=exp.correlation_id,
+            created_by=user_id,
+        )
+        db.add(h)
+        created.append(h)
+
+    exp.estado = "PRELIMINAR" if exp.nivel == "PRELIMINAR" else exp.nivel
+    exp.updated_at = _utcnow()
+    db.flush()
+
+    write_audit(
+        db,
+        organization_id=organization_id,
+        user_id=user_id,
+        action="evaluacion.evaluate",
+        detail=json.dumps({"hallazgos_creados": len(created), "porcentaje": exp.porcentaje_informacion, "resource_id": exp.id}),
+        commit=False,
+    )
+    return {
+        "expediente": expediente_to_detail(db, exp),
+        "hallazgos_creados": len(created),
+    }
+
+
+def create_hallazgo(
+    db: Session,
+    expediente_id: str,
+    organization_id: str,
+    *,
+    user_id: str,
+    titulo: str,
+    descripcion: str | None = None,
+    tipo_contenido: str = "INFERENCIA",
+    confianza: str = "MEDIA",
+    explicacion_confianza: str | None = None,
+    evidencia: str | None = None,
+    origen: str | None = None,
+    impacto_resumen: str | None = None,
+    visible_entidad: bool = False,
+    es_problema_original: bool = False,
+) -> EvaluacionHallazgo:
+    exp = _get_expediente(db, expediente_id, organization_id)
+    if tipo_contenido not in {"HECHO", "INFERENCIA", "PROYECCION", "RECOMENDACION"}:
+        raise HTTPException(status_code=422, detail="tipo_contenido inválido")
+    if confianza not in CONFIANZA_NIVELES:
+        raise HTTPException(status_code=422, detail="confianza inválida")
+    h = EvaluacionHallazgo(
+        organization_id=organization_id,
+        expediente_id=exp.id,
+        titulo=titulo,
+        descripcion=descripcion,
+        tipo_contenido=tipo_contenido,
+        confianza=confianza,
+        explicacion_confianza=explicacion_confianza,
+        evidencia=evidencia,
+        origen=origen or "manual",
+        impacto_resumen=impacto_resumen,
+        visible_entidad=visible_entidad,
+        es_problema_original=es_problema_original,
+        correlation_id=exp.correlation_id,
+        created_by=user_id,
+    )
+    db.add(h)
+    db.flush()
+    return h
+
+
+def set_visibilidad(
+    db: Session,
+    expediente_id: str,
+    organization_id: str,
+    *,
+    objeto_tipo: str,
+    objeto_id: str,
+    visible_entidad: bool,
+    user_id: str,
+) -> dict[str, Any]:
+    exp = _get_expediente(db, expediente_id, organization_id)
+    if objeto_tipo != "hallazgo":
+        raise HTTPException(status_code=422, detail="Solo se admite visibilidad sobre hallazgos en este bloque")
+    h = (
+        db.query(EvaluacionHallazgo)
+        .filter(
+            EvaluacionHallazgo.id == objeto_id,
+            EvaluacionHallazgo.expediente_id == exp.id,
+            EvaluacionHallazgo.organization_id == organization_id,
+        )
+        .first()
+    )
+    if not h:
+        raise HTTPException(status_code=404, detail="Hallazgo no encontrado")
+    prev = h.visible_entidad
+    h.visible_entidad = visible_entidad
+    h.updated_at = _utcnow()
+    log = EvaluacionVisibilidadLog(
+        organization_id=organization_id,
+        expediente_id=exp.id,
+        objeto_tipo=objeto_tipo,
+        objeto_id=objeto_id,
+        visible_entidad=visible_entidad,
+        changed_by=user_id,
+    )
+    db.add(log)
+    write_audit(
+        db,
+        organization_id=organization_id,
+        user_id=user_id,
+        action="evaluacion.visibility",
+        detail=json.dumps({"antes": prev, "despues": visible_entidad, "resource_id": h.id}),
+        commit=False,
+    )
+    return _hallazgo_dict(h)
+
+
+def get_vista_entidad(db: Session, expediente_id: str, organization_id: str) -> dict[str, Any]:
+    """Vista filtrada — sin datos internos sensibles."""
+    exp = _get_expediente(db, expediente_id, organization_id)
+    detail = expediente_to_detail(db, exp, include_internal=False)
+    # Eliminar campos internos explícitamente
+    safe = {
+        "codigo": detail["codigo"],
+        "titulo": detail["titulo"],
+        "entidad_nombre": detail["entidad_nombre"],
+        "estado": detail["estado"],
+        "nivel": detail["nivel"],
+        "objetivo": detail.get("objetivo"),
+        "area_proceso": detail.get("area_proceso"),
+        "confianza_global": detail["confianza_global"],
+        "porcentaje_informacion": detail["porcentaje_informacion"],
+        "hallazgos": [
+            h for h in detail["hallazgos"]
+            if h.get("visible_entidad")
+        ],
+        "informacion": [
+            {
+                "etiqueta": i["etiqueta"],
+                "estado": i["estado"],
+            }
+            for i in detail["informacion"]
+            if i["estado"] == "RECIBIDO"
+        ],
+        "impacto": get_impacto_resumen(db, exp.id, organization_id, vista_entidad=True),
+        "oportunidades": _oportunidades_visibles(db, exp),
+    }
+    return safe
+
+
+def _oportunidades_visibles(db: Session, exp: EvaluacionExpediente) -> list[dict[str, Any]]:
+    links = (
+        db.query(EvaluacionOportunidadLink, Opportunity)
+        .join(Opportunity, Opportunity.id == EvaluacionOportunidadLink.opportunity_id)
+        .filter(
+            EvaluacionOportunidadLink.expediente_id == exp.id,
+            EvaluacionOportunidadLink.organization_id == exp.organization_id,
+        )
+        .all()
+    )
+    visible_hallazgo_opp_ids = {
+        h.opportunity_id
+        for h in db.query(EvaluacionHallazgo)
+        .filter(
+            EvaluacionHallazgo.expediente_id == exp.id,
+            EvaluacionHallazgo.visible_entidad.is_(True),
+            EvaluacionHallazgo.opportunity_id.isnot(None),
+        )
+        .all()
+    }
+    result = []
+    for _link, opp in links:
+        if opp.id not in visible_hallazgo_opp_ids:
+            continue
+        result.append({
+            "codigo": opp.codigo,
+            "titulo": opp.titulo,
+            "estado": opp.estado,
+            "valor_potencial": float(opp.valor_potencial) if opp.valor_potencial else None,
+        })
+    return result
+
+
+def get_trazabilidad(db: Session, expediente_id: str, organization_id: str) -> dict[str, Any]:
+    exp = _get_expediente(db, expediente_id, organization_id)
+    vis_logs = (
+        db.query(EvaluacionVisibilidadLog)
+        .filter(EvaluacionVisibilidadLog.expediente_id == exp.id)
+        .order_by(EvaluacionVisibilidadLog.created_at.desc())
+        .all()
+    )
+    return {
+        "expediente_id": exp.id,
+        "correlation_id": exp.correlation_id,
+        "diagnostic_id": exp.diagnostic_id,
+        "visibilidad": [
+            {
+                "id": v.id,
+                "objeto_tipo": v.objeto_tipo,
+                "objeto_id": v.objeto_id,
+                "visible_entidad": v.visible_entidad,
+                "changed_by": v.changed_by,
+                "fecha": v.created_at.isoformat() if v.created_at else None,
+            }
+            for v in vis_logs
+        ],
+        "hallazgos": [
+            {
+                "id": h.id,
+                "titulo": h.titulo,
+                "origen": h.origen,
+                "tipo_contenido": h.tipo_contenido,
+                "confianza": h.confianza,
+                "visible_entidad": h.visible_entidad,
+                "fecha": h.created_at.isoformat() if h.created_at else None,
+            }
+            for h in db.query(EvaluacionHallazgo)
+            .filter(EvaluacionHallazgo.expediente_id == exp.id)
+            .order_by(EvaluacionHallazgo.created_at)
+            .all()
+        ],
+    }
+
+
+def get_impacto_resumen(
+    db: Session,
+    expediente_id: str,
+    organization_id: str,
+    *,
+    vista_entidad: bool = False,
+) -> dict[str, Any]:
+    exp = _get_expediente(db, expediente_id, organization_id)
+    hallazgos = db.query(EvaluacionHallazgo).filter(EvaluacionHallazgo.expediente_id == exp.id).all()
+    if vista_entidad:
+        hallazgos = [h for h in hallazgos if h.visible_entidad]
+
+    indicadores = []
+    for h in hallazgos:
+        if not h.impacto_resumen:
+            continue
+        indicadores.append({
+            "hallazgo": h.titulo,
+            "antes": None,
+            "proyectado": h.impacto_resumen if h.tipo_contenido == "PROYECCION" else None,
+            "real": h.impacto_resumen if h.tipo_contenido == "HECHO" else None,
+            "etiqueta_proyeccion": h.tipo_contenido == "PROYECCION",
+            "confianza": h.confianza,
+        })
+
+    return {
+        "expediente_id": exp.id,
+        "valor_potencial": exp.valor_potencial if not vista_entidad else None,
+        "indicadores": indicadores,
+        "nota": "PROYECTADO identifica estimaciones; REAL solo con evidencia verificada.",
+    }
+
+
+def vincular_oportunidad(
+    db: Session,
+    expediente_id: str,
+    organization_id: str,
+    *,
+    opportunity_id: str,
+    hallazgo_id: str | None = None,
+    user_id: str,
+) -> EvaluacionOportunidadLink:
+    exp = _get_expediente(db, expediente_id, organization_id)
+    opp = (
+        db.query(Opportunity)
+        .filter(Opportunity.id == opportunity_id, Opportunity.organization_id == organization_id)
+        .first()
+    )
+    if not opp:
+        raise HTTPException(status_code=404, detail="Oportunidad no encontrada")
+    existing = (
+        db.query(EvaluacionOportunidadLink)
+        .filter(
+            EvaluacionOportunidadLink.expediente_id == exp.id,
+            EvaluacionOportunidadLink.opportunity_id == opportunity_id,
+        )
+        .first()
+    )
+    if existing:
+        return existing
+    link = EvaluacionOportunidadLink(
+        organization_id=organization_id,
+        expediente_id=exp.id,
+        opportunity_id=opportunity_id,
+        hallazgo_id=hallazgo_id,
+        rol="VINCULADA",
+    )
+    db.add(link)
+    if hallazgo_id:
+        h = db.query(EvaluacionHallazgo).filter(EvaluacionHallazgo.id == hallazgo_id).first()
+        if h:
+            h.opportunity_id = opportunity_id
+    write_audit(
+        db,
+        organization_id=organization_id,
+        user_id=user_id,
+        action="evaluacion.link_opportunity",
+        detail=json.dumps({"opportunity_id": opportunity_id, "resource_id": exp.id}),
+        commit=False,
+    )
+    return link
+
+
+def crear_oportunidad_desde_hallazgo(
+    db: Session,
+    expediente_id: str,
+    organization_id: str,
+    *,
+    hallazgo_id: str,
+    user_id: str,
+    dominio: str = "operaciones",
+) -> dict[str, Any]:
+    exp = _get_expediente(db, expediente_id, organization_id)
+    h = (
+        db.query(EvaluacionHallazgo)
+        .filter(
+            EvaluacionHallazgo.id == hallazgo_id,
+            EvaluacionHallazgo.expediente_id == exp.id,
+        )
+        .first()
+    )
+    if not h:
+        raise HTTPException(status_code=404, detail="Hallazgo no encontrado")
+    payload = {
+        "titulo": h.titulo[:200],
+        "descripcion": h.descripcion or h.titulo,
+        "tipo_oportunidad": "EVALUACION",
+        "confianza": {"ALTA": 0.85, "MEDIA": 0.65, "BAJA": 0.4}.get(h.confianza, 0.5),
+        "impacto_estimado": 0,
+        "valor_potencial": 0,
+        "source_reference": f"eval-{exp.codigo}-{h.id[:8]}",
+        "evidencia": h.evidencia,
+        "es_problema_original": h.es_problema_original,
+    }
+    result = opp_svc.run_proactive_pipeline(
+        db,
+        organization_id=organization_id,
+        tipo="evaluacion",
+        dominio=dominio,
+        evento="evaluacion_expediente",
+        payload=payload,
+        origen="evaluacion_service",
+        user_id=user_id,
+    )
+    opp_id = result.get("opportunity_id")
+    if opp_id:
+        vincular_oportunidad(
+            db, exp.id, organization_id,
+            opportunity_id=opp_id, hallazgo_id=h.id, user_id=user_id,
+        )
+        h.opportunity_id = opp_id
+    return {"hallazgo_id": h.id, "opportunity_id": opp_id, "pipeline": result}
+
+
+def _has_usable_llm(db: Session, organization_id: str) -> bool:
+    rows = (
+        db.query(LlmProviderConfig)
+        .filter(
+            LlmProviderConfig.organization_id == organization_id,
+            LlmProviderConfig.is_enabled.is_(True),
+        )
+        .all()
+    )
+    for row in rows:
+        if not is_executable_llm_provider(row.provider_type):
+            continue
+        if secret_configured(row.secret_ref) or row.provider_type.lower() == "ollama":
+            return True
+    return False
+
+
+def ask_eiaax(
+    db: Session,
+    expediente_id: str,
+    organization_id: str,
+    *,
+    user_id: str,
+    mensaje: str,
+    accion: str | None = None,
+) -> dict[str, Any]:
+    exp = _get_expediente(db, expediente_id, organization_id)
+    context = {
+        "expediente_id": exp.id,
+        "expediente_codigo": exp.codigo,
+        "entidad": exp.entidad_nombre,
+        "estado": exp.estado,
+        "nivel": exp.nivel,
+        "porcentaje_informacion": exp.porcentaje_informacion,
+        "accion_sugerida": accion,
+    }
+    if not _has_usable_llm(db, organization_id):
+        pendientes = [
+            i.etiqueta
+            for i in db.query(EvaluacionInformacionItem)
+            .filter(
+                EvaluacionInformacionItem.expediente_id == exp.id,
+                EvaluacionInformacionItem.estado.in_(("PENDIENTE", "INCOMPLETO")),
+            )
+            .all()
+        ]
+        return {
+            "estado": "sin_proveedor",
+            "mensaje": (
+                "No hay proveedor de IA configurado para esta organización. "
+                "Configure un proveedor en Administración → Proveedores IA."
+            ),
+            "contexto_expediente": {
+                "codigo": exp.codigo,
+                "informacion_pendiente": pendientes[:8],
+                "confianza_global": exp.confianza_global,
+            },
+            "respuesta": None,
+        }
+
+    prompt = mensaje
+    if accion:
+        prompts = {
+            "profundizar_hallazgo": f"Profundiza el hallazgo relacionado con: {mensaje}",
+            "informacion_faltante": "¿Qué información falta en este expediente y por qué?",
+            "buscar_causas": f"Busca posibles causas raíz para: {mensaje}",
+            "cuantificar_impacto": f"Cuantifica el impacto potencial de: {mensaje}",
+            "identificar_oportunidades": "Identifica oportunidades adicionales a partir del expediente.",
+            "explicar_indicador": f"Explica este indicador en contexto del expediente: {mensaje}",
+            "siguiente_analisis": "¿Qué deberíamos analizar después en este expediente?",
+        }
+        prompt = prompts.get(accion, mensaje)
+
+    result = route_task(
+        db,
+        organization_id=organization_id,
+        user_id=user_id,
+        request=prompt,
+        context=context,
+        auto_execute=False,
+    )
+    return {"estado": "ok", "respuesta": result, "contexto_expediente": context}
