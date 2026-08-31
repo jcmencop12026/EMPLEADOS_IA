@@ -51,12 +51,12 @@ export function AdminOrganizationPage() {
     <div className="ops-page">
       <header className="page-header">
         <h1>Organización</h1>
-        <p className="muted">Datos del tenant actual</p>
+        <p className="muted">Datos de la organización actual</p>
       </header>
       <form className="panel" onSubmit={save}>
         <table className="data-table">
           <tbody>
-            <tr><th>Identificador</th><td className="mono">{org.id}</td></tr>
+            <tr><th>Identificador</th><td className="mono">{org.slug || org.id}</td></tr>
             <tr><th>Estado</th><td>{org.status === "ACTIVE" ? "Activa" : org.status}</td></tr>
             <tr><th>Creada</th><td>{new Date(org.created_at).toLocaleString()}</td></tr>
           </tbody>
