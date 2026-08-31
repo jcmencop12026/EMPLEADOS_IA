@@ -439,6 +439,29 @@ def generate_informe_impacto(
     db.add(informe)
     db.commit()
     db.refresh(informe)
+    try:
+        from app.events.bus import EventMessage, publish
+
+        publish(
+            EventMessage(
+                event_type="RESULTADOS_INFORME_GENERADO",
+                organization_id=organization_id,
+                correlation_id=exp.correlation_id,
+                payload={
+                    "informe_id": informe.id,
+                    "informe_titulo": informe.titulo,
+                    "informe_version": informe.version,
+                    "expediente_id": expediente_id,
+                    "expediente_codigo": exp.codigo,
+                    "responsable_id": user_id,
+                    "visibilidad": visibilidad,
+                },
+            ),
+            db,
+        )
+        db.commit()
+    except Exception:
+        pass
     return informe_dict(informe)
 
 

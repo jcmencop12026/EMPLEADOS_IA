@@ -270,3 +270,30 @@ def trazabilidad(
         return svc.get_trazabilidad_resultados(db, user.organization_id, expediente_id=expediente_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@router.post("/informes/{informe_id}/entregar")
+def entregar_informe_resultados(
+    informe_id: str,
+    body: dict[str, Any],
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("communications.send")),
+) -> dict[str, Any]:
+    from app.services import communications_service as comm_svc
+
+    try:
+        return comm_svc.deliver_informe_impacto(
+            db,
+            user.organization_id,
+            user,
+            informe_id=informe_id,
+            channel_id=body["channel_id"],
+            destinatario_tipo=body.get("destinatario_tipo", "USUARIO"),
+            destinatario_id=body.get("destinatario_id"),
+            destinatario_externo=body.get("destinatario_externo"),
+            visibilidad_entrega=body.get("visibilidad_entrega", "VISIBLE_ENTIDAD"),
+        )
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e

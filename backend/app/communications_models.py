@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -127,6 +127,8 @@ class CommMessage(Base):
     enviada_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     entregada_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     cancelada_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    referencias_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    prioridad: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("organization_id", "idempotency_key", name="uq_comm_msg_idempotency"),
@@ -177,3 +179,23 @@ class CommDedup(Base):
     __table_args__ = (
         UniqueConstraint("organization_id", "dedup_key", name="uq_comm_dedup_org_key"),
     )
+
+
+class CommEntregaInforme(Base):
+    """Registro inmutable de entrega de informe — versión fijada al momento del envío."""
+
+    __tablename__ = "comm_entregas_informe"
+    __table_args__ = (Index("ix_comm_ent_inf_informe", "informe_id", "informe_version"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
+    informe_id: Mapped[str] = mapped_column(String(36), ForeignKey("resultados_informes.id"), nullable=False)
+    informe_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    message_id: Mapped[str] = mapped_column(String(36), ForeignKey("comm_messages.id"), nullable=False)
+    expediente_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("evaluaciones_expediente.id"), nullable=True)
+    destinatario_tipo: Mapped[str] = mapped_column(String(30), nullable=False)
+    destinatario_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    visibilidad_entrega: Mapped[str] = mapped_column(String(20), default="VISIBLE_ENTIDAD", nullable=False)
+    correlation_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)

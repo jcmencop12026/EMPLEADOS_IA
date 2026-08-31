@@ -24,6 +24,7 @@ from app.communications_models import (
     CommChannel,
     CommDedup,
     CommDeliveryAttempt,
+    CommEntregaInforme,
     CommMessage,
     CommPreference,
     CommRule,
@@ -39,7 +40,7 @@ from app.notifications import resolve_event_id
 logger = logging.getLogger(__name__)
 
 _VAR_PATTERN = re.compile(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}")
-_DANGEROUS_VAR = re.compile(r"(import|exec|eval|__|<%|javascript:)", re.I)
+_DANGEROUS_VAR = re.compile(r"\b(import|exec|eval)\b|__|<%|javascript:", re.I)
 
 
 def _utcnow() -> datetime:
@@ -167,6 +168,8 @@ def message_to_dict(msg: CommMessage, db: Session, *, include_content: bool = Tr
         "enviada_at": msg.enviada_at,
         "entregada_at": msg.entregada_at,
         "cancelada_at": msg.cancelada_at,
+        "referencias": _json_load(msg.referencias_json) if msg.referencias_json else None,
+        "prioridad": msg.prioridad,
     }
 
 
@@ -571,7 +574,10 @@ def create_message_manual(db: Session, org_id: str, user: User, data: dict[str, 
         idioma=data.get("idioma", "es"),
         programada_para=programada,
         correlation_id=data.get("correlation_id"),
-        origen="MANUAL",
+        origen=data.get("origen", "MANUAL"),
+        origen_id=data.get("origen_id"),
+        referencias_json=_json_dump(data.get("referencias")),
+        prioridad=data.get("prioridad"),
         creador_id=user.id,
         max_intentos=MAX_REINTENTOS,
     )
@@ -1101,11 +1107,372 @@ def collect_trabajo_items(
     return items, msg_ids, correlation_ids
 
 
+def _event_correlation_id(event: EventMessage) -> str:
+    payload = event.payload or {}
+    return str(
+        payload.get("correlation_id")
+        or resolve_event_id(event.event_type, event.organization_id, event.work_plan_id, payload)
+    )
+
+
 def _comms_event_subscriber(event: EventMessage, db: Session) -> None:
     try:
         evaluate_rules_for_event(db, event)
+        if event.event_type == "RESULTADOS_INFORME_GENERADO":
+            _handle_informe_generado_event(db, event)
+        elif event.event_type == "EVALUACION_INFO_FALTANTE":
+            _handle_info_faltante_event(db, event)
     except Exception:
         logger.exception("MB-11 rule evaluation failed for %s", event.event_type)
+
+
+def _handle_informe_generado_event(db: Session, event: EventMessage) -> None:
+    """Notificación interna automática al responsable cuando se genera un informe."""
+    payload = event.payload or {}
+    informe_id = payload.get("informe_id")
+    responsable_id = payload.get("responsable_id") or payload.get("recipient_user_id")
+    if not informe_id or not responsable_id:
+        return
+    ch = (
+        db.query(CommChannel)
+        .filter(CommChannel.organization_id == event.organization_id, CommChannel.tipo == "INTERNO_PLATAFORMA", CommChannel.activo.is_(True))
+        .first()
+    )
+    if not ch:
+        return
+    tpl = (
+        db.query(CommTemplate)
+        .filter(CommTemplate.organization_id == event.organization_id, CommTemplate.codigo == "INFORME_DISPONIBLE")
+        .first()
+    )
+    ver_id = tpl.current_version_id if tpl else None
+    asunto = f"Informe disponible: {payload.get('informe_titulo', 'Informe de impacto')}"
+    contenido = (
+        f"Se generó el informe «{payload.get('informe_titulo', '')}» (versión {payload.get('informe_version', 1)}). "
+        f"Puede revisarlo y entregarlo desde Inteligencia de resultados."
+    )
+    if ver_id:
+        ver = db.query(CommTemplateVersion).filter(CommTemplateVersion.id == ver_id).first()
+        if ver:
+            org = db.query(Organization).filter(Organization.id == event.organization_id).first()
+            vars_map = {
+                "informe_titulo": str(payload.get("informe_titulo", "")),
+                "informe_version": str(payload.get("informe_version", "")),
+                "expediente": str(payload.get("expediente_id", "")),
+                "expediente_codigo": str(payload.get("expediente_codigo", "")),
+                "nombre": "",
+                "empresa": org.name if org else "",
+                "fecha": _utcnow().strftime("%Y-%m-%d"),
+                "evento": event.event_type,
+                "correlation_id": _event_correlation_id(event),
+            }
+            try:
+                contenido = render_template(ver.contenido, vars_map)
+                if ver.asunto:
+                    asunto = render_template(ver.asunto, vars_map)
+            except ValueError:
+                pass
+    admin = db.query(User).filter(User.id == responsable_id, User.organization_id == event.organization_id).first()
+    if not admin:
+        return
+    msg = CommMessage(
+        organization_id=event.organization_id,
+        estado="PENDIENTE_ENVIO",
+        tipo_comunicacion="INFORME",
+        channel_id=ch.id,
+        template_version_id=ver_id,
+        destinatario_tipo="USUARIO",
+        destinatario_id=admin.id,
+        asunto=asunto,
+        contenido=contenido,
+        correlation_id=_event_correlation_id(event),
+        event_id=resolve_event_id(event.event_type, event.organization_id, event.work_plan_id, payload),
+        origen="INFORME_IMPACTO",
+        origen_id=informe_id,
+        referencias_json=_json_dump({"informe_id": informe_id, "informe_version": payload.get("informe_version")}),
+        prioridad="NORMAL",
+        creador_id=admin.id,
+    )
+    db.add(msg)
+    db.flush()
+    send_message(db, msg, commit=False)
+
+
+def _handle_info_faltante_event(db: Session, event: EventMessage) -> None:
+    payload = event.payload or {}
+    dest_id = payload.get("responsable_id") or payload.get("recipient_user_id")
+    expediente_id = payload.get("expediente_id")
+    if not dest_id or not expediente_id:
+        return
+    user = db.query(User).filter(User.id == dest_id, User.organization_id == event.organization_id).first()
+    if not user:
+        return
+    send_solicitud_informacion_faltante(
+        db,
+        event.organization_id,
+        user,
+        expediente_id=expediente_id,
+        destinatario_id=dest_id,
+        porcentaje=payload.get("porcentaje_informacion"),
+        correlation_id=_event_correlation_id(event),
+        commit=False,
+    )
+
+
+def validate_delivery_privacy(
+    *,
+    informe_visibilidad: str,
+    channel_tipo: str,
+    destinatario_tipo: str,
+    contenido_interno: bool = False,
+) -> None:
+    """Rechaza entregas que violen visibilidad o expongan contenido restringido."""
+    if informe_visibilidad == "INTERNO" and destinatario_tipo == "EXTERNO":
+        raise ValueError("No se puede entregar un informe INTERNO a destinatarios externos.")
+    if contenido_interno and channel_tipo != "INTERNO_PLATAFORMA":
+        raise ValueError("Contenido restringido solo puede entregarse por canal interno.")
+    if destinatario_tipo == "EXTERNO" and channel_tipo == "INTERNO_PLATAFORMA":
+        raise ValueError("Destinatario externo requiere canal de correo o webhook.")
+
+
+def deliver_informe_impacto(
+    db: Session,
+    org_id: str,
+    user: User,
+    *,
+    informe_id: str,
+    channel_id: str,
+    destinatario_tipo: str,
+    destinatario_id: str | None = None,
+    destinatario_externo: str | None = None,
+    visibilidad_entrega: str = "VISIBLE_ENTIDAD",
+) -> dict[str, Any]:
+    from app.resultados_models import ResultadoInformeImpacto
+
+    inf = (
+        db.query(ResultadoInformeImpacto)
+        .filter(ResultadoInformeImpacto.id == informe_id, ResultadoInformeImpacto.organization_id == org_id)
+        .first()
+    )
+    if not inf:
+        raise LookupError("Informe no encontrado.")
+    channel = db.query(CommChannel).filter(CommChannel.id == channel_id, CommChannel.organization_id == org_id).first()
+    if not channel:
+        raise LookupError("Canal no encontrado.")
+    dest_tipo = destinatario_tipo.upper()
+    if dest_tipo == "USUARIO" and destinatario_id:
+        dest_user = db.query(User).filter(User.id == destinatario_id, User.organization_id == org_id).first()
+        if not dest_user:
+            raise ValueError("Destinatario no pertenece a la organización.")
+    validate_delivery_privacy(
+        informe_visibilidad=inf.visibilidad,
+        channel_tipo=channel.tipo,
+        destinatario_tipo=dest_tipo,
+        contenido_interno=inf.visibilidad == "INTERNO" and visibilidad_entrega != "VISIBLE_ENTIDAD",
+    )
+    if inf.visibilidad == "INTERNO" and visibilidad_entrega == "VISIBLE_ENTIDAD":
+        raise ValueError("El informe es INTERNO; no puede publicarse como visible para entidad sin cambiar visibilidad.")
+
+    contenido_entrega = inf.narrativa
+    if visibilidad_entrega == "VISIBLE_ENTIDAD":
+        contenido_entrega = _sanitize_narrativa_para_entidad(contenido_entrega)
+
+    msg = CommMessage(
+        organization_id=org_id,
+        estado="PENDIENTE_ENVIO",
+        tipo_comunicacion="INFORME",
+        channel_id=channel.id,
+        destinatario_tipo=dest_tipo,
+        destinatario_id=destinatario_id,
+        destinatario_externo=destinatario_externo,
+        asunto=inf.titulo,
+        contenido=contenido_entrega,
+        correlation_id=inf.correlation_id,
+        origen="INFORME_IMPACTO",
+        origen_id=inf.id,
+        referencias_json=_json_dump({
+            "informe_id": inf.id,
+            "informe_version": inf.version,
+            "expediente_id": inf.expediente_id,
+            "visibilidad_entrega": visibilidad_entrega,
+        }),
+        prioridad="NORMAL",
+        creador_id=user.id,
+    )
+    db.add(msg)
+    db.flush()
+    send_message(db, msg, commit=False)
+    entrega = CommEntregaInforme(
+        organization_id=org_id,
+        informe_id=inf.id,
+        informe_version=inf.version,
+        message_id=msg.id,
+        expediente_id=inf.expediente_id,
+        destinatario_tipo=dest_tipo,
+        destinatario_id=destinatario_id or destinatario_externo,
+        visibilidad_entrega=visibilidad_entrega,
+        correlation_id=inf.correlation_id,
+        created_by=user.id,
+    )
+    db.add(entrega)
+    write_audit(
+        db,
+        action="communications.informe.delivered",
+        organization_id=org_id,
+        user_id=user.id,
+        detail=json.dumps({"informe_id": inf.id, "version": inf.version, "message_id": msg.id}),
+    )
+    db.commit()
+    db.refresh(msg)
+    return {
+        "message": message_to_dict(msg, db),
+        "entrega": {
+            "id": entrega.id,
+            "informe_id": entrega.informe_id,
+            "informe_version": entrega.informe_version,
+            "visibilidad_entrega": entrega.visibilidad_entrega,
+        },
+    }
+
+
+def _sanitize_narrativa_para_entidad(narrativa: str) -> str:
+    """Elimina secciones que no deben compartirse con la entidad."""
+    lines = []
+    skip = False
+    for line in narrativa.split("\n"):
+        low = line.lower()
+        if any(x in low for x in ("nota interna", "economía privada", "margen", "hipótesis interna")):
+            skip = True
+            continue
+        if line.startswith("## "):
+            skip = False
+        if not skip:
+            lines.append(line)
+    return "\n".join(lines)
+
+
+def send_solicitud_informacion_faltante(
+    db: Session,
+    org_id: str,
+    user: User,
+    *,
+    expediente_id: str,
+    destinatario_id: str,
+    porcentaje: float | None = None,
+    correlation_id: str | None = None,
+    commit: bool = True,
+) -> dict[str, Any]:
+    ch = (
+        db.query(CommChannel)
+        .filter(CommChannel.organization_id == org_id, CommChannel.tipo == "INTERNO_PLATAFORMA", CommChannel.activo.is_(True))
+        .first()
+    )
+    if not ch:
+        raise LookupError("No hay canal interno activo.")
+    dest = db.query(User).filter(User.id == destinatario_id, User.organization_id == org_id).first()
+    if not dest:
+        raise ValueError("Destinatario no pertenece a la organización.")
+    pct = f"{porcentaje:.0f}%" if porcentaje is not None else "incompleta"
+    contenido = (
+        f"El expediente de evaluación requiere información adicional (completitud: {pct}). "
+        f"Revise la consola del expediente y complete los campos pendientes."
+    )
+    msg = CommMessage(
+        organization_id=org_id,
+        estado="PENDIENTE_ENVIO",
+        tipo_comunicacion="SOLICITUD",
+        channel_id=ch.id,
+        destinatario_tipo="USUARIO",
+        destinatario_id=dest.id,
+        asunto="Información faltante en expediente de evaluación",
+        contenido=contenido,
+        correlation_id=correlation_id,
+        origen="EVALUACION",
+        origen_id=expediente_id,
+        prioridad="ALTA",
+        creador_id=user.id,
+    )
+    db.add(msg)
+    db.flush()
+    send_message(db, msg, commit=False)
+    if commit:
+        db.commit()
+        db.refresh(msg)
+    return message_to_dict(msg, db)
+
+
+def list_entregas_informe(db: Session, org_id: str, *, informe_id: str | None = None) -> list[dict[str, Any]]:
+    qry = db.query(CommEntregaInforme).filter(CommEntregaInforme.organization_id == org_id)
+    if informe_id:
+        qry = qry.filter(CommEntregaInforme.informe_id == informe_id)
+    return [
+        {
+            "id": e.id,
+            "informe_id": e.informe_id,
+            "informe_version": e.informe_version,
+            "message_id": e.message_id,
+            "expediente_id": e.expediente_id,
+            "destinatario_tipo": e.destinatario_tipo,
+            "destinatario_id": e.destinatario_id,
+            "visibilidad_entrega": e.visibilidad_entrega,
+            "correlation_id": e.correlation_id,
+            "created_at": e.created_at.isoformat() if e.created_at else None,
+        }
+        for e in qry.order_by(CommEntregaInforme.created_at.desc()).all()
+    ]
+
+
+def get_centro_informacion_resumen(db: Session, org_id: str) -> dict[str, Any]:
+    base = contrato_centro_control(db, org_id)
+    entregas = db.query(CommEntregaInforme).filter(CommEntregaInforme.organization_id == org_id).count()
+    fallidas = db.query(CommMessage).filter(CommMessage.organization_id == org_id, CommMessage.estado == "FALLIDA").count()
+    programadas = db.query(CommMessage).filter(CommMessage.organization_id == org_id, CommMessage.estado == "PROGRAMADA").count()
+    informes = db.query(CommMessage).filter(
+        CommMessage.organization_id == org_id, CommMessage.tipo_comunicacion == "INFORME"
+    ).count()
+    return {
+        **base,
+        "informes_entregados": entregas,
+        "comunicaciones_fallidas": fallidas,
+        "programadas": programadas,
+        "informes_comunicacion": informes,
+    }
+
+
+def bootstrap_default_comm_assets(db: Session, org_id: str, user: User) -> None:
+    """Plantillas y canal por defecto para la organización."""
+    if not db.query(CommChannel).filter(CommChannel.organization_id == org_id, CommChannel.tipo == "INTERNO_PLATAFORMA").first():
+        create_channel(db, org_id, user, {"tipo": "INTERNO_PLATAFORMA", "nombre": "Bandeja interna EIAAX"})
+    defaults = [
+        {
+            "codigo": "INFORME_DISPONIBLE",
+            "nombre": "Informe de impacto disponible",
+            "tipo_comunicacion": "INFORME",
+            "canal_tipo": "INTERNO_PLATAFORMA",
+            "asunto": "Informe disponible: {{informe_titulo}}",
+            "contenido": "El informe «{{informe_titulo}}» (v{{informe_version}}) está listo para revisión y entrega.",
+        },
+        {
+            "codigo": "INFO_FALTANTE_EVAL",
+            "nombre": "Información faltante en evaluación",
+            "tipo_comunicacion": "SOLICITUD",
+            "canal_tipo": "INTERNO_PLATAFORMA",
+            "asunto": "Complete la información del expediente {{expediente_codigo}}",
+            "contenido": "Falta información en el expediente {{expediente_codigo}}. Revise la consola de evaluación.",
+        },
+        {
+            "codigo": "RESULTADO_REGISTRADO",
+            "nombre": "Medición real registrada",
+            "tipo_comunicacion": "RESULTADO",
+            "canal_tipo": "INTERNO_PLATAFORMA",
+            "asunto": "Nueva medición REAL: {{caso}}",
+            "contenido": "Se registró medición REAL para {{caso}} el {{fecha}}.",
+        },
+    ]
+    for spec in defaults:
+        if db.query(CommTemplate).filter(CommTemplate.organization_id == org_id, CommTemplate.codigo == spec["codigo"]).first():
+            continue
+        create_template(db, org_id, user, spec)
 
 
 def register_communications_handlers() -> None:

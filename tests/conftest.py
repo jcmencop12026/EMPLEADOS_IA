@@ -30,6 +30,7 @@ from app import valuation_models  # noqa: F401, E402
 from app import diagnostic_models  # noqa: F401, E402
 from app import evaluacion_models  # noqa: F401, E402
 from app import resultados_models  # noqa: F401, E402
+from app import communications_models  # noqa: F401, E402
 from app import external_models  # noqa: F401, E402
 from app import continuidad_models  # noqa: F401, E402
 from app import governance_models  # noqa: F401, E402

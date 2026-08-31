@@ -43,6 +43,28 @@ DESTINATARIO_DINAMICOS = (
     "PROPIETARIO_PROCESO",
 )
 
+TIPOS_COMUNICACION = (
+    "INFORMATIVA",
+    "OPERATIVA",
+    "ALERTA",
+    "RECORDATORIO",
+    "SOLICITUD",
+    "RESULTADO",
+    "INFORME",
+    "APROBACION",
+    "INCIDENTE",
+)
+
+EVENTOS_COMUNICACION = (
+    "RESULTADOS_INFORME_GENERADO",
+    "RESULTADOS_MEDICION_REAL",
+    "EVALUACION_INFO_FALTANTE",
+    "EVALUACION_APROBACION_PENDIENTE",
+    "ACCION_VENCIDA",
+    "OPORTUNIDAD_RELEVANTE",
+    "FALLO_IMPORTANTE",
+)
+
 ALLOWED_TEMPLATE_VARIABLES = frozenset({
     "nombre",
     "empresa",
@@ -55,6 +77,10 @@ ALLOWED_TEMPLATE_VARIABLES = frozenset({
     "organizacion",
     "evento",
     "correlation_id",
+    "informe_titulo",
+    "informe_version",
+    "expediente",
+    "expediente_codigo",
 })
 
 MAX_REINTENTOS = 3

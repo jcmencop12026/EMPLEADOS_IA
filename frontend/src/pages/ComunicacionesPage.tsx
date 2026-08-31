@@ -7,14 +7,20 @@ import {
   createCommRule,
   createCommTemplate,
   createCommTemplateVersion,
+  fetchCommCentroResumen,
   fetchCommChannels,
   fetchCommMessage,
   fetchCommMessages,
+  fetchCommPreferences,
   fetchCommRules,
   fetchCommTemplates,
+  updateCommPreferences,
 } from "../api";
+import { ContextualHelp } from "../components/ContextualHelp";
+import { EiaaxTable, type EiaaxColumn } from "../components/EiaaxTable";
+import { HELP_CENTRO_INFORMACION } from "../lib/comunicacionesHelp";
 
-type Tab = "bandeja" | "plantillas" | "reglas" | "canales" | "programadas" | "historial";
+type Tab = "bandeja" | "plantillas" | "reglas" | "canales" | "programadas" | "historial" | "preferencias";
 
 const ESTADO_LABELS: Record<string, string> = {
   BORRADOR: "Borrador",
@@ -39,6 +45,8 @@ export function ComunicacionesPage() {
   const [filterEstado, setFilterEstado] = useState("");
   const [filterQ, setFilterQ] = useState("");
   const [showNew, setShowNew] = useState(false);
+  const [resumen, setResumen] = useState<Record<string, number> | null>(null);
+  const [prefs, setPrefs] = useState({ canales: [] as string[], tipos: [] as string[], idioma: "es" });
 
   const [newTpl, setNewTpl] = useState({
     codigo: "",
@@ -84,6 +92,12 @@ export function ComunicacionesPage() {
 
   useEffect(() => {
     reload();
+    fetchCommCentroResumen().then(setResumen).catch(() => undefined);
+    if (tab === "preferencias") {
+      fetchCommPreferences().then((p) =>
+        setPrefs({ canales: p.canales ?? [], tipos: p.tipos ?? [], idioma: p.idioma ?? "es" }),
+      );
+    }
   }, [tab]);
 
   useEffect(() => {
@@ -182,6 +196,50 @@ export function ComunicacionesPage() {
     }
   };
 
+  const messageColumns = useMemo<EiaaxColumn<CommMessage>[]>(
+    () => [
+      {
+        key: "created_at",
+        label: "Fecha",
+        getValue: (m) => m.created_at,
+        render: (m) => (m.created_at ? new Date(m.created_at).toLocaleString("es-CO") : "—"),
+      },
+      { key: "tipo_comunicacion", label: "Tipo", sortable: true, getValue: (m) => m.tipo_comunicacion },
+      {
+        key: "destinatario",
+        label: "Destinatario",
+        render: (m) => m.destinatario_id || m.destinatario_externo || m.destinatario_tipo,
+      },
+      { key: "channel_tipo", label: "Canal", getValue: (m) => m.channel_tipo },
+      { key: "asunto", label: "Asunto", sortable: true, getValue: (m) => m.asunto },
+      {
+        key: "estado",
+        label: "Estado",
+        sortable: true,
+        getValue: (m) => m.estado,
+        render: (m) => ESTADO_LABELS[m.estado] ?? m.estado,
+      },
+      { key: "origen", label: "Origen", getValue: (m) => m.origen },
+      {
+        key: "acciones",
+        label: "",
+        render: (m) => (
+          <>
+            <button type="button" className="btn link" onClick={() => setSelectedId(m.id)}>
+              Ver
+            </button>
+            {m.estado === "PROGRAMADA" && (
+              <button type="button" className="btn link" onClick={() => cancelCommMessage(m.id).then(reload)}>
+                Cancelar
+              </button>
+            )}
+          </>
+        ),
+      },
+    ],
+    [],
+  );
+
   const tabs: { id: Tab; label: string }[] = [
     { id: "bandeja", label: "Bandeja" },
     { id: "plantillas", label: "Plantillas" },
@@ -189,21 +247,46 @@ export function ComunicacionesPage() {
     { id: "canales", label: "Canales" },
     { id: "programadas", label: "Programadas" },
     { id: "historial", label: "Historial" },
+    { id: "preferencias", label: "Preferencias" },
   ];
 
   return (
-    <div className="page comunicaciones-page">
+    <div className="page comunicaciones-page ops-page">
       <header className="page-header">
-        <div>
-          <h1>Comunicaciones</h1>
-          <p className="muted">
-            Centro transversal de comunicaciones empresariales — plantillas, canales, reglas y trazabilidad sin sustituir notificaciones (820).
-          </p>
+        <div className="page-header-row">
+          <div>
+            <h1>Centro de Información y Comunicaciones</h1>
+            <p className="muted">
+              Comunicaciones gobernadas, entrega de informes y trazabilidad — complementa notificaciones (820).
+            </p>
+          </div>
+          <ContextualHelp content={HELP_CENTRO_INFORMACION} />
         </div>
         <button type="button" className="btn primary" onClick={() => setShowNew(true)}>
           Nueva comunicación
         </button>
       </header>
+
+      {resumen && (
+        <div className="eval-metrics metrics-grid compact">
+          <div className="metric-card">
+            <span className="metric-label">Pendientes</span>
+            <strong>{resumen.pendientes}</strong>
+          </div>
+          <div className="metric-card">
+            <span className="metric-label">Fallidas</span>
+            <strong>{resumen.comunicaciones_fallidas ?? resumen.fallidas}</strong>
+          </div>
+          <div className="metric-card">
+            <span className="metric-label">Informes entregados</span>
+            <strong>{resumen.informes_entregados}</strong>
+          </div>
+          <div className="metric-card">
+            <span className="metric-label">Programadas</span>
+            <strong>{resumen.programadas}</strong>
+          </div>
+        </div>
+      )}
 
       {error && <div className="alert alert-error">{error}</div>}
 
@@ -221,61 +304,17 @@ export function ComunicacionesPage() {
       </nav>
 
       {(tab === "bandeja" || tab === "programadas" || tab === "historial") && (
-        <section className="card">
-          <div className="toolbar" style={{ marginBottom: "1rem" }}>
-            <input placeholder="Buscar asunto o contenido" value={filterQ} onChange={(e) => setFilterQ(e.target.value)} />
-            <select value={filterEstado} onChange={(e) => setFilterEstado(e.target.value)}>
-              <option value="">Todos los estados</option>
-              {Object.entries(ESTADO_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          </div>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Tipo</th>
-                <th>Destinatario</th>
-                <th>Canal</th>
-                <th>Asunto</th>
-                <th>Estado</th>
-                <th>Origen</th>
-                <th>Intentos</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((m) => (
-                <tr key={m.id}>
-                  <td>{m.created_at ? new Date(m.created_at).toLocaleString("es-ES") : "—"}</td>
-                  <td>{m.tipo_comunicacion}</td>
-                  <td>{m.destinatario_id || m.destinatario_externo || m.destinatario_tipo}</td>
-                  <td>{m.channel_tipo ?? "—"}</td>
-                  <td>{m.asunto ?? "—"}</td>
-                  <td>{ESTADO_LABELS[m.estado] ?? m.estado}</td>
-                  <td>{m.origen}</td>
-                  <td>{m.intentos}/{m.max_intentos}</td>
-                  <td>
-                    <button type="button" className="btn link" onClick={() => setSelectedId(m.id)}>
-                      Ver
-                    </button>
-                    {m.estado === "PROGRAMADA" && (
-                      <button
-                        type="button"
-                        className="btn link"
-                        onClick={() => cancelCommMessage(m.id).then(reload)}
-                      >
-                        Cancelar
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <section className="panel compact-panel">
+          <EiaaxTable
+            columns={messageColumns}
+            data={filtered}
+            rowKey={(m) => m.id}
+            prefsKey={`comms_${tab}_v1`}
+            searchPlaceholder="Buscar asunto o contenido…"
+            searchKeys={["asunto", "contenido", "tipo_comunicacion"]}
+            emptyMessage="Sin comunicaciones en esta vista."
+            defaultSortKey="created_at"
+          />
           {detail && selectedId && (
             <div className="card" style={{ marginTop: "1rem" }}>
               <h3>Detalle de comunicación</h3>
@@ -293,6 +332,53 @@ export function ComunicacionesPage() {
               )}
             </div>
           )}
+        </section>
+      )}
+
+      {tab === "preferencias" && (
+        <section className="panel compact-panel">
+          <h2>Preferencias de comunicación</h2>
+          <form
+            className="form-grid"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                await updateCommPreferences(prefs);
+                setError(null);
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "No se guardaron preferencias");
+              }
+            }}
+          >
+            <label>
+              Canales permitidos (separados por coma)
+              <input
+                value={prefs.canales.join(", ")}
+                onChange={(e) =>
+                  setPrefs({ ...prefs, canales: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })
+                }
+              />
+            </label>
+            <label>
+              Tipos silenciados (no críticos)
+              <input
+                value={prefs.tipos.join(", ")}
+                onChange={(e) =>
+                  setPrefs({ ...prefs, tipos: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })
+                }
+              />
+            </label>
+            <label>
+              Idioma
+              <select value={prefs.idioma} onChange={(e) => setPrefs({ ...prefs, idioma: e.target.value })}>
+                <option value="es">Español</option>
+              </select>
+            </label>
+            <button type="submit" className="btn primary">
+              Guardar preferencias
+            </button>
+          </form>
+          <p className="muted small">Las alertas obligatorias de política empresarial no pueden silenciarse.</p>
         </section>
       )}
 

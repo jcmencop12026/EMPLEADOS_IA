@@ -15,7 +15,10 @@ from app.permissions import check_permission
 from app.schemas_communications import (
     CommChannelCreate,
     CommChannelOut,
+    CommCentroInformacionResumen,
     CommContratoMiTrabajo,
+    CommEntregaInformeCreate,
+    CommEntregaInformeOut,
     CommMessageCreate,
     CommMessageDetailOut,
     CommMessageOut,
@@ -24,6 +27,7 @@ from app.schemas_communications import (
     CommResumenCentroControl,
     CommRuleCreate,
     CommRuleOut,
+    CommSolicitudInfoFaltante,
     CommTemplateCreate,
     CommTemplateOut,
     CommTemplateVersionCreate,
@@ -178,3 +182,69 @@ def contrato_centro_control(user: User = Depends(get_current_user), db: Session 
 def contrato_mi_trabajo(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     check_permission(user, "communications.view", db)
     return svc.contrato_mi_trabajo(db, user.organization_id)
+
+
+@router.get("/centro-informacion/resumen", response_model=CommCentroInformacionResumen)
+def centro_informacion_resumen(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "communications.view", db)
+    return svc.get_centro_informacion_resumen(db, user.organization_id)
+
+
+@router.post("/informes/{informe_id}/entregar")
+def entregar_informe(
+    informe_id: str,
+    body: CommEntregaInformeCreate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    check_permission(user, "communications.send", db)
+    try:
+        return svc.deliver_informe_impacto(
+            db,
+            user.organization_id,
+            user,
+            informe_id=informe_id,
+            **body.model_dump(),
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/informes/entregas", response_model=list[CommEntregaInformeOut])
+def list_entregas_informe(
+    informe_id: str | None = None,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    check_permission(user, "communications.history.view", db)
+    return svc.list_entregas_informe(db, user.organization_id, informe_id=informe_id)
+
+
+@router.post("/evaluaciones/solicitud-informacion", response_model=CommMessageOut, status_code=status.HTTP_201_CREATED)
+def solicitud_informacion_faltante(
+    body: CommSolicitudInfoFaltante,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    check_permission(user, "communications.send", db)
+    try:
+        return svc.send_solicitud_informacion_faltante(
+            db,
+            user.organization_id,
+            user,
+            expediente_id=body.expediente_id,
+            destinatario_id=body.destinatario_id,
+        )
+    except (LookupError, ValueError) as exc:
+        code = 404 if isinstance(exc, LookupError) else 422
+        raise HTTPException(status_code=code, detail=str(exc)) from exc
+
+
+@router.post("/bootstrap-defaults")
+def bootstrap_defaults(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "communications.template.manage", db)
+    svc.bootstrap_default_comm_assets(db, user.organization_id, user)
+    db.commit()
+    return {"ok": True, "message": "Plantillas y canal por defecto listos."}

@@ -3821,6 +3821,56 @@ export async function fetchCommCatalog() {
   return api<{ variables: string[]; canales: string[]; estados: string[] }>("/api/comunicaciones/catalogo/variables");
 }
 
+export type CommCentroResumen = {
+  pendientes: number;
+  fallidas: number;
+  enviadas: number;
+  informes_entregados: number;
+  comunicaciones_fallidas: number;
+  programadas: number;
+  informes_comunicacion: number;
+};
+
+export type CommPreference = {
+  canales?: string[];
+  tipos?: string[];
+  horario?: Record<string, unknown>;
+  idioma: string;
+};
+
+export async function fetchCommCentroResumen(): Promise<CommCentroResumen> {
+  return api("/api/comunicaciones/centro-informacion/resumen");
+}
+
+export async function fetchCommPreferences(): Promise<CommPreference> {
+  return api("/api/comunicaciones/preferencias");
+}
+
+export async function updateCommPreferences(data: Partial<CommPreference>): Promise<CommPreference> {
+  return api("/api/comunicaciones/preferencias", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function entregarInformeImpacto(
+  informeId: string,
+  data: {
+    channel_id: string;
+    destinatario_tipo?: string;
+    destinatario_id?: string;
+    visibilidad_entrega?: string;
+  },
+): Promise<{ message: CommMessage; entrega: Record<string, unknown> }> {
+  return api(`/api/comunicaciones/informes/${informeId}/entregar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchEntregasInforme(informeId?: string) {
+  const q = informeId ? `?informe_id=${informeId}` : "";
+  return api(`/api/comunicaciones/informes/entregas${q}`);
+}
+
+export async function bootstrapCommDefaults() {
+  return api("/api/comunicaciones/bootstrap-defaults", { method: "POST" });
+}
+
 // --- Evaluación EIAAX (Bloque Producto 1) ---
 
 export type EvaluacionInfoItem = {
