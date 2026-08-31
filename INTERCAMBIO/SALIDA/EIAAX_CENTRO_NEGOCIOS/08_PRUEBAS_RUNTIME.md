@@ -1,46 +1,47 @@
-# 08 — Pruebas y runtime
+# 08 — Pruebas y runtime (cierre integral)
 
-## Tests automatizados
+## Tests — 14 PASS
 
-Archivo: `tests/test_centro_negocios_1700.py`
+| Archivo | Tests |
+|---------|-------|
+| `test_centro_negocios_1700.py` | 4 (E2E, multiempresa, RBAC, versionamiento) |
+| `test_centro_negocios_1710.py` | 10 (PDF, aprobaciones, precio, sync, contrato, privacidad) |
 
-| Test | Cobertura |
-|------|-----------|
-| `test_centro_negocios_recorrido_completo` | Evaluación → oportunidad → propuesta → economía → precio → transiciones → negociación → contrato → implementación |
-| `test_centro_negocios_aislamiento_tenant` | Multiempresa A/B |
-| `test_centro_negocios_sin_permiso` | RBAC viewer |
-| `test_version_snapshot_inmutable` | Versionamiento post-presentación |
+## Cobertura focal 1710
 
-**Resultado:** 4 PASS
+- Presentación rechazada sin aprobaciones
+- PDF generado (`%PDF`) sin datos internos
+- Fases precio RECOMENDADO/APROBADO/PRESENTADO/CONTRATADO
+- Economía privada 403 viewer
+- Sincronización oportunidad + sync_log
+- Contratación requiere versión presentada
+- Negociación reset aprobaciones
+- POTENCIAL en nota, no en inversión
+- Aislamiento tenant detalle
+- Política aprobación configurable
 
-## Migraciones
+## Regresión Motor Económico
 
-```bash
-cd backend && python3 scripts/validate_migrations.py
-# Alembic head único: 1700a1b2c3d4e
-```
+`test_economic_motor_1600.py` — PASS
+
+## Migración
+
+Head: `1710a1b2c3d4e`
 
 ## Frontend
 
-```bash
-cd frontend && npm run build
-# ✓ build exitoso
-```
+`npm run build` — OK
 
-## API endpoints
+## Vista detalle
 
-| Método | Ruta |
-|--------|------|
-| GET | `/api/centro-negocios/dashboard` |
-| GET | `/api/centro-negocios/pipeline` |
-| POST | `/api/centro-negocios/propuestas/desde-expediente` |
-| GET | `/api/centro-negocios/propuestas/{id}` |
-| POST | `/api/centro-negocios/propuestas/{id}/enriquecer` |
-| POST | `/api/centro-negocios/propuestas/{id}/transicion` |
-| POST | `/api/centro-negocios/propuestas/{id}/precio` |
-| POST | `/api/centro-negocios/propuestas/{id}/negociacion` |
-| GET | `/api/centro-negocios/propuestas/{id}/versiones` |
-| GET | `/api/centro-negocios/propuestas/{id}/negociaciones` |
-| PUT | `/api/centro-negocios/propuestas/{id}/ia-consumo` |
-| PUT | `/api/centro-negocios/propuestas/{id}/perspectivas` |
-| POST | `/api/centro-negocios/propuestas/{id}/convertir-implementacion` |
+`/centro-negocios/propuestas/{id}` — pestañas: Resumen, Economía, Versiones, Aprobaciones, Negociación, Trazabilidad
+
+## APIs nuevas 1710
+
+- `GET .../detalle`
+- `POST .../aprobaciones`
+- `POST .../pdf`
+- `GET /documentos/{id}/pdf`
+- `POST .../contratar`
+- `POST .../sincronizar`
+- `PUT /politica-aprobacion`

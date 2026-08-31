@@ -7,6 +7,7 @@ import {
   type CentroNegociosPipelineItem,
 } from "../api";
 import { usePermissions } from "../hooks/usePermissions";
+import { labelProposalStatus } from "../lib/negocioLabels";
 
 const ESTADO_LABELS: Record<string, string> = {
   BORRADOR: "Borrador",
@@ -124,12 +125,12 @@ export function CentroNegociosPage() {
                     <tr key={p.id}>
                       <td>{p.codigo}</td>
                       <td>{p.titulo}</td>
-                      <td>{ESTADO_LABELS[p.estado] ?? p.estado}</td>
+                      <td>{p.estado_label ?? labelProposalStatus(p.estado)}</td>
                       <td>{p.precio_final != null ? p.precio_final.toLocaleString("es-CO") : "—"}</td>
                       <td>v{p.version}</td>
                       <td className="truncate-cell">{p.proximo_paso ?? "—"}</td>
                       <td>
-                        <Link to={`/comercial/propuestas/${p.id}`} className="btn small">
+                        <Link to={`/centro-negocios/propuestas/${p.id}`} className="btn small">
                           Ver
                         </Link>
                       </td>

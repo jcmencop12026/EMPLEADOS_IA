@@ -20,20 +20,28 @@ from app.negocio_enums import (
     ModeloComercial,
     PerspectivaPropuesta,
     PriceDecisionAction,
+    PricePhase,
     ProposalVersionTrigger,
 )
 from app.negocio_models import (
+    NegocioContractRecord,
     NegocioNegotiationEntry,
     NegocioPriceDecision,
+    NegocioPricePhaseRecord,
+    NegocioProposalDocument,
     NegocioProposalExtension,
     NegocioProposalVersion,
 )
+from app.negocio_labels import label_proposal_status
 from app.opportunity_models import Opportunity
 from app.services import commercial_service as com_svc
 from app.services import control_center_service as cc_svc
 from app.services import economic_motor_service as motor_svc
 from app.services import implementacion_service as impl_svc
 from app.services import proactive_service as opp_svc
+from app.services.negocio_approval_adapter import get_approval_adapter, list_approval_status
+from app.services.negocio_pdf_service import generate_and_store_pdf
+from app.services import negocio_sync_service as sync_svc
 
 POTENCIAL_NOTE = "POTENCIAL no cuenta como beneficio realizado ni en ROI/payback realizado."
 
@@ -120,6 +128,37 @@ def _default_perspectives(proposal: CommercialProposal, ext: NegocioProposalExte
     }
 
 
+def _record_price_phase(
+    db: Session,
+    org_id: str,
+    proposal_id: str,
+    fase: str,
+    monto: float | None,
+    user_id: str | None,
+    *,
+    version_number: int | None = None,
+    nota: str | None = None,
+) -> None:
+    db.add(
+        NegocioPricePhaseRecord(
+            proposal_id=proposal_id,
+            organization_id=org_id,
+            fase=fase,
+            monto=monto,
+            version_number=version_number,
+            user_id=user_id,
+            nota=nota,
+        )
+    )
+
+
+def _client_inversion(proposal: CommercialProposal, ext: NegocioProposalExtension) -> float | None:
+    """Solo precio final aprobado — nunca sugerido ni potencial."""
+    if proposal.precio_final is not None:
+        return float(proposal.precio_final)
+    return None
+
+
 def _build_client_document(proposal: CommercialProposal, ext: NegocioProposalExtension, perspectives: dict) -> dict[str, Any]:
     """Solo campos autorizados para cliente — sin margen ni costos internos."""
     gerencia = perspectives.get(PerspectivaPropuesta.GERENCIA, {})
@@ -137,7 +176,7 @@ def _build_client_document(proposal: CommercialProposal, ext: NegocioProposalExt
         "implementacion": perspectives.get(PerspectivaPropuesta.OPERACIONES, {}).get("implementacion"),
         "cronograma": None,
         "indicadores": perspectives.get(PerspectivaPropuesta.OPERACIONES, {}).get("indicadores"),
-        "inversion": gerencia.get("inversion"),
+        "inversion": _client_inversion(proposal, ext),
         "modalidad_comercial": ext.modelo_comercial,
         "consumo_ia": _parse(ext.ia_consumo_json),
         "soporte_sla": None,
@@ -399,6 +438,10 @@ def apply_price_recommendation(
         user_id=user.id,
     )
     db.add(dec)
+    if decided is not None:
+        _record_price_phase(db, org_id, proposal_id, PricePhase.APROBADO, float(decided), user.id, nota=justificacion)
+    if precio_rec is not None:
+        _record_price_phase(db, org_id, proposal_id, PricePhase.RECOMENDADO, float(precio_rec), user.id, nota="Motor económico")
     db.flush()
     return {"decision": action, "precio_decidido": decided, "recommendation": rec, "auto_published": False}
 
@@ -415,9 +458,52 @@ def transition_proposal(db: Session, user: User, org_id: str, proposal_id: str, 
             com_svc.approve_proposal(db, org_id, proposal_id, user.id)
         except com_svc.CommercialValidationError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+    elif nuevo_estado == ProposalStatus.EN_REVISION:
+        ext = _ensure_extension(db, proposal)
+        get_approval_adapter().ensure_records(db, org_id, proposal_id, ext.version_actual)
+        proposal.estado = nuevo_estado
     elif nuevo_estado == ProposalStatus.ENVIADA:
-        create_version_snapshot(db, user, org_id, proposal_id, trigger=ProposalVersionTrigger.PRESENTACION)
+        adapter = get_approval_adapter()
+        can, missing = adapter.can_present(db, org_id, proposal_id, ext.version_actual if (ext := _ensure_extension(db, proposal)) else 1)
+        if not can:
+            write_audit(
+                db,
+                action="negocio.presentacion.rechazada",
+                organization_id=org_id,
+                user_id=user.id,
+                detail=_json({"proposal_id": proposal_id, "niveles_pendientes": missing}),
+                commit=False,
+            )
+            raise HTTPException(
+                status_code=422,
+                detail=f"Aprobaciones pendientes para presentar: {', '.join(missing)}",
+            )
+        if proposal.precio_final is None:
+            raise HTTPException(status_code=422, detail="Debe aprobar precio antes de presentar")
+        ext = _ensure_extension(db, proposal)
+        ver = create_version_snapshot(db, user, org_id, proposal_id, trigger=ProposalVersionTrigger.PRESENTACION)
+        precio_pres = float(proposal.precio_final)
+        ver.precio_presentado = precio_pres
+        ver.presented_by_id = user.id
+        ext.precio_presentado = precio_pres
+        _record_price_phase(
+            db, org_id, proposal_id, PricePhase.PRESENTADO, precio_pres, user.id, version_number=ver.version_number
+        )
+        client_doc = _parse(ver.documento_cliente_json) or _build_client_document(
+            proposal, ext, _parse(ext.perspectivas_json) or _default_perspectives(proposal, ext)
+        )
+        generate_and_store_pdf(
+            db,
+            user,
+            org_id,
+            proposal_id,
+            ver,
+            client_doc,
+            prospecto=sync_svc.resolve_prospecto_name(db, ext),
+            perspectivas=_parse(ext.perspectivas_json),
+        )
         proposal.estado = ProposalStatus.ENVIADA
+        sync_svc.sync_to_opportunity(db, org_id, proposal_id, actor_id=user.id)
     else:
         proposal.estado = nuevo_estado
     ext = _ensure_extension(db, proposal)
@@ -476,16 +562,33 @@ def register_negotiation(
         ver = create_version_snapshot(db, user, org_id, proposal_id, trigger=ProposalVersionTrigger.NEGOCIACION)
         entry.nueva_version_id = ver.id
         proposal.estado = ProposalStatus.BORRADOR
+        get_approval_adapter().reset_for_version(db, org_id, proposal_id, ver.version_number)
+        ext.proximo_paso = data.get("proximo_paso") or "Revisar cambios solicitados y completar aprobaciones"
     db.flush()
     return {"entry_id": entry.id, "proposal": get_proposal_negocio(db, org_id, proposal_id, include_internal=True)}
 
 
-def convert_to_implementacion(db: Session, user: User, org_id: str, proposal_id: str) -> dict[str, Any]:
+def convert_to_implementacion(db: Session, user: User, org_id: str, proposal_id: str, condiciones: str | None = None) -> dict[str, Any]:
     proposal = com_svc._get_proposal(db, org_id, proposal_id)
-    if proposal.estado != ProposalStatus.ACEPTADA:
-        transition_proposal(db, user, org_id, proposal_id, ProposalStatus.ACEPTADA, "Marcada contratada para implementación")
-        proposal = com_svc._get_proposal(db, org_id, proposal_id)
     ext = _ensure_extension(db, proposal)
+    last_version = (
+        db.query(NegocioProposalVersion)
+        .filter(NegocioProposalVersion.proposal_id == proposal_id, NegocioProposalVersion.organization_id == org_id)
+        .order_by(NegocioProposalVersion.version_number.desc())
+        .first()
+    )
+    if proposal.estado != ProposalStatus.ACEPTADA:
+        contracted = contract_proposal(db, user, org_id, proposal_id, condiciones=condiciones, version_id=last_version.id if last_version else None)
+        contract_id = contracted["contract_id"]
+        proposal = com_svc._get_proposal(db, org_id, proposal_id)
+    else:
+        existing = (
+            db.query(NegocioContractRecord)
+            .filter(NegocioContractRecord.proposal_id == proposal_id)
+            .order_by(NegocioContractRecord.fecha_contratacion.desc())
+            .first()
+        )
+        contract_id = existing.id if existing else None
     if ext.implementacion_proyecto_id:
         return {"proyecto_id": ext.implementacion_proyecto_id, "ya_existia": True}
     proyecto = impl_svc.create_proyecto(
@@ -514,8 +617,15 @@ def convert_to_implementacion(db: Session, user: User, org_id: str, proposal_id:
     return {
         "proyecto_id": proyecto.id,
         "proposal_id": proposal_id,
+        "contract_id": contract_id,
         "flujo": "PROSPECTO→DIAGNÓSTICO→PROPUESTA→NEGOCIACIÓN→CONTRATADO→LEVANTAMIENTO",
         "datos_reutilizados": True,
+        "referencias": {
+            "evaluacion_id": ext.evaluacion_id,
+            "opportunity_id": ext.opportunity_id,
+            "version_number": last_version.version_number if last_version else ext.version_actual,
+            "document_id": last_version.pdf_document_id if last_version else None,
+        },
     }
 
 
@@ -610,6 +720,11 @@ def list_versions(db: Session, org_id: str, proposal_id: str) -> list[dict[str, 
             "version_number": r.version_number,
             "trigger": r.trigger,
             "estado_comercial": r.estado_comercial,
+            "estado_label": label_proposal_status(r.estado_comercial),
+            "pdf_document_id": r.pdf_document_id,
+            "precio_presentado": float(r.precio_presentado) if r.precio_presentado else None,
+            "presented_by_id": r.presented_by_id,
+            "approved_by_id": r.approved_by_id,
             "created_at": r.created_at.isoformat() if r.created_at else None,
             "documento_cliente": _parse(r.documento_cliente_json),
         }
@@ -662,6 +777,7 @@ def list_pipeline(db: Session, org_id: str, limit: int = 50) -> list[dict[str, A
                 "codigo": p.codigo,
                 "titulo": p.titulo,
                 "estado": p.estado,
+                "estado_label": label_proposal_status(p.estado),
                 "valor_atribuible": float(p.valor_atribuible_total or 0) if p.valor_atribuible_total else None,
                 "precio_final": float(p.precio_final or 0) if p.precio_final else None,
                 "opportunity_id": ext.opportunity_id if ext else None,
@@ -671,3 +787,169 @@ def list_pipeline(db: Session, org_id: str, limit: int = 50) -> list[dict[str, A
             }
         )
     return out
+
+
+def approve_level(
+    db: Session,
+    user: User,
+    org_id: str,
+    proposal_id: str,
+    nivel: str,
+    *,
+    comentario: str | None = None,
+) -> dict[str, Any]:
+    adapter = get_approval_adapter()
+    ext = _ensure_extension(db, com_svc._get_proposal(db, org_id, proposal_id))
+    row = adapter.approve(db, user, org_id, proposal_id, nivel, comentario=comentario, version_number=ext.version_actual)
+    return {"nivel": row.nivel, "estado": row.estado, "aprobaciones": list_approval_status(db, org_id, proposal_id)}
+
+
+def contract_proposal(
+    db: Session,
+    user: User,
+    org_id: str,
+    proposal_id: str,
+    *,
+    condiciones: str | None = None,
+    version_id: str | None = None,
+) -> dict[str, Any]:
+    proposal = com_svc._get_proposal(db, org_id, proposal_id)
+    ext = _ensure_extension(db, proposal)
+    ver = None
+    if version_id:
+        ver = db.query(NegocioProposalVersion).filter(NegocioProposalVersion.id == version_id).first()
+    if not ver:
+        ver = (
+            db.query(NegocioProposalVersion)
+            .filter(NegocioProposalVersion.proposal_id == proposal_id)
+            .order_by(NegocioProposalVersion.version_number.desc())
+            .first()
+        )
+    if not ver or not ver.pdf_document_id:
+        raise HTTPException(status_code=422, detail="Contratación requiere versión presentada con documento PDF")
+    precio = float(proposal.precio_final or ext.precio_presentado or ver.precio_presentado or 0)
+    contract = NegocioContractRecord(
+        proposal_id=proposal_id,
+        organization_id=org_id,
+        version_id=ver.id,
+        version_number=ver.version_number,
+        document_id=ver.pdf_document_id,
+        precio_contratado=precio,
+        modelo_comercial=ext.modelo_comercial,
+        condiciones=condiciones,
+        responsable_id=user.id,
+        proximo_paso="Convertir en implementación",
+        created_by_id=user.id,
+    )
+    db.add(contract)
+    ext.precio_contratado = precio
+    _record_price_phase(db, org_id, proposal_id, PricePhase.CONTRATADO, precio, user.id, version_number=ver.version_number)
+    if proposal.estado != ProposalStatus.ACEPTADA:
+        proposal.estado = ProposalStatus.ACEPTADA
+    write_audit(
+        db,
+        action="negocio.contratacion",
+        organization_id=org_id,
+        user_id=user.id,
+        detail=_json({"proposal_id": proposal_id, "version": ver.version_number, "precio": precio}),
+        commit=False,
+    )
+    db.flush()
+    return {"contract_id": contract.id, "version_number": ver.version_number, "precio_contratado": precio}
+
+
+def get_proposal_detail(db: Session, org_id: str, proposal_id: str, *, include_internal: bool = False) -> dict[str, Any]:
+    detail = get_proposal_negocio(db, org_id, proposal_id, include_internal=include_internal)
+    ext = db.query(NegocioProposalExtension).filter(NegocioProposalExtension.proposal_id == proposal_id).first()
+    detail["estado_label"] = label_proposal_status(detail.get("estado"))
+    detail["aprobaciones"] = list_approval_status(db, org_id, proposal_id, ext.version_actual if ext else 1)
+    detail["versiones"] = list_versions(db, org_id, proposal_id)
+    detail["negociaciones"] = list_negotiations(db, org_id, proposal_id)
+    detail["fases_precio"] = list_price_phases(db, org_id, proposal_id)
+    detail["sync_log"] = sync_svc.get_sync_log(db, org_id, proposal_id)
+    detail["prospecto"] = sync_svc.resolve_prospecto_name(db, ext)
+    if ext:
+        detail["negocio"]["precio_presentado"] = float(ext.precio_presentado) if ext.precio_presentado else None
+        detail["negocio"]["precio_contratado"] = float(ext.precio_contratado) if ext.precio_contratado else None
+        detail["negocio"]["sync_revision"] = ext.sync_revision
+    return detail
+
+
+def list_price_phases(db: Session, org_id: str, proposal_id: str) -> list[dict[str, Any]]:
+    rows = (
+        db.query(NegocioPricePhaseRecord)
+        .filter(NegocioPricePhaseRecord.proposal_id == proposal_id, NegocioPricePhaseRecord.organization_id == org_id)
+        .order_by(NegocioPricePhaseRecord.created_at.asc())
+        .all()
+    )
+    from app.negocio_labels import PRICE_PHASE_LABELS
+
+    return [
+        {
+            "fase": r.fase,
+            "fase_label": PRICE_PHASE_LABELS.get(r.fase, r.fase),
+            "monto": float(r.monto) if r.monto else None,
+            "version_number": r.version_number,
+            "nota": r.nota,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in rows
+    ]
+
+
+def get_document_pdf(db: Session, org_id: str, document_id: str) -> tuple[bytes, str, str]:
+    doc = (
+        db.query(NegocioProposalDocument)
+        .filter(NegocioProposalDocument.id == document_id, NegocioProposalDocument.organization_id == org_id)
+        .first()
+    )
+    if not doc or not doc.content_bytes:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    return doc.content_bytes, doc.filename, doc.content_type
+
+
+def generate_proposal_pdf(
+    db: Session,
+    user: User,
+    org_id: str,
+    proposal_id: str,
+    *,
+    version_number: int | None = None,
+) -> dict[str, Any]:
+    proposal = com_svc._get_proposal(db, org_id, proposal_id)
+    ext = _ensure_extension(db, proposal)
+    ver = None
+    if version_number:
+        ver = (
+            db.query(NegocioProposalVersion)
+            .filter(
+                NegocioProposalVersion.proposal_id == proposal_id,
+                NegocioProposalVersion.version_number == version_number,
+            )
+            .first()
+        )
+    if not ver:
+        ver = create_version_snapshot(db, user, org_id, proposal_id, trigger=ProposalVersionTrigger.REVISION_INTERNA)
+    client_doc = _parse(ver.documento_cliente_json) or _build_client_document(
+        proposal, ext, _parse(ext.perspectivas_json) or _default_perspectives(proposal, ext)
+    )
+    doc = generate_and_store_pdf(
+        db,
+        user,
+        org_id,
+        proposal_id,
+        ver,
+        client_doc,
+        prospecto=sync_svc.resolve_prospecto_name(db, ext),
+        perspectivas=_parse(ext.perspectivas_json),
+    )
+    return {"document_id": doc.id, "filename": doc.filename, "version_number": ver.version_number, "sha256": doc.content_sha256}
+
+
+def sync_opportunity(db: Session, org_id: str, proposal_id: str, direction: str = "both") -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    if direction in ("from", "both"):
+        result["from_opportunity"] = sync_svc.sync_from_opportunity(db, org_id, proposal_id)
+    if direction in ("to", "both"):
+        result["to_opportunity"] = sync_svc.sync_to_opportunity(db, org_id, proposal_id)
+    return result

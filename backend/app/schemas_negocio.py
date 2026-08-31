@@ -51,3 +51,22 @@ class IaConsumoIn(BaseModel):
 class PerspectivaUpdateIn(BaseModel):
     perspectiva: str
     contenido: dict[str, Any]
+
+
+class ApprovalLevelIn(BaseModel):
+    nivel: str
+    comentario: str | None = None
+
+
+class ContractIn(BaseModel):
+    condiciones: str | None = None
+    version_id: str | None = None
+
+
+class ApprovalPolicyIn(BaseModel):
+    levels: list[str]
+    enabled: bool = True
+
+
+class SyncIn(BaseModel):
+    direction: str = "both"

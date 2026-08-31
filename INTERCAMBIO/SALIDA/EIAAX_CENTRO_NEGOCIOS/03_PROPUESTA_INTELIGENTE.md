@@ -1,38 +1,27 @@
-# 03 — Propuesta inteligente
+# 03 — Propuesta inteligente y PDF formal
 
-## Un solo expediente, un solo objeto
+## PDF profesional
 
-`create_proposal_from_expediente` reutiliza:
+- Generación vía `negocio_pdf_service.py` (PDF estándar en español)
+- Endpoint: `POST /api/centro-negocios/propuestas/{id}/pdf`
+- Descarga: `GET /api/centro-negocios/documentos/{document_id}/pdf`
 
-- Organización y evaluación (`evaluacion_id`)
-- Oportunidad vinculada (`opportunity_id` desde link o parámetro)
-- Necesidad/objetivo del expediente en perspectiva GERENCIA
-- Valoración vía `import_from_valuation` cuando existe
-- Trazabilidad en `traceability_json`
+## Contenido del PDF (solo cliente)
 
-## Tres perspectivas — un documento
+Incluye: identidad, organización, prospecto, resumen, situación, oportunidad, solución, alcance, perspectivas Gerencia/Operaciones/Sistemas, inversión autorizada, modalidad, consumo IA, supuestos, próximos pasos.
 
-Almacenadas en `perspectivas_json` (`NegocioProposalExtension`):
+**Excluye:** margen, costo interno, precio sugerido no aprobado, economía privada.
 
-| Perspectiva | Contenido |
-|-------------|-----------|
-| **GERENCIA** | situación, oportunidad, impacto, ROI, inversión, resultados |
-| **OPERACIONES** | procesos, solución, automatización, indicadores, implementación |
-| **SISTEMAS** | arquitectura, integraciones, seguridad/gobierno, continuidad |
+## Versionamiento documental
 
-API: `PUT /api/centro-negocios/propuestas/{id}/perspectivas`
+Cada presentación (`ENVIADA`) genera:
 
-## Documento para cliente
+1. `NegocioProposalVersion` inmutable
+2. `NegocioProposalDocument` con PDF vinculado (`pdf_document_id`)
+3. Metadatos: `presented_by_id`, `precio_presentado`, `approved_by_id`
 
-`documento_cliente_json` — solo campos autorizados:
+Modificaciones posteriores **no alteran** versiones ya presentadas.
 
-- Resumen, situación, oportunidad, solución, alcance
-- Inversión (precio final, no sugerido interno)
-- Modalidad comercial, consumo IA, supuestos
-- `economia_privada_incluida: false` siempre en vista cliente
+## Tres perspectivas — un objeto
 
-## Documento interno
-
-`documento_interno_json` — margen, costos, recomendación económica, riesgos.
-
-Solo visible con permiso `negocio.economy.private` o `finops.economy.private`.
+Persistidas en `perspectivas_json` y reflejadas en PDF.

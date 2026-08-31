@@ -1,31 +1,31 @@
-# 09 — Brechas restantes
+# 09 — Brechas restantes (post-cierre integral)
 
-## P0 (bloqueantes para producción plena)
+## P0 — CERRADOS
 
-| Brecha | Nota |
-|--------|------|
-| Generación PDF formal de propuesta | Reutilizar reporting existente — pendiente integración documento exportable |
-| Workflow de aprobación multi-nivel | Solo aprobación comercial 1280; sin cadena jerárquica configurable |
+| Brecha anterior | Estado |
+|-----------------|--------|
+| Export PDF formal | ✅ `negocio_pdf_service` + documento versionado |
+| Aprobación multi-nivel | ✅ Adaptador `ApprovalPort` + política configurable |
 
-## P1 (mejoras prioritarias)
+## P1 — CERRADOS
 
-| Brecha | Nota |
-|--------|------|
-| Vista detalle Centro de Negocios en frontend | Pipeline + dashboard; detalle sigue en `/comercial/propuestas/{id}` |
-| Sincronización bidireccional oportunidad ↔ propuesta | Transición parcial al presentar |
-| Operator sin `negocio.contract` | Requiere rol admin para contratar |
+| Brecha anterior | Estado |
+|-----------------|--------|
+| Vista detalle Centro de Negocios | ✅ `/centro-negocios/propuestas/{id}` |
+| Sync oportunidad ↔ negocio | ✅ `negocio_sync_service` + log |
 
-## P2 (futuro)
+## P1 — Pendiente integración externa
 
-| Brecha | Nota |
-|--------|------|
-| Integración Sistema Transversal de Experiencia | GENERAL integrará posteriormente |
-| Plantillas de propuesta por sector | Perspectivas con defaults genéricos |
-| Firma electrónica / portal cliente | Fuera de alcance Agente B |
+| Brecha | Dependencia |
+|--------|-------------|
+| Reemplazar `LocalNegocioApprovalAdapter` por Gobierno Operacional transversal | Rama Agente A — contrato `ApprovalPort` documentado |
+
+## P2 — Futuro
+
+- Plantillas PDF sectoriales con diseño gráfico avanzado (reportlab/weasyprint)
+- Portal cliente para firma electrónica
+- Integración Sistema Transversal de Experiencia (GENERAL)
 
 ## No hecho (por diseño)
 
-- PIIAX, Partners, Gobierno Operacional de A
-- CRM completo
-- Módulo implementación completo
-- Reconstrucción Motor Económico u Oportunidades
+PIIAX, Partners, CRM completo, implementación completa, merge central.

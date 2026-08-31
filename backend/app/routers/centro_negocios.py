@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -10,14 +11,19 @@ from app.deps import get_current_user
 from app.models import User
 from app.permissions import check_permission
 from app.schemas_negocio import (
+    ApprovalLevelIn,
+    ApprovalPolicyIn,
+    ContractIn,
     IaConsumoIn,
     NegociacionIn,
     PerspectivaUpdateIn,
     PrecioDecisionIn,
     PropuestaDesdeExpedienteIn,
     PropuestaTransicionIn,
+    SyncIn,
 )
 from app.services import negocio_service as svc
+from app.services.negocio_approval_adapter import set_org_approval_policy
 
 router = APIRouter(prefix="/api/centro-negocios", tags=["Centro de Negocios"])
 
@@ -259,6 +265,146 @@ def actualizar_perspectiva(
         result = svc.update_perspectives(db, org_id, proposal_id, body.perspectiva, body.contenido)
         db.commit()
         return {"perspectivas": result}
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/propuestas/{proposal_id}/detalle")
+def detalle_propuesta(
+    proposal_id: str,
+    organization_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "negocio.view", db)
+    org_id = _org(db, user, organization_id)
+    include_internal = False
+    from app.permissions import user_permissions
+
+    perms = user_permissions(user, db)
+    if "negocio.economy.private" in perms or "finops.economy.private" in perms:
+        include_internal = True
+    return svc.get_proposal_detail(db, org_id, proposal_id, include_internal=include_internal)
+
+
+@router.post("/propuestas/{proposal_id}/aprobaciones")
+def aprobar_nivel(
+    proposal_id: str,
+    body: ApprovalLevelIn,
+    organization_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "negocio.proposal.approve", db)
+    org_id = _org(db, user, organization_id)
+    try:
+        result = svc.approve_level(db, user, org_id, proposal_id, body.nivel, comentario=body.comentario)
+        db.commit()
+        return result
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/propuestas/{proposal_id}/pdf")
+def generar_pdf(
+    proposal_id: str,
+    version_number: int | None = Query(None),
+    organization_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "negocio.manage", db)
+    org_id = _org(db, user, organization_id)
+    try:
+        result = svc.generate_proposal_pdf(db, user, org_id, proposal_id, version_number=version_number)
+        db.commit()
+        return result
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/documentos/{document_id}/pdf")
+def descargar_pdf(
+    document_id: str,
+    organization_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "negocio.view", db)
+    org_id = _org(db, user, organization_id)
+    content, filename, content_type = svc.get_document_pdf(db, org_id, document_id)
+    return Response(content=content, media_type=content_type, headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@router.post("/propuestas/{proposal_id}/contratar")
+def contratar_propuesta(
+    proposal_id: str,
+    body: ContractIn,
+    organization_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "negocio.contract", db)
+    org_id = _org(db, user, organization_id)
+    try:
+        result = svc.contract_proposal(db, user, org_id, proposal_id, condiciones=body.condiciones, version_id=body.version_id)
+        db.commit()
+        return result
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/propuestas/{proposal_id}/sincronizar")
+def sincronizar_oportunidad(
+    proposal_id: str,
+    body: SyncIn,
+    organization_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "negocio.manage", db)
+    org_id = _org(db, user, organization_id)
+    try:
+        result = svc.sync_opportunity(db, org_id, proposal_id, direction=body.direction)
+        db.commit()
+        return result
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.put("/politica-aprobacion")
+def configurar_politica_aprobacion(
+    body: ApprovalPolicyIn,
+    organization_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "negocio.manage", db)
+    org_id = _org(db, user, organization_id)
+    try:
+        row = set_org_approval_policy(db, org_id, body.levels, enabled=body.enabled)
+        db.commit()
+        return {"organization_id": row.organization_id, "levels": body.levels, "enabled": row.enabled}
     except HTTPException:
         db.rollback()
         raise

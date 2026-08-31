@@ -1,56 +1,34 @@
-# 10 — Guía visual
+# 10 — Guía visual (actualizada)
 
-## Acceso
+## Rutas
 
-Menú **Análisis y control → Centro de Negocios** (`/centro-negocios`)
+| Ruta | Descripción |
+|------|-------------|
+| `/centro-negocios` | Dashboard + pipeline |
+| `/centro-negocios/propuestas/{id}` | Detalle operativo con pestañas |
 
-Requiere permiso `negocio.view`.
+## Detalle — pestañas
 
-## Pantalla principal
+1. **Resumen** — origen, oportunidad, responsable, próximo paso
+2. **Economía** — fases de precio (recomendado → aprobado → presentado → contratado)
+3. **Versiones** — historial inmutable + enlace PDF
+4. **Aprobaciones** — niveles configurables, botón aprobar
+5. **Negociación** — rondas y nueva versión
+6. **Trazabilidad** — log sincronización oportunidad
 
-### Panel de indicadores (fila compacta)
+## Etiquetas en español
 
-- Oportunidades totales
-- Propuestas activas
-- Negociaciones abiertas
-- Contrataciones
-- Valor realizado (excluye POTENCIAL)
+Fuente única: `frontend/src/lib/negocioLabels.ts` y `backend/app/negocio_labels.py`
 
-### Pipeline comercial
+Estados visibles: Borrador, En revisión, Aprobada internamente, Presentada, Contratada, etc.
 
-Tabla compacta con:
+## Acciones principales
 
-| Columna | Descripción |
-|---------|-------------|
-| Código | `PROP-NNNNN` |
-| Título | Nombre de la propuesta |
-| Estado | Etiqueta en español |
-| Precio | Precio final autorizado |
-| Versión | Número de versión actual |
-| Próximo paso | Acción pendiente |
-| Ver | Enlace a detalle comercial |
+- **Generar PDF** — borrador o pre-presentación
+- **Presentar** — solo con aprobaciones + precio aprobado
+- **Sincronizar oportunidad** — bidireccional controlada
+- **Contratar e implementar** — desde versión presentada
 
-### Accesos rápidos
+## Nota POTENCIAL
 
-- Evaluaciones EIAAX
-- Centro de oportunidades
-- Comercial y valor
-
-## Flujo recomendado para el usuario
-
-1. Crear evaluación en `/evaluaciones`
-2. Generar oportunidad desde evaluación
-3. API o futuro botón: propuesta desde expediente
-4. Gestionar ciclo en Centro de Negocios / Comercial
-5. Contratar → convertir a implementación
-
-## Nota sobre POTENCIAL
-
-Pie de página con aviso: valores POTENCIAL no cuentan como beneficio realizado.
-
-## UX
-
-- Sin tarjetas gigantes
-- Tabla filtrable por búsqueda
-- Todo en español
-- Sin códigos técnicos visibles al usuario
+Visible en pie de página; no suma a inversión ni ROI realizado.

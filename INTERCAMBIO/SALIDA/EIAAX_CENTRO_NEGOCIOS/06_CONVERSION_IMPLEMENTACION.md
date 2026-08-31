@@ -1,30 +1,32 @@
-# 06 — Conversión a implementación
+# 06 — Contratación y conversión a implementación
 
-## Punto de continuación
+## Contratación (`POST .../contratar`)
 
-`POST /api/centro-negocios/propuestas/{id}/convertir-implementacion`
+Requiere versión presentada con PDF. Registra en `negocio_contract_records`:
 
-Permiso: `negocio.contract`
+- Versión aceptada y documento PDF
+- Precio/modalidad contratada
+- Fecha, responsable, condiciones
+- Próximo paso
 
-## Comportamiento
+## Conversión (`POST .../convertir-implementacion`)
 
-1. Si la propuesta no está `ACEPTADA`, la marca como contratada
-2. Crea `ImplementacionProyecto` vía `implementacion_service.create_proyecto`
-3. Vincula `implementacion_proyecto_id` en extensión
-4. Genera snapshot de versión con trigger `CONTRATACION`
-5. Idempotente: si ya existe proyecto, retorna `ya_existia: true`
+1. Contrata si no está `ACEPTADA` (usa última versión presentada)
+2. Crea proyecto implementación 1340 con referencias:
+   - evaluacion_id, opportunity_id, proposal_id, document_id
+3. No solicita información ya conocida
 
-## Datos reutilizados
+## Salida
 
-- Título de propuesta → título del proyecto
-- `proposal_id` → enlace directo
-- Valor compromiso snapshot desde propuesta (1340)
-- Trazabilidad evaluación/oportunidad en extensión
-
-## Flujo conceptual
-
+```json
+{
+  "proyecto_id": "...",
+  "contract_id": "...",
+  "referencias": {
+    "evaluacion_id": "...",
+    "opportunity_id": "...",
+    "version_number": 2,
+    "document_id": "..."
+  }
+}
 ```
-PROSPECTO → DIAGNÓSTICO → PROPUESTA → NEGOCIACIÓN → CONTRATADO → LEVANTAMIENTO / IMPLEMENTACIÓN
-```
-
-**No** se construye el módulo completo de implementación — solo el contrato de transferencia y proyecto inicial.

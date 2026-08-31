@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.commercial_enums import ProposalStatus
 from app.models import Organization, User
+from app.negocio_enums import ApprovalLevel
 from app.negocio_models import NegocioProposalVersion
 from app.security import hash_password
 from app.services import economic_motor_service as motor
@@ -91,6 +92,36 @@ def _create_opportunity(client: TestClient, headers: dict) -> dict:
     return {"id": res.json()["opportunity_id"]}
 
 
+def _approve_all(client: TestClient, headers: dict, proposal_id: str) -> None:
+    for nivel in (ApprovalLevel.REVISOR, ApprovalLevel.APROBADOR_COMERCIAL):
+        res = client.post(
+            f"/api/centro-negocios/propuestas/{proposal_id}/aprobaciones",
+            headers=headers,
+            json={"nivel": nivel, "comentario": "Aprobado en test"},
+        )
+        assert res.status_code == 200, res.text
+
+
+def _advance_to_presented(client: TestClient, headers: dict, proposal_id: str) -> None:
+    client.post(
+        f"/api/centro-negocios/propuestas/{proposal_id}/transicion",
+        headers=headers,
+        json={"nuevo_estado": ProposalStatus.EN_REVISION},
+    )
+    _approve_all(client, headers, proposal_id)
+    client.post(
+        f"/api/centro-negocios/propuestas/{proposal_id}/transicion",
+        headers=headers,
+        json={"nuevo_estado": ProposalStatus.APROBADA},
+    )
+    res = client.post(
+        f"/api/centro-negocios/propuestas/{proposal_id}/transicion",
+        headers=headers,
+        json={"nuevo_estado": ProposalStatus.ENVIADA, "motivo": "Presentada"},
+    )
+    assert res.status_code == 200, res.text
+
+
 def test_centro_negocios_recorrido_completo(client: TestClient):
     db = TestingSessionLocal()
     org, _, password, username = _create_tenant(db, "CN Recorrido")
@@ -169,13 +200,7 @@ def test_centro_negocios_recorrido_completo(client: TestClient):
     assert price.status_code == 200
     assert price.json()["auto_published"] is False
 
-    for estado in (ProposalStatus.EN_REVISION, ProposalStatus.APROBADA, ProposalStatus.ENVIADA):
-        tr = client.post(
-            f"/api/centro-negocios/propuestas/{proposal_id}/transicion",
-            headers=headers,
-            json={"nuevo_estado": estado, "motivo": f"Paso a {estado}"},
-        )
-        assert tr.status_code == 200, tr.text
+    _advance_to_presented(client, headers, proposal_id)
 
     versions = client.get(f"/api/centro-negocios/propuestas/{proposal_id}/versiones", headers=headers)
     assert versions.status_code == 200
@@ -197,13 +222,7 @@ def test_centro_negocios_recorrido_completo(client: TestClient):
     versions2 = client.get(f"/api/centro-negocios/propuestas/{proposal_id}/versiones", headers=headers)
     assert len(versions2.json()) >= 2
 
-    for estado in (ProposalStatus.EN_REVISION, ProposalStatus.APROBADA, ProposalStatus.ENVIADA):
-        tr2 = client.post(
-            f"/api/centro-negocios/propuestas/{proposal_id}/transicion",
-            headers=headers,
-            json={"nuevo_estado": estado, "motivo": f"Reapertura post-negociación → {estado}"},
-        )
-        assert tr2.status_code == 200, tr2.text
+    _advance_to_presented(client, headers, proposal_id)
 
     accept = client.post(
         f"/api/centro-negocios/propuestas/{proposal_id}/transicion",
@@ -293,21 +312,7 @@ def test_version_snapshot_inmutable(client: TestClient):
         json={"action": "MODIFICAR", "precio_decidido": 15000, "justificacion": "Precio test"},
     )
 
-    client.post(
-        f"/api/centro-negocios/propuestas/{proposal_id}/transicion",
-        headers=headers,
-        json={"nuevo_estado": ProposalStatus.EN_REVISION},
-    )
-    client.post(
-        f"/api/centro-negocios/propuestas/{proposal_id}/transicion",
-        headers=headers,
-        json={"nuevo_estado": ProposalStatus.APROBADA},
-    )
-    client.post(
-        f"/api/centro-negocios/propuestas/{proposal_id}/transicion",
-        headers=headers,
-        json={"nuevo_estado": ProposalStatus.ENVIADA},
-    )
+    _advance_to_presented(client, headers, proposal_id)
 
     versions = client.get(f"/api/centro-negocios/propuestas/{proposal_id}/versiones", headers=headers).json()
     snap_doc = versions[0]["documento_cliente"]["resumen_ejecutivo"]

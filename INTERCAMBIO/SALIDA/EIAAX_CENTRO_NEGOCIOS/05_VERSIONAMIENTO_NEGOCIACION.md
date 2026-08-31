@@ -1,36 +1,36 @@
-# 05 — Versionamiento y negociación
+# 05 — Versionamiento, negociación y aprobaciones
 
-## Versiones inmutables
+## Aprobación multinivel (frontera reemplazable)
 
-Al presentar (`ENVIADA`) o en negociación/contratación se crea `NegocioProposalVersion`:
+`negocio_approval_adapter.py` implementa `ApprovalPort`:
 
-- `snapshot_json` — estado completo de la propuesta
-- `documento_cliente_json` — copia del documento visible al cliente
-- `trigger` — `PRESENTACION` | `NEGOCIACION` | `CONTRATACION` | `REVISION_INTERNA`
+- `LocalNegocioApprovalAdapter` — provisional hasta Gobierno Operacional (Agente A)
+- Niveles: PREPARADOR, REVISOR, APROBADOR_COMERCIAL, AUTORIZADOR_FINAL
+- Política por organización: `PUT /api/centro-negocios/politica-aprobacion`
+- Default: REVISOR + APROBADOR_COMERCIAL
 
-**Regla:** modificar perspectivas o datos internos **no altera** versiones ya presentadas.
+## Regla de publicación (backend)
 
-## Estados de propuesta (evolución)
+`ENVIADA` rechazada con **422** si:
 
-```
-BORRADOR → EN_REVISION → APROBADA → ENVIADA
-```
+- Faltan aprobaciones de la política vigente
+- No hay `precio_final` aprobado
 
-Tras negociación con `crear_nueva_version: true` → vuelve a `BORRADOR` para nueva iteración.
+Intento rechazado auditado: `negocio.presentacion.rechazada`
 
-## Negociación ligera
+## Negociación reforzada
 
-`negocio_negotiation_entries` registra:
+Flujo: presentada → observaciones → `crear_nueva_version` → BORRADOR → re-aprobaciones → nueva presentación.
 
-- Versión presentada, fecha, interlocutor
-- Observaciones, cambios solicitados
-- Próximo paso, estado (`ABIERTA` / cerrada)
-- Referencia a nueva versión si aplica
+Versiones anteriores y PDFs preservados.
 
-No es CRM completo — solo trazabilidad del ciclo EIAAX.
+## Fases de precio
 
-## APIs
+`negocio_price_phase_records`:
 
-- `POST .../negociacion` — registrar ronda
-- `GET .../negociaciones` — historial
-- `GET .../versiones` — snapshots
+| Fase | Momento |
+|------|---------|
+| RECOMENDADO | Motor económico (borrador) |
+| APROBADO | Decisión humana |
+| PRESENTADO | Al presentar al cliente |
+| CONTRATADO | Al contratar |
