@@ -23,6 +23,7 @@ from app.orchestration_models import (
     EmployeeModelPolicy,
 )
 from app.services.finops_service import registrar_consumo
+from app.services.llm_provider_service import update_inference_log_cost
 from app.services.knowledge_retrieval import retrieve_knowledge
 
 
@@ -158,6 +159,14 @@ def run_llm_for_task(
                 tokens_out=response.tokens_out,
                 duration_ms=response.latency_ms,
             )
+            if finops_record and response.trace_id:
+                update_inference_log_cost(
+                    db,
+                    organization_id,
+                    response.trace_id,
+                    cost=float(finops_record.cost) if finops_record.cost is not None else None,
+                    currency=finops_record.currency,
+                )
         except Exception as exc:
             finops_registration_failed = True
             write_audit(

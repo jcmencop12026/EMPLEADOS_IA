@@ -1,70 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { fetchUnreadCount } from "./api";
-import { filterMenuByPermissions } from "./auth/permissions";
+import { OrganizationContextBar } from "./components/OrganizationContextBar";
+import { fetchTrabajoResumen, fetchUnreadCount } from "./api";
+import { filterMenuByPermissions, canAccessRoute } from "./auth/permissions";
 import { getCachedUser, logout } from "./auth/session";
+import { OrganizationProvider, ORGANIZATION_CONTEXT_EVENT, useOrganizationContext } from "./hooks/useOrganizationContext";
+import { MENU } from "./navigation/menu";
 
-type NavItem = { to: string; label: string; end?: boolean };
-type NavSection = { id: string; label: string; items: NavItem[]; future?: boolean };
-
-const MENU: NavSection[] = [
-  {
-    id: "inicio",
-    label: "Inicio",
-    items: [{ to: "/", label: "Panel de control", end: true }],
-  },
-  {
-    id: "operaciones",
-    label: "Operaciones",
-    items: [
-      { to: "/operaciones", label: "Centro de operaciones" },
-      { to: "/ejecuciones", label: "Ejecuciones" },
-      { to: "/aprobaciones", label: "Aprobaciones" },
-      { to: "/automatizaciones", label: "Automatizaciones" },
-    ],
-  },
-  {
-    id: "salud",
-    label: "Salud",
-    items: [{ to: "/salud/diagnostico", label: "Diagnóstico IPS" }],
-  },
-  {
-    id: "empleados",
-    label: "Empleados IA",
-    items: [
-      { to: "/directorio", label: "Directorio" },
-      { to: "/empleados/nuevo", label: "Crear empleado" },
-      { to: "/capacidades", label: "Capacidades" },
-      { to: "/herramientas", label: "Herramientas" },
-      { to: "/conocimiento", label: "Conocimiento" },
-      { to: "/test-lab", label: "Test Lab" },
-    ],
-  },
-  {
-    id: "analisis",
-    label: "Análisis y control",
-    items: [
-      { to: "/oportunidades", label: "Centro de oportunidades" },
-      { to: "/costos-valor", label: "Costos y valor" },
-      { to: "/notificaciones", label: "Notificaciones" },
-      { to: "/auditoria", label: "Auditoría" },
-    ],
-  },
-  {
-    id: "admin",
-    label: "Administración",
-    items: [
-      { to: "/administracion/empresas", label: "Empresas" },
-      { to: "/administracion/usuarios", label: "Usuarios" },
-      { to: "/administracion/roles", label: "Roles y permisos" },
-      { to: "/administracion/organizacion", label: "Organización" },
-      { to: "/administracion/configuracion", label: "Configuración" },
-      { to: "/administracion/proveedores-ia", label: "Proveedores IA" },
-      { to: "/administracion/seguridad", label: "Seguridad" },
-    ],
-  },
-];
-
+type NavSection = (typeof MENU)[number];
 const COLLAPSE_KEY = "eaios_menu_collapsed";
 const SECTION_KEY = "eaios_menu_sections";
 
@@ -77,10 +20,20 @@ function loadSections(): Record<string, boolean> {
 }
 
 export function AppShell() {
+  return (
+    <OrganizationProvider>
+      <AppShellInner />
+    </OrganizationProvider>
+  );
+}
+
+function AppShellInner() {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
   const [sections, setSections] = useState<Record<string, boolean>>(loadSections);
   const [unread, setUnread] = useState(0);
+  const [trabajoPendientes, setTrabajoPendientes] = useState(0);
   const user = getCachedUser();
+  const { organizationQueryParam } = useOrganizationContext();
   const permissionSet = useMemo(
     () => new Set(user?.permissions ?? []),
     [user?.permissions],
@@ -104,15 +57,27 @@ export function AppShell() {
   }, [sections]);
 
   useEffect(() => {
-    const refresh = () => fetchUnreadCount().then(setUnread).catch(() => undefined);
+    const refreshNotif = () => fetchUnreadCount().then(setUnread).catch(() => undefined);
+    const refreshTrabajo = () => {
+      if (!canAccessRoute("/trabajo", permissionSet)) return;
+      fetchTrabajoResumen(organizationQueryParam)
+        .then((r) => setTrabajoPendientes(r.pendientes))
+        .catch(() => undefined);
+    };
+    const refresh = () => {
+      refreshNotif();
+      refreshTrabajo();
+    };
     refresh();
     const timer = window.setInterval(refresh, 60000);
     window.addEventListener("notifications-changed", refresh);
+    window.addEventListener(ORGANIZATION_CONTEXT_EVENT, refresh);
     return () => {
       window.clearInterval(timer);
       window.removeEventListener("notifications-changed", refresh);
+      window.removeEventListener(ORGANIZATION_CONTEXT_EVENT, refresh);
     };
-  }, []);
+  }, [permissionSet, organizationQueryParam]);
 
   function toggleSection(id: string) {
     setSections((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }));
@@ -150,7 +115,12 @@ export function AppShell() {
                   className={section.id === "admin" ? "nav-sub" : undefined}
                 >
                   <span className="nav-icon">{section.id === "admin" ? "○" : "●"}</span>
-                  <span className="nav-label">{item.label}</span>
+                  <span className="nav-label">
+                    {item.label}
+                    {item.to === "/trabajo" && trabajoPendientes > 0 && (
+                      <span className="notification-badge">{trabajoPendientes > 99 ? "99+" : trabajoPendientes}</span>
+                    )}
+                  </span>
                 </NavLink>
               ),
             )}
@@ -164,7 +134,7 @@ export function AppShell() {
     <div className={`layout ${collapsed ? "sidebar-collapsed" : ""}`}>
       <aside className="sidebar" title="Navegación principal">
         <div className="brand-row">
-          <div className="brand">Enterprise AI OS</div>
+          <div className="brand">Sistema empresarial de IA</div>
           <button
             type="button"
             className="btn-icon"
@@ -192,10 +162,13 @@ export function AppShell() {
       </aside>
       <div className="main">
         <header className="topbar">
-          <span>EMPLEADOS_IA · Orquestador E2E · Workspace Salud</span>
-          <NavLink className="notification-bell" to="/notificaciones" title="Centro de notificaciones">
-            🔔{unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}
-          </NavLink>
+          <span>EMPLEADOS IA · Plataforma empresarial</span>
+          <div className="topbar-actions">
+            <OrganizationContextBar />
+            <NavLink className="notification-bell" to="/notificaciones" title="Centro de notificaciones">
+              🔔{unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}
+            </NavLink>
+          </div>
         </header>
         <section className="content">
           <Outlet />
