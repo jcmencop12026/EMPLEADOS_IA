@@ -4,6 +4,7 @@ import type { KnowledgeDocumentItem } from "../api";
 import {
   deactivateKnowledgeDocument,
   deleteKnowledgeDocument,
+  downloadKnowledgeDocument,
   fetchKnowledgeDocuments,
   reprocessKnowledgeDocument,
   uploadKnowledgeFile,
@@ -111,6 +112,15 @@ export function KnowledgePage() {
   const onDeactivate = async (id: string) => {
     await deactivateKnowledgeDocument(id);
     await load();
+  };
+
+  const onDownload = async (row: KnowledgeDocumentItem) => {
+    setError("");
+    try {
+      await downloadKnowledgeDocument(row.id, row.original_filename || row.name);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   return (
@@ -231,16 +241,9 @@ export function KnowledgePage() {
                   <button type="button" title="Reprocesar" onClick={() => void onReprocess(row.id)}>
                     ↻
                   </button>
-                  <a
-                    href={`/api/knowledge/${row.id}/download`}
-                    title="Descargar"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      window.open(`/api/knowledge/${row.id}/download`, "_blank");
-                    }}
-                  >
+                  <button type="button" title="Descargar" onClick={() => void onDownload(row)}>
                     ⬇
-                  </a>
+                  </button>
                   <button type="button" title="Desactivar" onClick={() => void onDeactivate(row.id)}>
                     ⏸
                   </button>
