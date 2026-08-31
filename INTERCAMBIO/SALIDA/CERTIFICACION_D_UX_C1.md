@@ -20,8 +20,8 @@
 | V2 referencia | `dc1e6cda8d3de6695d9a052a2a13afdb5f431077` |
 | SHA certificado | `25ad1021ee6ea0322aceb0622252e7b748706d32` |
 | Commit | `feat(c1): base segura convergencia V1+V2 con hotfix login selectivo` |
-| Fecha UTC | 2026-08-31 |
-| Método | Gate 17 controles: revisión diff C1↔V2 + API + Puppeteer 1280×900 |
+| Fecha UTC | 2026-08-31 (re-ejecución gate 12:43 UTC) |
+| Método | Gate 17 controles: diff C1↔V2 + API + Puppeteer 1280×900 (2 corridas) |
 
 ---
 
@@ -48,7 +48,7 @@ C1 **no altera** navegación, CC, sidebar ni páginas V2. Solo integra hotfix lo
 | 3 | MFA/SSO preservados | **PASS** | `verifyMfaLogin`, `discoverLogin`, `beginPublicOidc` en código |
 | 4 | Ruta inicial `/` | **PASS** | Post-login navega a `/` |
 | 5 | CON `control_center.view` → CC | **PASS** | `admin` y `viewer` ven «Centro de Control ejecutivo» |
-| 6 | SIN `control_center.view` → fallback | **FAIL** | Ver P1-D-UX-01 |
+| 6 | SIN `control_center.view` → fallback determinístico | **FAIL** | Sin redirect a ruta accesible; ver P1-D-UX-01 |
 | 7 | Sin loop redirección | **PASS** | `admin`, `viewer`, restringido: URL estable, no rebote `/login` |
 | 8 | Sin 403 experiencia inicial | **PASS** (admin/viewer) / **FAIL** (restringido) | Restringido: pantalla de denegación CC (no HTTP 403, pero UX bloqueante) |
 | 9 | `CentroControlPage` preservado | **PASS** | Ruta index sin cambios vs V2 |
@@ -88,9 +88,19 @@ C1 **no altera** navegación, CC, sidebar ni páginas V2. Solo integra hotfix lo
 - **No** hay redirect automático a `/trabajo`, `/directorio` ni panel reducido.
 - `CentroControlPage.tsx` L65-70: bloqueo estático sin `Navigate` fallback.
 
+### Fallback determinístico (control #6)
+
+| Criterio | Esperado | Observado C1 |
+|----------|----------|--------------|
+| Destino predecible sin CC | Redirect a primera ruta permitida (`/trabajo`, `/directorio` o `/operaciones`) | **No** — permanece en `/` |
+| Sin mensaje bloqueante CC | Sin texto de denegación en contenido principal | **No** — muestra error CC |
+| Repetibilidad | Mismo resultado en re-ejecuciones | **Sí** — 2 corridas gate idénticas (`restrux_7160f84d`) |
+
+`deterministic = false` · `redirected = false` · `noPerm = true`
+
 ### Conclusión P1-D-UX-01
 
-**FAIL** — La política de roles estándar (`viewer`/`operator` incluyen `control_center.view`) mitiga el caso mayoritario, pero **no implementa** el fallback UX exigido para usuarios sin CC. El hallazgo preintegración **permanece abierto**.
+**FAIL** — La política de roles estándar (`viewer`/`operator` incluyen `control_center.view`) mitiga el caso mayoritario, pero **no implementa** fallback determinístico para usuarios sin CC. El hallazgo preintegración **permanece abierto**.
 
 ---
 

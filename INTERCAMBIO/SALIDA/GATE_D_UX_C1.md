@@ -13,7 +13,7 @@
 | 3 | MFA/SSO preservados | Presencia `verifyMfaLogin`, `discoverLogin` en LoginPage |
 | 4 | Ruta inicial `/` | Navegación post-login |
 | 5 | Usuario CON `control_center.view` → CC | `admin` / `viewer` en `/` |
-| 6 | Usuario SIN `control_center.view` → fallback | Rol custom sin CC en `/` |
+| 6 | Usuario SIN `control_center.view` → fallback determinístico | Rol custom sin CC en `/`; destino predecible |
 | 7 | Sin loop redirección | URL estable post-login |
 | 8 | Sin 403 como experiencia inicial | Texto/código en landing |
 | 9 | `CentroControlPage` preservado | Import/ruta en `App.tsx` |
