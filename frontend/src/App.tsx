@@ -36,6 +36,7 @@ import { SenalDetailPage } from "./pages/SenalDetailPage";
 import { DiagnosticosPage } from "./pages/DiagnosticosPage";
 import { DiagnosticoDetailPage } from "./pages/DiagnosticoDetailPage";
 import { EvaluacionesPage } from "./pages/EvaluacionesPage";
+import { ArquitectoTransformacionPage } from "./pages/ArquitectoTransformacionPage";
 import { PartnersPage } from "./pages/PartnersPage";
 import { PartnerDetailPage } from "./pages/PartnerDetailPage";
 import { EvaluacionConsolePage } from "./pages/EvaluacionConsolePage";
@@ -150,6 +151,9 @@ export default function App() {
           <Route element={<RequirePermission anyOf={["evaluacion.view"]} />}>
             <Route path="evaluaciones" element={<EvaluacionesPage />} />
             <Route path="evaluaciones/:evaluacionId" element={<EvaluacionConsolePage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["transformacion.view"]} />}>
+            <Route path="arquitecto-transformacion" element={<ArquitectoTransformacionPage />} />
           </Route>
           <Route element={<RequirePermission anyOf={["partners.view"]} />}>
             <Route path="partners" element={<PartnersPage />} />

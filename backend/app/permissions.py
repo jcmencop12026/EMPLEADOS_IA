@@ -203,6 +203,12 @@ PARTNER_PERMISSIONS = {
     "partners.audit",
 }
 
+TRANSFORMACION_PERMISSIONS = {
+    "transformacion.view",
+    "transformacion.manage",
+    "transformacion.execute",
+}
+
 INTELIGENCIA_EXTERNA_PERMISSIONS = {
     "inteligencia_externa.view",
     "inteligencia_externa.manage",
@@ -446,6 +452,9 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "partners.org.grant": ("Partners", "Asociar organizaciones a partners"),
     "partners.user.assign": ("Partners", "Asignar usuarios a partners"),
     "partners.audit": ("Partners", "Consultar auditoría de partners"),
+    "transformacion.view": ("Transformación", "Consultar dossier y diagnóstico adaptativo"),
+    "transformacion.manage": ("Transformación", "Registrar necesidades y gestionar dossier"),
+    "transformacion.execute": ("Transformación", "Ejecutar diagnóstico y motor de transformación"),
     "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
     "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
     "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
@@ -547,6 +556,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | DIAGNOSTICOS_PERMISSIONS
         | EVALUACION_PERMISSIONS
         | PARTNER_PERMISSIONS
+        | TRANSFORMACION_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
@@ -586,6 +596,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | DIAGNOSTICOS_PERMISSIONS
         | EVALUACION_PERMISSIONS
         | PARTNER_PERMISSIONS
+        | TRANSFORMACION_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
@@ -672,6 +683,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "evaluacion.evaluate",
         "evaluacion.visibility",
         "evaluacion.vista_entidad",
+        "transformacion.view",
+        "transformacion.manage",
+        "transformacion.execute",
         "inteligencia_externa.view",
         "inteligencia_externa.manage",
         "inteligencia_externa.ingest",

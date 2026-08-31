@@ -4091,3 +4091,58 @@ export async function fetchPartnerCatalogo(): Promise<{
 }> {
   return api("/api/partners/meta/catalogo");
 }
+
+// —— Arquitecto de Transformación ——
+
+export type TransformacionDossier = {
+  id: string;
+  organization_id: string;
+  etapa_actual: string;
+  sector?: string | null;
+  resumen?: string | null;
+  confianza_global: string;
+  porcentaje_completitud: number;
+  expediente_activo_id?: string | null;
+  expediente_activo?: { id: string; codigo: string; titulo: string } | null;
+  conocimiento?: Array<{ campo: string; etiqueta: string; valor?: string; fuente: string; calidad: string }>;
+  mapa?: Array<{ id: string; tipo: string; nombre: string; parent_id?: string | null }>;
+  causas?: Array<{ id: string; tipo: string; titulo: string; confianza: string }>;
+  alternativas?: Array<Record<string, unknown>>;
+  iniciativas?: Array<Record<string, unknown>>;
+  escenarios?: Array<{ id: string; titulo: string; tipo: string; es_proyectado: boolean }>;
+};
+
+export type TransformacionRecorrido = {
+  pasos: Array<{ id: string; label: string; completo: boolean; detalle?: string }>;
+  dossier: TransformacionDossier;
+  suficiencia?: {
+    porcentaje_informacion: number;
+    confianza_global: string;
+    faltantes: Array<{ campo: string; etiqueta: string; impacto_precision?: string }>;
+    explicacion: string;
+  };
+};
+
+export async function fetchDossier(): Promise<TransformacionDossier> {
+  return api("/api/transformacion/dossier");
+}
+
+export async function fetchRecorridoTransformacion(expedienteId?: string): Promise<TransformacionRecorrido> {
+  const q = expedienteId ? `?expediente_id=${expedienteId}` : "";
+  return api(`/api/transformacion/recorrido${q}`);
+}
+
+export async function registrarNecesidadTransformacion(data: {
+  titulo: string;
+  necesidad: string;
+  objetivo?: string;
+  area_proceso?: string;
+  entidad_nombre?: string;
+  nivel?: string;
+}): Promise<Record<string, unknown>> {
+  return api("/api/transformacion/necesidad", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function diagnosticarTransformacion(expedienteId: string): Promise<Record<string, unknown>> {
+  return api(`/api/transformacion/expedientes/${expedienteId}/diagnosticar`, { method: "POST" });
+}

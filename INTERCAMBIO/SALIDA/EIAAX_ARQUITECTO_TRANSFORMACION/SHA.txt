@@ -1,0 +1,2 @@
+SHA_INICIAL=fe646d4
+BASE=Partners finalizado (MB-03)
