@@ -1,0 +1,15 @@
+{
+  "artifact": "EIAAX_V1_e8cb853_20260831T015348Z.tar.gz",
+  "git_sha": "e8cb853a2c447fd5e136a0907e44d68ce2c8cf81",
+  "label": "V1 certificado",
+  "created_utc": "2026-08-31T01:53:48Z",
+  "sha256": "d63c50c6941ced5fc239a3dfbb81c701ed00714e9c713e810246149c8a31c7dc",
+  "size_bytes": 2003082,
+  "format": "git archive tar.gz",
+  "prefix": "EIAAX_V1_e8cb853/",
+  "alembic_baseline_head": "d1e2f3a4b5c6",
+  "migration_files": 21,
+  "secrets_included": false,
+  "regenerate_command": "git archive --format=tar.gz --prefix=EIAAX_V1_e8cb853/ e8cb853a2c447fd5e136a0907e44d68ce2c8cf81 -o EIAAX_V1_e8cb853.tar.gz",
+  "verify_command": "sha256sum EIAAX_V1_e8cb853_20260831T015348Z.tar.gz"
+}
