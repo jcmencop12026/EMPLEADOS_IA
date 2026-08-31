@@ -808,6 +808,7 @@ def get_executive_summary(
         adapters.AuditorEmpleadosAdapter(),
         adapters.MiTrabajoAdapter(),
         adapters.ContinuidadAdapter(),
+        adapters.MotorEconomicoAdapter(),
     ]
     modulos = _fetch_module_adapters(
         db,

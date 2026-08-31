@@ -156,6 +156,11 @@ FINOPS_PERMISSIONS = {
     "finops.planner.simulate",
     "finops.planner.configure",
     "finops.margin.view",
+    "finops.economy.recommend",
+}
+
+FINOPS_ECONOMY_PRIVATE_PERMISSIONS = {
+    "finops.economy.private",
 }
 
 OPORTUNIDADES_PERMISSIONS = {
@@ -292,6 +297,25 @@ CONTROL_CENTER_PERMISSIONS = {
     "control_center.view",
 }
 
+GOBIERNO_OPERACIONAL_PERMISSIONS = {
+    "gobierno.view",
+    "gobierno.manage",
+    "gobierno.execute",
+    "gobierno.approve",
+    "gobierno.visibility",
+    "gobierno.ia_policy",
+    "gobierno.audit",
+    "gobierno.confianza.view",
+}
+
+PARTNER_PERMISSIONS = {
+    "partners.view",
+    "partners.manage",
+    "partners.org.grant",
+    "partners.user.assign",
+    "partners.audit",
+}
+
 CONTINUIDAD_PERMISSIONS = {
     "continuidad.view",
     "continuidad.manage",
@@ -412,6 +436,8 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "finops.planner.simulate": ("FinOps", "Simular consumo y capacidad IA"),
     "finops.planner.configure": ("FinOps", "Configurar planificador de consumo IA"),
     "finops.margin.view": ("FinOps", "Ver margen comercial"),
+    "finops.economy.private": ("FinOps", "Ver economía privada operador"),
+    "finops.economy.recommend": ("FinOps", "Generar recomendaciones de precio (borrador)"),
     "llm.view": ("Proveedores IA", "Ver proveedores de inferencia"),
     "llm.manage": ("Proveedores IA", "Administrar proveedores de inferencia"),
     "llm.use": ("Proveedores IA", "Ejecutar inferencia LLM"),
@@ -439,6 +465,19 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "evaluacion.accion.request": ("Evaluación EIAAX", "Solicitar capacidades externas desde expediente"),
     "evaluacion.accion.approve": ("Evaluación EIAAX", "Aprobar acciones externas de ejecución"),
     "evaluacion.indicadores.manage": ("Evaluación EIAAX", "Gestionar indicadores de impacto"),
+    "gobierno.view": ("Gobierno operacional", "Consultar políticas y solicitudes de acción"),
+    "gobierno.manage": ("Gobierno operacional", "Gestionar políticas de acción"),
+    "gobierno.execute": ("Gobierno operacional", "Solicitar acciones operacionales"),
+    "gobierno.approve": ("Gobierno operacional", "Aprobar o rechazar solicitudes"),
+    "gobierno.visibility": ("Gobierno operacional", "Gestionar visibilidad generalizada"),
+    "gobierno.ia_policy": ("Gobierno operacional", "Gestionar políticas de gobierno IA"),
+    "gobierno.audit": ("Gobierno operacional", "Consultar eventos de gobierno operacional"),
+    "gobierno.confianza.view": ("Gobierno operacional", "Ver Centro de Confianza"),
+    "partners.view": ("Partners", "Consultar partners y aliados comerciales"),
+    "partners.manage": ("Partners", "Crear y administrar partners"),
+    "partners.org.grant": ("Partners", "Asociar organizaciones a partners"),
+    "partners.user.assign": ("Partners", "Asignar usuarios a partners"),
+    "partners.audit": ("Partners", "Consultar auditoría de partners"),
     "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
     "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
     "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
@@ -532,6 +571,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | KNOWLEDGE_PERMISSIONS
         | TEST_LAB_PERMISSIONS
         | FINOPS_PERMISSIONS
+        | FINOPS_ECONOMY_PRIVATE_PERMISSIONS
         | LLM_PERMISSIONS
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
@@ -539,6 +579,8 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | VALORACION_PERMISSIONS
         | DIAGNOSTICOS_PERMISSIONS
         | EVALUACION_PERMISSIONS
+        | PARTNER_PERMISSIONS
+        | GOBIERNO_OPERACIONAL_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
@@ -570,6 +612,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | KNOWLEDGE_PERMISSIONS
         | TEST_LAB_PERMISSIONS
         | FINOPS_PERMISSIONS
+        | FINOPS_ECONOMY_PRIVATE_PERMISSIONS
         | LLM_PERMISSIONS
         | SALUD_PERMISSIONS
         | OPORTUNIDADES_PERMISSIONS
@@ -577,6 +620,8 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | VALORACION_PERMISSIONS
         | DIAGNOSTICOS_PERMISSIONS
         | EVALUACION_PERMISSIONS
+        | PARTNER_PERMISSIONS
+        | GOBIERNO_OPERACIONAL_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
@@ -723,6 +768,14 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "support.update",
         "support.resolve",
         "support.close",
+        "gobierno.view",
+        "gobierno.execute",
+        "gobierno.approve",
+        "gobierno.visibility",
+        "gobierno.ia_policy",
+        "gobierno.audit",
+        "gobierno.confianza.view",
+        "partners.view",
     },
     "viewer": {
         "employee.view",
@@ -765,6 +818,9 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "planes.view",
         "support.view",
         "support.create",
+        "gobierno.view",
+        "gobierno.confianza.view",
+        "partners.view",
     },
 }
 

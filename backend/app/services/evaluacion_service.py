@@ -667,6 +667,19 @@ def set_visibilidad(
         changed_by=user_id,
     )
     db.add(log)
+    from app.services.gobierno_operacional_service import set_visibilidad_general
+
+    set_visibilidad_general(
+        db,
+        organization_id,
+        user_id,
+        dominio="evaluacion",
+        contexto_id=exp.id,
+        objeto_tipo=objeto_tipo,
+        objeto_id=objeto_id,
+        visible=visible_entidad,
+        correlation_id=exp.correlation_id,
+    )
     write_audit(
         db,
         organization_id=organization_id,

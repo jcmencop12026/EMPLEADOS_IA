@@ -48,6 +48,8 @@ export const MENU: NavSection[] = [
       { to: "/implementacion", label: "Implementación" },
       { to: "/comercial/segmentacion", label: "Segmentación y planes" },
       { to: "/evaluaciones", label: "Evaluaciones EIAAX" },
+      { to: "/centro-confianza", label: "Centro de Confianza" },
+      { to: "/partners", label: "Partners y aliados" },
       { to: "/oportunidades", label: "Centro de oportunidades" },
       { to: "/senales", label: "Señales y fuentes" },
       { to: "/diagnosticos", label: "Diagnósticos" },

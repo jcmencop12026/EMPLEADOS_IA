@@ -163,7 +163,12 @@ def compute_siguiente_accion(
 
     for acc in acciones_pend:
         if acc.estado == "PENDIENTE_APROBACION":
-            politica = evaluar_politica_aprobacion(acc.tipo_accion, {"accion_id": acc.id})
+            politica = evaluar_politica_aprobacion(
+                acc.tipo_accion,
+                {"accion_id": acc.id, "capacidad": acc.capacidad},
+                db=db,
+                organization_id=org_id,
+            )
             candidatas.append({
                 "codigo": "solicitar_aprobacion",
                 "titulo": f"Aprobar acción: {acc.titulo}",

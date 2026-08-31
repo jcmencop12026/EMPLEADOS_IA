@@ -136,6 +136,16 @@ def crear_accion(
             raise HTTPException(status_code=404, detail="Hallazgo no encontrado")
 
     requiere_aprobacion = tipo_accion in TIPO_REQUIERE_APROBACION
+    from app.services.evaluacion_integracion_gobierno import evaluar_politica_aprobacion
+
+    politica = evaluar_politica_aprobacion(
+        tipo_accion,
+        {"capacidad": capacidad, "recurso_tipo": "evaluacion_accion_externa"},
+        db=db,
+        organization_id=organization_id,
+    )
+    if politica.get("integrado"):
+        requiere_aprobacion = bool(politica.get("requiere_aprobacion", requiere_aprobacion))
     corr = str(uuid.uuid4())
     accion = EvaluacionAccionExterna(
         organization_id=organization_id,
