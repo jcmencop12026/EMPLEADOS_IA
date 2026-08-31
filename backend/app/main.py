@@ -34,6 +34,7 @@ from app import scim_models  # noqa: F401 — SCIM 1380
 from app import support_models  # noqa: F401 — mesa de ayuda MB-12
 from app import employee_audit_models  # noqa: F401 — auditor empleados MVP
 from app import consumption_planner_models  # noqa: F401 — planificador MB-07 portable
+from app import economic_motor_models  # noqa: F401 — motor económico EIAAX 1600
 from app import communications_models  # noqa: F401 — comunicaciones MB-11
 from app.health import build_health_report, health_http_status
 from app.routers import (
@@ -79,6 +80,7 @@ from app.routers import (
     trabajo,
     empleados_auditor,
     comunicaciones,
+    motor_economico,
 )
 from app.seed import bootstrap
 from app.security_config import validate_security_settings
@@ -173,6 +175,7 @@ app.include_router(notification_routes.rules_router)
 app.include_router(comunicaciones.router)
 app.include_router(trabajo.router)
 app.include_router(finops.router)
+app.include_router(motor_economico.router)
 app.include_router(salud.router)
 app.include_router(experience.router)
 app.include_router(oportunidades.router)
