@@ -298,6 +298,12 @@ GOBIERNO_OPERACIONAL_PERMISSIONS = {
     "gobierno.ia_policy",
     "gobierno.audit",
     "gobierno.confianza.view",
+    "gobierno.clasificacion.view",
+    "gobierno.clasificacion.assign",
+    "gobierno.trazabilidad.view",
+    "gobierno.evidencia.view",
+    "gobierno.evidencia.link",
+    "gobierno.auditoria.consulta",
 }
 
 CONTINUIDAD_PERMISSIONS = {
@@ -452,6 +458,12 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "gobierno.ia_policy": ("Gobierno operacional", "Gestionar políticas de gobierno IA"),
     "gobierno.audit": ("Gobierno operacional", "Consultar eventos de gobierno operacional"),
     "gobierno.confianza.view": ("Gobierno operacional", "Ver Centro de Confianza"),
+    "gobierno.clasificacion.view": ("Gobierno operacional", "Consultar clasificación de información"),
+    "gobierno.clasificacion.assign": ("Gobierno operacional", "Asignar clasificación a objetos"),
+    "gobierno.trazabilidad.view": ("Gobierno operacional", "Consultar trazabilidad empresarial"),
+    "gobierno.evidencia.view": ("Gobierno operacional", "Consultar evidencia vinculada"),
+    "gobierno.evidencia.link": ("Gobierno operacional", "Vincular evidencia a decisiones"),
+    "gobierno.auditoria.consulta": ("Gobierno operacional", "Consultar auditoría federada en español"),
     "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
     "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
     "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
@@ -742,6 +754,12 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "gobierno.ia_policy",
         "gobierno.audit",
         "gobierno.confianza.view",
+        "gobierno.clasificacion.view",
+        "gobierno.clasificacion.assign",
+        "gobierno.trazabilidad.view",
+        "gobierno.evidencia.view",
+        "gobierno.evidencia.link",
+        "gobierno.auditoria.consulta",
     },
     "viewer": {
         "employee.view",
@@ -786,6 +804,10 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "support.create",
         "gobierno.view",
         "gobierno.confianza.view",
+        "gobierno.clasificacion.view",
+        "gobierno.trazabilidad.view",
+        "gobierno.evidencia.view",
+        "gobierno.auditoria.consulta",
     },
 }
 

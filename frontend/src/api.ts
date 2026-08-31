@@ -286,8 +286,11 @@ export type AdminUserIdentityDetail = {
 export type AuditLog = {
   id: string;
   action: string;
+  accion_etiqueta?: string;
   detail: string | null;
   user_id: string | null;
+  usuario?: string | null;
+  organization_id?: string | null;
   created_at: string;
 };
 
@@ -424,8 +427,8 @@ export async function fetchEvents(): Promise<WorkEventItem[]> {
   return api<WorkEventItem[]>("/api/operations/events");
 }
 
-export async function fetchAuditLogs(): Promise<AuditLog[]> {
-  return api<AuditLog[]>("/api/audit/logs");
+export async function fetchAuditLogs(query = ""): Promise<AuditLog[]> {
+  return api<AuditLog[]>(`/api/audit/logs${query}`);
 }
 
 export async function fetchOrganization(): Promise<Organization> {
@@ -4001,6 +4004,46 @@ export type GobiernoSolicitud = {
 
 export async function fetchCentroConfianza(): Promise<ConfianzaCentro> {
   return api("/api/gobierno-operacional/confianza");
+}
+
+export type ConfianzaEmpresarial = {
+  organization_id: string;
+  generado_en: string;
+  controles: Array<{
+    id: string;
+    nombre: string;
+    grupo: string;
+    grupo_etiqueta: string;
+    estado: string;
+    estado_etiqueta: string;
+    evidencia?: string | null;
+    detalle?: Record<string, unknown> | null;
+  }>;
+  grupos: Array<{
+    id: string;
+    etiqueta: string;
+    controles: ConfianzaEmpresarial["controles"];
+  }>;
+  resumen: {
+    total_controles: number;
+    implementados: number;
+    configurados: number;
+    pendientes: number;
+    no_disponibles: number;
+    solo_evidencia_real: boolean;
+  };
+};
+
+export async function fetchCentroConfianzaEmpresarial(): Promise<ConfianzaEmpresarial> {
+  return api("/api/empresa-seguridad/confianza");
+}
+
+export async function fetchAuditoriaFederada(query = ""): Promise<Array<Record<string, unknown>>> {
+  return api(`/api/empresa-seguridad/auditoria/consulta${query}`);
+}
+
+export async function fetchTrazabilidad(correlationId: string): Promise<Record<string, unknown>> {
+  return api(`/api/empresa-seguridad/trazabilidad/${correlationId}`);
 }
 
 export async function fetchGobiernoSolicitudes(estado?: string): Promise<GobiernoSolicitud[]> {

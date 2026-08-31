@@ -84,6 +84,17 @@ export const AUDIT_ACTION: Record<string, string> = {
   "automation.scheduler_run": "Ejecución programada",
   "llm.inference": "Inferencia de IA",
   "finops.registration.failed": "Error al registrar consumo",
+  "evaluacion.visibility": "Visibilidad de evaluación cambiada",
+  "empresa.clasificacion.asignada": "Clasificación asignada",
+  "empresa.evidencia.vinculada": "Evidencia vinculada",
+  "empresa.visibilidad.cambiada": "Visibilidad empresarial cambiada",
+  "gobierno.accion.solicitada": "Acción solicitada",
+  "gobierno.accion.aprobada": "Acción aprobada",
+  "gobierno.accion.ejecutada": "Acción ejecutada",
+  "gov.catalog.create": "Entrada de catálogo creada",
+  "gov.classification.create": "Clasificación de datos creada",
+  "security.mfa.enabled": "MFA activado",
+  "security.policy.updated": "Política de seguridad actualizada",
 };
 
 export function label(map: Record<string, string>, value: string | undefined | null): string {

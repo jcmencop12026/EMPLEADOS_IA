@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
-import type { ConfianzaCentro, GobiernoSolicitud } from "../api";
+import type { ConfianzaEmpresarial, GobiernoSolicitud } from "../api";
 import {
-  fetchCentroConfianza,
+  fetchCentroConfianzaEmpresarial,
   fetchGobiernoSolicitudes,
   fetchGobiernoEventos,
 } from "../api";
 
+const ESTADO_COLOR: Record<string, string> = {
+  IMPLEMENTADO: "#0a7",
+  CONFIGURADO: "#06c",
+  PENDIENTE: "#c80",
+  NO_DISPONIBLE: "#999",
+};
+
 export function CentroConfianzaPage() {
-  const [centro, setCentro] = useState<ConfianzaCentro | null>(null);
+  const [centro, setCentro] = useState<ConfianzaEmpresarial | null>(null);
   const [solicitudes, setSolicitudes] = useState<GobiernoSolicitud[]>([]);
   const [eventos, setEventos] = useState<Array<Record<string, unknown>>>([]);
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +22,7 @@ export function CentroConfianzaPage() {
   const load = useCallback(() => {
     setError(null);
     return Promise.all([
-      fetchCentroConfianza().then(setCentro).catch((e) => setError(String(e))),
+      fetchCentroConfianzaEmpresarial().then(setCentro).catch((e) => setError(String(e))),
       fetchGobiernoSolicitudes().then(setSolicitudes).catch(() => undefined),
       fetchGobiernoEventos().then(setEventos).catch(() => undefined),
     ]);
@@ -25,18 +32,13 @@ export function CentroConfianzaPage() {
     load();
   }, [load]);
 
-  const estadoColor = (estado: string) => {
-    if (estado === "ACTIVO" || estado === "CONFIGURADO") return "#0a7";
-    return "#666";
-  };
-
   return (
     <div className="page">
       <header className="page-header">
         <div>
           <h1>Centro de Confianza</h1>
           <p className="muted">
-            Controles operacionales con evidencia real — sin certificaciones ficticias.
+            Controles verificables agrupados por dominio — sin certificaciones ficticias.
           </p>
         </div>
       </header>
@@ -48,41 +50,44 @@ export function CentroConfianzaPage() {
           <section className="card" style={{ marginBottom: "1rem" }}>
             <h2>Resumen</h2>
             <p>
-              <strong>{centro.resumen.controles_activos}</strong> control(es) con evidencia ·{" "}
-              <strong>{centro.resumen.eventos_gobierno}</strong> evento(s) de gobierno
+              <strong>{centro.resumen.implementados}</strong> implementado(s) ·{" "}
+              <strong>{centro.resumen.configurados}</strong> configurado(s) ·{" "}
+              <strong>{centro.resumen.pendientes}</strong> pendiente(s)
             </p>
             <p className="muted" style={{ fontSize: "0.85rem" }}>
               Generado: {new Date(centro.generado_en).toLocaleString()}
             </p>
           </section>
 
-          <section className="card" style={{ marginBottom: "1rem" }}>
-            <h2>Controles implementados</h2>
-            {centro.controles.length === 0 ? (
-              <p className="muted">Sin controles con evidencia registrada aún.</p>
-            ) : (
+          {centro.grupos.map((grupo) => (
+            <section key={grupo.id} className="card" style={{ marginBottom: "1rem" }}>
+              <h2>{grupo.etiqueta}</h2>
               <div style={{ display: "grid", gap: "0.75rem" }}>
-                {centro.controles.map((c) => (
+                {grupo.controles.map((c) => (
                   <div
                     key={c.id}
-                    style={{
-                      border: "1px solid #e0e0e0",
-                      borderRadius: 8,
-                      padding: "0.75rem 1rem",
-                    }}
+                    style={{ border: "1px solid #e0e0e0", borderRadius: 8, padding: "0.75rem 1rem" }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <strong>{c.nombre}</strong>
-                      <span style={{ color: estadoColor(c.estado), fontWeight: 600, fontSize: "0.85rem" }}>
-                        {c.estado}
+                      <span
+                        style={{
+                          color: ESTADO_COLOR[c.estado] || "#666",
+                          fontWeight: 600,
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        {c.estado_etiqueta}
                       </span>
                     </div>
-                    {c.evidencia && <p style={{ margin: "0.35rem 0 0", fontSize: "0.9rem" }}>{c.evidencia}</p>}
+                    {c.evidencia && (
+                      <p style={{ margin: "0.35rem 0 0", fontSize: "0.9rem" }}>{c.evidencia}</p>
+                    )}
                   </div>
                 ))}
               </div>
-            )}
-          </section>
+            </section>
+          ))}
         </>
       )}
 
