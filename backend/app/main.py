@@ -13,6 +13,29 @@ from app import orchestration_models, notifications  # noqa: F401 — registra t
 from app import salud_models  # noqa: F401 — registra tablas IPS
 from app import experience_models  # noqa: F401 — experiencia transversal core
 from app import opportunity_models  # noqa: F401 — oportunidades proactivas 1030
+from app import baseline_models  # noqa: F401 — línea base e impacto 1200
+from app import valuation_models  # noqa: F401 — valoración económica 1210
+from app import diagnostic_models  # noqa: F401 — diagnóstico transversal 1220
+from app import evaluacion_models  # noqa: F401 — expediente evaluación 1405
+from app import external_models  # noqa: F401 — inteligencia externa 1240
+from app import continuidad_models  # noqa: F401 — continuidad operativa 1360
+from app import governance_models  # noqa: F401 — gobierno de datos 1350
+from app import integration_models  # noqa: F401 — integraciones 1330
+from app import learning_models  # noqa: F401 — aprendizaje y repriorización 1260
+from app import optimization_models  # noqa: F401 — optimización 1290
+from app import commercial_models  # noqa: F401 — modelo comercial 1280
+from app import tco_models  # noqa: F401 — TCO y ecosistema 1320
+from app import implementacion_models  # noqa: F401 — implementación 1340
+from app import segmentation_models  # noqa: F401 — segmentación 1310
+from app import llm_models  # noqa: F401 — LLM Gateway V1
+from app import security_models  # noqa: F401 — seguridad avanzada 1300
+from app import identity_models  # noqa: F401 — identidad empresarial 1370
+from app import scim_models  # noqa: F401 — SCIM 1380
+from app import support_models  # noqa: F401 — mesa de ayuda MB-12
+from app import employee_audit_models  # noqa: F401 — auditor empleados MVP
+from app import consumption_planner_models  # noqa: F401 — planificador MB-07 portable
+from app import communications_models  # noqa: F401 — comunicaciones MB-11
+from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
     agent_factory,
@@ -23,19 +46,46 @@ from app.routers import (
     capabilities,
     finops,
     knowledge,
+    llm_providers,
     notifications as notification_routes,
     operations,
     organization,
     platform,
     salud,
     experience,
+    linea_base,
+    control_center,
     oportunidades,
+    senales,
+    valoracion,
+    diagnosticos,
+    evaluaciones,
+    inteligencia_externa,
+    continuidad,
+    governance,
+    integraciones,
+    security,
+    identidad,
+    scim,
+    aprendizaje,
+    optimizacion,
+    comercial,
+    tco,
+    implementacion,
+    segmentacion,
+    soporte,
     test_lab,
     tools,
+    trabajo,
+    empleados_auditor,
+    comunicaciones,
 )
 from app.seed import bootstrap
+from app.security_config import validate_security_settings
 from app.services.automation_events import register_automation_event_handlers
+from app.services.employee_audit_events import register_employee_audit_event_handlers
 from app.services.automation_scheduler import start_scheduler, stop_scheduler
+from app.services.communications_service import register_communications_handlers
 from app.services.proactive_scheduler import start_proactive_scheduler, stop_proactive_scheduler
 from app.services.authorization import AuthorizationError
 
@@ -49,6 +99,14 @@ async def lifespan(_app: FastAPI):
     except MigrationControlError as exc:
         raise RuntimeError(str(exc)) from exc
 
+    validate_security_settings(
+        database_url=settings.database_url,
+        jwt_secret=settings.jwt_secret,
+        bootstrap_admin_password=settings.bootstrap_admin_password,
+        app_env=settings.app_env,
+        cors_origins=settings.cors_origins,
+    )
+
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
@@ -56,6 +114,8 @@ async def lifespan(_app: FastAPI):
     finally:
         db.close()
     register_automation_event_handlers()
+    register_employee_audit_event_handlers()
+    register_communications_handlers()
     start_scheduler()
     start_proactive_scheduler()
     yield
@@ -63,28 +123,38 @@ async def lifespan(_app: FastAPI):
     stop_scheduler()
 
 
+_docs_kwargs: dict[str, str | None] = {}
+if not settings.api_docs_enabled:
+    _docs_kwargs = {"docs_url": None, "redoc_url": None, "openapi_url": None}
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     lifespan=lifespan,
+    **_docs_kwargs,
 )
 
 
 @app.exception_handler(AuthorizationError)
 async def authorization_error_handler(_request, exc: AuthorizationError):
-    return JSONResponse(status_code=400, content={"detail": str(exc)})
+    return JSONResponse(
+        status_code=403,
+        content={"detail": str(exc) or "No tiene permisos para realizar esta acción."},
+    )
 
 
-origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(auth.router)
+app.include_router(security.router)
+app.include_router(identidad.router)
+app.include_router(scim.router)
 app.include_router(organization.router)
 app.include_router(platform.router)
 app.include_router(admin.router)
@@ -100,27 +170,72 @@ app.include_router(automations.router)
 app.include_router(automations.runs_router)
 app.include_router(notification_routes.notifications_router)
 app.include_router(notification_routes.rules_router)
+app.include_router(comunicaciones.router)
+app.include_router(trabajo.router)
 app.include_router(finops.router)
 app.include_router(salud.router)
 app.include_router(experience.router)
 app.include_router(oportunidades.router)
+app.include_router(senales.router)
+app.include_router(linea_base.router)
+app.include_router(valoracion.router)
+app.include_router(diagnosticos.router)
+app.include_router(evaluaciones.router)
+app.include_router(inteligencia_externa.router)
+app.include_router(continuidad.router)
+app.include_router(control_center.router)
+app.include_router(governance.router)
+app.include_router(integraciones.router)
+app.include_router(aprendizaje.router)
+app.include_router(optimizacion.router)
+app.include_router(comercial.router)
+app.include_router(tco.router)
+app.include_router(implementacion.router)
+app.include_router(segmentacion.router)
+app.include_router(llm_providers.router)
+app.include_router(soporte.router)
+app.include_router(empleados_auditor.router)
 
 
 @app.get("/health")
 def health():
+    report = build_health_report(include_schedulers=True)
+    return JSONResponse(status_code=health_http_status(report), content=report)
+
+
+@app.get("/health/live")
+def health_live():
     return {
-        "status": "ok",
+        "status": "up",
         "app": settings.app_name,
         "version": settings.app_version,
-        "phase": "B2-agent-factory",
+        "environment": settings.app_env,
+        "message": "Proceso API en ejecución",
     }
+
+
+@app.get("/health/ready")
+def health_ready():
+    report = build_health_report(include_schedulers=True)
+    ready = report["components"]["database"]["status"] == "up"
+    content = {
+        "status": "up" if ready else "down",
+        "environment": settings.app_env,
+        "components": {
+            "database": report["components"]["database"],
+            "schedulers": report["components"].get("schedulers"),
+        },
+    }
+    return JSONResponse(status_code=200 if ready else 503, content=content)
 
 
 @app.get("/")
 def root():
-    return {
+    payload = {
         "message": "EMPLEADOS_IA API",
-        "docs": "/docs",
         "health": "/health",
         "frontend": "http://127.0.0.1:5180",
     }
+    if settings.api_docs_enabled:
+        payload["docs"] = "/docs"
+    return payload

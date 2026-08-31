@@ -46,6 +46,7 @@ from app.services.authorization import (
     assert_employee_has_capability,
     evaluate_tool_execution,
 )
+from app.services.llm_execution import run_llm_for_task, should_use_llm
 from app.tools import docint, rips
 
 _TOOL_EXECUTION_COUNTER = 0
@@ -463,6 +464,32 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
     try:
         if employee:
             limits = db.query(EmployeeLimits).filter(EmployeeLimits.employee_id == employee.id).first()
+            from app.services.finops_service import assert_budget_allows_consumption
+
+            try:
+                assert_budget_allows_consumption(
+                    db,
+                    plan.organization_id,
+                    employee_id=employee.id,
+                    category="Modelo IA",
+                )
+            except PermissionError as exc:
+                publish(
+                    EventMessage(
+                        event_type="FINOPS_LIMIT_REACHED",
+                        organization_id=plan.organization_id,
+                        work_plan_id=plan.id,
+                        task_id=task.id,
+                        user_id=user_id,
+                        payload={
+                            "employee_id": employee.id,
+                            "reason": str(exc),
+                            "policy": "Bloquear",
+                        },
+                    ),
+                    db,
+                )
+                raise
             spent_today = (
                 db.query(func.coalesce(func.sum(FinOpsRecord.cost), 0.0))
                 .filter(
@@ -547,8 +574,19 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
             commit_gated(db)
             return {"task_id": task.id, "status": task.status}
 
-        output = _run_tool(tool.code if tool else "docint", inputs)
+        output = _run_execution(
+            db,
+            employee=employee,
+            tool=tool,
+            tool_code=tool.code if tool else "docint",
+            inputs=inputs,
+            plan=plan,
+            task=task,
+            user_id=user_id,
+        )
         require_execution_allowed(db)
+        if output.get("source") == "llm" and output.get("error"):
+            raise RuntimeError(output.get("summary") or "Error de inferencia IA")
         duration_ms = int((time.monotonic() - start_ms) * 1000)
 
         task.outputs_json = json.dumps(output, ensure_ascii=False)
@@ -623,16 +661,24 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
             db,
         )
 
-        db.add(
-            FinOpsRecord(
-                organization_id=plan.organization_id,
-                work_plan_id=plan.id,
-                task_id=task.id,
-                model_name=employee.model_name if employee else None,
-                provider=employee.model_provider if employee else "rule-engine",
-                duration_ms=duration_ms,
+        if output.get("source") != "llm":
+            from app.services.finops_service import resolve_opportunity_id
+
+            opp_id = resolve_opportunity_id(
+                db, plan.organization_id, work_plan_id=plan.id
             )
-        )
+            db.add(
+                FinOpsRecord(
+                    organization_id=plan.organization_id,
+                    work_plan_id=plan.id,
+                    task_id=task.id,
+                    opportunity_id=opp_id,
+                    employee_id=employee.id if employee else None,
+                    model_name=employee.model_name if employee else None,
+                    provider=employee.model_provider if employee else "rule-engine",
+                    duration_ms=duration_ms,
+                )
+            )
         commit_gated(db)
         return {"task_id": task.id, "status": task.status, "output": output}
 
@@ -717,6 +763,40 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
         return {"task_id": task.id, "status": task.status, "error": str(exc)}
 
 
+def _run_execution(
+    db: Session,
+    *,
+    employee: AIEmployee | None,
+    tool: Tool | None,
+    tool_code: str,
+    inputs: dict[str, Any],
+    plan: WorkPlan,
+    task: EmployeeTask,
+    user_id: str,
+) -> dict[str, Any]:
+    user_prompt = inputs.get("request") or inputs.get("prompt") or plan.request or ""
+    context = inputs.get("context") or {}
+    if isinstance(context, str):
+        try:
+            context = json.loads(context)
+        except json.JSONDecodeError:
+            context = {}
+
+    if should_use_llm(employee, tool.executor_type if tool else task.executor_type):
+        return run_llm_for_task(
+            db,
+            organization_id=plan.organization_id,
+            employee=employee,
+            user_prompt=str(user_prompt),
+            context=context,
+            work_plan_id=plan.id,
+            task_id=task.id,
+            user_id=user_id,
+            knowledge_source_ids=context.get("knowledge_source_ids"),
+        )
+    return _run_tool(tool_code, inputs)
+
+
 def _run_tool(tool_code: str, inputs: dict[str, Any]) -> dict[str, Any]:
     global _TOOL_EXECUTION_COUNTER
     _TOOL_EXECUTION_COUNTER += 1
@@ -774,6 +854,15 @@ def decide_approval(
     if approval.status != "PENDING":
         return {"error": "Aprobación ya decidida"}
 
+    from app.services.employee_lifecycle_service import (
+        assert_factory_approval_decision_allowed,
+        sync_factory_approval_on_decide,
+    )
+
+    seg_err = assert_factory_approval_decision_allowed(db, approval, user_id)
+    if seg_err:
+        return {"error": seg_err}
+
     plan = db.query(WorkPlan).filter(WorkPlan.id == approval.work_plan_id).first()
     task = db.query(EmployeeTask).filter(EmployeeTask.id == approval.task_id).first() if approval.task_id else None
     employee = db.query(AIEmployee).filter(AIEmployee.id == task.employee_id).first() if task and task.employee_id else None
@@ -791,20 +880,30 @@ def decide_approval(
                 inputs["request"] = plan.request
             require_execution_allowed(db)
             start_ms = time.monotonic()
-            output = _run_tool(tool_obj.code if tool_obj else "docint", inputs)
+            output = _run_execution(
+                db,
+                employee=employee,
+                tool=tool_obj,
+                tool_code=tool_obj.code if tool_obj else "docint",
+                inputs=inputs,
+                plan=plan,
+                task=task,
+                user_id=user_id,
+            )
             duration_ms = int((time.monotonic() - start_ms) * 1000)
             task.outputs_json = json.dumps(output, ensure_ascii=False)
             task.confidence = output.get("confidence")
-            db.add(
-                FinOpsRecord(
-                    organization_id=organization_id,
-                    work_plan_id=plan.id if plan else approval.work_plan_id,
-                    task_id=task.id,
-                    model_name=employee.model_name if employee else None,
-                    provider=employee.model_provider if employee else "rule-engine",
-                    duration_ms=duration_ms,
+            if output.get("source") != "llm":
+                db.add(
+                    FinOpsRecord(
+                        organization_id=organization_id,
+                        work_plan_id=plan.id if plan else approval.work_plan_id,
+                        task_id=task.id,
+                        model_name=employee.model_name if employee else None,
+                        provider=employee.model_provider if employee else "rule-engine",
+                        duration_ms=duration_ms,
+                    )
                 )
-            )
         else:
             tasks = (
                 db.query(EmployeeTask).filter(EmployeeTask.work_plan_id == plan.id).all()
@@ -828,6 +927,7 @@ def decide_approval(
                     plan_status=plan.status,
                     error=plan.error,
                 )
+                sync_factory_approval_on_decide(db, approval.id, decision)
                 publish(
                     EventMessage(
                         event_type=WorkEventType.APPROVAL_COMPLETED,
@@ -867,6 +967,7 @@ def decide_approval(
         if employee:
             employee.status = EmployeeStatus.DISPONIBLE
 
+    sync_factory_approval_on_decide(db, approval.id, decision)
     commit_gated(db)
     publish(
         EventMessage(
