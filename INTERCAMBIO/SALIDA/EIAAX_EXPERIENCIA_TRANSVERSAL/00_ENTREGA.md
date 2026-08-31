@@ -44,7 +44,7 @@ Infraestructura reutilizable de experiencia EIAAX sobre BP1 certificado, **sin r
 | Etapa | SHA |
 |-------|-----|
 | Inicial (BP1) | `7e9abba11f4c4f216142c6c70d662229ffc585bb` |
-| Final | Ver commit en rama `cursor/eiaax-experiencia-transversal-9a85` |
+| Final | `817960a` — `feat(experiencia): sistema transversal EIAAX` |
 
 ---
 
