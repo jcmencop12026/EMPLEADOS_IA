@@ -1,0 +1,7 @@
+# Override for PASO 2: deploy pre-built frontend hotfix image only.
+# Usage (from PASO2 script):
+#   docker compose -f <CERT>/docker-compose.yml -f this-file.yml --project-directory <CERT> up -d --no-build --no-deps --force-recreate frontend
+
+services:
+  frontend:
+    image: empleados_ia_cert-frontend-hotfix:latest

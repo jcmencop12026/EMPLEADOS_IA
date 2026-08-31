@@ -129,7 +129,7 @@ export function EmployeeDetailPage() {
             <p><strong>Capacidades:</strong> {caps.map((c) => c.code || c).join(", ") || (detail?.capabilities as string[])?.join(", ")}</p>
             <div className="ops-actions">
               <Link className="btn" to={`/empleados/${employeeId}/editar`}>Editar configuración</Link>
-              <Link className="btn" to="/test-lab">Abrir Test Lab</Link>
+              <Link className="btn" to="/test-lab">Abrir laboratorio de pruebas</Link>
               <button type="button" className="btn" disabled={loading} onClick={() => runAction("test")}>Ejecutar pruebas</button>
               <button type="button" className="btn" disabled={loading} onClick={() => runAction("certify")}>Certificar</button>
               <button type="button" className="btn primary" disabled={loading || lifecycle !== "CERTIFIED"} onClick={() => runAction("publish")}>Publicar</button>
@@ -188,7 +188,7 @@ export function EmployeeDetailPage() {
             {testResult ? (
               <pre className="mono result-pre">{JSON.stringify(testResult, null, 2)}</pre>
             ) : (
-              <p className="muted">Ejecute pruebas desde Resumen o <Link to="/test-lab">Test Lab</Link>.</p>
+              <p className="muted">Ejecute pruebas desde Resumen o <Link to="/test-lab">laboratorio de pruebas</Link>.</p>
             )}
           </>
         )}

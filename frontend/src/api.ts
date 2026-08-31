@@ -41,8 +41,11 @@ function parseDetail(text: string): string {
   return text;
 }
 
-function userMessage(status: number, detail: string): string {
-  if (status === 401) return "Su sesión ha vencido. Inicie sesión nuevamente.";
+function userMessage(status: number, detail: string, path?: string): string {
+  if (status === 401) {
+    if (path === "/api/auth/login") return detail || "Credenciales incorrectas";
+    return "Su sesión ha vencido. Inicie sesión nuevamente.";
+  }
   if (status === 403) return "No tiene permisos para realizar esta acción.";
   if (status === 404) return "El recurso solicitado no fue encontrado.";
   if (status === 409) return detail || "La operación no puede completarse por un conflicto de estado.";
@@ -69,9 +72,15 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     throw new ApiError(0, "No se pudo conectar con el servidor. Verifique que el backend esté en ejecución.");
   }
 
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
+  const text = await res.text();
+
   if (!res.ok) {
     const detail = parseDetail(text);
-    const message = userMessage(res.status, detail);
+    const message = userMessage(res.status, detail, path);
     console.error("[api]", res.status, path, detail);
     if (res.status === 401) {
       const isLoginAttempt = path === "/api/auth/login";
@@ -86,13 +95,6 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     throw new ApiError(res.status, message, detail);
   }
 
-  if (res.status === 204) {
-    return undefined as T;
-  }
-  if (res.status === 204) {
-    return undefined as T;
-  }
-  const text = await res.text();
   if (!text) {
     return undefined as T;
   }
@@ -942,6 +944,49 @@ export async function reprocessKnowledgeDocument(id: string): Promise<KnowledgeD
 
 export async function deactivateKnowledgeDocument(id: string): Promise<KnowledgeDocumentItem> {
   return api<KnowledgeDocumentItem>(`/api/knowledge/${id}/deactivate`, { method: "POST" });
+}
+
+function parseContentDispositionFilename(header: string | null): string | null {
+  if (!header) return null;
+  const match = /filename\*?=(?:UTF-8''|")?([^";]+)/i.exec(header);
+  if (!match?.[1]) return null;
+  try {
+    return decodeURIComponent(match[1].replace(/"/g, ""));
+  } catch {
+    return match[1].replace(/"/g, "");
+  }
+}
+
+/** Descarga autenticada vía Bearer — no expone token en URL. */
+export async function downloadKnowledgeDocument(id: string, fallbackFilename?: string): Promise<void> {
+  const headers = new Headers();
+  const token = getToken();
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  const res = await fetch(`/api/knowledge/${id}/download`, { headers });
+  if (!res.ok) {
+    const text = await res.text();
+    const detail = parseDetail(text);
+    throw new ApiError(res.status, userMessage(res.status, detail), detail);
+  }
+  const blob = await res.blob();
+  const filename =
+    parseContentDispositionFilename(res.headers.get("Content-Disposition")) ||
+    fallbackFilename ||
+    `documento-${id}`;
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    anchor.rel = "noopener";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }
 
 export async function uploadKnowledgeFile(file: File, name?: string): Promise<KnowledgeDocumentItem> {

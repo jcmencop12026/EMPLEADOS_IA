@@ -20,7 +20,7 @@ export function CostosValorPage() {
     <div className="ops-page">
       <header className="page-header">
         <h1>Costos y valor</h1>
-        <p className="muted">Consumo, valor generado, ROI y presupuestos por empresa</p>
+        <p className="muted">Consumo, valor generado, retorno de inversión y presupuestos por empresa</p>
       </header>
       {error && <p className="error">{error}</p>}
       {summary && (
@@ -42,7 +42,7 @@ export function CostosValorPage() {
             <strong>{summary.net_benefit ?? "—"}</strong>
           </div>
           <div className="metric-card">
-            <span className="metric-label">ROI</span>
+            <span className="metric-label">Retorno de inversión</span>
             <strong>{summary.roi_label}</strong>
           </div>
           <div className="metric-card">

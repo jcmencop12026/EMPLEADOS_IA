@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, fetchSecuritySummary, type SecuritySummary } from "../../api";
 import { ErrorState, LoadingState } from "../../components/AsyncState";
+import { formatAuditAction } from "../../lib/labels";
 
 export function AdminSecurityPage() {
   const [data, setData] = useState<SecuritySummary | null>(null);
@@ -43,7 +44,7 @@ export function AdminSecurityPage() {
             {data.recent_events.map((ev, i) => (
               <tr key={`${ev.action}-${i}`}>
                 <td className="mono">{new Date(ev.created_at).toLocaleString()}</td>
-                <td>{ev.action}</td>
+                  <td>{formatAuditAction(ev.action)}</td>
                 <td className="cell-truncate">{ev.detail || "—"}</td>
               </tr>
             ))}
