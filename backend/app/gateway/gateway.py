@@ -9,18 +9,25 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.gateway.adapters.anthropic_adapter import AnthropicAdapter
+from app.gateway.adapters.azure_openai_adapter import AzureOpenAIAdapter
 from app.gateway.adapters.base import BaseLlmAdapter
+from app.gateway.adapters.gemini_adapter import GeminiAdapter
 from app.gateway.adapters.ollama_adapter import OllamaAdapter
 from app.gateway.adapters.openai_adapter import OpenAIAdapter
 from app.gateway.errors import FALLBACK_ELIGIBLE, LlmErrorCategory, LlmGatewayError
-from app.gateway.providers import EXECUTABLE_LLM_PROVIDERS, is_executable_llm_provider
+from app.gateway.providers import is_executable_llm_provider
 from app.gateway.secrets import resolve_secret
 from app.gateway.types import GatewayRequest, GatewayResponse, LlmMessage
 from app.llm_models import LlmInferenceLog, LlmProviderConfig
+from app.services.llm_routing_service import select_routed_provider
 
 _ADAPTER_REGISTRY: dict[str, type[BaseLlmAdapter]] = {
     "openai": OpenAIAdapter,
     "ollama": OllamaAdapter,
+    "anthropic": AnthropicAdapter,
+    "gemini": GeminiAdapter,
+    "azure-openai": AzureOpenAIAdapter,
 }
 
 
@@ -118,11 +125,14 @@ def select_fallback_provider(
 
 
 def _default_model(provider_type: str) -> str:
-    if provider_type.lower() == "openai":
-        return "gpt-4o-mini"
-    if provider_type.lower() == "ollama":
-        return "llama3.2"
-    return "default"
+    defaults = {
+        "openai": "gpt-4o-mini",
+        "ollama": "llama3.2",
+        "anthropic": "claude-3-haiku-20240307",
+        "gemini": "gemini-1.5-flash",
+        "azure-openai": "gpt-4o-mini",
+    }
+    return defaults.get(provider_type.lower(), "default")
 
 
 def _invoke_adapter(
@@ -173,7 +183,7 @@ def complete(
         normalized = preferred_provider.lower().strip()
         if not is_executable_llm_provider(normalized):
             response = _configuration_error(
-                technical_detail=f"Proveedor no ejecutable en V1: {normalized}",
+                technical_detail=f"Proveedor no soportado: {normalized}",
                 provider=normalized,
                 model=preferred_model,
             )
@@ -181,13 +191,15 @@ def complete(
             _persist_inference_log(db, organization_id, response, employee_id, work_plan_id, task_id)
             return response
 
-    primary_sel = select_primary_provider(
+    routed = select_routed_provider(
         db,
         organization_id,
         preferred_provider=preferred_provider,
         preferred_model=preferred_model,
-        require_explicit_match=require_explicit_preferred,
+        allow_fallback=enable_fallback,
+        require_explicit=require_explicit_preferred,
     )
+    primary_sel = ProviderSelection(config=routed.config, model=routed.model) if routed else None
     if not primary_sel:
         detail = (
             f"Proveedor preferido no disponible o inválido: {preferred_provider}"
@@ -318,7 +330,7 @@ def test_provider_connection(
             error=LlmGatewayError.from_category(
                 LlmErrorCategory.CONFIGURATION_ERROR,
                 provider=config.provider_type,
-                technical_detail=f"Proveedor no ejecutable en V1: {config.provider_type}",
+                technical_detail=f"Proveedor no soportado: {config.provider_type}",
             ),
         )
 
@@ -351,6 +363,9 @@ def _persist_inference_log(
     employee_id: str | None,
     work_plan_id: str | None,
     task_id: str | None,
+    *,
+    cost: float | None = None,
+    currency: str | None = None,
 ) -> LlmInferenceLog:
     status = "OK" if response.success else "ERROR"
     error = response.error
@@ -369,6 +384,8 @@ def _persist_inference_log(
         tokens_out=response.tokens_out,
         tokens_total=tokens_total,
         latency_ms=response.latency_ms,
+        cost=cost,
+        currency=currency,
         status=status,
         finish_reason=response.finish_reason,
         error_category=error.category if error else None,

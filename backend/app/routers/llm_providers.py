@@ -14,19 +14,35 @@ from app.schemas_llm import (
     LlmCompleteRequest,
     LlmCompleteResponse,
     LlmInferenceLogOut,
+    LlmModelCatalogCreate,
+    LlmModelCatalogOut,
+    LlmObservabilitySummary,
     LlmProviderCreate,
+    LlmProviderHealthOut,
     LlmProviderOut,
     LlmProviderUpdate,
+    LlmRoutingExplainOut,
+    LlmRoutingPolicyCreate,
+    LlmRoutingPolicyOut,
+    LlmRoutingPolicyUpdate,
     LlmTestConnectionResult,
 )
 from app.services.llm_execution import run_llm_for_task
+from app.services.llm_health_service import list_providers_health
+from app.services.llm_observability_service import get_observability_summary
 from app.services.llm_provider_service import (
+    create_model_catalog_entry,
     create_provider,
+    create_routing_policy,
     get_provider,
     list_inference_logs,
+    list_model_catalog,
     list_providers,
+    list_routing_policies,
     update_provider,
+    update_routing_policy,
 )
+from app.services.llm_routing_service import explain_routing
 
 router = APIRouter(prefix="/api/llm", tags=["llm"])
 
@@ -121,6 +137,93 @@ def api_inference_logs(
 ):
     check_permission(user, "llm.view", db)
     return list_inference_logs(db, user.organization_id, limit=min(limit, 200))
+
+
+@router.get("/observability", response_model=LlmObservabilitySummary)
+def api_observability(
+    periodo: str = "mtd",
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "llm.view", db)
+    return get_observability_summary(db, user.organization_id, periodo=periodo)
+
+
+@router.get("/health", response_model=list[LlmProviderHealthOut])
+def api_providers_health(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "llm.view", db)
+    return list_providers_health(db, user.organization_id)
+
+
+@router.get("/routing/explain", response_model=LlmRoutingExplainOut)
+def api_routing_explain(
+    preferred_provider: str | None = None,
+    preferred_model: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "llm.view", db)
+    return explain_routing(
+        db,
+        user.organization_id,
+        preferred_provider=preferred_provider,
+        preferred_model=preferred_model,
+    )
+
+
+@router.get("/models", response_model=list[LlmModelCatalogOut])
+def api_list_models(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "llm.view", db)
+    return list_model_catalog(db, user.organization_id)
+
+
+@router.post("/models", response_model=LlmModelCatalogOut, status_code=201)
+def api_create_model(
+    data: LlmModelCatalogCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "llm.manage", db)
+    return create_model_catalog_entry(db, user.organization_id, data, user_id=user.id)
+
+
+@router.get("/routing/policies", response_model=list[LlmRoutingPolicyOut])
+def api_list_routing_policies(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "llm.view", db)
+    return list_routing_policies(db, user.organization_id)
+
+
+@router.post("/routing/policies", response_model=LlmRoutingPolicyOut, status_code=201)
+def api_create_routing_policy(
+    data: LlmRoutingPolicyCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "llm.manage", db)
+    return create_routing_policy(db, user.organization_id, data, user_id=user.id)
+
+
+@router.patch("/routing/policies/{policy_id}", response_model=LlmRoutingPolicyOut)
+def api_update_routing_policy(
+    policy_id: str,
+    data: LlmRoutingPolicyUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "llm.manage", db)
+    row = update_routing_policy(db, user.organization_id, policy_id, data, user_id=user.id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Política no encontrada.")
+    return row
 
 
 @router.post("/complete", response_model=LlmCompleteResponse)

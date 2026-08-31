@@ -645,7 +645,7 @@ export function DiagnosticoIpsPage() {
               <h3 className="salud-sub">Valor por propuesta (estimado)</h3>
               <div className="table-wrap">
                 <table className="data-table">
-                  <thead><tr><th>Referencia</th><th>Beneficio</th><th>Certidumbre</th><th>ROI</th></tr></thead>
+                  <thead><tr><th>Referencia</th><th>Beneficio</th><th>Certidumbre</th><th>Retorno de inversión</th></tr></thead>
                   <tbody>
                     {(diag.finops ?? []).map((f) => (
                       <tr key={f.referencia}>

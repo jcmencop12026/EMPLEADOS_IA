@@ -1,6 +1,7 @@
 import { api, clearToken, getToken, type UserMe } from "../api";
 
 const USER_KEY = "eaios_user";
+const ORG_CONTEXT_KEY = "eaios_selected_org_id";
 
 export function saveUser(user: UserMe): void {
   sessionStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -19,6 +20,7 @@ export function getCachedUser(): UserMe | null {
 export function clearSession(): void {
   clearToken();
   sessionStorage.removeItem(USER_KEY);
+  sessionStorage.removeItem(ORG_CONTEXT_KEY);
 }
 
 export function logout(): void {
