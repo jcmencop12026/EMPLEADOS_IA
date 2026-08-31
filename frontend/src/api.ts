@@ -3986,6 +3986,8 @@ export type AccionExterna = {
   titulo: string;
   descripcion: string | null;
   estado: string;
+  estado_es?: string;
+  proveedor_codigo?: string | null;
   requiere_aprobacion: boolean;
   resultado_resumen: string | null;
   evidencia_ref: string | null;
@@ -4012,6 +4014,14 @@ export async function fetchCapacidades(): Promise<{ capacidades: CapacidadExtern
 
 export async function fetchPiiaxStatus(): Promise<Record<string, unknown>> {
   return api("/api/evaluaciones/integracion/piiax");
+}
+
+export async function fetchSiguienteAccion(expedienteId: string): Promise<Record<string, unknown>> {
+  return api(`/api/evaluaciones/${expedienteId}/siguiente-accion`);
+}
+
+export async function fetchProveedoresExternos(): Promise<{ proveedores: Record<string, unknown>[] }> {
+  return api("/api/evaluaciones/proveedores-externos");
 }
 
 export async function fetchAccionesExternas(expedienteId: string): Promise<{ items: AccionExterna[] }> {

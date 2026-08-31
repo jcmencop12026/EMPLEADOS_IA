@@ -11,9 +11,10 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User
-from app.permissions import require_permission
+from app.permissions import require_permission, user_permissions
 from app.services import evaluacion_service as svc
 from app.services import evaluacion_accion_service as acc_svc
+from app.services.evaluacion_proveedor_externo_service import listar_proveedores
 from app.services.piiax_bridge_service import get_piiax_status, list_capacidades_catalog
 
 router = APIRouter(prefix="/api/evaluaciones", tags=["Evaluaciones"])
@@ -126,6 +127,14 @@ def estado_piiax(
     user: User = Depends(require_permission("evaluacion.view")),
 ):
     return get_piiax_status(db, user.organization_id)
+
+
+@router.get("/proveedores-externos")
+def list_proveedores_externos(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.view")),
+):
+    return {"proveedores": listar_proveedores(db, user.organization_id)}
 
 
 @router.get("")
@@ -469,3 +478,17 @@ def crear_indicador(
     )
     db.commit()
     return acc_svc._indicador_dict(ind)  # noqa: SLF001
+
+
+@router.get("/{expediente_id}/siguiente-accion")
+def get_siguiente_accion(
+    expediente_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.view")),
+):
+    perms = user_permissions(user, db)
+    resultado = svc.get_siguiente_accion(
+        db, expediente_id, user.organization_id, permisos=perms, persistir=True,
+    )
+    db.commit()
+    return resultado

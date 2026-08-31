@@ -50,7 +50,7 @@ export function EiaaxAskPanel({ expedienteId, open, onClose }: Props) {
         <strong>Preguntar a EIAAX</strong>
         <button type="button" className="btn-icon" onClick={onClose} title="Cerrar panel">×</button>
       </header>
-      <p className="muted small">Clasifica la intención (A–F) y orienta sin ejecutar acciones externas automáticamente.</p>
+      <p className="muted small">Clasifica la intención (A–H) y orienta sin ejecutar acciones externas automáticamente.</p>
       <div className="eiaax-ask-actions">
         {ACCIONES.map((a) => (
           <button

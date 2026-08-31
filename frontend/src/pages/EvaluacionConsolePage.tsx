@@ -18,6 +18,7 @@ import {
 import { AccionesExternasPanel } from "../components/evaluacion/AccionesExternasPanel";
 import { EiaaxAskPanel } from "../components/evaluacion/EiaaxAskPanel";
 import { ImpactoGrafico } from "../components/evaluacion/ImpactoGrafico";
+import { SiguienteAccionPanel } from "../components/evaluacion/SiguienteAccionPanel";
 import { VistaEntidadView } from "../components/evaluacion/VistaEntidadView";
 import { usePermissions } from "../hooks/usePermissions";
 import { CONFIANZA, ESTADO_EXPEDIENTE, label, TIPO_CONTENIDO } from "../lib/evaluacionLabels";
@@ -161,6 +162,20 @@ export function EvaluacionConsolePage() {
 
         {tab === "resumen" && (
           <section className="panel compact-panel">
+            <SiguienteAccionPanel
+              expedienteId={evaluacionId}
+              onNavigateTab={(p) => {
+                const map: Record<string, Tab> = {
+                  resumen: "resumen",
+                  informacion: "informacion",
+                  analisis: "analisis",
+                  impacto: "impacto",
+                  oportunidades: "oportunidades",
+                };
+                if (map[p]) setTab(map[p]);
+              }}
+              onRefresh={load}
+            />
             <h2>Resumen ejecutivo</h2>
             <dl className="detail-dl">
               <dt>Problema</dt><dd>{exp.necesidad ?? "—"}</dd>

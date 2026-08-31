@@ -65,6 +65,7 @@ class EvaluacionExpediente(Base):
     responsable_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
     created_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
     notas_internas: Mapped[str | None] = mapped_column(Text, nullable=True)
+    siguiente_accion_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -185,7 +186,7 @@ ACCION_ESTADOS = frozenset({
     "CANCELADA",
 })
 
-INTENCION_TIPOS = frozenset({"A", "B", "C", "D", "E", "F"})
+INTENCION_TIPOS = frozenset({"A", "B", "C", "D", "E", "F", "G", "H"})
 
 
 class EvaluacionAccionExterna(Base):
@@ -211,6 +212,7 @@ class EvaluacionAccionExterna(Base):
     aprobado_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     rechazo_motivo: Mapped[str | None] = mapped_column(Text, nullable=True)
     correlation_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    proveedor_codigo: Mapped[str | None] = mapped_column(String(40), nullable=True)
     referencia_externa: Mapped[str | None] = mapped_column(String(120), nullable=True)
     resultado_resumen: Mapped[str | None] = mapped_column(Text, nullable=True)
     evidencia_ref: Mapped[str | None] = mapped_column(Text, nullable=True)

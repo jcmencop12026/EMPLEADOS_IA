@@ -1068,6 +1068,28 @@ def ask_eiaax(
             "respuesta": None,
         }
 
+    if codigo == "G":
+        return {
+            **base,
+            "estado": "oportunidad_sugerida",
+            "mensaje": (
+                f"{INTENCION_DESCRIPCIONES['G']} "
+                "Puede crear o vincular una oportunidad desde la pestaña Oportunidades o desde un hallazgo."
+            ),
+            "respuesta": None,
+        }
+
+    if codigo == "H":
+        return {
+            **base,
+            "estado": "tarea_seguimiento",
+            "mensaje": (
+                f"{INTENCION_DESCRIPCIONES['H']} "
+                "La asignación operativa se integrará con el Centro de Operaciones cuando esté disponible."
+            ),
+            "respuesta": None,
+        }
+
     if codigo == "C" and not tiene_llm:
         return {
             **base,
@@ -1107,3 +1129,23 @@ def ask_eiaax(
         return {**base, "estado": "ok", "respuesta": result}
 
     return {**base, "estado": "ok", "respuesta": None}
+
+
+def get_siguiente_accion(
+    db: Session,
+    expediente_id: str,
+    organization_id: str,
+    *,
+    permisos: set[str] | None = None,
+    persistir: bool = True,
+) -> dict[str, Any]:
+    from app.services.evaluacion_siguiente_accion_service import (
+        compute_siguiente_accion,
+        persistir_siguiente_accion,
+    )
+
+    exp = _get_expediente(db, expediente_id, organization_id)
+    resultado = compute_siguiente_accion(db, exp, permisos=permisos or set())
+    if persistir:
+        persistir_siguiente_accion(db, exp, resultado)
+    return resultado

@@ -1,9 +1,4 @@
-# RESULTADO — EIAAX BLOQUE PRODUCTO 2
-
-**Estado:** FINALIZADO  
-**Base BP1:** `7e9abba11f4c4f216142c6c70d662229ffc585bb`  
-**SHA final BP2:** `506739f`  
-**Rama:** `cursor/producto-bloque-2-piiax-prep-85e4`
+# RESULTADO — EIAAX BLOQUE PRODUCTO 2 (FINAL AMPLIADO)
 
 ---
 
@@ -11,44 +6,32 @@
 
 ---
 
-## Resumen ejecutivo
+| Campo | Valor |
+|-------|-------|
+| SHA inicial (BP1) | `7e9abba11f4c4f216142c6c70d662229ffc585bb` |
+| SHA final | *(commit de cierre)* |
+| Rama | `cursor/producto-bloque-2-piiax-prep-85e4` |
+| Migraciones | `1410a1b2c3d4e`, `1420a1b2c3d4e` |
+| P0 / P1 | 0 / 0 |
 
-EIAAX queda preparado para solicitar **capacidades externas** a PIIAX sin implementar PIIAX ni conectores. El expediente BP1 evoluciona con acciones desde hallazgos, aprobación humana, trazabilidad `correlation_id`, agente con intención A–F, impacto ANTES/PROYECTADO/REAL con gráficos y UX mejorada (Vista Entidad legible, etiquetas español).
+## Modelos nuevos/ampliados
 
-## P0 / P1 / P2
+- `EvaluacionAccionExterna` (+ `proveedor_codigo`)
+- `EvaluacionAccionEvento`, `EvaluacionIndicador`
+- `EvaluacionExpediente` (+ `siguiente_accion_json`)
 
-| Prioridad | Count |
-|-----------|-------|
-| P0 | 0 |
-| P1 | 0 |
-| P2 | Ver `10_BRECHAS_RESTANTES.md` (preparación futura) |
+## Servicios nuevos
 
-## Certificación BP1
+- `evaluacion_siguiente_accion_service`
+- `evaluacion_proveedor_externo_service`
+- `evaluacion_integracion_gobierno` (stub A)
+- `evaluacion_integracion_finops` (stub B)
 
-No recertificado (según instrucción). Regresión BP1: 8/8 tests PASS.
+## APIs nuevas
 
-## Entregables
+- `GET /api/evaluaciones/{id}/siguiente-accion`
+- `GET /api/evaluaciones/proveedores-externos`
 
-| Doc | Contenido |
-|-----|-----------|
-| 01 | Alcance |
-| 02 | Arquitectura intención/capacidad |
-| 03 | Modelo PIIAX |
-| 04 | Aprobación humana |
-| 05 | Trazabilidad |
-| 06 | Agente EIAAX |
-| 07 | Impacto/indicadores |
-| 08 | UX |
-| 09 | Pruebas |
-| 10 | Brechas |
-| 11 | SHA/migraciones/permisos |
+## Pruebas
 
-## Recorrido visual
-
-1. Consola evaluación → barra «PIIAX no conectado»
-2. Análisis → hallazgo → «Solicitar capacidad externa»
-3. Aprobar si aplica → estado controlado
-4. Registrar resultado compatible → evidencia en acción
-5. Impacto → gráfico tres barras
-6. Vista Entidad → datos estructurados
-7. Preguntar a EIAAX → badge intención B/D/E
+31 tests PASS (BP1+BP2+migraciones)

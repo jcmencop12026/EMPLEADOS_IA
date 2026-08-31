@@ -1,31 +1,15 @@
-# 05 — Trazabilidad transversal
+# 05 — Trazabilidad
 
-## Cadena `correlation_id`
+## correlation_id
 
-Generado al crear una acción externa y propagado en:
-
-1. Organización (`organization_id`)
-2. Expediente (`expediente_id`)
-3. Hallazgo (`hallazgo_id`, opcional)
-4. Acción (`EvaluacionAccionExterna.correlation_id`)
-5. Eventos (`EvaluacionAccionEvento.correlation_id`)
-6. Resultado / referencia externa PIIAX
+Cadena: organización → expediente → hallazgo → oportunidad → acción → eventos → resultado.
 
 ## Eventos empresariales
 
-Tabla `evaluaciones_accion_eventos` — tipos como:
+Tabla `evaluaciones_accion_eventos` — sin logs técnicos completos de proveedores.
 
-- `CREADA`, `SOLICITADA`, `APROBADA`, `RECHAZADA`
-- `HANDOFF_PIIAX`, `RESULTADO_RECIBIDO`, `ERROR`
+## API
 
-**No** se almacenan logs técnicos completos de PIIAX en EIAAX.
+`GET /api/evaluaciones/{id}/trazabilidad` incluye `acciones_externas` y referencias.
 
-## API trazabilidad expediente
-
-`GET /api/evaluaciones/{id}/trazabilidad` incluye:
-
-- Historial de estados del expediente
-- Acciones externas con `correlation_id` y resumen
-- Cadena legible para auditoría empresarial
-
-PIIAX mantendrá trazabilidad técnica detallada en su dominio.
+PIIAX conservará trazabilidad técnica detallada en su dominio.

@@ -1,4 +1,4 @@
-"""Clasificación de intención del agente EIAAX — Bloque Producto 2."""
+"""Clasificación de intención del agente EIAAX — Bloque Producto 2 (A–H)."""
 
 from __future__ import annotations
 
@@ -10,12 +10,14 @@ INTENCION_DESCRIPCIONES: dict[str, str] = {
     "B": "Necesita información adicional del usuario o de la entidad.",
     "C": "Requiere análisis asistido por IA.",
     "D": "Requiere consultar una fuente externa (capacidad de lectura).",
-    "E": "Requiere ejecutar una acción externa (capacidad técnica vía PIIAX).",
+    "E": "Requiere ejecutar una acción externa (capacidad técnica).",
     "F": "Requiere aprobación humana antes de continuar.",
+    "G": "Puede convertirse en oportunidad de mejora o valor.",
+    "H": "Puede convertirse en tarea o seguimiento operativo.",
 }
 
 _EXTERNAL_KEYWORDS = re.compile(
-    r"\b(fuente|externo|sistema|api|base de datos|sincroniz|integraci[oó]n|erp|consultar datos)\b",
+    r"\b(fuente|externo|sistema|api|base de datos|sincroniz|integraci[oó]n|erp|consultar datos|validar)\b",
     re.I,
 )
 _EXECUTE_KEYWORDS = re.compile(
@@ -28,6 +30,14 @@ _APPROVAL_KEYWORDS = re.compile(
 )
 _INFO_MISSING_KEYWORDS = re.compile(
     r"\b(falta|pendiente|qué información|información adicional|incompleto)\b",
+    re.I,
+)
+_OPPORTUNITY_KEYWORDS = re.compile(
+    r"\b(oportunidad|mejora|valor|beneficio|optimiz|ahorro|ingreso)\b",
+    re.I,
+)
+_TASK_KEYWORDS = re.compile(
+    r"\b(tarea|seguimiento|asignar|escalar|recordatorio|plazo|responsable)\b",
     re.I,
 )
 
@@ -44,8 +54,16 @@ def classify_intent(
     texto = (mensaje or "").strip()
     accion = (accion_sugerida or "").strip()
 
-    if accion in ("informacion_faltante",) or _INFO_MISSING_KEYWORDS.search(texto) or info_pendiente_count > 0 and porcentaje_informacion < 60:
+    if accion in ("informacion_faltante",) or _INFO_MISSING_KEYWORDS.search(texto) or (
+        info_pendiente_count > 0 and porcentaje_informacion < 60
+    ):
         return _result("B", capacidad_sugerida=None, requiere_aprobacion=False)
+
+    if accion in ("identificar_oportunidades", "crear_oportunidad") or _OPPORTUNITY_KEYWORDS.search(texto):
+        return _result("G", capacidad_sugerida=None, requiere_aprobacion=False)
+
+    if accion in ("asignar_tarea", "seguimiento") or _TASK_KEYWORDS.search(texto):
+        return _result("H", capacidad_sugerida=None, requiere_aprobacion=False)
 
     if _APPROVAL_KEYWORDS.search(texto) or accion in ("ejecutar_externo",):
         return _result("F", capacidad_sugerida="ejecutar_proceso", requiere_aprobacion=True)
@@ -57,7 +75,10 @@ def classify_intent(
         cap = "consultar_datos"
         return _result("D", capacidad_sugerida=cap, requiere_aprobacion=False)
 
-    if accion in ("profundizar_hallazgo", "buscar_causas", "cuantificar_impacto", "identificar_oportunidades", "siguiente_analisis", "explicar_indicador"):
+    if accion in (
+        "profundizar_hallazgo", "buscar_causas", "cuantificar_impacto",
+        "siguiente_analisis", "explicar_indicador",
+    ):
         if tiene_proveedor_llm:
             return _result("C", capacidad_sugerida=None, requiere_aprobacion=False)
         return _result("A", capacidad_sugerida=None, requiere_aprobacion=False)

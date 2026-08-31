@@ -22,6 +22,7 @@ from app.evaluacion_models import (
     EvaluacionIndicador,
 )
 from app.services import evaluacion_service as exp_svc
+from app.services.evaluacion_proveedor_externo_service import estado_capacidad_es
 from app.services.piiax_bridge_service import (
     CAPACIDAD_LABELS,
     TIPO_ACCION_LABELS,
@@ -63,6 +64,8 @@ def _log_evento(
 
 def _accion_dict(db: Session, a: EvaluacionAccionExterna, org_id: str) -> dict[str, Any]:
     org_cfg = _org_piiax_config(db, org_id)
+    piiax = get_piiax_status(db, org_id)
+    estado_es = estado_capacidad_es(a.estado, piiax.get("disponible", False))
     return {
         "id": a.id,
         "expediente_id": a.expediente_id,
@@ -74,6 +77,8 @@ def _accion_dict(db: Session, a: EvaluacionAccionExterna, org_id: str) -> dict[s
         "titulo": a.titulo,
         "descripcion": a.descripcion,
         "estado": a.estado,
+        "estado_es": estado_es,
+        "proveedor_codigo": a.proveedor_codigo,
         "requiere_aprobacion": a.requiere_aprobacion,
         "aprobado_por": a.aprobado_por,
         "aprobado_at": a.aprobado_at.isoformat() if a.aprobado_at else None,
@@ -208,6 +213,8 @@ def solicitar_accion(
     piiax = get_piiax_status(db, organization_id)
     params = json.loads(accion.parametros_json) if accion.parametros_json else None
     handoff = solicitar_ejecucion_piiax(
+        db=db,
+        organization_id=organization_id,
         capacidad=accion.capacidad,
         tipo_accion=accion.tipo_accion,
         correlation_id=accion.correlation_id,
@@ -215,6 +222,7 @@ def solicitar_accion(
         piiax_disponible=piiax["disponible"],
     )
     accion.estado = handoff["estado"]
+    accion.proveedor_codigo = handoff.get("proveedor")
     accion.referencia_externa = handoff.get("referencia_externa")
     if not handoff["enviado"]:
         accion.error_mensaje = handoff["mensaje"]

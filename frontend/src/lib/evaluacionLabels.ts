@@ -42,6 +42,19 @@ export const ESTADO_ACCION: Record<string, string> = {
   CANCELADA: "Cancelada",
 };
 
+/** Estados de capacidad externa (contrato UX español) */
+export const ESTADO_CAPACIDAD_ES: Record<string, string> = {
+  "NO DISPONIBLE": "No disponible",
+  DISPONIBLE: "Disponible",
+  PENDIENTE: "Pendiente",
+  "EN COLA": "En cola",
+  EJECUTANDO: "Ejecutando",
+  "ESPERANDO APROBACION": "Esperando aprobación",
+  COMPLETADO: "Completado",
+  FALLIDO: "Fallido",
+  CANCELADO: "Cancelado",
+};
+
 export const TIPO_ACCION: Record<string, string> = {
   LECTURA: "Lectura",
   ANALISIS: "Análisis",
@@ -56,8 +69,15 @@ export const INTENCION_AGENTE: Record<string, string> = {
   D: "Requiere consulta externa",
   E: "Requiere acción externa",
   F: "Requiere aprobación humana",
+  G: "Puede convertirse en oportunidad",
+  H: "Puede convertirse en tarea/seguimiento",
 };
 
 export function label(map: Record<string, string>, code: string): string {
   return map[code] ?? code.replace(/_/g, " ").toLowerCase();
+}
+
+export function labelEstadoCapacidad(estadoEs?: string, estadoInterno?: string): string {
+  if (estadoEs) return ESTADO_CAPACIDAD_ES[estadoEs] ?? estadoEs;
+  return label(ESTADO_ACCION, estadoInterno ?? "");
 }

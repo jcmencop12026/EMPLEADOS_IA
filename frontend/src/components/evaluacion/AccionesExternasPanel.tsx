@@ -9,7 +9,7 @@ import {
   type AccionExterna,
   type CapacidadExterna,
 } from "../../api";
-import { label, ESTADO_ACCION, TIPO_ACCION } from "../../lib/evaluacionLabels";
+import { label, labelEstadoCapacidad, TIPO_ACCION } from "../../lib/evaluacionLabels";
 import { usePermissions } from "../../hooks/usePermissions";
 
 type Props = {
@@ -114,7 +114,7 @@ export function AccionesExternasPanel({ expedienteId, hallazgoId, hallazgoTitulo
         <article key={a.id} className="accion-externa-card">
           <header>
             <strong>{a.titulo}</strong>
-            <span className="badge">{label(ESTADO_ACCION, a.estado)}</span>
+            <span className="badge">{labelEstadoCapacidad(a.estado_es, a.estado)}</span>
           </header>
           <p className="muted small">{a.capacidad_etiqueta ?? a.capacidad} · {a.tipo_accion_etiqueta ?? a.tipo_accion}</p>
           {a.resultado_resumen && <p>{a.resultado_resumen}</p>}

@@ -5,7 +5,7 @@
 | Etapa | Commit |
 |-------|--------|
 | Base certificada BP1 | `7e9abba11f4c4f216142c6c70d662229ffc585bb` |
-| Final BP2 | `506739f` |
+| Final BP2 | `41c1cc6` |
 
 ## Migración
 

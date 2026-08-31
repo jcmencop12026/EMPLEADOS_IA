@@ -1746,6 +1746,47 @@ tr.row-selected {
   margin-bottom: 10px;
 }
 
+.siguiente-accion-panel {
+  margin-bottom: 16px;
+  border-left: 3px solid #2563eb;
+}
+
+.siguiente-accion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.siguiente-accion-principal {
+  padding: 8px 0;
+}
+
+.siguiente-accion-principal.disabled {
+  opacity: 0.65;
+}
+
+.siguiente-accion-alternativas {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.estado-capacidad-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 6px;
+  background: #fef3c7;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.intencion-badge.tiny {
+  font-size: 10px;
+  padding: 1px 4px;
+  margin-right: 4px;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --eiaax-surface: #0f172a;

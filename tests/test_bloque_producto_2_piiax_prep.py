@@ -175,7 +175,84 @@ def test_bp2_preguntar_intencion(client: TestClient, auth_headers):
         json={"mensaje": "¿Qué información falta?", "accion": "informacion_faltante"},
     )
     assert res.status_code == 200
-    assert res.json()["intencion"]["intencion"] in ("A", "B", "C", "D", "E", "F")
+    assert res.json()["intencion"]["intencion"] in ("A", "B", "C", "D", "E", "F", "G", "H")
+
+
+def test_bp2_intencion_g_oportunidad():
+    r = classify_intent(
+        "identificar oportunidad de mejora",
+        accion_sugerida="identificar_oportunidades",
+        porcentaje_informacion=70,
+        tiene_proveedor_llm=True,
+        piiax_disponible=False,
+        info_pendiente_count=0,
+    )
+    assert r["intencion"] == "G"
+
+
+def test_bp2_intencion_h_tarea():
+    r = classify_intent(
+        "asignar tarea de seguimiento al responsable",
+        accion_sugerida=None,
+        porcentaje_informacion=70,
+        tiene_proveedor_llm=True,
+        piiax_disponible=False,
+        info_pendiente_count=0,
+    )
+    assert r["intencion"] == "H"
+
+
+def test_bp2_motor_siguiente_accion(client: TestClient, auth_headers):
+    exp = _create_exp(client, auth_headers)
+    res = client.get(f"/api/evaluaciones/{exp['id']}/siguiente-accion", headers=auth_headers)
+    assert res.status_code == 200
+    body = res.json()
+    assert "principal" in body
+    assert body["principal"]["codigo"] in (
+        "solicitar_informacion", "ejecutar_evaluacion", "continuar_evaluacion", "sin_accion",
+    )
+
+
+def test_bp2_proveedores_externos(client: TestClient, auth_headers):
+    res = client.get("/api/evaluaciones/proveedores-externos", headers=auth_headers)
+    assert res.status_code == 200
+    provs = res.json()["proveedores"]
+    assert any(p["codigo"] == "PIIAX" for p in provs)
+    piiax = next(p for p in provs if p["codigo"] == "PIIAX")
+    assert piiax["estado_es"] == "NO DISPONIBLE"
+
+
+def test_bp2_estado_es_en_accion(client: TestClient, auth_headers):
+    exp = _create_exp(client, auth_headers)
+    crear = client.post(
+        f"/api/evaluaciones/{exp['id']}/acciones",
+        headers=auth_headers,
+        json={
+            "capacidad": "consultar_datos",
+            "tipo_accion": "LECTURA",
+            "titulo": "Estado ES test",
+            "solicitar": True,
+        },
+    )
+    assert crear.status_code == 201
+    assert "estado_es" in crear.json()
+    assert crear.json()["estado_es"] in ("NO DISPONIBLE", "EN COLA", "ESPERANDO APROBACION", "PENDIENTE")
+
+
+def test_bp2_eiaax_sin_piiax_recorrido_interno(client: TestClient, auth_headers):
+    """EIAAX funciona sin PIIAX: evaluación → hallazgo → oportunidad."""
+    exp = _create_exp(client, auth_headers)
+    ev = client.post(f"/api/evaluaciones/{exp['id']}/evaluar", headers=auth_headers)
+    assert ev.status_code == 200
+    hallazgos = ev.json()["expediente"]["hallazgos"]
+    assert len(hallazgos) >= 1
+    opp = client.post(
+        f"/api/evaluaciones/{exp['id']}/oportunidades/crear",
+        headers=auth_headers,
+        json={"hallazgo_id": hallazgos[0]["id"]},
+    )
+    assert opp.status_code == 201
+    assert opp.json().get("opportunity_id")
 
 
 def test_bp2_trazabilidad_acciones(client: TestClient, auth_headers):

@@ -1,4 +1,4 @@
-"""Puente de preparación EIAAX ↔ PIIAX — sin implementar PIIAX ni conectores."""
+"""Puente de preparación EIAAX ↔ PIIAX — delega en adaptador desacoplado."""
 
 from __future__ import annotations
 
@@ -7,8 +7,12 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.models import Organization
+from app.services.evaluacion_proveedor_externo_service import (
+    PiiaxAdapter,
+    listar_proveedores,
+    solicitar_capacidad_externa,
+)
 
 CAPACIDAD_LABELS: dict[str, str] = {
     "consultar_datos": "Consultar datos",
@@ -56,21 +60,24 @@ def _org_piiax_config(db: Session, organization_id: str) -> dict[str, Any]:
 
 
 def get_piiax_status(db: Session, organization_id: str) -> dict[str, Any]:
-    """Estado de disponibilidad PIIAX — sin llamar endpoints concretos."""
+    """Estado PIIAX vía adaptador — EIAAX funciona igual si no está disponible."""
+    adapter = PiiaxAdapter()
+    disponible = adapter.disponible(db, organization_id)
     org_cfg = _org_piiax_config(db, organization_id)
-    enabled_env = getattr(settings, "piiax_bridge_enabled", False)
-    enabled_org = bool(org_cfg.get("enabled"))
-    disponible = enabled_env or enabled_org
+    proveedores = listar_proveedores(db, organization_id)
+    piiax_prov = next((p for p in proveedores if p["codigo"] == "PIIAX"), None)
 
     return {
         "disponible": disponible,
+        "estado_es": piiax_prov["estado_es"] if piiax_prov else ("DISPONIBLE" if disponible else "NO DISPONIBLE"),
         "mensaje": (
             "PIIAX conectado y listo para resolver capacidades técnicas."
             if disponible
-            else "PIIAX no está conectado. Las solicitudes quedarán en estado controlado hasta la integración."
+            else "PIIAX no está conectado. EIAAX continúa operando con capacidades propias."
         ),
         "detalle_tecnico_url": org_cfg.get("detalle_url") if disponible else None,
         "modo": "conectado" if disponible else "no_conectado",
+        "proveedores": proveedores,
     }
 
 
@@ -89,30 +96,27 @@ def list_capacidades_catalog() -> list[dict[str, str]]:
 
 def solicitar_ejecucion_piiax(
     *,
+    db: Session,
+    organization_id: str,
     capacidad: str,
     tipo_accion: str,
     correlation_id: str,
     parametros: dict[str, Any] | None,
-    piiax_disponible: bool,
+    piiax_disponible: bool | None = None,
 ) -> dict[str, Any]:
-    """Simula handoff a PIIAX — no ejecuta conectores reales."""
-    if not piiax_disponible:
-        return {
-            "enviado": False,
-            "estado": "PIIAX_NO_DISPONIBLE",
-            "referencia_externa": None,
-            "mensaje": "PIIAX no conectado. La solicitud queda registrada en EIAAX para ejecución posterior.",
-        }
-    return {
-        "enviado": True,
-        "estado": "SOLICITADA",
-        "referencia_externa": f"piiax-prep-{correlation_id[:8]}",
-        "mensaje": "Solicitud enviada a PIIAX para resolución técnica.",
-    }
+    """Delega en capa de proveedores — no simula ejecución exitosa sin PIIAX real."""
+    return solicitar_capacidad_externa(
+        db,
+        organization_id,
+        capacidad=capacidad,
+        tipo_accion=tipo_accion,
+        correlation_id=correlation_id,
+        parametros=parametros,
+        proveedor_preferido="PIIAX",
+    )
 
 
 def get_detalle_tecnico_link(referencia_externa: str | None, org_cfg: dict[str, Any]) -> str | None:
-    """URL desacoplada para ver detalle técnico en PIIAX — plantilla configurable."""
     if not referencia_externa:
         return None
     base = org_cfg.get("detalle_url")
