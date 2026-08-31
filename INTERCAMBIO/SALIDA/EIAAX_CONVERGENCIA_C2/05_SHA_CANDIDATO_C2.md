@@ -11,7 +11,7 @@
 | Referencia | SHA |
 |---|---|
 | **SHA inicial C2** (C1-R1 certificado) | `3226ba5ee9b998547c7026c98b69972dfacd2d3d` |
-| **SHA candidato C2** (único) | `8fbcfa08847e6897e2508ff1969f140fd6b713e4` |
+| **SHA candidato C2** (único) | `afce8c34229addb2fdd0fce5b8c99b800e4f29d7` |
 | V1 certificado (intacto) | `e8cb853a2c447fd5e136a0907e44d68ce2c8cf81` |
 | V2 certificado (intacto) | `dc1e6cda8d3de6695d9a052a2a13afdb5f431077` |
 | Tag Fase 2 (intacto) | `fase2-candidato-final-certificado` → `dc1e6cd` |
@@ -22,7 +22,7 @@
 
 ```
 3226ba5e — fix(c1-r1): fallback determinístico ruta inicial /     [base certificada]
-→ 8fbcfa08 — feat(c2): gobierno multiempresa CC + Mi Trabajo       [candidato]
+→ afce8c34 — feat(c2): gobierno multiempresa CC + Mi Trabajo       [candidato]
 ```
 
 ---
