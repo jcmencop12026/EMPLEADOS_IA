@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, fetchAuditLogs, type AuditLog } from "../api";
 import { EmptyState, ErrorState, LoadingState } from "../components/AsyncState";
+import { formatAuditAction } from "../lib/labels";
 
 export function AuditPage() {
   const [rows, setRows] = useState<AuditLog[]>([]);
@@ -45,7 +46,7 @@ export function AuditPage() {
               {rows.map((r) => (
                 <tr key={r.id}>
                   <td className="mono">{new Date(r.created_at).toLocaleString()}</td>
-                  <td>{r.action}</td>
+                  <td>{formatAuditAction(r.action)}</td>
                   <td className="cell-truncate" title={r.detail || ""}>{r.detail ?? "—"}</td>
                 </tr>
               ))}

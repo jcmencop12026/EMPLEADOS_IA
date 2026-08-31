@@ -268,7 +268,7 @@ def test_deny_blocks_orchestrator_execution(client, token):
         orch = client.post(
             "/api/assistant/ask",
             headers=auth_header(token),
-            json={"message": "deny orch audit", "context": {"tool": "docint", "documents": []}},
+            json={"message": "deny orch audit", "context": {"tool": "docint", "documents": [], "employee_id": emp_id}},
         ).json()
         assert orch["status"] == "FAILED"
         assert "denegada" in (orch.get("error") or "").lower()
@@ -294,12 +294,14 @@ def test_finops_limit_reached_is_published_from_real_execution(client, token):
         client.patch(f"/api/agent-factory/employees/{emp['id']}", headers=auth_header(token), json={
             "capability_ids": [cap["id"]], "tools": [{"tool_id": tool["id"], "permission": "ALLOW"}],
             "limits": {"daily_cost_limit": 0},
+            "instructions": {"role_text": "Analista FinOps", "objective_text": "Validar límite de costo"},
+            "model_policy": {"preferred_provider": "rule-engine", "preferred_model": "docint-rules-v1"},
         })
         for step in ("test", "certify", "publish", "activate"):
             client.post(f"/api/agent-factory/employees/{emp['id']}/{step}", headers=auth_header(token))
         _pause_docint_active(client, token, keep_ids={emp["id"]})
         result = client.post("/api/assistant/ask", headers=auth_header(token), json={
-            "message": "FinOps limit", "context": {"tool": "docint", "documents": []},
+            "message": "FinOps limit", "context": {"tool": "docint", "documents": [], "employee_id": emp["id"]},
         }).json()
         assert result["status"] == "FAILED"
         db = TestingSessionLocal()

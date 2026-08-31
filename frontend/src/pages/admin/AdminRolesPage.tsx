@@ -107,7 +107,7 @@ export function AdminRolesPage() {
     <div className="ops-page">
       <header className="page-header">
         <h1>Roles y permisos</h1>
-        <p className="muted">Matriz de permisos por rol. Los roles personalizados del tenant son editables.</p>
+        <p className="muted">Matriz de permisos por rol. Los roles personalizados de la organización son editables.</p>
       </header>
 
       <div className="ops-actions">

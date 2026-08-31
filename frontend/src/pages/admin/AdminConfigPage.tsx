@@ -42,7 +42,7 @@ export function AdminConfigPage() {
     <div className="ops-page">
       <header className="page-header">
         <h1>Configuración</h1>
-        <p className="muted">Parámetros empresariales del tenant</p>
+        <p className="muted">Parámetros empresariales de la organización</p>
       </header>
       <form className="panel" onSubmit={save}>
         <label>Idioma por defecto

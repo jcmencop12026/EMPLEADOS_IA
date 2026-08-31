@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pytest
 from jose import jwt
@@ -249,3 +250,48 @@ def test_security_config_allows_sqlite_default_jwt():
         jwt_secret="change-me-in-env-local-dev-only",
         bootstrap_admin_password="Admin2026*",
     )
+
+
+def test_security_config_rejects_default_bootstrap_on_postgresql(monkeypatch):
+    from app.security_config import DEFAULT_BOOTSTRAP_ADMIN_PASSWORD, validate_security_settings
+
+    monkeypatch.delenv("ALLOW_INSECURE_DEV_DEFAULTS", raising=False)
+    with pytest.raises(RuntimeError, match="BOOTSTRAP_ADMIN_PASSWORD"):
+        validate_security_settings(
+            database_url="postgresql+psycopg2://u:p@localhost/db",
+            jwt_secret="a-secure-jwt-secret-with-enough-length-for-prod",
+            bootstrap_admin_password=DEFAULT_BOOTSTRAP_ADMIN_PASSWORD,
+        )
+
+
+def test_security_config_rejects_short_jwt_on_postgresql(monkeypatch):
+    from app.security_config import validate_security_settings
+
+    monkeypatch.delenv("ALLOW_INSECURE_DEV_DEFAULTS", raising=False)
+    with pytest.raises(RuntimeError, match="JWT_SECRET demasiado corto"):
+        validate_security_settings(
+            database_url="postgresql+psycopg2://u:p@localhost/db",
+            jwt_secret="short-secret",
+            bootstrap_admin_password="secure-bootstrap-password-2026",
+        )
+
+
+def test_security_config_rejects_wildcard_cors_in_production(monkeypatch):
+    from app.security_config import validate_security_settings
+
+    monkeypatch.delenv("ALLOW_INSECURE_DEV_DEFAULTS", raising=False)
+    with pytest.raises(RuntimeError, match="CORS_ORIGINS"):
+        validate_security_settings(
+            database_url="postgresql+psycopg2://u:p@localhost/db",
+            jwt_secret="a-secure-jwt-secret-with-enough-length-for-prod",
+            bootstrap_admin_password="secure-bootstrap-password-2026",
+            app_env="prod",
+            cors_origins="*",
+        )
+
+
+def test_docker_compose_requires_bootstrap_password():
+    compose_path = Path(__file__).resolve().parents[1] / "docker-compose.yml"
+    content = compose_path.read_text(encoding="utf-8")
+    assert "BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:?" in content
+    assert "Admin2026*" not in content
