@@ -2,7 +2,7 @@
 
 **Estado:** FINALIZADO  
 **Base BP1:** `7e9abba11f4c4f216142c6c70d662229ffc585bb`  
-**SHA final BP2:** `e392dde`  
+**SHA final BP2:** `506739f`  
 **Rama:** `cursor/producto-bloque-2-piiax-prep-85e4`
 
 ---
