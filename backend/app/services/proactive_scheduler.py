@@ -79,7 +79,7 @@ def _tick() -> None:
                         dominio=item["dominio"],
                         evento=item["evento"],
                         payload=item["payload"],
-                        origen="proactive_scheduler",
+                        origen="proactive_scheduler_sintetico",
                     )
                     db.commit()
                     if not result.get("deduplicated"):
@@ -145,7 +145,7 @@ def run_proactive_tick_once(db=None) -> list[dict]:
                     dominio=item["dominio"],
                     evento=item["evento"],
                     payload=item["payload"],
-                    origen="proactive_scheduler_test",
+                    origen="proactive_scheduler_sintetico",
                 )
                 results.append(result)
         db.commit()
