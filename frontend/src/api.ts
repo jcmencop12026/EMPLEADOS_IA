@@ -3622,12 +3622,22 @@ export type SupportCase = {
   asunto: string;
   descripcion?: string | null;
   prioridad: string;
+  prioridad_sugerida?: string | null;
   impacto: string;
   urgencia: string;
   estado: string;
   solicitante_id: string;
   responsable_id?: string | null;
+  servicio_componente?: string | null;
+  es_incidente_mayor?: boolean;
+  sintoma?: string | null;
+  hipotesis?: string | null;
+  causa_probable?: string | null;
+  causa_validada?: string | null;
+  validacion_solicitante?: string | null;
   sla_estado?: string | null;
+  primera_respuesta_limite?: string | null;
+  resolucion_limite?: string | null;
   correlation_id?: string | null;
   modulo_relacionado?: string | null;
   entidad_relacionada?: string | null;
@@ -3636,11 +3646,22 @@ export type SupportCase = {
   updated_at?: string | null;
 };
 
+export type SupportEvidence = {
+  id: string;
+  tipo: string;
+  referencia: string;
+  descripcion?: string | null;
+  created_at?: string | null;
+};
+
 export type SupportCaseDetail = SupportCase & {
   responsable_nombre?: string | null;
   responsable_email?: string | null;
   historial: Array<{ id: string; accion: string; detalle?: Record<string, unknown> | null; created_at?: string | null }>;
   comentarios: Array<{ id: string; usuario_id: string; cuerpo: string; es_interno: boolean; created_at?: string | null }>;
+  evidencias?: SupportEvidence[];
+  problema?: Record<string, unknown> | null;
+  revision_posterior?: Record<string, unknown> | null;
 };
 
 export type SupportAssignee = {
@@ -3660,11 +3681,13 @@ export async function fetchSupportCases(params?: {
   estado?: string;
   q?: string;
   solo_mios?: boolean;
+  sla_estado?: string;
 }): Promise<SupportCase[]> {
   const qs = new URLSearchParams();
   if (params?.estado) qs.set("estado", params.estado);
   if (params?.q) qs.set("q", params.q);
   if (params?.solo_mios) qs.set("solo_mios", "true");
+  if (params?.sla_estado) qs.set("sla_estado", params.sla_estado);
   const query = qs.toString();
   return api(`/api/soporte/casos${query ? `?${query}` : ""}`);
 }
@@ -3697,8 +3720,45 @@ export async function addSupportComment(id: string, data: { cuerpo: string; es_i
   return api(`/api/soporte/casos/${id}/comentarios`, { method: "POST", body: JSON.stringify(data) });
 }
 
-export async function fetchSupportTipos(): Promise<{ tipos: string[]; estados: string[]; prioridades: string[] }> {
+export async function fetchSupportTipos(): Promise<{
+  tipos: string[];
+  estados: string[];
+  prioridades: string[];
+  estado_etiquetas?: Record<string, string>;
+}> {
   return api("/api/soporte/tipos");
+}
+
+export async function suggestSupportPriority(impacto: string, urgencia: string): Promise<{ prioridad_sugerida: string }> {
+  return api("/api/soporte/prioridad/sugerir", { method: "POST", body: JSON.stringify({ impacto, urgencia }) });
+}
+
+export async function fetchSupportAutoservicio(consulta: string): Promise<Record<string, unknown>> {
+  return api("/api/soporte/autoservicio", { method: "POST", body: JSON.stringify({ consulta }) });
+}
+
+export async function fetchSupportProblems(): Promise<Array<Record<string, unknown>>> {
+  return api("/api/soporte/problemas");
+}
+
+export async function escalateSupportCase(id: string, data: { motivo: string; nota?: string }): Promise<SupportCase> {
+  return api(`/api/soporte/casos/${id}/escalar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateSupportCaseDiagnosis(id: string, data: Record<string, string>): Promise<SupportCase> {
+  return api(`/api/soporte/casos/${id}/diagnostico`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function addSupportEvidence(id: string, data: { tipo: string; referencia: string; descripcion?: string }): Promise<unknown> {
+  return api(`/api/soporte/casos/${id}/evidencias`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function validateSupportResolution(id: string, data: { aceptada: boolean; comentario?: string }): Promise<SupportCase> {
+  return api(`/api/soporte/casos/${id}/validar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function proposeSupportKnowledge(data: { titulo: string; contenido: string; case_id?: string }): Promise<unknown> {
+  return api("/api/soporte/conocimiento/proponer", { method: "POST", body: JSON.stringify(data) });
 }
 
 // —— Comunicaciones MB-11 ——

@@ -1468,6 +1468,30 @@ def bootstrap_default_comm_assets(db: Session, org_id: str, user: User) -> None:
             "asunto": "Nueva medición REAL: {{caso}}",
             "contenido": "Se registró medición REAL para {{caso}} el {{fecha}}.",
         },
+        {
+            "codigo": "SOPORTE_CASO_ASIGNADO",
+            "nombre": "Caso de soporte asignado",
+            "tipo_comunicacion": "OPERATIVA",
+            "canal_tipo": "INTERNO_PLATAFORMA",
+            "asunto": "Caso asignado: {{asunto}}",
+            "contenido": "Se le asignó un caso de soporte. Revise la Mesa de Ayuda.",
+        },
+        {
+            "codigo": "SOPORTE_SLA_ALERTA",
+            "nombre": "Alerta SLA de soporte",
+            "tipo_comunicacion": "ALERTA",
+            "canal_tipo": "INTERNO_PLATAFORMA",
+            "asunto": "SLA: {{asunto}}",
+            "contenido": "Un caso de soporte requiere atención por SLA. Estado: {{estado}}.",
+        },
+        {
+            "codigo": "SOPORTE_CASO_RESUELTO",
+            "nombre": "Caso de soporte resuelto",
+            "tipo_comunicacion": "INFORMATIVA",
+            "canal_tipo": "INTERNO_PLATAFORMA",
+            "asunto": "Caso resuelto: {{asunto}}",
+            "contenido": "Su caso fue resuelto. Valide la solución en la Mesa de Ayuda.",
+        },
     ]
     for spec in defaults:
         if db.query(CommTemplate).filter(CommTemplate.organization_id == org_id, CommTemplate.codigo == spec["codigo"]).first():
