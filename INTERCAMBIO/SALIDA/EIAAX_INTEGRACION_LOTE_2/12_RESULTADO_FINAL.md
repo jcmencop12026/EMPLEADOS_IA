@@ -15,7 +15,7 @@ Integración selectiva de cinco ramas paralelas desde BP1 certificado en la rama
 | Concepto | SHA |
 |----------|-----|
 | Base BP1 | `7e9abba11f4c4f216142c6c70d662229ffc585bb` |
-| **Candidato integrado** | `e34c778790440b448e916ac1747b2a262ae762ed` |
+| **Candidato integrado** | `73e417b` (código `e34c778` + docs) |
 | BP2 | `ee57fab` |
 | Experiencia transversal | `7f2e3ce` |
 | Gobierno operacional | `21e2330` |
