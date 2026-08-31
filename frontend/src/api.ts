@@ -2743,6 +2743,126 @@ export async function simulateCommercialProposal(proposalId: string, data: Recor
   return api(`/api/comercial/propuestas/${proposalId}/simular`, { method: "POST", body: JSON.stringify(data) });
 }
 
+// --- Centro de Negocios EIAAX (1700) ---
+
+export type CentroNegociosDashboard = {
+  organization_id: string;
+  oportunidades_total: number;
+  propuestas_activas: number;
+  propuestas_por_estado: Record<string, number>;
+  negociaciones_abiertas: number;
+  contrataciones: number;
+  valores?: { valor_realizado?: number; valor_potencial?: number };
+  nota_potencial?: string;
+};
+
+export type CentroNegociosPipelineItem = {
+  id: string;
+  codigo: string;
+  titulo: string;
+  estado: string;
+  valor_atribuible?: number | null;
+  precio_final?: number | null;
+  opportunity_id?: string | null;
+  evaluacion_id?: string | null;
+  proximo_paso?: string | null;
+  version: number;
+};
+
+export async function fetchCentroNegociosDashboard(): Promise<CentroNegociosDashboard> {
+  return api("/api/centro-negocios/dashboard");
+}
+
+export async function fetchCentroNegociosPipeline(): Promise<CentroNegociosPipelineItem[]> {
+  return api("/api/centro-negocios/pipeline");
+}
+
+export async function createPropuestaDesdeExpediente(data: Record<string, unknown>) {
+  return api("/api/centro-negocios/propuestas/desde-expediente", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function transicionPropuestaNegocio(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/transicion`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function decidirPrecioNegocio(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/precio`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function registrarNegociacion(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/negociacion`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function convertirAImplementacion(proposalId: string) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/convertir-implementacion`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export type CentroNegociosDetalle = CentroNegociosPipelineItem & {
+  estado_label?: string;
+  currency?: string;
+  precio_final?: number | null;
+  documento_cliente?: Record<string, unknown> | null;
+  negocio: Record<string, unknown>;
+  aprobaciones?: Array<{ nivel: string; nivel_label?: string; estado: string }>;
+  versiones?: Array<{
+    id: string;
+    version_number: number;
+    estado_comercial: string;
+    estado_label?: string;
+    pdf_document_id?: string | null;
+    precio_presentado?: number | null;
+  }>;
+  negociaciones?: Array<{ id: string; interlocutor?: string; observaciones?: string; cambios_solicitados?: string }>;
+  fases_precio?: Array<{ fase: string; fase_label?: string; monto?: number | null; version_number?: number | null }>;
+  sync_log?: Array<{ id: string; direction: string; field_name: string }>;
+  nota_potencial?: string;
+  prospecto?: string | null;
+};
+
+export async function fetchCentroNegociosDetalle(proposalId: string): Promise<CentroNegociosDetalle> {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/detalle`);
+}
+
+export async function approveNegocioLevel(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/aprobaciones`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function generarPropuestaPdf(proposalId: string, versionNumber?: number) {
+  const q = versionNumber != null ? `?version_number=${versionNumber}` : "";
+  return api<{ document_id: string; filename: string; version_number: number }>(
+    `/api/centro-negocios/propuestas/${proposalId}/pdf${q}`,
+    { method: "POST", body: JSON.stringify({}) },
+  );
+}
+
+export async function downloadCentroNegociosDocumentPdf(documentId: string): Promise<Blob> {
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(`/api/centro-negocios/documentos/${documentId}/pdf`, { headers });
+  if (!res.ok) throw new ApiError(res.status, "No se pudo descargar el PDF");
+  return res.blob();
+}
+
+export function openCentroNegociosDocumentPdf(documentId: string): void {
+  downloadCentroNegociosDocumentPdf(documentId).then((blob) => {
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  });
+}
+
+export function fetchCentroNegociosDocumentPdfUrl(documentId: string): string {
+  return `/api/centro-negocios/documentos/${documentId}/pdf`;
+}
+
+export async function sincronizarNegocioOportunidad(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/sincronizar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function contratarPropuestaNegocio(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/contratar`, { method: "POST", body: JSON.stringify(data) });
+}
+
 // --- TCO y ecosistema de aliados (1320) ---
 
 export type TcoProveedorItem = {
