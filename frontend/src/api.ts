@@ -3820,3 +3820,153 @@ export async function cancelCommMessage(id: string): Promise<CommMessage> {
 export async function fetchCommCatalog() {
   return api<{ variables: string[]; canales: string[]; estados: string[] }>("/api/comunicaciones/catalogo/variables");
 }
+
+// --- Evaluación EIAAX (Bloque Producto 1) ---
+
+export type EvaluacionInfoItem = {
+  id: string;
+  campo: string;
+  etiqueta: string;
+  estado: string;
+  obligatorio: boolean;
+  explicacion: string | null;
+  por_que: string | null;
+  impacto_precision: string | null;
+  respuesta: string | null;
+  evidencia_ref: string | null;
+  orden: number;
+};
+
+export type EvaluacionHallazgo = {
+  id: string;
+  titulo: string;
+  descripcion: string | null;
+  tipo_contenido: string;
+  confianza: string;
+  explicacion_confianza: string | null;
+  evidencia: string | null;
+  origen: string | null;
+  impacto_resumen: string | null;
+  visible_entidad: boolean;
+  es_problema_original: boolean;
+  opportunity_id: string | null;
+  created_at: string | null;
+};
+
+export type EvaluacionExpedienteSummary = {
+  id: string;
+  codigo: string;
+  titulo: string;
+  entidad_nombre: string;
+  estado: string;
+  nivel: string;
+  porcentaje_informacion: number;
+  confianza_global: string;
+  valor_potencial: string | null;
+  area_proceso: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type EvaluacionExpedienteDetail = EvaluacionExpedienteSummary & {
+  entidad_ref: string | null;
+  necesidad: string | null;
+  objetivo: string | null;
+  diagnostic_id: string | null;
+  correlation_id: string | null;
+  notas_internas?: string | null;
+  informacion: EvaluacionInfoItem[];
+  hallazgos: EvaluacionHallazgo[];
+  oportunidades_vinculadas: string[];
+};
+
+export type EvaluacionListResponse = {
+  items: EvaluacionExpedienteSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export async function fetchEvaluaciones(params = ""): Promise<EvaluacionListResponse> {
+  return api(`/api/evaluaciones${params ? `?${params}` : ""}`);
+}
+
+export async function fetchEvaluacion(id: string): Promise<EvaluacionExpedienteDetail> {
+  return api(`/api/evaluaciones/${id}`);
+}
+
+export async function createEvaluacion(data: {
+  titulo: string;
+  entidad_nombre: string;
+  entidad_ref?: string;
+  necesidad?: string;
+  objetivo?: string;
+  area_proceso?: string;
+  nivel?: string;
+}): Promise<EvaluacionExpedienteDetail> {
+  return api("/api/evaluaciones", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateEvaluacion(id: string, data: Record<string, unknown>): Promise<EvaluacionExpedienteDetail> {
+  return api(`/api/evaluaciones/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function updateEvaluacionInformacion(
+  expedienteId: string,
+  itemId: string,
+  data: { respuesta?: string; evidencia_ref?: string; estado?: string },
+): Promise<EvaluacionExpedienteDetail> {
+  return api(`/api/evaluaciones/${expedienteId}/informacion/${itemId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function evaluarExpediente(id: string): Promise<{ expediente: EvaluacionExpedienteDetail; hallazgos_creados: number }> {
+  return api(`/api/evaluaciones/${id}/evaluar`, { method: "POST" });
+}
+
+export async function setHallazgoVisibilidad(
+  expedienteId: string,
+  objetoId: string,
+  visible: boolean,
+): Promise<EvaluacionHallazgo> {
+  return api(`/api/evaluaciones/${expedienteId}/visibilidad`, {
+    method: "POST",
+    body: JSON.stringify({ objeto_tipo: "hallazgo", objeto_id: objetoId, visible_entidad: visible }),
+  });
+}
+
+export async function fetchVistaEntidad(expedienteId: string): Promise<Record<string, unknown>> {
+  return api(`/api/evaluaciones/${expedienteId}/vista-entidad`);
+}
+
+export async function fetchEvaluacionTrazabilidad(expedienteId: string): Promise<Record<string, unknown>> {
+  return api(`/api/evaluaciones/${expedienteId}/trazabilidad`);
+}
+
+export async function fetchEvaluacionImpacto(expedienteId: string): Promise<Record<string, unknown>> {
+  return api(`/api/evaluaciones/${expedienteId}/impacto`);
+}
+
+export async function crearOportunidadDesdeHallazgo(
+  expedienteId: string,
+  hallazgoId: string,
+  dominio = "operaciones",
+): Promise<Record<string, unknown>> {
+  return api(`/api/evaluaciones/${expedienteId}/oportunidades/crear`, {
+    method: "POST",
+    body: JSON.stringify({ hallazgo_id: hallazgoId, dominio }),
+  });
+}
+
+export async function preguntarEiaax(
+  expedienteId: string,
+  mensaje: string,
+  accion?: string,
+): Promise<Record<string, unknown>> {
+  return api(`/api/evaluaciones/${expedienteId}/preguntar`, {
+    method: "POST",
+    body: JSON.stringify({ mensaje, accion }),
+  });
+}

@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, setToken, verifyMfaLogin, discoverLogin, beginPublicOidc, completeOidcCallback, type UserMe } from "../api";
 import { saveUser } from "../auth/session";
+import { EIAAX_BRAND } from "../lib/brand";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -157,8 +158,9 @@ export function LoginPage() {
   return (
     <div className="login-wrap">
       <form className="login-card" onSubmit={onSubmit}>
-        <h1>Sistema empresarial de IA</h1>
-        <p className="muted">Inicio de sesión · EMPLEADOS IA</p>
+        <h1>{EIAAX_BRAND.name}</h1>
+        <p className="muted">{EIAAX_BRAND.descriptor}</p>
+        <p className="muted small">Inicio de sesión · {EIAAX_BRAND.productLine}</p>
         <label>
           Usuario
           <input

@@ -47,6 +47,7 @@ export const MENU: NavSection[] = [
       { to: "/tco", label: "TCO y aliados" },
       { to: "/implementacion", label: "Implementación" },
       { to: "/comercial/segmentacion", label: "Segmentación y planes" },
+      { to: "/evaluaciones", label: "Evaluaciones EIAAX" },
       { to: "/oportunidades", label: "Centro de oportunidades" },
       { to: "/senales", label: "Señales y fuentes" },
       { to: "/diagnosticos", label: "Diagnósticos" },

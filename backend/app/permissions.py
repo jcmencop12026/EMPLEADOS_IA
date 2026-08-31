@@ -187,6 +187,14 @@ DIAGNOSTICOS_PERMISSIONS = {
     "diagnosticos.manage",
 }
 
+EVALUACION_PERMISSIONS = {
+    "evaluacion.view",
+    "evaluacion.manage",
+    "evaluacion.evaluate",
+    "evaluacion.visibility",
+    "evaluacion.vista_entidad",
+}
+
 INTELIGENCIA_EXTERNA_PERMISSIONS = {
     "inteligencia_externa.view",
     "inteligencia_externa.manage",
@@ -420,6 +428,11 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "diagnosticos.generate": ("Diagnósticos", "Generar diagnósticos"),
     "diagnosticos.validate": ("Diagnósticos", "Validar diagnósticos"),
     "diagnosticos.manage": ("Diagnósticos", "Administrar configuración de diagnóstico"),
+    "evaluacion.view": ("Evaluación EIAAX", "Consultar expedientes de evaluación"),
+    "evaluacion.manage": ("Evaluación EIAAX", "Crear y editar expedientes de evaluación"),
+    "evaluacion.evaluate": ("Evaluación EIAAX", "Ejecutar evaluaciones y registrar hallazgos"),
+    "evaluacion.visibility": ("Evaluación EIAAX", "Gestionar visibilidad para entidad"),
+    "evaluacion.vista_entidad": ("Evaluación EIAAX", "Ver vista entidad del expediente"),
     "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
     "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
     "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
@@ -519,6 +532,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | LINEA_BASE_PERMISSIONS
         | VALORACION_PERMISSIONS
         | DIAGNOSTICOS_PERMISSIONS
+        | EVALUACION_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
@@ -556,6 +570,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | LINEA_BASE_PERMISSIONS
         | VALORACION_PERMISSIONS
         | DIAGNOSTICOS_PERMISSIONS
+        | EVALUACION_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
@@ -637,6 +652,11 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "diagnosticos.view",
         "diagnosticos.generate",
         "diagnosticos.validate",
+        "evaluacion.view",
+        "evaluacion.manage",
+        "evaluacion.evaluate",
+        "evaluacion.visibility",
+        "evaluacion.vista_entidad",
         "inteligencia_externa.view",
         "inteligencia_externa.manage",
         "inteligencia_externa.ingest",

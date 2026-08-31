@@ -23,6 +23,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/oportunidades": ["oportunidades.view"],
   "/senales": ["oportunidades.view"],
   "/diagnosticos": ["diagnosticos.view"],
+  "/evaluaciones": ["evaluacion.view"],
   "/inteligencia-externa": ["inteligencia_externa.view"],
   "/continuidad": ["continuidad.view"],
   "/trabajo": [

@@ -6,6 +6,7 @@ import { filterMenuByPermissions, canAccessRoute } from "./auth/permissions";
 import { getCachedUser, logout } from "./auth/session";
 import { OrganizationProvider, ORGANIZATION_CONTEXT_EVENT, useOrganizationContext } from "./hooks/useOrganizationContext";
 import { MENU } from "./navigation/menu";
+import { EIAAX_BRAND } from "./lib/brand";
 
 type NavSection = (typeof MENU)[number];
 const COLLAPSE_KEY = "eaios_menu_collapsed";
@@ -134,7 +135,10 @@ function AppShellInner() {
     <div className={`layout ${collapsed ? "sidebar-collapsed" : ""}`}>
       <aside className="sidebar" title="Navegación principal">
         <div className="brand-row">
-          <div className="brand">Sistema empresarial de IA</div>
+          <div className="brand">
+            <span className="brand-name">{EIAAX_BRAND.name}</span>
+            <span className="brand-descriptor">{EIAAX_BRAND.descriptor}</span>
+          </div>
           <button
             type="button"
             className="btn-icon"
