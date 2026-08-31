@@ -12,23 +12,61 @@ import { AdminConfigPage } from "./pages/admin/AdminConfigPage";
 import { AdminOrganizationPage } from "./pages/admin/AdminOrganizationPage";
 import { AdminRolesPage } from "./pages/admin/AdminRolesPage";
 import { AdminSecurityPage } from "./pages/admin/AdminSecurityPage";
+import { AdminIdentidadPage } from "./pages/admin/AdminIdentidadPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
+import { AdminUserDetailPage } from "./pages/admin/AdminUserDetailPage";
 import { AuditPage } from "./pages/AuditPage";
 import { CapabilitiesPage } from "./pages/CapabilitiesPage";
+import { HomePage } from "./pages/HomePage";
 import { CostosValorPage } from "./pages/CostosValorPage";
+import { GobernanzaDatosPage } from "./pages/GobernanzaDatosPage";
+import { LineasBasePage } from "./pages/LineasBasePage";
+import { LineaBaseDetailPage } from "./pages/LineaBaseDetailPage";
 import { OportunidadesPage } from "./pages/OportunidadesPage";
 import { OportunidadDetailPage } from "./pages/OportunidadDetailPage";
-import { DashboardPage } from "./pages/DashboardPage";
+import { ComercialPage } from "./pages/ComercialPage";
+import { ComercialPropuestaDetailPage } from "./pages/ComercialPropuestaDetailPage";
+import { ComercialPlanDetailPage } from "./pages/ComercialPlanDetailPage";
+import { TcoPage } from "./pages/TcoPage";
+import { ImplementacionPage } from "./pages/ImplementacionPage";
+import { ImplementacionDetailPage } from "./pages/ImplementacionDetailPage";
+import { SegmentacionPage } from "./pages/SegmentacionPage";
+import { SenalesPage } from "./pages/SenalesPage";
+import { SenalDetailPage } from "./pages/SenalDetailPage";
+import { DiagnosticosPage } from "./pages/DiagnosticosPage";
+import { DiagnosticoDetailPage } from "./pages/DiagnosticoDetailPage";
+import { EvaluacionesPage } from "./pages/EvaluacionesPage";
+import { EvaluacionConsolePage } from "./pages/EvaluacionConsolePage";
+import { CentroConfianzaPage } from "./pages/CentroConfianzaPage";
+import { PartnersPage } from "./pages/PartnersPage";
+import { PartnerDetailPage } from "./pages/PartnerDetailPage";
+import { InteligenciaExternaPage } from "./pages/InteligenciaExternaPage";
+import { InteligenciaExternaDetailPage } from "./pages/InteligenciaExternaDetailPage";
+import { ContinuidadPage } from "./pages/ContinuidadPage";
+import { SoportePage } from "./pages/SoportePage";
+import { SoporteCasoDetailPage } from "./pages/SoporteCasoDetailPage";
+import { IntegracionesPage } from "./pages/IntegracionesPage";
+import { IntegracionWizardPage } from "./pages/IntegracionWizardPage";
+import { IntegracionDetailPage } from "./pages/IntegracionDetailPage";
+import { IntegracionTrazabilidadPage } from "./pages/IntegracionTrazabilidadPage";
+import { AprendizajePage } from "./pages/AprendizajePage";
+import { AprendizajeDetailPage } from "./pages/AprendizajeDetailPage";
+import { OptimizacionPage } from "./pages/OptimizacionPage";
+import { OptimizacionDetailPage } from "./pages/OptimizacionDetailPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
 import { EmployeeDetailPage } from "./pages/EmployeeDetailPage";
+import { EmployeeAuditorPage } from "./pages/EmployeeAuditorPage";
 import { EmployeeWizardPage } from "./pages/EmployeeWizardPage";
 import { ExecutionDetailPage } from "./pages/ExecutionDetailPage";
 import { ExecutionsPage } from "./pages/ExecutionsPage";
 import { KnowledgeDetailPage } from "./pages/KnowledgeDetailPage";
 import { KnowledgePage } from "./pages/KnowledgePage";
 import { LoginPage } from "./pages/LoginPage";
+import { MiSeguridadPage } from "./pages/MiSeguridadPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
+import { TrabajoPage } from "./pages/TrabajoPage";
+import { ComunicacionesPage } from "./pages/ComunicacionesPage";
 import { OperationDetailPage } from "./pages/OperationDetailPage";
 import { OperationsCenterPage } from "./pages/OperationsCenterPage";
 import { OperationsHubPage } from "./pages/OperationsHubPage";
@@ -45,7 +83,9 @@ export default function App() {
       />
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route index element={<DashboardPage />} />
+          <Route index element={<HomePage />} />
+          <Route path="centro-control" element={<HomePage />} />
+          <Route path="panel" element={<Navigate to="/" replace />} />
           <Route path="operaciones" element={<OperationsHubPage />} />
           <Route path="operaciones/solicitud" element={<OperationsCenterPage />} />
           <Route path="operaciones/:operationId" element={<OperationDetailPage />} />
@@ -53,6 +93,30 @@ export default function App() {
           <Route path="ejecuciones" element={<ExecutionsPage />} />
           <Route path="ejecuciones/:planId" element={<ExecutionDetailPage />} />
           <Route path="aprobaciones" element={<ApprovalsPage />} />
+          <Route
+            element={
+              <RequirePermission
+                anyOf={[
+                  "operations.view",
+                  "notification.view",
+                  "oportunidades.view",
+                  "continuidad.view",
+                  "integraciones.view",
+                  "finops.view",
+                  "automation.view",
+                  "linea_base.view",
+                  "diagnosticos.view",
+                  "optimizacion.view",
+                  "support.view",
+                  "support.create",
+                  "support.assign",
+                  "communications.view",
+                ]}
+              />
+            }
+          >
+            <Route path="trabajo" element={<TrabajoPage />} />
+          </Route>
           <Route path="directorio" element={<DirectoryPage />} />
           <Route path="automatizaciones" element={<AutomationsPage />} />
           <Route path="automatizaciones/nueva" element={<AutomationWizardPage />} />
@@ -61,20 +125,60 @@ export default function App() {
           <Route path="conocimiento" element={<KnowledgePage />} />
           <Route path="conocimiento/:documentId" element={<KnowledgeDetailPage />} />
           <Route path="empleados/nuevo" element={<EmployeeWizardPage />} />
+          <Route path="empleados/auditoria" element={<EmployeeAuditorPage />} />
           <Route path="empleados/:employeeId/editar" element={<EmployeeWizardPage />} />
           <Route path="empleados/:employeeId" element={<EmployeeDetailPage />} />
           <Route path="capacidades" element={<CapabilitiesPage />} />
           <Route path="herramientas" element={<ToolsPage />} />
           <Route path="test-lab" element={<TestLabPage />} />
           <Route path="costos-valor" element={<CostosValorPage />} />
+          <Route path="gobernanza-datos" element={<GobernanzaDatosPage />} />
+          <Route path="lineas-base" element={<LineasBasePage />} />
+          <Route path="lineas-base/:lineaBaseId" element={<LineaBaseDetailPage />} />
+          <Route path="comercial" element={<ComercialPage />} />
+          <Route path="comercial/segmentacion" element={<SegmentacionPage />} />
+          <Route path="comercial/planes/:planId" element={<ComercialPlanDetailPage />} />
+          <Route path="comercial/propuestas/:proposalId" element={<ComercialPropuestaDetailPage />} />
+          <Route path="tco" element={<TcoPage />} />
+          <Route path="implementacion" element={<ImplementacionPage />} />
+          <Route path="implementacion/:proyectoId" element={<ImplementacionDetailPage />} />
           <Route path="oportunidades" element={<OportunidadesPage />} />
           <Route path="oportunidades/:opportunityId" element={<OportunidadDetailPage />} />
+          <Route path="senales" element={<SenalesPage />} />
+          <Route path="senales/:signalId" element={<SenalDetailPage />} />
+          <Route path="diagnosticos" element={<DiagnosticosPage />} />
+          <Route path="diagnosticos/:diagnosticId" element={<DiagnosticoDetailPage />} />
+          <Route element={<RequirePermission anyOf={["evaluacion.view"]} />}>
+            <Route path="evaluaciones" element={<EvaluacionesPage />} />
+            <Route path="evaluaciones/:evaluacionId" element={<EvaluacionConsolePage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["gobierno.confianza.view"]} />}>
+            <Route path="centro-confianza" element={<CentroConfianzaPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["partners.view"]} />}>
+            <Route path="partners" element={<PartnersPage />} />
+            <Route path="partners/:partnerId" element={<PartnerDetailPage />} />
+          </Route>
+          <Route path="inteligencia-externa" element={<InteligenciaExternaPage />} />
+          <Route path="inteligencia-externa/senales/:signalId" element={<InteligenciaExternaDetailPage />} />
+          <Route path="continuidad" element={<ContinuidadPage />} />
+          <Route path="soporte" element={<SoportePage />} />
+          <Route path="soporte/casos/:caseId" element={<SoporteCasoDetailPage />} />
+          <Route path="integraciones" element={<IntegracionesPage />} />
+          <Route path="integraciones/nueva" element={<IntegracionWizardPage />} />
+          <Route path="integraciones/trazabilidad" element={<IntegracionTrazabilidadPage />} />
+          <Route path="integraciones/:connectorId" element={<IntegracionDetailPage />} />
+          <Route path="aprendizaje" element={<AprendizajePage />} />
+          <Route path="aprendizaje/:cicloId" element={<AprendizajeDetailPage />} />
+          <Route path="optimizacion" element={<OptimizacionPage />} />
+          <Route path="optimizacion/:recId" element={<OptimizacionDetailPage />} />
           <Route path="organizacion" element={<Navigate to="/administracion/organizacion" replace />} />
           <Route element={<RequirePermission anyOf={["platform.organization.view"]} />}>
             <Route path="administracion/empresas" element={<AdminCompaniesPage />} />
           </Route>
           <Route element={<RequirePermission anyOf={["admin.user.view"]} />}>
             <Route path="administracion/usuarios" element={<AdminUsersPage />} />
+            <Route path="administracion/usuarios/:userId" element={<AdminUserDetailPage />} />
           </Route>
           <Route element={<RequirePermission anyOf={["admin.role.view"]} />}>
             <Route path="administracion/roles" element={<AdminRolesPage />} />
@@ -88,13 +192,20 @@ export default function App() {
           <Route element={<RequirePermission anyOf={["llm.view"]} />}>
             <Route path="administracion/proveedores-ia" element={<AdminLlmProvidersPage />} />
           </Route>
-          <Route element={<RequirePermission anyOf={["admin.security.view"]} />}>
+          <Route element={<RequirePermission anyOf={["admin.security.view", "seguridad.view"]} />}>
             <Route path="administracion/seguridad" element={<AdminSecurityPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["identidad.view"]} />}>
+            <Route path="administracion/identidad" element={<AdminIdentidadPage />} />
           </Route>
           <Route element={<RequirePermission anyOf={["audit.view"]} />}>
             <Route path="auditoria" element={<AuditPage />} />
           </Route>
           <Route path="notificaciones" element={<NotificationsPage />} />
+          <Route element={<RequirePermission anyOf={["communications.view"]} />}>
+            <Route path="comunicaciones" element={<ComunicacionesPage />} />
+          </Route>
+          <Route path="mi-seguridad" element={<MiSeguridadPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
