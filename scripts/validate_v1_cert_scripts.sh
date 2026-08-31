@@ -102,7 +102,7 @@ ok "PS1 password echo scan done"
 # G. Required files
 echo ""
 echo "[G] Required artifacts"
-for req in _V1CertCommon.ps1 Inspect-AdminUser.ps1 Reset-AdminPassword.ps1 Test-LoginApi.ps1 PASO1-Recuperar-Admin.ps1 PASO2-Desplegar-Hotfix-Frontend.ps1; do
+for req in _V1CertCommon.ps1 Inspect-AdminUser.ps1 Reset-AdminPassword.ps1 Test-LoginApi.ps1 PASO1-Recuperar-Admin.ps1 PASO2-Desplegar-Hotfix-Frontend.ps1 docker-compose.frontend-hotfix.yml; do
   if [ -f "$V1_DIR/$req" ]; then ok "$req"; else report "missing $req"; fi
 done
 
@@ -128,6 +128,20 @@ for f in "$V1_DIR"/*.ps1; do
     ok "no docker Go template: $(basename "$f")"
   fi
 done
+
+# J. PASO2 self-contained + compose override
+echo ""
+echo "[J] PASO2 self-contained deploy"
+if grep -q '_V1CertCommon.ps1' "$V1_DIR/PASO2-Desplegar-Hotfix-Frontend.ps1"; then
+  report "PASO2 still dot-sources _V1CertCommon.ps1"
+else
+  ok "PASO2 is self-contained"
+fi
+if [ -f "$V1_DIR/docker-compose.frontend-hotfix.yml" ]; then
+  ok "compose override present"
+else
+  report "missing docker-compose.frontend-hotfix.yml"
+fi
 
 echo ""
 if [ "$fail" -eq 0 ]; then

@@ -1,78 +1,127 @@
 #Requires -Version 5.1
-<#
-.SYNOPSIS
-  PASO 2: Build and deploy frontend hotfix (api.ts fix + login UI).
-.DESCRIPTION
-  Does NOT modify D:\EMPLEADOS_IA_CERT Git HEAD, PostgreSQL, admin credentials, or backend data.
-  Recreates ONLY empleados_ia_cert-frontend-1.
-.PARAMETER HotfixRoot
-  Hotfix worktree (default: D:\EMPLEADOS_IA_V1_HOTFIX)
-.PARAMETER CertDir
-  CERT docker compose directory (default: D:\EMPLEADOS_IA_CERT)
-.PARAMETER Rebuild
-  Force docker build even if empleados_ia_cert-frontend-hotfix:latest already exists.
-.PARAMETER FrontendImage
-  Image tag to deploy (default: empleados_ia_cert-frontend-hotfix:latest)
-#>
 param(
-    [string]$HotfixRoot = "",
+    [string]$HotfixRoot = "D:\EMPLEADOS_IA_V1_HOTFIX",
     [string]$CertDir = "D:\EMPLEADOS_IA_CERT",
-    [switch]$Rebuild,
-    [string]$FrontendImage = "empleados_ia_cert-frontend-hotfix:latest"
+    [switch]$Rebuild
 )
 
 $ErrorActionPreference = "Stop"
-. "$PSScriptRoot\_V1CertCommon.ps1"
 
-$docker = Get-V1CertDockerExe
-$root = Resolve-V1CertHotfixRoot -HotfixRoot $HotfixRoot
-$backendContainer = "empleados_ia_cert-backend-1"
-$postgresContainer = "empleados_ia_cert-postgres-1"
-$frontendContainer = "empleados_ia_cert-frontend-1"
+$ImageName = "empleados_ia_cert-frontend-hotfix:latest"
+$BackendName = "empleados_ia_cert-backend-1"
+$PostgresName = "empleados_ia_cert-postgres-1"
+$FrontendName = "empleados_ia_cert-frontend-1"
 
-if (-not (Test-Path -LiteralPath $CertDir)) {
-    throw "CertDir not found: $CertDir"
+function Find-Docker {
+    $paths = @(
+        "C:\Program Files\Docker\Docker\resources\bin\docker.exe",
+        "docker.exe",
+        "docker"
+    )
+    foreach ($p in $paths) {
+        if ($p -eq "docker.exe" -or $p -eq "docker") {
+            $cmd = Get-Command $p -ErrorAction SilentlyContinue
+            if ($cmd) { return $cmd.Source }
+        } elseif (Test-Path -LiteralPath $p) {
+            return $p
+        }
+    }
+    throw "Docker not found."
 }
 
-$composeFile = Join-Path $CertDir "docker-compose.yml"
-if (-not (Test-Path -LiteralPath $composeFile)) {
-    throw "docker-compose.yml not found in $CertDir"
+function Test-ContainerRunning {
+    param([string]$Docker, [string]$Name)
+    $id = & $Docker ps --filter "name=^/${Name}$" --filter "status=running" -q
+    return [bool]$id
+}
+
+function Get-FrontendPort {
+    param([string]$Dir)
+    $port = "5180"
+    $envFile = Join-Path $Dir ".env"
+    if (Test-Path -LiteralPath $envFile) {
+        $line = Get-Content -LiteralPath $envFile | Where-Object { $_ -match '^\s*FRONTEND_PORT\s*=' } | Select-Object -First 1
+        if ($line -match '=\s*(\d+)') { $port = $Matches[1] }
+    }
+    return $port
+}
+
+function Test-ImageExists {
+    param([string]$Docker, [string]$Image)
+    & $Docker image inspect $Image 1>$null 2>$null
+    return ($LASTEXITCODE -eq 0)
+}
+
+function Wait-Http200 {
+    param([string]$Url)
+    for ($i = 1; $i -le 30; $i++) {
+        try {
+            $r = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 5
+            if ($r.StatusCode -eq 200) { return $r }
+        } catch {
+            # retry
+        }
+        Start-Sleep -Seconds 2
+    }
+    throw "HTTP not ready: $Url"
+}
+
+function Test-LoginHotfixBundle {
+    param([string]$BaseUrl)
+    $base = $BaseUrl.TrimEnd("/")
+    $page = Invoke-WebRequest -Uri ($base + "/login") -UseBasicParsing -TimeoutSec 15
+    $bundle = $page.Content
+    $jsMatches = [regex]::Matches($bundle, 'src="(/assets/[^"]+\.js)"')
+    foreach ($m in $jsMatches) {
+        $js = Invoke-WebRequest -Uri ($base + $m.Groups[1].Value) -UseBasicParsing -TimeoutSec 15
+        $bundle += $js.Content
+    }
+    $need = @("password-toggle", "login-forgot", "Sistema empresarial de IA", "Usuario", "Contrase", "Olvid", "Ocultar")
+    foreach ($n in $need) {
+        if ($bundle -notlike "*$n*") {
+            throw "Hotfix marker missing: $n"
+        }
+    }
+}
+
+$docker = Find-Docker
+$root = (Resolve-Path -LiteralPath $HotfixRoot).Path
+$cert = (Resolve-Path -LiteralPath $CertDir).Path
+$composeBase = Join-Path $cert "docker-compose.yml"
+$composeHotfix = Join-Path $PSScriptRoot "docker-compose.frontend-hotfix.yml"
+
+if (-not (Test-Path -LiteralPath $composeBase)) {
+    throw "Missing: $composeBase"
+}
+if (-not (Test-Path -LiteralPath $composeHotfix)) {
+    throw "Missing: $composeHotfix"
 }
 
 Write-Host "========== PASO 2: DEPLOY FRONTEND HOTFIX ==========" -ForegroundColor Cyan
 Write-Host "HotfixRoot: $root"
-Write-Host "CertDir:    $CertDir"
-Write-Host "Image:      $FrontendImage"
+Write-Host "CertDir:    $cert"
+Write-Host "Image:      $ImageName"
 
 Write-Host ""
-Write-Host "=== Pre-flight (read-only) ===" -ForegroundColor Cyan
-Assert-V1CertContainerRunning -Docker $docker -ContainerName $backendContainer
-Assert-V1CertContainerRunning -Docker $docker -ContainerName $postgresContainer
-
-$backendHealth = Get-V1CertContainerHealthLabel -Docker $docker -ContainerName $backendContainer
-$postgresHealth = Get-V1CertContainerHealthLabel -Docker $docker -ContainerName $postgresContainer
-Write-Host "Backend:  $backendContainer -> $backendHealth"
-Write-Host "Postgres: $postgresContainer -> $postgresHealth"
-
-if ($backendHealth -notmatch 'healthy|RUNNING') {
-    Write-Host "STOP: backend is not healthy." -ForegroundColor Red
+Write-Host "=== Pre-flight ===" -ForegroundColor Cyan
+if (-not (Test-ContainerRunning -Docker $docker -Name $BackendName)) {
+    Write-Host "STOP: $BackendName is not running." -ForegroundColor Red
     exit 1
 }
-if ($postgresHealth -notmatch 'healthy|RUNNING') {
-    Write-Host "STOP: postgres is not healthy." -ForegroundColor Red
+if (-not (Test-ContainerRunning -Docker $docker -Name $PostgresName)) {
+    Write-Host "STOP: $PostgresName is not running." -ForegroundColor Red
     exit 1
 }
+Write-Host "Backend:  $BackendName -> running"
+Write-Host "Postgres: $PostgresName -> running"
 
-$imageExists = Test-V1CertDockerImageExists -Docker $docker -ImageRef $FrontendImage
-if ($Rebuild -or -not $imageExists) {
-    if ($imageExists -and $Rebuild) {
-        Write-Host "Rebuild requested (-Rebuild)." -ForegroundColor Yellow
-    } else {
-        Write-Host "Image not found; building frontend hotfix..." -ForegroundColor Yellow
-    }
+$hasImage = Test-ImageExists -Docker $docker -Image $ImageName
+if ($Rebuild -or -not $hasImage) {
+    Write-Host ""
+    Write-Host "=== Build image ===" -ForegroundColor Cyan
     Push-Location $root
     try {
-        & $docker build -t $FrontendImage -f frontend/Dockerfile .
+        & $docker build -t $ImageName -f frontend/Dockerfile .
         if ($LASTEXITCODE -ne 0) {
             Write-Host "STOP: docker build failed." -ForegroundColor Red
             exit 1
@@ -82,54 +131,32 @@ if ($Rebuild -or -not $imageExists) {
     }
     Write-Host "BUILD: PASS" -ForegroundColor Green
 } else {
-    Write-Host "BUILD: SKIP (reusing existing image $FrontendImage)" -ForegroundColor Green
+    Write-Host "BUILD: SKIP (image already exists)" -ForegroundColor Green
 }
 
 Write-Host ""
-Write-Host "=== Network detection (JSON inspect) ===" -ForegroundColor Cyan
-$network = Get-V1CertContainerNetwork -Docker $docker -ReferenceContainer $backendContainer
-Write-Host "Docker network: $network"
-
-$frontendPort = Get-V1CertFrontendPort -CertDir $CertDir
-Write-Host "Frontend port: $frontendPort"
-
-Write-Host ""
-Write-Host "=== Recreate frontend container only ===" -ForegroundColor Cyan
-& $docker compose -f $composeFile --project-directory $CertDir stop frontend 2>$null | Out-Null
-& $docker rm -f $frontendContainer 2>$null | Out-Null
-
-& $docker run -d --name $frontendContainer `
-    --network $network `
-    -p "${frontendPort}:80" `
-    --restart unless-stopped `
-    $FrontendImage
-
+Write-Host "=== Deploy frontend only (docker compose) ===" -ForegroundColor Cyan
+& $docker compose -f $composeBase -f $composeHotfix --project-directory $cert up -d --no-build --no-deps --force-recreate frontend
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "STOP: frontend container failed to start." -ForegroundColor Red
+    Write-Host "STOP: docker compose up failed." -ForegroundColor Red
     exit 1
 }
 
-Assert-V1CertContainerRunning -Docker $docker -ContainerName $frontendContainer
-$frontendHealth = Get-V1CertContainerHealthLabel -Docker $docker -ContainerName $frontendContainer
-Write-Host "Frontend container: $frontendContainer -> $frontendHealth"
+if (-not (Test-ContainerRunning -Docker $docker -Name $FrontendName)) {
+    Write-Host "STOP: $FrontendName is not running after deploy." -ForegroundColor Red
+    exit 1
+}
 
-$loginUrl = "http://localhost:${frontendPort}/login"
+$port = Get-FrontendPort -Dir $cert
+$loginUrl = "http://localhost:${port}/login"
+
 Write-Host ""
-Write-Host "=== HTTP verification ===" -ForegroundColor Cyan
-Write-Host "Waiting for $loginUrl ..."
+Write-Host "=== Verify HTTP and hotfix UI ===" -ForegroundColor Cyan
 try {
-    $null = Wait-V1CertHttpReady -Url $loginUrl
+    $null = Wait-Http200 -Url $loginUrl
     Write-Host "HTTP: PASS ($loginUrl)" -ForegroundColor Green
-} catch {
-    Write-Host "STOP: $($_.Exception.Message)" -ForegroundColor Red
-    exit 1
-}
-
-Write-Host ""
-Write-Host "=== Hotfix content verification ===" -ForegroundColor Cyan
-try {
-    $null = Test-V1CertLoginHotfixContent -BaseUrl "http://localhost:${frontendPort}"
-    Write-Host "HOTFIX UI: PASS (password toggle, forgot link, Spanish login)" -ForegroundColor Green
+    Test-LoginHotfixBundle -BaseUrl "http://localhost:${port}"
+    Write-Host "HOTFIX UI: PASS" -ForegroundColor Green
 } catch {
     Write-Host "STOP: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
@@ -138,7 +165,6 @@ try {
 Write-Host ""
 Write-Host "PASO 2: PASS" -ForegroundColor Green
 Write-Host "URL: $loginUrl"
-Write-Host "Backend:  $backendContainer -> $backendHealth"
-Write-Host "Postgres: $postgresContainer -> $postgresHealth"
-Write-Host "Frontend: $frontendContainer -> RUNNING on port $frontendPort"
-Write-Host "Expected UI: Usuario, Contrasena, eye toggle, forgot password, Spanish 401 message."
+Write-Host "Backend:  $BackendName -> running (unchanged)"
+Write-Host "Postgres: $PostgresName -> running (unchanged)"
+Write-Host "Frontend: $FrontendName -> hotfix image deployed on port $port"
