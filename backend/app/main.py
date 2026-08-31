@@ -13,7 +13,16 @@ from app import orchestration_models, notifications  # noqa: F401 — registra t
 from app import salud_models  # noqa: F401 — registra tablas IPS
 from app import experience_models  # noqa: F401 — experiencia transversal core
 from app import opportunity_models  # noqa: F401 — oportunidades proactivas 1030
+from app import baseline_models  # noqa: F401 — línea base e impacto 1200
+from app import valuation_models  # noqa: F401 — valoración económica 1210
+from app import diagnostic_models  # noqa: F401 — diagnóstico transversal 1220
+from app import external_models  # noqa: F401 — inteligencia externa 1240
+from app import continuidad_models  # noqa: F401 — continuidad operativa 1360
+from app import governance_models  # noqa: F401 — gobierno de datos 1350
 from app import llm_models  # noqa: F401 — LLM Gateway V1
+from app import security_models  # noqa: F401 — seguridad avanzada 1300
+from app import identity_models  # noqa: F401 — identidad empresarial 1370
+from app import scim_models  # noqa: F401 — SCIM 1380
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
@@ -32,7 +41,18 @@ from app.routers import (
     platform,
     salud,
     experience,
+    linea_base,
+    control_center,
     oportunidades,
+    senales,
+    valoracion,
+    diagnosticos,
+    inteligencia_externa,
+    continuidad,
+    governance,
+    security,
+    identidad,
+    scim,
     test_lab,
     tools,
 )
@@ -57,6 +77,8 @@ async def lifespan(_app: FastAPI):
         database_url=settings.database_url,
         jwt_secret=settings.jwt_secret,
         bootstrap_admin_password=settings.bootstrap_admin_password,
+        app_env=settings.app_env,
+        cors_origins=settings.cors_origins,
     )
 
     Base.metadata.create_all(bind=engine)
@@ -102,6 +124,9 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(security.router)
+app.include_router(identidad.router)
+app.include_router(scim.router)
 app.include_router(organization.router)
 app.include_router(platform.router)
 app.include_router(admin.router)
@@ -121,6 +146,14 @@ app.include_router(finops.router)
 app.include_router(salud.router)
 app.include_router(experience.router)
 app.include_router(oportunidades.router)
+app.include_router(senales.router)
+app.include_router(linea_base.router)
+app.include_router(valoracion.router)
+app.include_router(diagnosticos.router)
+app.include_router(inteligencia_externa.router)
+app.include_router(continuidad.router)
+app.include_router(control_center.router)
+app.include_router(governance.router)
 app.include_router(llm_providers.router)
 
 
