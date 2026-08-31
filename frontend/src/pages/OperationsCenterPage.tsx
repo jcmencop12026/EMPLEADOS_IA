@@ -49,7 +49,7 @@ export function OperationsCenterPage() {
     <div className="ops-page">
       <header className="page-header">
         <h1>Centro de Operaciones</h1>
-        <p className="muted">Orquestador E2E · Workspace Salud</p>
+        <p className="muted">Centro de operaciones · Módulo Salud</p>
       </header>
 
       <section className="panel ops-main">
