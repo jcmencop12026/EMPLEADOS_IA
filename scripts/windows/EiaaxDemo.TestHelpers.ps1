@@ -131,15 +131,61 @@ function Invoke-EiaaxTestShellCommand {
         param($ShellPath, $CommandText)
         $previous = $ErrorActionPreference
         $ErrorActionPreference = "Stop"
+        $stdoutFile = $null
+        $stderrFile = $null
         try {
-            $output = & $ShellPath -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command $CommandText 2>&1 | Out-String
+            $stdoutFile = [System.IO.Path]::GetTempFileName()
+            $stderrFile = [System.IO.Path]::GetTempFileName()
+            $encoded = [Convert]::ToBase64String(
+                [System.Text.Encoding]::Unicode.GetBytes($CommandText)
+            )
+            $process = Start-Process -FilePath $ShellPath `
+                -ArgumentList @(
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-ExecutionPolicy", "Bypass",
+                    "-EncodedCommand", $encoded
+                ) `
+                -Wait -PassThru -NoNewWindow `
+                -RedirectStandardOutput $stdoutFile `
+                -RedirectStandardError $stderrFile
+            if ($null -eq $process) {
+                throw "Failed to start shell test process"
+            }
+
+            $stdout = ""
+            $stderr = ""
+            if (Test-Path -LiteralPath $stdoutFile) {
+                $stdout = Get-Content -LiteralPath $stdoutFile -Raw -ErrorAction SilentlyContinue
+            }
+            if (Test-Path -LiteralPath $stderrFile) {
+                $stderr = Get-Content -LiteralPath $stderrFile -Raw -ErrorAction SilentlyContinue
+            }
+
+            $combined = ""
+            if (-not [string]::IsNullOrEmpty($stdout)) {
+                $combined += $stdout
+            }
+            if (-not [string]::IsNullOrEmpty($stderr)) {
+                if ($combined.Length -gt 0) {
+                    $combined += "`n"
+                }
+                $combined += $stderr
+            }
+
             return [ordered]@{
-                ExitCode = $LASTEXITCODE
-                Output   = $output
+                ExitCode = [int]$process.ExitCode
+                Output   = $combined
             }
         }
         finally {
             $ErrorActionPreference = $previous
+            if ($null -ne $stdoutFile) {
+                Remove-Item -LiteralPath $stdoutFile -ErrorAction SilentlyContinue
+            }
+            if ($null -ne $stderrFile) {
+                Remove-Item -LiteralPath $stderrFile -ErrorAction SilentlyContinue
+            }
         }
     } -ArgumentList $shell, $Script
 
@@ -151,7 +197,12 @@ function Invoke-EiaaxTestShellCommand {
     }
 
     $result = Receive-Job -Job $job
+    $state = $job.State
     Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
+    if ($state -eq "Failed") {
+        throw ($result | Out-String)
+    }
+
     return $result
 }
 

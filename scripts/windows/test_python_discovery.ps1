@@ -233,6 +233,7 @@ if ((Get-EiaaxCollectionCount `$candidates) -gt 0) {
     Write-Host 'SKIP_HAS_CANDIDATES'
     exit 0
 }
+Remove-Item Env:EIAAX_PYTHON -ErrorAction SilentlyContinue
 Find-EiaaxPython | Out-Null
 exit 0
 "@
