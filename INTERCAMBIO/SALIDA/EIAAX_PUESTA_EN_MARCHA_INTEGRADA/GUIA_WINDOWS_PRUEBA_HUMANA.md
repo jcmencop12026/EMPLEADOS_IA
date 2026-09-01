@@ -121,6 +121,29 @@ En Windows PowerShell 5.1, cuando `Where-Object` devuelve **un solo** elemento, 
 
 ---
 
+## INCIDENTE AUTOTEST CASE 3 (SHA 8d00469)
+
+### Fallo real
+
+CASE 2 PASS (C:\Python314\python.exe detectado). CASE 3 fallo con:
+
+`PYTHON NOT FOUND: no python.exe candidates detected on this machine.`
+
+La suite completa aborto antes de CASE 4-7.
+
+### Causa raiz
+
+1. CASE 3 usaba `Get-Command python` (PATH/WindowsApps) en vez de `C:\Python314\python.exe`.
+2. `Find-EiaaxPython` llama `exit 1` en el mismo proceso del autotest (no capturable por try/catch).
+
+### Correccion (SHA 39421c5)
+
+- CASE 3 usa `Get-EiaaxKnownWindowsPythonExe` y subproceso aislado.
+- Setup/teardown de `EIAAX_PYTHON` por caso.
+- CASE 4-7 revisados con el mismo patron de aislamiento.
+
+---
+
 ### Fallo real
 
 Tras parser PASS, la preparacion fallo con:
