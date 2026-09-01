@@ -9,11 +9,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# DATABASE_URL debe fijarse antes de importar la app.
-DEFAULT_DATABASE_URL = "sqlite:////workspace/data/eiaax_integrado_demo.db"
-os.environ.setdefault("DATABASE_URL", DEFAULT_DATABASE_URL)
-
 BACKEND_DIR = Path(__file__).resolve().parents[1]
+REPO_ROOT = BACKEND_DIR.parent
+DATA_DIR = REPO_ROOT / "data"
+
+# DATABASE_URL debe fijarse antes de importar la app.
+DEFAULT_DATABASE_URL = f"sqlite:///{(DATA_DIR / 'eiaax_integrado_demo.db').as_posix()}"
+os.environ.setdefault("DATABASE_URL", DEFAULT_DATABASE_URL)
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
@@ -91,11 +93,31 @@ DEMO_ORG_B = {
 }
 
 
+DEMO_DB_FILE_NAME = "eiaax_integrado_demo.db"
+
+
+def _assert_demo_database_path(db_path: Path) -> None:
+    resolved = db_path.resolve()
+    if resolved.name != DEMO_DB_FILE_NAME:
+        raise RuntimeError(f"Unsafe demo DB file name: {resolved.name}")
+    if resolved.parent.name != "data":
+        raise RuntimeError(f"Unsafe demo DB directory: {resolved.parent}")
+    if resolved.parent.parent.name.upper() in {
+        "EMPLEADOS_IA",
+        "EMPLEADOS_IA_CERT",
+        "EMPLEADOS_IA_V1_HOTFIX",
+    }:
+        raise RuntimeError(
+            f"Refusing demo DB under forbidden worktree: {resolved.parent.parent.name}"
+        )
+
+
 def _prepare_demo_database(database_url: str) -> None:
     from alembic import command
     from alembic.config import Config
 
     db_path = database_url_to_path(database_url)
+    _assert_demo_database_path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     if db_path.exists():
         safe_unlink_sqlite(db_path, database_url)
