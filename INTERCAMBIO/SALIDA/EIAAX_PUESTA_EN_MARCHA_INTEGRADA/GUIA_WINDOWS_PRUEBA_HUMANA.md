@@ -39,6 +39,55 @@ Ejecucion Windows real: **pendiente confirmacion usuario**.
 
 ---
 
+## INCIDENTE DETECCION PYTHON f081077
+
+### Fallo real
+
+Tras `PARSER VALIDATION: PASS`, la preparacion fallo con:
+
+`ERROR: No suitable Python runtime found`
+
+aunque `C:\Python314\python.exe` (Python 3.14.5) existe en el equipo.
+
+### Causa raiz
+
+Ese mensaje **no lo genera EIAAX**: lo emite `py.exe` (Python Launcher) cuando se invoca
+`py -3.14` sin runtime registrado en el launcher. Con `$ErrorActionPreference = Stop`,
+el error terminaba `Find-EiaaxPython` antes de validar `C:\Python314\python.exe`.
+
+### Correccion
+
+- Eliminado `py.exe` del descubrimiento de Python.
+- Busqueda directa de `python.exe` en rutas reales (`C:\Python314`, Program Files, AppData).
+- Ignorados stubs de WindowsApps.
+- Mensajes diferenciados: `PYTHON NOT FOUND` vs `PYTHON X DETECTED BUT INCOMPATIBLE`.
+- Log de cada candidato en `logs\demo\preparar.log`.
+
+---
+
+## INCIDENTE COLECCION VACIA List (SHA 115265a)
+
+### Fallo real
+
+Tras parser PASS, la preparacion fallo con:
+
+`No se puede enlazar el argumento con el parametro 'List' porque es una coleccion vacia.`
+
+### Causa raiz
+
+`Add-EiaaxPythonCandidate` tenia `[Mandatory][List[string]]$List`. En Windows PowerShell 5.1,
+pasar una lista vacia al primer intento de descubrimiento provoca error de parameter binding.
+
+Ademas `Get-ChildItem -Depth` no existe en PS 5.1.
+
+### Correccion
+
+- Eliminado helper con parametro `List` Mandatory.
+- Descubrimiento con scriptblock local y retorno `@($array)`.
+- Busqueda AppData sin `-Depth`; escaneo `C:\` solo si existe.
+
+---
+
 ## Procedimiento (4 pasos)
 
 ### PASO A — Preparar demo

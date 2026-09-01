@@ -180,8 +180,8 @@ function Invoke-EiaaxNativeCommand {
     param(
         [Parameter(Mandatory = $true)]
         [string]$FilePath,
-        [Parameter(Mandatory = $true)]
-        [string[]]$ArgumentList,
+        [AllowEmptyCollection()]
+        [string[]]$ArgumentList = @(),
         [string]$FailureMessage = "Command failed."
     )
 
@@ -207,92 +207,83 @@ function Test-EiaaxWindowsPythonStub {
     return $false
 }
 
-function Add-EiaaxPythonCandidate {
-    param(
-        [Parameter(Mandatory = $true)]
-        [System.Collections.Generic.List[string]]$List,
-        [Parameter(Mandatory = $true)]
-        [hashtable]$Seen,
-        [string]$Path
-    )
-
-    if ([string]::IsNullOrWhiteSpace($Path)) {
-        return
-    }
-
-    try {
-        $fullPath = [System.IO.Path]::GetFullPath($Path)
-    }
-    catch {
-        return
-    }
-
-    if (-not (Test-Path -LiteralPath $fullPath)) {
-        return
-    }
-
-    if (Test-EiaaxWindowsPythonStub -Path $fullPath) {
-        return
-    }
-
-    $key = $fullPath.ToUpperInvariant()
-    if ($Seen.ContainsKey($key)) {
-        return
-    }
-
-    $Seen[$key] = $true
-    [void]$List.Add($fullPath)
-}
-
 function Get-EiaaxPythonDiscoveryCandidates {
-    $candidates = New-Object System.Collections.Generic.List[string]
+    $result = New-Object System.Collections.Generic.List[string]
     $seen = @{}
 
-    if (-not [string]::IsNullOrWhiteSpace($env:EIAAX_PYTHON)) {
-        Add-EiaaxPythonCandidate -List $candidates -Seen $seen -Path $env:EIAAX_PYTHON
+    $tryAdd = {
+        param([string]$CandidatePath)
+        if ([string]::IsNullOrWhiteSpace($CandidatePath)) {
+            return
+        }
+        try {
+            $fullPath = [System.IO.Path]::GetFullPath($CandidatePath)
+        }
+        catch {
+            return
+        }
+        if (-not (Test-Path -LiteralPath $fullPath)) {
+            return
+        }
+        if (Test-EiaaxWindowsPythonStub -Path $fullPath) {
+            return
+        }
+        $key = $fullPath.ToUpperInvariant()
+        if ($seen.ContainsKey($key)) {
+            return
+        }
+        $seen[$key] = $true
+        [void]$result.Add($fullPath)
     }
 
-    $staticPaths = @(
-        "C:\Python314\python.exe",
-        "C:\Python313\python.exe",
-        "C:\Python312\python.exe"
-    )
-    foreach ($staticPath in $staticPaths) {
-        Add-EiaaxPythonCandidate -List $candidates -Seen $seen -Path $staticPath
+    if (-not [string]::IsNullOrWhiteSpace($env:EIAAX_PYTHON)) {
+        & $tryAdd $env:EIAAX_PYTHON
+    }
+
+    foreach ($staticPath in @(
+            "C:\Python314\python.exe",
+            "C:\Python313\python.exe",
+            "C:\Python312\python.exe"
+        )) {
+        & $tryAdd $staticPath
     }
 
     if (-not [string]::IsNullOrWhiteSpace($env:ProgramFiles)) {
         foreach ($version in @("314", "313", "312")) {
             $programFilesPath = Join-Path $env:ProgramFiles ("Python" + $version + "\python.exe")
-            Add-EiaaxPythonCandidate -List $candidates -Seen $seen -Path $programFilesPath
+            & $tryAdd $programFilesPath
         }
     }
 
     if (-not [string]::IsNullOrWhiteSpace($env:LocalAppData)) {
         $userPythonRoot = Join-Path $env:LocalAppData "Programs\Python"
         if (Test-Path -LiteralPath $userPythonRoot) {
-            $userMatches = Get-ChildItem -LiteralPath $userPythonRoot -Filter "python.exe" -Recurse -Depth 2 -ErrorAction SilentlyContinue
-            foreach ($match in $userMatches) {
-                Add-EiaaxPythonCandidate -List $candidates -Seen $seen -Path $match.FullName
+            $versionDirs = Get-ChildItem -LiteralPath $userPythonRoot -ErrorAction SilentlyContinue |
+                Where-Object { $_.PSIsContainer }
+            foreach ($versionDir in $versionDirs) {
+                $userPython = Join-Path $versionDir.FullName "python.exe"
+                & $tryAdd $userPython
             }
         }
     }
 
-    $pythonRoots = Get-ChildItem -Path "C:\" -Directory -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -like "Python*" }
-    foreach ($root in $pythonRoots) {
-        $rootPython = Join-Path $root.FullName "python.exe"
-        Add-EiaaxPythonCandidate -List $candidates -Seen $seen -Path $rootPython
+    if (Test-Path -LiteralPath "C:\") {
+        $pythonRoots = Get-ChildItem -Path "C:\" -ErrorAction SilentlyContinue |
+            Where-Object { $_.PSIsContainer -and $_.Name -like "Python*" }
+        foreach ($root in $pythonRoots) {
+            $rootPython = Join-Path $root.FullName "python.exe"
+            & $tryAdd $rootPython
+        }
     }
 
     foreach ($commandName in @("python", "python3")) {
         $command = Get-Command $commandName -ErrorAction SilentlyContinue
         if ($null -ne $command -and $command.CommandType -eq "Application") {
-            Add-EiaaxPythonCandidate -List $candidates -Seen $seen -Path $command.Source
+            & $tryAdd $command.Source
         }
     }
 
-    return $candidates
+    return @($result.ToArray())
 }
 
 function Invoke-EiaaxPythonVersionProbe {
@@ -396,12 +387,12 @@ function Find-EiaaxPython {
         }
     }
 
-    $candidates = Get-EiaaxPythonDiscoveryCandidates
-    if ($candidates.Count -eq 0) {
+    $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
+    if ($null -eq $candidates -or $candidates.Count -eq 0) {
         Exit-EiaaxFailure -Message "PYTHON NOT FOUND: no python.exe candidates detected on this machine."
     }
 
-    $failures = New-Object System.Collections.Generic.List[string]
+    $failures = @()
     foreach ($candidate in $candidates) {
         $message = "Checking Python candidate: " + $candidate
         Write-Host $message
@@ -411,7 +402,7 @@ function Find-EiaaxPython {
 
         $probe = Test-EiaaxPythonRuntimeCandidate -PythonExe $candidate
         if (-not $probe.Executable) {
-            [void]$failures.Add($candidate + " -> " + $probe.Error)
+            $failures += ($candidate + " -> " + $probe.Error)
             continue
         }
 
@@ -812,7 +803,7 @@ function Confirm-EiaaxAlembicState {
         if ($headsOutput -notmatch $script:ExpectedAlembicHead) {
             Exit-EiaaxFailure -Message ("Expected alembic head " + $script:ExpectedAlembicHead + " not found.")
         }
-        if (($headsOutput -split "`n").Where({ $_ -match '\(head\)' }).Count -gt 1) {
+        if (($headsOutput -split "`n" | Where-Object { $_ -match '\(head\)' }).Count -gt 1) {
             Exit-EiaaxFailure -Message "Multiple alembic heads detected."
         }
 

@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Self-check for Python discovery helpers (run on Windows).
+    Functional self-tests for Python discovery helpers.
 #>
 
 Set-StrictMode -Version Latest
@@ -10,22 +10,175 @@ $ErrorActionPreference = "Stop"
 $common = Join-Path $PSScriptRoot "EiaaxDemo.Common.ps1"
 . $common
 
-Write-Host "=== EIAAX Python discovery self-check ==="
+$failed = 0
 
-$candidates = Get-EiaaxPythonDiscoveryCandidates
-Write-Host ("Candidates discovered: " + $candidates.Count)
-foreach ($candidate in $candidates) {
-    $probe = Test-EiaaxPythonRuntimeCandidate -PythonExe $candidate
-    $status = if ($probe.Executable) { "OK" } else { "FAIL" }
-    Write-Host ("  [" + $status + "] " + $candidate + " -> " + $probe.Version + " " + $probe.Error)
+function Assert-Test {
+    param(
+        [string]$Name,
+        [scriptblock]$Action
+    )
+
+    Write-Host ("TEST: " + $Name)
+    try {
+        & $Action
+        Write-Host ("  PASS")
+    }
+    catch {
+        $script:failed++
+        Write-Host ("  FAIL: " + $_.Exception.Message)
+    }
 }
 
-try {
-    $selected = Find-EiaaxPython
-    Write-Host ("Selected runtime: " + $selected)
-    exit 0
+Assert-Test "CASE 1 empty candidate list binding regression" {
+    $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
+    if ($null -eq $candidates) {
+        throw "Get-EiaaxPythonDiscoveryCandidates returned null"
+    }
+    $typeName = $candidates.GetType().FullName
+    if ($typeName -ne "System.Object[]" -and $typeName -notlike "*Object[]") {
+        throw ("Unexpected return type: " + $typeName)
+    }
 }
-catch {
-    Write-Host ("Selection failed: " + $_.Exception.Message)
+
+Assert-Test "CASE 2 explicit C:\Python314\python.exe when present" {
+    $target = "C:\Python314\python.exe"
+    if (Test-Path -LiteralPath $target) {
+        $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
+        if ($candidates -notcontains (Resolve-Path -LiteralPath $target).Path) {
+            throw ("Expected candidate missing: " + $target)
+        }
+    }
+    else {
+        Write-Host "  SKIP: C:\Python314\python.exe not present on this machine"
+    }
+}
+
+Assert-Test "CASE 3 EIAAX_PYTHON valid" {
+    $python = (Get-Command python -ErrorAction SilentlyContinue)
+    if ($null -eq $python) {
+        Write-Host "  SKIP: python not in PATH"
+        return
+    }
+    $previous = $env:EIAAX_PYTHON
+    try {
+        $env:EIAAX_PYTHON = $python.Source
+        $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
+        if ($candidates.Count -lt 1) {
+            throw "Expected at least one candidate with EIAAX_PYTHON set"
+        }
+        $selected = Find-EiaaxPython
+        if ([string]::IsNullOrWhiteSpace($selected)) {
+            throw "Find-EiaaxPython returned empty value"
+        }
+    }
+    finally {
+        $env:EIAAX_PYTHON = $previous
+    }
+}
+
+function Invoke-EiaaxTestCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Script
+    )
+
+    Push-Location $PSScriptRoot
+    try {
+        $output = & pwsh -NoProfile -ExecutionPolicy Bypass -Command $Script 2>&1 | Out-String
+        return [ordered]@{
+            ExitCode = $LASTEXITCODE
+            Output   = $output
+        }
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+Assert-Test "CASE 4 EIAAX_PYTHON missing path" {
+    $commonPath = Join-Path $PSScriptRoot "EiaaxDemo.Common.ps1"
+    $scriptText = @"
+`$ErrorActionPreference = 'Stop'
+. '$commonPath'
+`$env:EIAAX_PYTHON = 'Z:\EIAAX\no-such-python.exe'
+Find-EiaaxPython | Out-Null
+"@
+    $result = Invoke-EiaaxTestCommand -Script $scriptText
+    if ($result.ExitCode -eq 0) {
+        throw "Expected non-zero exit for missing EIAAX_PYTHON path"
+    }
+    if ($result.Output -notmatch "PYTHON NOT FOUND") {
+        throw ("Unexpected output: " + $result.Output)
+    }
+}
+
+Assert-Test "CASE 5 python in PATH" {
+    $python = Get-Command python -ErrorAction SilentlyContinue
+    if ($null -eq $python) {
+        Write-Host "  SKIP: python not in PATH"
+        return
+    }
+    $previous = $env:EIAAX_PYTHON
+    try {
+        Remove-Item Env:EIAAX_PYTHON -ErrorAction SilentlyContinue
+        $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
+        $found = $false
+        foreach ($candidate in $candidates) {
+            if ($candidate.ToUpperInvariant() -eq $python.Source.ToUpperInvariant()) {
+                $found = $true
+                break
+            }
+        }
+        if (-not $found) {
+            throw ("PATH python not discovered: " + $python.Source)
+        }
+    }
+    finally {
+        $env:EIAAX_PYTHON = $previous
+    }
+}
+
+Assert-Test "CASE 6 WindowsApps alias ignored" {
+    if ([string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
+        Write-Host "  SKIP: LOCALAPPDATA not set"
+        return
+    }
+    $stub = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps\python.exe"
+    if (-not (Test-Path -LiteralPath $stub)) {
+        Write-Host "  SKIP: WindowsApps python stub not present"
+        return
+    }
+    if (-not (Test-EiaaxWindowsPythonStub -Path $stub)) {
+        throw "WindowsApps stub was not classified as stub"
+    }
+}
+
+Assert-Test "CASE 7 no candidates handled cleanly" {
+    $commonPath = Join-Path $PSScriptRoot "EiaaxDemo.Common.ps1"
+    $scriptText = @"
+`$ErrorActionPreference = 'Stop'
+. '$commonPath'
+`$env:EIAAX_PYTHON = 'Z:\EIAAX\no-such-python.exe'
+`$env:PATH = 'C:\Windows\System32'
+`$candidates = @(Get-EiaaxPythonDiscoveryCandidates)
+if (`$candidates.Count -gt 0) { Write-Host 'SKIP_HAS_CANDIDATES'; exit 0 }
+Find-EiaaxPython | Out-Null
+"@
+    $result = Invoke-EiaaxTestCommand -Script $scriptText
+    if ($result.Output -match "SKIP_HAS_CANDIDATES") {
+        Write-Host "  SKIP: machine still exposes python candidates in restricted PATH"
+        return
+    }
+    if ($result.ExitCode -eq 0) {
+        throw "Expected failure when no candidates are available"
+    }
+}
+
+Write-Host ""
+if ($failed -gt 0) {
+    Write-Host ("PYTHON DISCOVERY TESTS: FAIL (" + $failed + ")")
     exit 1
 }
+
+Write-Host "PYTHON DISCOVERY TESTS: PASS"
+exit 0

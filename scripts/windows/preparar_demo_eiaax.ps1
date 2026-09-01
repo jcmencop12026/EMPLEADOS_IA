@@ -20,6 +20,16 @@ $logFile = $null
 try {
     if (-not $SkipParserValidation) {
         Invoke-EiaaxPowerShellParserValidation -ScriptsDir $PSScriptRoot
+        $semanticsTest = Join-Path $PSScriptRoot "test_ps_semantics.ps1"
+        $discoveryTest = Join-Path $PSScriptRoot "test_python_discovery.ps1"
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $semanticsTest
+        if ($LASTEXITCODE -ne 0) {
+            Exit-EiaaxFailure -Message "PowerShell semantics self-test failed."
+        }
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $discoveryTest
+        if ($LASTEXITCODE -ne 0) {
+            Exit-EiaaxFailure -Message "Python discovery self-test failed."
+        }
     }
 
     $worktree = Get-EiaaxWorktreeRoot
