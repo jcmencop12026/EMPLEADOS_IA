@@ -1,44 +1,42 @@
-# 09 — Brechas P0 / P1 / P2 y riesgos de integración
+# 09 — Brechas P0 / P1 / P2 (pendientes reales)
 
-## P0 (antes de integrar a rama central)
+## Cerrado en continuación V1
 
-| ID | Brecha | Notas |
-|----|--------|-------|
-| P0-1 | Commit dossier en flujos escritura | Cockpit usa `create=False`; Arquitecto debe persistir dossier |
-| P0-2 | Economía privada completa | Falta margen, precio sugerido, desglose integraciones en adapter |
-| P0-3 | Reconciliación migraciones 1410/1420 | Heredado de base MB-08 |
+| Brecha material | Estado |
+|-----------------|--------|
+| Economía privada completa (margen/precio/ROI) | **CERRADO** |
+| Persistencia dossier en flujos escritura | **CERRADO** |
+| ContinuidadAdapter degradados lista | **CERRADO** + test regresión |
+| Privacidad economía backend | **CERRADO** + tests |
 
-## P1
+## P0 — defectos/bloqueantes reales pendientes
 
-| ID | Brecha |
-|----|--------|
-| P1-1 | Exportación gráficos (CSV/PNG) |
-| P1-2 | Drill-down periodo y agrupación |
-| P1-3 | Lectura Sistemas — gobernanza con KPI reales |
-| P1-4 | Modo comité — vista side-by-side en UI |
-| P1-5 | Selector organización SuperAdmin en UI |
+| ID | Pendiente |
+|----|-----------|
+| P0-1 | Reconciliación migraciones 1410/1420 (heredado plataforma, no específico estratégico) |
 
-## P2
+## P1 — mejoras no bloqueantes
 
-| ID | Brecha |
-|----|--------|
-| P2-1 | Voz accesibilidad (speechSynthesis) opcional |
+| ID | Pendiente |
+|----|-----------|
+| P1-1 | Exportación gráficos CSV/PNG |
+| P1-2 | Drill-down temporal y agrupación avanzada |
+| P1-3 | UI modo comité side-by-side |
+| P1-4 | Selector organización SuperAdmin en UI estratégica |
+| P1-5 | Escritura directa escenarios transformación (hoy vía `diagnosticar`) |
+
+## P2 — post-V1
+
+| ID | Pendiente |
+|----|-----------|
+| P2-1 | Voz accesibilidad (`speechSynthesis`) |
 | P2-2 | Notificación in-app al publicar dossier |
 | P2-3 | Persistencia lectura activa por usuario |
 
-## Riesgos de integración (rama independiente)
+## Riesgos integración (documentados)
 
 | Riesgo | Mitigación |
 |--------|------------|
-| Confusión MB-08 vs estratégico | Rutas y menú separados; docs frontera |
-| Permisos no sembrados en tenants existentes | Seed `STRATEGIC_CONTROL_PERMISSIONS` en admin |
-| `get_dossier_completo(create=False)` vs escritura | Parámetro opcional no rompe callers existentes |
-| Adapter Continuidad | Fix `len(degradados)` — compatible MB-08 |
-
-## Cerrado V1
-
-- Cockpit 5 lecturas mismo dossier
-- API + UI + RBAC + tenant + privacidad economía
-- Semántica ANTES/PROYECTADO/REAL
-- Separación MB-08 verificada
-- Tests + build
+| Rama independiente vs convergencia GENERAL | Adapter fail-closed publicación |
+| Confusión MB-08 / estratégico | Rutas separadas + tests |
+| Permisos no sembrados en tenants legacy | Seed admin incluye `STRATEGIC_CONTROL_PERMISSIONS` |

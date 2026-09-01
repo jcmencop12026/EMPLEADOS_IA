@@ -1,7 +1,7 @@
 """Centro de Control Estratégico/Empresa — cockpit dossier (V1).
 
 Complementa MB-08 operacional. Mismo dossier, múltiples lecturas.
-Solo lectura — sin duplicar motores de dominio.
+Lectura vía adapters; escrituras delegadas a servicios canónicos.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from app.permissions import user_permissions
 from app.services import control_center_adapters as adapters
 from app.services import control_center_service as cc_svc
 from app.services import evaluacion_service as eval_svc
+from app.services import strategic_economy_service as eco_svc
 from app.services import transformacion_service as trans_svc
 
 LECTURAS = [
@@ -217,6 +218,8 @@ def _lectura_financiero(db: Session, org_id: str, permissions: set[str], *, incl
                 "roi_pct": vr.get("retorno_porcentaje"),
                 "payback_meses": vr.get("payback_meses"),
                 "confianza": vr.get("confianza", "MEDIA"),
+                "valor_potencial": vr.get("valor_potencial"),
+                "nota_potencial": SEMANTICA_VALOR["nota"],
             }
     if _has(permissions, "comercial.view"):
         com = adapters.ComercialResumenAdapter().fetch(db, org_id, permissions=permissions)
@@ -227,6 +230,7 @@ def _lectura_financiero(db: Session, org_id: str, permissions: set[str], *, incl
                 "estimado": com.get("valor_estimado"),
                 "potencial": com.get("valor_potencial"),
                 "roi_promedio": com.get("roi_promedio"),
+                "payback_promedio_meses": com.get("payback_promedio_meses"),
             }
     if _has(permissions, "tco.view"):
         tco = adapters.TcoAdapter().fetch(db, org_id, permissions=permissions)
@@ -237,19 +241,10 @@ def _lectura_financiero(db: Session, org_id: str, permissions: set[str], *, incl
                 "proyectado": tco.get("inversion_total"),
                 "real": tco.get("finops_ia"),
             }
-    if incluir_privado and _has(permissions, "strategic_control.economia_privada"):
-        bloques["economia_privada"] = {
-            "visible_interno": True,
-            "nota": "No publicable a la entidad sin autoridad de publicación",
-            "consumo_ia_enlace": "/costos-valor",
-        }
-        if _has(permissions, "finops.view"):
-            fin = adapters.FinOpsExtendidoAdapter().fetch(db, org_id, permissions=permissions)
-            if fin.get("disponible"):
-                bloques["economia_privada"]["costo_periodo"] = fin.get("costo_periodo")
-                bloques["economia_privada"]["tokens_periodo"] = fin.get("tokens_periodo")
+    if incluir_privado:
+        bloques["economia_privada"] = eco_svc.build_economia_privada(db, org_id, permissions)
     else:
-        bloques["economia_privada"] = {"visible_interno": False, "restringido": True}
+        bloques["economia_privada"] = {"visible_interno": False, "restringido": True, "privado": True}
     return bloques
 
 
@@ -304,6 +299,8 @@ def get_cockpit(
             "autoridad": "evaluacion.visibility + evaluacion.vista_entidad",
             "nota": "La entidad solo ve hallazgos marcados visible_entidad",
             "economia_privada_publicable": False,
+            "fail_closed": True,
+            "dependencia_externa": None,
         },
         "enlaces": {
             "operacional_mb08": "/centro-control",

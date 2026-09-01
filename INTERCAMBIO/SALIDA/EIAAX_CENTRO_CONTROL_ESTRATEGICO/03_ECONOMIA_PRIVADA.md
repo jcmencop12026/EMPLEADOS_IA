@@ -1,26 +1,40 @@
-# 03 — Economía privada
+# 03 — Economía privada (completa V1)
 
-## Principio
+## Motor reutilizado
 
-La empresa/prospecto **no recibe automáticamente** costos internos, margen, consumo IA ni precio sugerido.
+`strategic_economy_service.build_economia_privada` compone:
+
+| Fuente | Bloque | Datos |
+|--------|--------|-------|
+| `commercial_service.proposal_to_detail` | 1280 | Valores por categoría, costos, precio sugerido, ROI, payback, margen |
+| `commercial_service.suggest_price` | 1280 | Simulación si falta precio persistido |
+| `ValorRetornoAdapter` | 1210 | Valor verificado/estimado/potencial org |
+| `TcoAdapter` | 1320 | Inversión, desglose, FinOps IA |
+| `FinOpsExtendidoAdapter` | 1110 | Consumo periodo, tokens |
+| `Mb07PlanificadorAdapter` | MB-07 | Margen bruto estimado |
+
+## Fórmula precio (Motor Económico 1280)
+
+```
+max(valor_atribuible_realizable × fracción, costo_total × (1 + margen_mínimo), precio_base_plan)
+```
+
+No es simple `costo + margen`. Considera valor, complejidad (costos), escenarios (riesgo/urgencia), plan (reutilización/soporte).
+
+## Separación POTENCIAL
+
+- `separacion_potencial.potencial_no_realizado: true`
+- POTENCIAL excluido de `valor_atribuible_precio` y precio sugerido
+- Advertencia explícita en motor comercial
 
 ## Permiso
 
-- `strategic_control.economia_privada` — solo usuarios internos autorizados
-- Sin permiso: bloque `economia_privada.restringido = true`
+`strategic_control.economia_privada` — sin él: `restringido: true`
 
-## Contenido interno (lectura financiero)
+Margen detallado adicionalmente requiere `comercial.approve`.
 
-- Costo periodo / tokens (vía `FinOpsExtendidoAdapter` si `finops.view`)
-- Enlace a `/costos-valor`
-- Nota: no publicable sin autoridad de publicación
+## Privacidad
 
-## Publicación a entidad
-
-- Autoridad existente: `evaluacion.visibility` + `evaluacion.vista_entidad`
-- `publicacion.economia_privada_publicable: false` en cockpit
-- Hallazgos visibles solo con `visible_entidad`
-
-## Prueba
-
-`test_economia_privada_restringida_sin_permiso` — usuario con `strategic_control.view` sin economía privada no ve bloque interno.
+- No aparece en `vista_entidad`
+- `publicacion.economia_privada_publicable: false`
+- Prospecto/cliente sin permiso estratégico: 403 en cockpit
