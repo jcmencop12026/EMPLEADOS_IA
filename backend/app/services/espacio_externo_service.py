@@ -28,13 +28,14 @@ from app.espacio_externo_models import (
     EntidadEmpresaAcceso,
     EvaluacionEntregaExterna,
 )
-from app.evaluacion_models import EvaluacionExpediente, EvaluacionInformacionItem
+from app.evaluacion_models import EvaluacionInformacionItem
 from app.models import User
 from app.orchestration_models import AIEmployee
 from app.security import hash_password
 from app.services import agent_factory as agent_svc
 from app.services import communications_service as comm_svc
 from app.services import evaluacion_service as eval_svc
+from app.services import evidencia_entrega_service as evid_svc
 from app.services import implementacion_service as impl_svc
 from app.services import support_service as support_svc
 from app.services.espacio_externo_adapters import (
@@ -131,8 +132,13 @@ def _publicacion_dict(p: EmpresaPublicacion) -> dict[str, Any]:
     }
 
 
-def _entrega_dict(e: EvaluacionEntregaExterna) -> dict[str, Any]:
-    return {
+def _entrega_dict(
+    e: EvaluacionEntregaExterna,
+    db: Session | None = None,
+    *,
+    include_internal: bool = False,
+) -> dict[str, Any]:
+    out: dict[str, Any] = {
         "id": e.id,
         "titulo": e.titulo,
         "descripcion": e.descripcion,
@@ -142,11 +148,19 @@ def _entrega_dict(e: EvaluacionEntregaExterna) -> dict[str, Any]:
         "evidencia_ref": e.evidencia_ref,
         "version": e.version,
         "informacion_item_id": e.informacion_item_id,
+        "observacion_publica": e.observacion_publica,
         "solicitado_at": e.solicitado_at.isoformat() if e.solicitado_at else None,
         "entregado_at": e.entregado_at.isoformat() if e.entregado_at else None,
         "validado_at": e.validado_at.isoformat() if e.validado_at else None,
         "suficiencia_minima_at": e.suficiencia_minima_at.isoformat() if e.suficiencia_minima_at else None,
     }
+    if include_internal:
+        out["observacion_interna"] = e.observacion_interna
+    if db is not None:
+        out["adjuntos"] = evid_svc.list_adjuntos_entrega(
+            db, e.organization_id, e.id, include_internal=include_internal
+        )
+    return out
 
 
 def _get_entidad(db: Session, entidad_id: str, organization_id: str) -> EntidadEmpresa:
@@ -651,7 +665,7 @@ def get_portal_informacion(db: Session, user: User) -> dict[str, Any]:
             for i in items
             if i.obligatorio or i.estado != "OPCIONAL"
         ],
-        "entregas": [_entrega_dict(e) for e in entregas],
+        "entregas": [_entrega_dict(e, db) for e in entregas],
     }
 
 
@@ -736,7 +750,124 @@ def external_entregar(
         commit=False,
     )
     db.flush()
-    return _entrega_dict(entrega)
+    return _entrega_dict(entrega, db)
+
+
+def upload_adjuntos_portal(
+    db: Session,
+    user: User,
+    *,
+    entrega_id: str | None = None,
+    item_id: str | None = None,
+    files: list[tuple[str, bytes, str | None]],
+    observacion: str | None = None,
+    fuente_tipo: str = "SUMINISTRADA_EMPRESA",
+) -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    return evid_svc.upload_adjuntos_externo(
+        db,
+        user,
+        entrega_id=entrega_id,
+        item_id=item_id,
+        files=files,
+        observacion=observacion,
+        fuente_tipo=fuente_tipo,
+        entidad_id=entidad.id,
+        expediente_id=entidad.expediente_id,
+        correlation_id=entidad.correlation_id,
+    )
+
+
+def reemplazar_adjunto_portal(
+    db: Session,
+    user: User,
+    adjunto_id: str,
+    *,
+    filename: str,
+    data: bytes,
+    mime_type: str | None,
+    observacion: str | None = None,
+) -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    return evid_svc.reemplazar_adjunto_externo(
+        db,
+        user,
+        adjunto_id,
+        filename=filename,
+        data=data,
+        mime_type=mime_type,
+        observacion=observacion,
+        entidad_id=entidad.id,
+    )
+
+
+def download_adjunto_portal(db: Session, user: User, adjunto_id: str) -> tuple[str, bytes, str | None]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    return evid_svc.download_adjunto(
+        db,
+        user.organization_id,
+        adjunto_id,
+        entidad_id=entidad.id,
+        user_id=user.id,
+        acceso_activo=acceso.activo,
+    )
+
+
+def list_adjuntos_entrega_interna(db: Session, organization_id: str, entrega_id: str) -> list[dict[str, Any]]:
+    _get_entrega_for_validation(db, organization_id, entrega_id)
+    return evid_svc.list_adjuntos_entrega(db, organization_id, entrega_id, include_internal=True)
+
+
+def list_historial_adjunto_interna(
+    db: Session, organization_id: str, grupo_archivo: str
+) -> list[dict[str, Any]]:
+    return evid_svc.list_historial_grupo(db, organization_id, grupo_archivo, include_internal=True)
+
+
+def download_adjunto_interna(
+    db: Session, organization_id: str, user_id: str, adjunto_id: str
+) -> tuple[str, bytes, str | None]:
+    return evid_svc.download_adjunto(
+        db, organization_id, adjunto_id, user_id=user_id, acceso_activo=True
+    )
+
+
+def validar_adjunto_interna(
+    db: Session,
+    organization_id: str,
+    user_id: str,
+    adjunto_id: str,
+    *,
+    estado: str,
+    observacion_publica: str | None = None,
+    observacion_interna: str | None = None,
+) -> dict[str, Any]:
+    return evid_svc.validar_adjunto_interno(
+        db,
+        organization_id,
+        user_id,
+        adjunto_id,
+        estado=estado,
+        observacion_publica=observacion_publica,
+        observacion_interna=observacion_interna,
+    )
+
+
+def _get_entrega_for_validation(db: Session, organization_id: str, entrega_id: str) -> EvaluacionEntregaExterna:
+    entrega = (
+        db.query(EvaluacionEntregaExterna)
+        .filter(
+            EvaluacionEntregaExterna.id == entrega_id,
+            EvaluacionEntregaExterna.organization_id == organization_id,
+        )
+        .first()
+    )
+    if not entrega:
+        raise HTTPException(status_code=404, detail="Entrega no encontrada")
+    return entrega
 
 
 def validar_entrega_interna(
@@ -747,6 +878,8 @@ def validar_entrega_interna(
     *,
     estado: str,
     marcar_suficiencia: bool = False,
+    observacion_publica: str | None = None,
+    observacion_interna: str | None = None,
 ) -> dict[str, Any]:
     if estado not in ESTADOS_VALIDACION_EXTERNA:
         raise HTTPException(status_code=422, detail="estado de validación inválido")
@@ -764,6 +897,10 @@ def validar_entrega_interna(
     entrega.estado = estado
     entrega.validado_por = user_id
     entrega.validado_at = now
+    if observacion_publica is not None:
+        entrega.observacion_publica = observacion_publica
+    if observacion_interna is not None:
+        entrega.observacion_interna = observacion_interna
     if marcar_suficiencia:
         entrega.suficiencia_minima_at = now
     if entrega.informacion_item_id:
@@ -785,7 +922,7 @@ def validar_entrega_interna(
         detail=json.dumps({"entrega_id": entrega.id, "estado": estado}),
         commit=False,
     )
-    return _entrega_dict(entrega)
+    return _entrega_dict(entrega, db, include_internal=True)
 
 
 def get_portal_estado(db: Session, user: User) -> dict[str, Any]:
@@ -1123,4 +1260,4 @@ def crear_solicitud_informacion(
     )
     db.add(entrega)
     db.flush()
-    return _entrega_dict(entrega)
+    return _entrega_dict(entrega, db)

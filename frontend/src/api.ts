@@ -4052,6 +4052,42 @@ export async function entregarInformacionExterna(payload: {
   });
 }
 
+export async function subirAdjuntosExternos(
+  itemId: string,
+  files: File[],
+  observacion?: string,
+): Promise<Record<string, unknown>> {
+  const form = new FormData();
+  form.append("item_id", itemId);
+  if (observacion) form.append("observacion", observacion);
+  for (const f of files) form.append("files", f);
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch("/api/espacio-externo/mi-espacio/adjuntos", { method: "POST", headers, body: form });
+  if (!res.ok) throw new Error(await res.text() || res.statusText);
+  return res.json() as Promise<Record<string, unknown>>;
+}
+
+export function urlDescargaAdjuntoExterno(adjuntoId: string): string {
+  return `/api/espacio-externo/mi-espacio/adjuntos/${encodeURIComponent(adjuntoId)}/descarga`;
+}
+
+export async function descargarAdjuntoExterno(adjuntoId: string, filename: string): Promise<void> {
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(urlDescargaAdjuntoExterno(adjuntoId), { headers });
+  if (!res.ok) throw new Error(await res.text() || res.statusText);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export async function validarEntregaExterna(
   entregaId: string,
   estado: string,

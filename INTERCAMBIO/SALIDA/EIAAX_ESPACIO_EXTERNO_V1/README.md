@@ -100,6 +100,57 @@ tenant (organization_id)
 
 ---
 
+## Qué se completó (V1c — evidencias/adjuntos)
+
+1. **Reutilización `knowledge_storage`** — `EVIDENCE_ROOT`, `save_evidence_bytes`, `read_evidence_file` (misma política de formatos/tamaño)
+2. **`EvaluacionEntregaAdjunto`** — metadata versionada + migración `1432`
+3. **`evidencia_entrega_service`** — carga, reemplazo, descarga segura, vínculo `EmpresaEvidenciaVinculo` → dossier
+4. **API** — upload multipart portal + descarga + historial interno + validación complemento
+5. **Frontend** — carga múltiple en formulario + listado adjuntos con descarga autenticada
+6. **Tests** — `test_espacio_externo_evidencias_v1.py` (10 tests) + 18 previos = **28/28 PASS**
+
+---
+
+## Autoridad de archivos reutilizada
+
+| Componente | Uso |
+|------------|-----|
+| `knowledge_storage` | Validación extensión, tamaño, sanitización nombre, path traversal |
+| `EmpresaEvidenciaVinculo` | Vínculo evidencia → expediente/información (sin duplicar bytes) |
+| `EvaluacionEntregaExterna` | Flujo estados SOLICITADO→RECIBIDO→VALIDADO/REQUIERE_COMPLEMENTO |
+
+**Almacenamiento nuevo creado:** NO (solo namespace `data/evidence/` sobre misma autoridad)
+
+---
+
+## Matriz PASS/FAIL (V1c evidencias)
+
+| Criterio | Resultado |
+|----------|-----------|
+| Carga externa | **PASS** |
+| Versionado | **PASS** |
+| Complemento | **PASS** |
+| Descarga segura | **PASS** |
+| Tenant isolation | **PASS** |
+| Revocación | **PASS** |
+| Dossier canónico | **PASS** |
+| Historial | **PASS** |
+| Validación interna | **PASS** |
+| Frontend | **PASS** |
+| Tests | **28 / PASS** |
+
+---
+
+## P0 / P1 / P2 reales (post-V1c)
+
+| Prioridad | Item | Estado |
+|-----------|------|--------|
+| **P0** | Evidencias reales externas | PASS |
+| **P1** | Cablear gobierno 4 niveles en publicación | Dependencia Centro Control |
+| **P2** | Email invitación automática | Pendiente |
+
+---
+
 ## SHA
 
 Ver `SHA.txt` en este directorio.

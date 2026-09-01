@@ -75,6 +75,14 @@ ESTADOS_VALIDACION_EXTERNA = frozenset({
     "REQUIERE_COMPLEMENTO",
 })
 
+ESTADOS_ADJUNTO_ENTREGA = frozenset({
+    "RECIBIDO",
+    "EN_VALIDACION",
+    "VALIDADO",
+    "REQUIERE_COMPLEMENTO",
+    "REEMPLAZADO",
+})
+
 
 class EntidadEmpresa(Base):
     """Empresa/prospecto/cliente vinculada a un expediente — evoluciona sin duplicar."""
@@ -189,4 +197,40 @@ class EvaluacionEntregaExterna(Base):
     entregado_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     validado_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     suficiencia_minima_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    observacion_publica: Mapped[str | None] = mapped_column(Text, nullable=True)
+    observacion_interna: Mapped[str | None] = mapped_column(Text, nullable=True)
     correlation_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+
+
+class EvaluacionEntregaAdjunto(Base):
+    """Adjunto versionado vinculado a entrega externa y dossier canónico."""
+
+    __tablename__ = "evaluacion_entrega_adjuntos"
+    __table_args__ = (
+        Index("ix_adjunto_entrega", "entrega_id", "es_version_actual"),
+        Index("ix_adjunto_expediente", "expediente_id", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(String(36), ForeignKey("organizations.id"), nullable=False, index=True)
+    expediente_id: Mapped[str] = mapped_column(String(36), ForeignKey("evaluaciones_expediente.id"), nullable=False, index=True)
+    entidad_id: Mapped[str] = mapped_column(String(36), ForeignKey("entidades_empresa.id"), nullable=False, index=True)
+    entrega_id: Mapped[str] = mapped_column(String(36), ForeignKey("evaluacion_entregas_externas.id"), nullable=False, index=True)
+    informacion_item_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("evaluaciones_informacion.id"), nullable=True)
+    grupo_archivo: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    reemplaza_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("evaluacion_entrega_adjuntos.id"), nullable=True)
+    nombre_original: Mapped[str] = mapped_column(String(260), nullable=False)
+    nombre_sanitizado: Mapped[str] = mapped_column(String(260), nullable=False)
+    extension: Mapped[str] = mapped_column(String(20), nullable=False)
+    mime_type: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    storage_key: Mapped[str] = mapped_column(String(400), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    es_version_actual: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    estado: Mapped[str] = mapped_column(String(30), nullable=False, default="RECIBIDO")
+    observacion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    observacion_interna: Mapped[str | None] = mapped_column(Text, nullable=True)
+    fuente_tipo: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    subido_por: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    correlation_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)

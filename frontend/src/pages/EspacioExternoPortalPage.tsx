@@ -11,6 +11,8 @@ import {
   fetchMiEspacioInformacion,
   fetchMiEspacioSoporte,
   fetchMiEspacioVistaEntidad,
+  subirAdjuntosExternos,
+  descargarAdjuntoExterno,
   type MiEspacioContext,
 } from "../api";
 import { VistaEntidadPreview } from "../components/evaluacion/VistaEntidadPreview";
@@ -114,9 +116,15 @@ export function EspacioExternoPortalPage() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const contenido = String(fd.get("contenido") ?? "").trim();
-    if (!contenido) return;
+    const fileInput = e.currentTarget.querySelector<HTMLInputElement>('input[type="file"]');
+    const files = fileInput?.files ? Array.from(fileInput.files) : [];
+    if (!contenido && files.length === 0) return;
     try {
-      await entregarInformacionExterna({ item_id: itemId, contenido });
+      if (files.length > 0) {
+        await subirAdjuntosExternos(itemId, files, contenido || undefined);
+      } else {
+        await entregarInformacionExterna({ item_id: itemId, contenido });
+      }
       setMsg("Entrega registrada — en validación");
       fetchMiEspacioInformacion().then(setInformacion);
     } catch (err) {
@@ -193,7 +201,9 @@ export function EspacioExternoPortalPage() {
                   <span className="badge">{String(s.estado_validacion ?? s.estado)}</span>
                   {s.puede_entregar && (
                     <form onSubmit={(e) => onEntregar(e, String(s.id))} className="entrega-form">
-                      <textarea name="contenido" rows={3} placeholder="Su respuesta o evidencia…" required />
+                      <textarea name="contenido" rows={3} placeholder="Su respuesta u observación…" />
+                      <input type="file" name="adjuntos" multiple accept=".txt,.csv,.json,.pdf,.docx,.xlsx" />
+                      <p className="muted small">Formatos: txt, csv, json, pdf, docx, xlsx (máx. 20 MB)</p>
                       <button type="submit" className="btn primary">Entregar</button>
                     </form>
                   )}
@@ -204,8 +214,26 @@ export function EspacioExternoPortalPage() {
           {tab === "entregas" && (
             <ul>
               {((informacion.entregas as Record<string, unknown>[]) ?? []).map((e) => (
-                <li key={String(e.id)}>
-                  {String(e.titulo)} — {String(e.estado)} — v{String(e.version)}
+                <li key={String(e.id)} className="entrega-card">
+                  <strong>{String(e.titulo)}</strong> — {String(e.estado)} — v{String(e.version)}
+                  {e.observacion_publica ? (
+                    <p className="muted small">Complemento solicitado: {String(e.observacion_publica)}</p>
+                  ) : null}
+                  <ul className="adjuntos-list">
+                    {((e.adjuntos as Record<string, unknown>[]) ?? []).map((a) => (
+                      <li key={String(a.id)}>
+                        {String(a.nombre)} — v{String(a.version)} — {String(a.estado)}
+                        {" "}
+                        <button
+                          type="button"
+                          className="btn link"
+                          onClick={() => descargarAdjuntoExterno(String(a.id), String(a.nombre)).catch((err) => setError(String(err)))}
+                        >
+                          Descargar
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </li>
               ))}
             </ul>

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -79,6 +80,14 @@ class EntregaExterna(BaseModel):
 class ValidarEntrega(BaseModel):
     estado: str
     marcar_suficiencia: bool = False
+    observacion_publica: str | None = None
+    observacion_interna: str | None = None
+
+
+class ValidarAdjunto(BaseModel):
+    estado: str
+    observacion_publica: str | None = None
+    observacion_interna: str | None = None
 
 
 # --- Internal (EIAAX staff) ---
@@ -270,6 +279,59 @@ def validar_entrega(
         entrega_id,
         estado=body.estado,
         marcar_suficiencia=body.marcar_suficiencia,
+        observacion_publica=body.observacion_publica,
+        observacion_interna=body.observacion_interna,
+    )
+    db.commit()
+    return result
+
+
+@router.get("/entregas/{entrega_id}/adjuntos")
+def listar_adjuntos_entrega(
+    entrega_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.manage")),
+):
+    return svc.list_adjuntos_entrega_interna(db, user.organization_id, entrega_id)
+
+
+@router.get("/adjuntos/historial/{grupo_archivo}")
+def historial_adjunto(
+    grupo_archivo: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.manage")),
+):
+    return svc.list_historial_adjunto_interna(db, user.organization_id, grupo_archivo)
+
+
+@router.get("/adjuntos/{adjunto_id}/descarga")
+def descargar_adjunto_interno(
+    adjunto_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.manage")),
+):
+    filename, data, mime = svc.download_adjunto_interna(
+        db, user.organization_id, user.id, adjunto_id
+    )
+    headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+    return Response(content=data, media_type=mime or "application/octet-stream", headers=headers)
+
+
+@router.post("/adjuntos/{adjunto_id}/validar")
+def validar_adjunto(
+    adjunto_id: str,
+    body: ValidarAdjunto,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.manage")),
+):
+    result = svc.validar_adjunto_interna(
+        db,
+        user.organization_id,
+        user.id,
+        adjunto_id,
+        estado=body.estado,
+        observacion_publica=body.observacion_publica,
+        observacion_interna=body.observacion_interna,
     )
     db.commit()
     return result
@@ -430,3 +492,84 @@ def mi_soporte_comentario(
     )
     db.commit()
     return result
+
+
+@router.post("/mi-espacio/entregas/{entrega_id}/adjuntos", status_code=201)
+async def mi_subir_adjuntos_entrega(
+    entrega_id: str,
+    files: list[UploadFile] = File(...),
+    observacion: str | None = Form(None),
+    fuente_tipo: str = Form("SUMINISTRADA_EMPRESA"),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.entregar")),
+):
+    payload: list[tuple[str, bytes, str | None]] = []
+    for f in files:
+        payload.append((f.filename or "documento.txt", await f.read(), f.content_type))
+    result = svc.upload_adjuntos_portal(
+        db,
+        user,
+        entrega_id=entrega_id,
+        files=payload,
+        observacion=observacion,
+        fuente_tipo=fuente_tipo,
+    )
+    db.commit()
+    return result
+
+
+@router.post("/mi-espacio/adjuntos", status_code=201)
+async def mi_subir_adjuntos_item(
+    item_id: str = Form(...),
+    files: list[UploadFile] = File(...),
+    observacion: str | None = Form(None),
+    fuente_tipo: str = Form("SUMINISTRADA_EMPRESA"),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.entregar")),
+):
+    payload: list[tuple[str, bytes, str | None]] = []
+    for f in files:
+        payload.append((f.filename or "documento.txt", await f.read(), f.content_type))
+    result = svc.upload_adjuntos_portal(
+        db,
+        user,
+        item_id=item_id,
+        files=payload,
+        observacion=observacion,
+        fuente_tipo=fuente_tipo,
+    )
+    db.commit()
+    return result
+
+
+@router.post("/mi-espacio/adjuntos/{adjunto_id}/reemplazar", status_code=201)
+async def mi_reemplazar_adjunto(
+    adjunto_id: str,
+    file: UploadFile = File(...),
+    observacion: str | None = Form(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.entregar")),
+):
+    data = await file.read()
+    result = svc.reemplazar_adjunto_portal(
+        db,
+        user,
+        adjunto_id,
+        filename=file.filename or "documento.txt",
+        data=data,
+        mime_type=file.content_type,
+        observacion=observacion,
+    )
+    db.commit()
+    return result
+
+
+@router.get("/mi-espacio/adjuntos/{adjunto_id}/descarga")
+def mi_descargar_adjunto(
+    adjunto_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.portal")),
+):
+    filename, data, mime = svc.download_adjunto_portal(db, user, adjunto_id)
+    headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+    return Response(content=data, media_type=mime or "application/octet-stream", headers=headers)
