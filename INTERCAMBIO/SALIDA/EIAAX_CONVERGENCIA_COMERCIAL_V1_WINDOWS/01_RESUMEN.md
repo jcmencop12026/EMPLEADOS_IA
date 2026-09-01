@@ -1,6 +1,6 @@
 # EIAAX 482ff6f — Puesta en marcha Windows (convergencia comercial V1)
 
-**Estado:** LISTO PARA PRUEBA WINDOWS  
+**Estado:** CORRECCION WINDOWS LISTA PARA VALIDACION LOCAL  
 **Agente remoto:** no ejecuto Windows real; procedimiento unico certificado abajo.
 
 ---
@@ -10,7 +10,8 @@
 | Campo | Valor |
 |-------|-------|
 | SHA convergencia (integracion) | `482ff6f` |
-| SHA Windows arranque | `0b48139` (incluye preparador Alembic 1820) |
+| SHA Windows certificacion | HEAD actual de rama `cursor/convergencia-comercial-v1-85e4` |
+| Validacion SHA | **Rama + manifest** (`eiaax_convergence_manifest.json`), no SHA fijo obsoleto |
 | Rama | `cursor/convergencia-comercial-v1-85e4` |
 | PR | #159 |
 | Base protegida | `d034566` — tag `eiaax-v1-preconvergencia-windows-operativo` |
@@ -55,22 +56,24 @@ git fetch origin cursor/convergencia-comercial-v1-85e4
 git worktree add D:\EMPLEADOS_IA_CONVERGENCIA cursor/convergencia-comercial-v1-85e4
 ```
 
-### B. Arranque (un solo comando)
+### B. Arranque (un solo comando certificado)
 
 ```powershell
 cd D:\EMPLEADOS_IA_CONVERGENCIA
+git pull
+git checkout cursor/convergencia-comercial-v1-85e4
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\windows\arrancar_convergencia_windows.ps1
 ```
 
-Equivale a: validar parser → preparar (venv, npm, seed, alembic 1820) → iniciar backend + frontend.
+Un solo bloque fail-closed: repo, puertos, Python, preparacion, seed, Alembic 1820, arranque, identidad runtime.
 
-Opciones:
+Si falla cualquier paso critico: **CERTIFICACION ABORTADA** — no declarar operativo.
 
-| Parametro | Efecto |
-|-----------|--------|
-| `-PrepareOnly` | Solo preparacion |
-| `-StartOnly` | Solo arranque (BD ya preparada) |
-| `-SkipPrepare` | Igual que StartOnly |
+Opcional si Python no se autodetecta:
+
+```powershell
+$env:EIAAX_PYTHON = "C:\Python312\python.exe"
+```
 
 ### C. Detener
 

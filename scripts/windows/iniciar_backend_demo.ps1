@@ -42,6 +42,7 @@ try {
     }
 
     Write-Host "Starting backend at http://127.0.0.1:${port} ..."
+    $runtimeEnv = Get-EiaaxBackendRuntimeEnvironment -DatabaseUrl $databaseUrl -StateDir $stateDir
     $proc = Start-EiaaxManagedProcess `
         -FilePath $venvPython `
         -ArgumentList @("-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", [string]$port) `
@@ -49,7 +50,7 @@ try {
         -LogFile $logFile `
         -StateDir $stateDir `
         -WrapperName "run_backend" `
-        -Environment @{ DATABASE_URL = $databaseUrl }
+        -Environment $runtimeEnv
 
     $listenerPid = Wait-EiaaxListenerPid -Port $port -TimeoutSec 45
     if ($null -eq $listenerPid) {

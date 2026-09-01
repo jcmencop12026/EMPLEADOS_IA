@@ -15,8 +15,8 @@ $script:StateDirName = ".runtime-eiaax-demo"
 $script:LogsDirName = "logs\demo"
 $script:DemoDbFileName = "eiaax_integrado_demo.db"
 $script:ExpectedAlembicHead = "1820a1b2c3d4e"
-$script:ExpectedConvergenceSha = "0b48139"
 $script:ConvergenceWorktreeDefault = "D:\EMPLEADOS_IA_CONVERGENCIA"
+$script:ConvergenceManifestFile = "eiaax_convergence_manifest.json"
 
 $script:ForbiddenWorktreeNames = @(
     "EMPLEADOS_IA",
@@ -450,7 +450,398 @@ function Get-EiaaxPythonDiscoveryCandidates {
         }
     }
 
+    foreach ($wherePath in (Get-EiaaxPythonWhereCandidates)) {
+        & $addCandidate $wherePath
+    }
+
+    foreach ($launcherPath in (Get-EiaaxPythonLauncherCandidates)) {
+        & $addCandidate $launcherPath
+    }
+
+    foreach ($registryPath in (Get-EiaaxPythonRegistryCandidates)) {
+        & $addCandidate $registryPath
+    }
+
+    foreach ($pathDir in ($env:PATH -split ';')) {
+        if ([string]::IsNullOrWhiteSpace($pathDir)) {
+            continue
+        }
+        $pathCandidate = Join-Path $pathDir.Trim() "python.exe"
+        & $addCandidate $pathCandidate
+    }
+
     return [string[]]$ordered.ToArray()
+}
+
+function Get-EiaaxPythonWhereCandidates {
+    $whereExe = Join-Path $env:SystemRoot "System32\where.exe"
+    if (-not (Test-Path -LiteralPath $whereExe)) {
+        return @()
+    }
+
+    $paths = New-Object System.Collections.Generic.List[string]
+    foreach ($target in @("python.exe", "python3.exe")) {
+        $result = Invoke-EiaaxExternalCommand -FilePath $whereExe -ArgumentList @($target)
+        if ($result.ExitCode -ne 0) {
+            continue
+        }
+        foreach ($line in ($result.Output -split "`r?`n")) {
+            $trimmed = $line.Trim()
+            if (-not [string]::IsNullOrWhiteSpace($trimmed)) {
+                [void]$paths.Add($trimmed)
+            }
+        }
+    }
+    return [string[]]$paths.ToArray()
+}
+
+function Get-EiaaxPythonLauncherCandidates {
+    $py = Get-Command py.exe -ErrorAction SilentlyContinue
+    if ($null -eq $py) {
+        $py = Get-Command py -ErrorAction SilentlyContinue
+    }
+    if ($null -eq $py) {
+        return @()
+    }
+
+    $paths = New-Object System.Collections.Generic.List[string]
+    $listResult = Invoke-EiaaxExternalCommand -FilePath $py.Source -ArgumentList @("-0p")
+    if ($listResult.ExitCode -eq 0) {
+        foreach ($line in ($listResult.Output -split "`r?`n")) {
+            if ($line -match '(C:\\[^`\r\n]+\.exe)\s*$') {
+                [void]$paths.Add($Matches[1].Trim())
+            }
+        }
+    }
+
+    foreach ($version in @("3.12", "3.13", "3.11")) {
+        $resolveResult = Invoke-EiaaxExternalCommand -FilePath $py.Source `
+            -ArgumentList @("-$version", "-c", "import sys; print(sys.executable)")
+        if ($resolveResult.ExitCode -eq 0) {
+            foreach ($line in ($resolveResult.Output -split "`r?`n")) {
+                $trimmed = $line.Trim()
+                if ($trimmed -match '^[A-Za-z]:\\') {
+                    [void]$paths.Add($trimmed)
+                }
+            }
+        }
+    }
+
+    return [string[]]$paths.ToArray()
+}
+
+function Get-EiaaxPythonRegistryCandidates {
+    $paths = New-Object System.Collections.Generic.List[string]
+    foreach ($root in @("HKLM:\SOFTWARE\Python\PythonCore", "HKCU:\SOFTWARE\Python\PythonCore")) {
+        if (-not (Test-Path -LiteralPath $root)) {
+            continue
+        }
+        $versions = Get-ChildItem -LiteralPath $root -ErrorAction SilentlyContinue
+        foreach ($versionKey in $versions) {
+            $installPath = (Get-ItemProperty -LiteralPath (Join-Path $versionKey.PSPath "InstallPath") -ErrorAction SilentlyContinue).'(default)'
+            if (-not [string]::IsNullOrWhiteSpace($installPath)) {
+                [void]$paths.Add((Join-Path $installPath "python.exe"))
+            }
+        }
+    }
+    return [string[]]$paths.ToArray()
+}
+
+function Get-EiaaxConvergenceManifest {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    $manifestPath = Join-Path $ScriptsDir $script:ConvergenceManifestFile
+    if (-not (Test-Path -LiteralPath $manifestPath)) {
+        Exit-EiaaxFailure -Message ("Missing convergence manifest: " + $manifestPath)
+    }
+    return (Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json)
+}
+
+function Get-EiaaxGitBranchName {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot
+    )
+
+    Push-Location $WorktreeRoot
+    try {
+        $branch = (& git rev-parse --abbrev-ref HEAD 2>$null)
+        if ($LASTEXITCODE -ne 0) {
+            return $null
+        }
+        return $branch.Trim()
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+function Get-EiaaxGitShortSha {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot
+    )
+
+    Push-Location $WorktreeRoot
+    try {
+        $sha = (& git rev-parse --short HEAD 2>$null)
+        if ($LASTEXITCODE -ne 0) {
+            return $null
+        }
+        return $sha.Trim()
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+function Confirm-EiaaxConvergenceRepository {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    $manifest = Get-EiaaxConvergenceManifest -ScriptsDir $ScriptsDir
+    $branch = Get-EiaaxGitBranchName -WorktreeRoot $WorktreeRoot
+    $sha = Get-EiaaxGitShortSha -WorktreeRoot $WorktreeRoot
+
+    if ([string]::IsNullOrWhiteSpace($branch)) {
+        Exit-EiaaxFailure -Message "Cannot resolve git branch for convergence validation."
+    }
+    if ($branch -ne $manifest.branch) {
+        Exit-EiaaxFailure -Message ("Wrong git branch. Expected " + $manifest.branch + " but found " + $branch + ".")
+    }
+
+    if ([string]::IsNullOrWhiteSpace($sha)) {
+        Exit-EiaaxFailure -Message "Cannot resolve git SHA for convergence validation."
+    }
+
+    Write-Host ("Repository OK: branch=" + $branch + " sha=" + $sha)
+    return [ordered]@{
+        Manifest = $manifest
+        Branch   = $branch
+        Sha      = $sha
+    }
+}
+
+function Get-EiaaxPortOccupantInfo {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$Port,
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot
+    )
+
+    $listener = Get-EiaaxListenerPid -Port $Port
+    if ($null -eq $listener) {
+        return $null
+    }
+
+    $serviceName = if ($Port -eq $script:BackendPort) { "backend" } else { "frontend" }
+    $commandLine = Get-EiaaxProcessCommandLine -ProcessId $listener
+    $managed = Test-EiaaxManagedProcess -ProcessId $listener -WorktreeRoot $WorktreeRoot -ServiceName $serviceName
+    $sameWorktree = $false
+    if (-not [string]::IsNullOrWhiteSpace($commandLine)) {
+        $sameWorktree = $commandLine.ToUpperInvariant().Contains($WorktreeRoot.ToUpperInvariant())
+    }
+
+    return [ordered]@{
+        Port         = $Port
+        ProcessId    = $listener
+        CommandLine  = $commandLine
+        Managed      = $managed
+        SameWorktree = $sameWorktree
+        ServiceName  = $serviceName
+    }
+}
+
+function Clear-EiaaxPortsForConvergence {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    $stopScript = Join-Path $ScriptsDir "detener_demo_eiaax.ps1"
+    $foreign = New-Object System.Collections.Generic.List[string]
+
+    foreach ($port in @($script:BackendPort, $script:FrontendPort)) {
+        $info = Get-EiaaxPortOccupantInfo -Port $port -WorktreeRoot $WorktreeRoot
+        if ($null -eq $info) {
+            Write-Host ("Port " + $port + ": libre.")
+            continue
+        }
+
+        Write-Host ("Port " + $port + " ocupado por PID " + $info.ProcessId)
+        if (-not [string]::IsNullOrWhiteSpace($info.CommandLine)) {
+            Write-Host ("  CMD: " + $info.CommandLine)
+        }
+
+        if ($info.Managed -and $info.SameWorktree) {
+            Write-Host ("  -> proceso EIAAX gestionado del mismo worktree; se detendra.")
+            continue
+        }
+
+        if ($info.Managed -and (-not $info.SameWorktree)) {
+            [void]$foreign.Add("Port " + $port + " used by EIAAX from another worktree (PID " + $info.ProcessId + ").")
+            continue
+        }
+
+        [void]$foreign.Add("Port " + $port + " used by non-EIAAX process PID " + $info.ProcessId + ".")
+    }
+
+    if ($foreign.Count -gt 0) {
+        Exit-EiaaxFailure -Message ("Cannot start convergence candidate safely: " + ($foreign -join " "))
+    }
+
+    if (Test-Path -LiteralPath $stopScript) {
+        Invoke-EiaaxPowerShellFile -FilePath $stopScript | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Exit-EiaaxFailure -Message "Failed to stop previous EIAAX demo processes for this worktree."
+        }
+    }
+
+    foreach ($port in @($script:BackendPort, $script:FrontendPort)) {
+        $remaining = Get-EiaaxListenerPid -Port $port
+        if ($null -ne $remaining) {
+            Exit-EiaaxFailure -Message ("Port " + $port + " still in use by PID " + $remaining + " after stop.")
+        }
+    }
+}
+
+function Write-EiaaxRuntimeIdentityState {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$StateDir,
+        [Parameter(Mandatory = $true)]
+        [string]$GitSha,
+        [Parameter(Mandatory = $true)]
+        [string]$DemoProfile,
+        [Parameter(Mandatory = $true)]
+        [string]$RuntimeMarker
+    )
+
+    Write-EiaaxStateValue -StateDir $StateDir -Name "runtime_git_sha" -Value $GitSha
+    Write-EiaaxStateValue -StateDir $StateDir -Name "runtime_demo_profile" -Value $DemoProfile
+    Write-EiaaxStateValue -StateDir $StateDir -Name "runtime_marker" -Value $RuntimeMarker
+}
+
+function Get-EiaaxBackendRuntimeEnvironment {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$DatabaseUrl,
+        [Parameter(Mandatory = $true)]
+        [string]$StateDir
+    )
+
+    $envMap = @{ DATABASE_URL = $DatabaseUrl }
+    foreach ($pair in @(
+            @{ Name = "runtime_git_sha"; Env = "EIAAX_GIT_SHA" },
+            @{ Name = "runtime_demo_profile"; Env = "EIAAX_DEMO_PROFILE" },
+            @{ Name = "runtime_marker"; Env = "EIAAX_RUNTIME_MARKER" }
+        )) {
+        $value = Get-EiaaxStateValue -StateDir $StateDir -Name $pair.Name
+        if (-not [string]::IsNullOrWhiteSpace($value)) {
+            $envMap[$pair.Env] = $value
+        }
+    }
+    return $envMap
+}
+
+function Invoke-EiaaxHealthJson {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$Port,
+        [string]$Path = "/health"
+    )
+
+    $uri = "http://127.0.0.1:" + $Port + $Path
+    try {
+        $response = Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 10
+        return [ordered]@{
+            StatusCode = [int]$response.StatusCode
+            Body       = $response.Content
+        }
+    }
+    catch {
+        return [ordered]@{
+            StatusCode = 0
+            Body       = $_.Exception.Message
+        }
+    }
+}
+
+function Confirm-EiaaxRuntimeIdentity {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedGitSha,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedAlembicHead,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedDemoProfile,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedRuntimeMarker,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedDemoDbName,
+        [int]$BackendPort = $script:BackendPort,
+        [int]$FrontendPort = $script:FrontendPort
+    )
+
+    $backend = Invoke-EiaaxHealthJson -Port $BackendPort -Path "/health"
+    if ($backend.StatusCode -ne 200) {
+        Exit-EiaaxFailure -Message ("Backend /health failed. Status=" + $backend.StatusCode + " Body=" + $backend.Body)
+    }
+
+    $health = $backend.Body | ConvertFrom-Json
+    if ($health.status -ne "up") {
+        Exit-EiaaxFailure -Message ("Backend health status is not up: " + $health.status)
+    }
+    if (-not $health.runtime) {
+        Exit-EiaaxFailure -Message "Backend /health missing runtime identity block."
+    }
+
+    $runtime = $health.runtime
+    if ($runtime.git_sha -ne $ExpectedGitSha) {
+        Exit-EiaaxFailure -Message ("Runtime git_sha mismatch. Expected " + $ExpectedGitSha + " got " + $runtime.git_sha)
+    }
+    if ($runtime.demo_profile -ne $ExpectedDemoProfile) {
+        Exit-EiaaxFailure -Message ("Runtime demo_profile mismatch. Expected " + $ExpectedDemoProfile + " got " + $runtime.demo_profile)
+    }
+    if ($runtime.runtime_marker -ne $ExpectedRuntimeMarker) {
+        Exit-EiaaxFailure -Message ("Runtime marker mismatch. Expected " + $ExpectedRuntimeMarker + " got " + $runtime.runtime_marker)
+    }
+    if ($runtime.alembic_current -ne $ExpectedAlembicHead) {
+        Exit-EiaaxFailure -Message ("Alembic current mismatch. Expected " + $ExpectedAlembicHead + " got " + $runtime.alembic_current)
+    }
+    if ($runtime.demo_db_name -ne $ExpectedDemoDbName) {
+        Exit-EiaaxFailure -Message ("Demo DB name mismatch. Expected " + $ExpectedDemoDbName + " got " + $runtime.demo_db_name)
+    }
+
+    $proxy = Invoke-EiaaxHealthJson -Port $FrontendPort -Path "/health"
+    if ($proxy.StatusCode -ne 200) {
+        Exit-EiaaxFailure -Message ("Frontend proxy /health failed. Status=" + $proxy.StatusCode)
+    }
+    $proxyHealth = $proxy.Body | ConvertFrom-Json
+    if (-not $proxyHealth.runtime) {
+        Exit-EiaaxFailure -Message "Frontend proxy /health missing runtime identity."
+    }
+    if ($proxyHealth.runtime.git_sha -ne $ExpectedGitSha) {
+        Exit-EiaaxFailure -Message "Frontend proxy points to a different backend instance."
+    }
+
+    $frontend = Invoke-EiaaxHealthJson -Port $FrontendPort -Path "/"
+    if ($frontend.StatusCode -ne 200) {
+        Exit-EiaaxFailure -Message ("Frontend root failed. Status=" + $frontend.StatusCode)
+    }
+
+    Write-Host "Runtime identity PASS (backend + frontend proxy)."
+    return $true
 }
 
 function Invoke-EiaaxPythonVersionProbe {
@@ -586,7 +977,7 @@ function Find-EiaaxPython {
 
     $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
     if (Get-EiaaxCollectionCount $candidates -eq 0) {
-        Exit-EiaaxFailure -Message "PYTHON NOT FOUND: no python.exe candidates detected on this machine."
+        Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: no python.exe candidates detected. Tried PATH, where.exe, py launcher, registry and standard install paths. Set EIAAX_PYTHON to a full python.exe path if needed.")
     }
 
     $failures = @()
