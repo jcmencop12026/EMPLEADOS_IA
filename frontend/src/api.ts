@@ -2843,6 +2843,10 @@ export type ImplTablero = {
 };
 
 export type ImplProyectoDetalle = ImplProyectoSummary & {
+  opportunity_id?: string | null;
+  evaluacion_id?: string | null;
+  contract_id?: string | null;
+  compromiso_contractual?: Record<string, unknown> | null;
   hitos?: Array<{ id: string; nombre: string; estado: string }>;
   tareas?: Array<Record<string, unknown>>;
   requisitos?: Array<Record<string, unknown>>;
@@ -2915,6 +2919,49 @@ export async function medirImplObjetivo(objetivoId: string, valor_medido: number
 
 export async function calcularImplSalud(proyectoId: string) {
   return api(`/api/implementacion/proyectos/${proyectoId}/salud`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export type ImplEntregable = {
+  id: string;
+  nombre: string;
+  descripcion?: string | null;
+  estado: string;
+  fecha_objetivo?: string | null;
+  evidencia?: string | null;
+  aceptacion?: string | null;
+  observaciones?: string | null;
+};
+
+export async function fetchImplEntregables(proyectoId: string): Promise<ImplEntregable[]> {
+  return api(`/api/implementacion/proyectos/${proyectoId}/entregables`);
+}
+
+export async function createImplEntregable(proyectoId: string, data: Record<string, unknown>): Promise<ImplEntregable> {
+  return api(`/api/implementacion/proyectos/${proyectoId}/entregables`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateImplEntregable(entregableId: string, data: Record<string, unknown>): Promise<ImplEntregable> {
+  return api(`/api/implementacion/entregables/${entregableId}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function createImplTarea(proyectoId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/proyectos/${proyectoId}/tareas`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function completarImplTarea(tareaId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/tareas/${tareaId}/completar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function resolverImplBloqueador(bloqueadorId: string, data: Record<string, unknown>) {
+  return api(`/api/implementacion/bloqueadores/${bloqueadorId}/resolver`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function createImplRenovacion(data: Record<string, unknown>) {
+  return api("/api/implementacion/exito/renovaciones", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function createImplExpansion(data: Record<string, unknown>) {
+  return api("/api/implementacion/exito/expansiones", { method: "POST", body: JSON.stringify(data) });
 }
 
 // --- Segmentación y planes verticales (1310) ---
@@ -3821,6 +3868,56 @@ export async function fetchCommCatalog() {
   return api<{ variables: string[]; canales: string[]; estados: string[] }>("/api/comunicaciones/catalogo/variables");
 }
 
+export type CommCentroResumen = {
+  pendientes: number;
+  fallidas: number;
+  enviadas: number;
+  informes_entregados: number;
+  comunicaciones_fallidas: number;
+  programadas: number;
+  informes_comunicacion: number;
+};
+
+export type CommPreference = {
+  canales?: string[];
+  tipos?: string[];
+  horario?: Record<string, unknown>;
+  idioma: string;
+};
+
+export async function fetchCommCentroResumen(): Promise<CommCentroResumen> {
+  return api("/api/comunicaciones/centro-informacion/resumen");
+}
+
+export async function fetchCommPreferences(): Promise<CommPreference> {
+  return api("/api/comunicaciones/preferencias");
+}
+
+export async function updateCommPreferences(data: Partial<CommPreference>): Promise<CommPreference> {
+  return api("/api/comunicaciones/preferencias", { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function entregarInformeImpacto(
+  informeId: string,
+  data: {
+    channel_id: string;
+    destinatario_tipo?: string;
+    destinatario_id?: string;
+    visibilidad_entrega?: string;
+  },
+): Promise<{ message: CommMessage; entrega: Record<string, unknown> }> {
+  return api(`/api/comunicaciones/informes/${informeId}/entregar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function fetchEntregasInforme(informeId?: string) {
+  const q = informeId ? `?informe_id=${informeId}` : "";
+  return api(`/api/comunicaciones/informes/entregas${q}`);
+}
+
+export async function bootstrapCommDefaults() {
+  return api("/api/comunicaciones/bootstrap-defaults", { method: "POST" });
+}
+
 // --- Evaluación EIAAX (Bloque Producto 1) ---
 
 export type EvaluacionInfoItem = {
@@ -4242,4 +4339,343 @@ export async function fetchPartnerCatalogo(): Promise<{
   tipos_relacion: string[];
 }> {
   return api("/api/partners/meta/catalogo");
+}
+export type CentroNegociosDashboard = {
+  organization_id: string;
+  oportunidades_total: number;
+  propuestas_activas: number;
+  propuestas_por_estado: Record<string, number>;
+  negociaciones_abiertas: number;
+  contrataciones: number;
+  valores?: { valor_realizado?: number; valor_potencial?: number };
+  nota_potencial?: string;
+};
+
+export type CentroNegociosPipelineItem = {
+  id: string;
+  codigo: string;
+  titulo: string;
+  estado: string;
+  valor_atribuible?: number | null;
+  precio_final?: number | null;
+  opportunity_id?: string | null;
+  evaluacion_id?: string | null;
+  proximo_paso?: string | null;
+  version: number;
+};
+
+export async function fetchCentroNegociosDashboard(): Promise<CentroNegociosDashboard> {
+  return api("/api/centro-negocios/dashboard");
+}
+
+export async function fetchCentroNegociosPipeline(): Promise<CentroNegociosPipelineItem[]> {
+  return api("/api/centro-negocios/pipeline");
+}
+
+export async function createPropuestaDesdeExpediente(data: Record<string, unknown>) {
+  return api("/api/centro-negocios/propuestas/desde-expediente", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function transicionPropuestaNegocio(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/transicion`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function decidirPrecioNegocio(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/precio`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function registrarNegociacion(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/negociacion`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function convertirAImplementacion(proposalId: string, condiciones?: string | null) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/convertir-implementacion`, {
+    method: "POST",
+    body: JSON.stringify({ condiciones: condiciones ?? null }),
+  });
+}
+
+export type CentroNegociosDetalle = CentroNegociosPipelineItem & {
+  estado_label?: string;
+  currency?: string;
+  precio_final?: number | null;
+  documento_cliente?: Record<string, unknown> | null;
+  negocio: Record<string, unknown>;
+  aprobaciones?: Array<{ nivel: string; nivel_label?: string; estado: string }>;
+  versiones?: Array<{
+    id: string;
+    version_number: number;
+    estado_comercial: string;
+    estado_label?: string;
+    pdf_document_id?: string | null;
+    precio_presentado?: number | null;
+  }>;
+  negociaciones?: Array<{ id: string; interlocutor?: string; observaciones?: string; cambios_solicitados?: string }>;
+  fases_precio?: Array<{ fase: string; fase_label?: string; monto?: number | null; version_number?: number | null }>;
+  sync_log?: Array<{ id: string; direction: string; field_name: string }>;
+  nota_potencial?: string;
+  prospecto?: string | null;
+};
+
+export async function fetchCentroNegociosDetalle(proposalId: string): Promise<CentroNegociosDetalle> {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/detalle`);
+}
+
+export async function approveNegocioLevel(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/aprobaciones`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function generarPropuestaPdf(proposalId: string, versionNumber?: number) {
+  const q = versionNumber != null ? `?version_number=${versionNumber}` : "";
+  return api<{ document_id: string; filename: string; version_number: number }>(
+    `/api/centro-negocios/propuestas/${proposalId}/pdf${q}`,
+    { method: "POST", body: JSON.stringify({}) },
+  );
+}
+
+export async function downloadCentroNegociosDocumentPdf(documentId: string): Promise<Blob> {
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(`/api/centro-negocios/documentos/${documentId}/pdf`, { headers });
+  if (!res.ok) throw new ApiError(res.status, "No se pudo descargar el PDF");
+  return res.blob();
+}
+
+export function openCentroNegociosDocumentPdf(documentId: string): void {
+  downloadCentroNegociosDocumentPdf(documentId).then((blob) => {
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  });
+}
+
+export function fetchCentroNegociosDocumentPdfUrl(documentId: string): string {
+  return `/api/centro-negocios/documentos/${documentId}/pdf`;
+}
+
+export async function sincronizarNegocioOportunidad(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/sincronizar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function contratarPropuestaNegocio(proposalId: string, data: Record<string, unknown>) {
+  return api(`/api/centro-negocios/propuestas/${proposalId}/contratar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+// --- Continuidad comercial y operacional (1720) ---
+
+export type ContinuidadVista = {
+  diagnosticado?: Record<string, unknown> | null;
+  prometido?: Record<string, unknown>;
+  contratado?: Record<string, unknown>;
+  compromiso_snapshot?: Record<string, unknown>;
+  implementado?: Record<string, unknown>;
+  operando?: Record<string, unknown>;
+  proyectado?: Record<string, unknown>;
+  resultado_real?: Record<string, unknown>;
+  referencias?: {
+    proposal_id?: string;
+    opportunity_id?: string;
+    evaluacion_id?: string;
+    contract_id?: string;
+    proyecto_id?: string;
+  };
+};
+
+export type CambioAlcance = {
+  id: string;
+  codigo: string;
+  estado: string;
+  solicitud: string;
+  analisis?: string | null;
+  decision?: string | null;
+  impacto?: Record<string, unknown> | null;
+  proposal_id?: string;
+  proyecto_id?: string | null;
+  contract_id?: string | null;
+};
+
+export type CierreContrato = {
+  id: string;
+  contract_id: string;
+  proposal_id?: string;
+  proyecto_id?: string | null;
+  motivo: string;
+  estado: string;
+  confirmacion?: boolean;
+  pendientes?: string[];
+};
+
+export async function fetchContinuidadVistaPorPropuesta(proposalId: string): Promise<ContinuidadVista> {
+  return api(`/api/continuidad-comercial/propuestas/${proposalId}/vista`);
+}
+
+export async function fetchContinuidadVistaPorProyecto(proyectoId: string): Promise<ContinuidadVista> {
+  return api(`/api/continuidad-comercial/proyectos/${proyectoId}/vista`);
+}
+
+export async function fetchCambiosAlcance(proposalId: string): Promise<CambioAlcance[]> {
+  return api(`/api/continuidad-comercial/propuestas/${proposalId}/cambios-alcance`);
+}
+
+export async function crearCambioAlcance(data: Record<string, unknown>): Promise<CambioAlcance> {
+  return api("/api/continuidad-comercial/cambios-alcance", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function avanzarCambioAlcance(cambioId: string, data: Record<string, unknown>): Promise<CambioAlcance> {
+  return api(`/api/continuidad-comercial/cambios-alcance/${cambioId}/avanzar`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function iniciarCierreContrato(contractId: string, data: Record<string, unknown>): Promise<CierreContrato> {
+  return api(`/api/continuidad-comercial/contratos/${contractId}/cierre`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function confirmarCierreContrato(closureId: string): Promise<CierreContrato> {
+  return api(`/api/continuidad-comercial/cierres/${closureId}/confirmar`, { method: "POST", body: JSON.stringify({ confirmacion: true }) });
+}
+
+export type TransformacionDossier = {
+  id: string;
+  organization_id: string;
+  etapa_actual: string;
+  sector?: string | null;
+  resumen?: string | null;
+  confianza_global: string;
+  porcentaje_completitud: number;
+  expediente_activo_id?: string | null;
+  expediente_activo?: { id: string; codigo: string; titulo: string } | null;
+  conocimiento?: Array<{ campo: string; etiqueta: string; valor?: string; fuente: string; calidad: string }>;
+  mapa?: Array<{ id: string; tipo: string; nombre: string; parent_id?: string | null }>;
+  causas?: Array<{ id: string; tipo: string; titulo: string; confianza: string }>;
+  alternativas?: Array<Record<string, unknown>>;
+  iniciativas?: Array<Record<string, unknown>>;
+  escenarios?: Array<{ id: string; titulo: string; tipo: string; es_proyectado: boolean }>;
+};
+
+export type TransformacionRecorrido = {
+  pasos: Array<{ id: string; label: string; completo: boolean; detalle?: string }>;
+  dossier: TransformacionDossier;
+  suficiencia?: {
+    porcentaje_informacion: number;
+    confianza_global: string;
+    faltantes: Array<{ campo: string; etiqueta: string; impacto_precision?: string }>;
+    explicacion: string;
+  };
+};
+
+export async function fetchDossier(): Promise<TransformacionDossier> {
+  return api("/api/transformacion/dossier");
+}
+
+export async function fetchRecorridoTransformacion(expedienteId?: string): Promise<TransformacionRecorrido> {
+  const q = expedienteId ? `?expediente_id=${expedienteId}` : "";
+  return api(`/api/transformacion/recorrido${q}`);
+}
+
+export async function registrarNecesidadTransformacion(data: {
+  titulo: string;
+  necesidad: string;
+  objetivo?: string;
+  area_proceso?: string;
+  entidad_nombre?: string;
+  nivel?: string;
+}): Promise<Record<string, unknown>> {
+  return api("/api/transformacion/necesidad", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function diagnosticarTransformacion(expedienteId: string): Promise<Record<string, unknown>> {
+  return api(`/api/transformacion/expedientes/${expedienteId}/diagnosticar`, { method: "POST" });
+}
+
+export async function fetchRequerimientosEmpleadoIA(): Promise<{ items: Array<Record<string, unknown>> }> {
+  return api("/api/transformacion/requerimientos-empleado-ia");
+}
+
+export async function createEmployeeFromRequerimiento(requerimientoId: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/from-requerimiento/${requerimientoId}`, { method: "POST" });
+}
+
+export async function fetchBibliotecaEmpleados(params = ""): Promise<{ items: Array<Record<string, unknown>>; total: number }> {
+  return api(`/api/agent-factory/biblioteca${params ? `?${params}` : ""}`);
+}
+
+export async function cloneEmployee(employeeId: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${employeeId}/clone`, { method: "POST" });
+}
+
+export async function estimateEmployeeCapacity(employeeId: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${employeeId}/estimate-capacity`);
+}
+
+export async function validateEmployeeProvider(employeeId: string): Promise<Record<string, unknown>> {
+  return api(`/api/agent-factory/employees/${employeeId}/validate-provider`);
+}
+
+// --- Inteligencia de resultados (1410) ---
+
+export type ResultadoIndicador = {
+  id: string;
+  nombre: string;
+  unidad: string;
+  antes: number | null;
+  proyectado: number | null;
+  real: number | null;
+  meta: number | null;
+  confianza: string;
+  fuente: string;
+  tipo_analitica: string;
+  expediente_id: string | null;
+  sin_medicion_posterior: boolean;
+  visible_entidad: boolean;
+};
+
+export type InformeImpacto = {
+  id: string;
+  titulo: string;
+  tipo: string;
+  version: number;
+  visibilidad: string;
+  narrativa: string;
+  contenido: Record<string, unknown>;
+  expediente_id: string | null;
+  created_at: string | null;
+};
+
+export async function fetchResultadosIndicadores(params?: string): Promise<{ items: ResultadoIndicador[]; total: number }> {
+  return api(`/api/resultados/indicadores${params ? `?${params}` : ""}`);
+}
+
+export async function fetchAntesProyectadoReal(expedienteId?: string): Promise<Record<string, unknown>> {
+  const q = expedienteId ? `?expediente_id=${expedienteId}` : "";
+  return api(`/api/resultados/antes-proyectado-real${q}`);
+}
+
+export async function generarInformeImpacto(expedienteId: string, tipo = "IMPACTO"): Promise<InformeImpacto> {
+  return api("/api/resultados/informes/generar", {
+    method: "POST",
+    body: JSON.stringify({ expediente_id: expedienteId, tipo }),
+  });
+}
+
+export async function fetchInformesImpacto(expedienteId?: string): Promise<{ items: InformeImpacto[]; total: number }> {
+  const q = expedienteId ? `?expediente_id=${expedienteId}` : "";
+  return api(`/api/resultados/informes${q}`);
+}
+
+export async function fetchInformeImpacto(id: string): Promise<InformeImpacto> {
+  return api(`/api/resultados/informes/${id}`);
+}
+
+export async function fetchResultadosTrazabilidad(expedienteId: string): Promise<Record<string, unknown>> {
+  return api(`/api/resultados/expediente/${expedienteId}/trazabilidad`);
+}
+
+export async function createIndicadorResultado(data: Record<string, unknown>): Promise<ResultadoIndicador> {
+  return api("/api/resultados/indicadores", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function registerMedicionReal(indicadorId: string, valorReal: number, evidenciaRef?: string): Promise<ResultadoIndicador> {
+  return api(`/api/resultados/indicadores/${indicadorId}/medicion-real`, {
+    method: "POST",
+    body: JSON.stringify({ valor_real: valorReal, evidencia_ref: evidenciaRef }),
+  });
 }

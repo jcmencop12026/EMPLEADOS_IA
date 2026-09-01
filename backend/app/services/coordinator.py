@@ -835,6 +835,47 @@ def _build_plan_response(db: Session, plan: WorkPlan) -> dict[str, Any]:
     }
 
 
+def _mirror_decision_to_gobierno(
+    db: Session,
+    *,
+    organization_id: str,
+    user_id: str,
+    approval: ApprovalRequest,
+    decision: str,
+    comment: str | None,
+) -> None:
+    """Registra la decisión en Gobierno Operacional — autoridad transversal única."""
+    from app.services import gobierno_operacional_service as gov_svc
+
+    solicitud = gov_svc.crear_solicitud(
+        db,
+        organization_id,
+        user_id,
+        {
+            "tipo_accion": "EJECUCION",
+            "recurso_tipo": "operaciones.aprobacion",
+            "recurso_id": approval.id,
+            "descripcion": approval.action or "Aprobación operacional",
+            "payload": {
+                "approval_id": approval.id,
+                "work_plan_id": approval.work_plan_id,
+                "task_id": approval.task_id,
+                "decision": decision,
+            },
+            "criticidad": "HIGH",
+            "motivo_solicitud": approval.reason,
+        },
+    )
+    gov_svc.decidir_solicitud(
+        db,
+        organization_id,
+        solicitud["id"],
+        user_id,
+        decision="approve" if decision == "approve" else "reject",
+        motivo=comment,
+    )
+
+
 def decide_approval(
     db: Session,
     *,
@@ -870,6 +911,14 @@ def decide_approval(
     approval.decided_by = user_id
     approval.decided_at = _utcnow()
     approval.decision_comment = comment
+    _mirror_decision_to_gobierno(
+        db,
+        organization_id=organization_id,
+        user_id=user_id,
+        approval=approval,
+        decision=decision,
+        comment=comment,
+    )
 
     if decision == "approve":
         approval.status = "APPROVED"

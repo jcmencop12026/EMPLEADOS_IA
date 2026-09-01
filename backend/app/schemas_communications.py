@@ -186,3 +186,36 @@ class CommContratoMiTrabajo(BaseModel):
     canales_bloqueados: int
     reintentos_agotados: int
     endpoint: str = "/api/comunicaciones/contrato/mi-trabajo"
+
+
+class CommEntregaInformeCreate(BaseModel):
+    channel_id: str
+    destinatario_tipo: str = "USUARIO"
+    destinatario_id: str | None = None
+    destinatario_externo: str | None = None
+    visibilidad_entrega: str = "VISIBLE_ENTIDAD"
+
+
+class CommEntregaInformeOut(BaseModel):
+    id: str
+    informe_id: str
+    informe_version: int
+    message_id: str
+    expediente_id: str | None = None
+    destinatario_tipo: str
+    destinatario_id: str | None = None
+    visibilidad_entrega: str
+    correlation_id: str | None = None
+    created_at: str | None = None
+
+
+class CommCentroInformacionResumen(CommResumenCentroControl):
+    informes_entregados: int = 0
+    comunicaciones_fallidas: int = 0
+    programadas: int = 0
+    informes_comunicacion: int = 0
+
+
+class CommSolicitudInfoFaltante(BaseModel):
+    expediente_id: str
+    destinatario_id: str

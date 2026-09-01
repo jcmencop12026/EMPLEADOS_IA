@@ -490,9 +490,24 @@ def set_visibilidad_general(
     objeto_id: str,
     visible: bool,
     correlation_id: str | None = None,
+    nivel_visibilidad: str | None = None,
+    motivo: str | None = None,
 ) -> GobiernoVisibilidadLog:
     if dominio not in DOMINIOS_VISIBILIDAD:
         raise HTTPException(status_code=422, detail=f"dominio inválido: {dominio}")
+    nivel = nivel_visibilidad or ("VISIBLE_ENTIDAD" if visible else "INTERNO_EIAAX")
+    prev = (
+        db.query(GobiernoVisibilidadLog)
+        .filter(
+            GobiernoVisibilidadLog.organization_id == organization_id,
+            GobiernoVisibilidadLog.dominio == dominio,
+            GobiernoVisibilidadLog.objeto_id == objeto_id,
+        )
+        .order_by(GobiernoVisibilidadLog.created_at.desc())
+        .first()
+    )
+    estado_anterior = prev.nivel_visibilidad if prev else None
+    version = (prev.version or 0) + 1 if prev else 1
     log = GobiernoVisibilidadLog(
         organization_id=organization_id,
         dominio=dominio,
@@ -500,6 +515,10 @@ def set_visibilidad_general(
         objeto_tipo=objeto_tipo,
         objeto_id=objeto_id,
         visible=visible,
+        nivel_visibilidad=nivel,
+        estado_anterior=estado_anterior,
+        motivo=motivo,
+        version=version,
         changed_by=user_id,
         correlation_id=correlation_id,
         created_at=_utcnow(),
@@ -514,7 +533,7 @@ def set_visibilidad_general(
         recurso_tipo=objeto_tipo,
         recurso_id=objeto_id,
         correlation_id=correlation_id,
-        detalle={"dominio": dominio, "visible": visible, "contexto_id": contexto_id},
+        detalle={"dominio": dominio, "visible": visible, "contexto_id": contexto_id, "nivel": nivel, "version": version},
     )
     db.flush()
     return log
@@ -542,6 +561,10 @@ def list_visibilidad(
             "objeto_tipo": r.objeto_tipo,
             "objeto_id": r.objeto_id,
             "visible": r.visible,
+            "nivel_visibilidad": r.nivel_visibilidad,
+            "estado_anterior": r.estado_anterior,
+            "motivo": r.motivo,
+            "version": r.version,
             "changed_by": r.changed_by,
             "correlation_id": r.correlation_id,
             "created_at": r.created_at,

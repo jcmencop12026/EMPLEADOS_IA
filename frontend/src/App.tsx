@@ -24,6 +24,11 @@ import { LineasBasePage } from "./pages/LineasBasePage";
 import { LineaBaseDetailPage } from "./pages/LineaBaseDetailPage";
 import { OportunidadesPage } from "./pages/OportunidadesPage";
 import { OportunidadDetailPage } from "./pages/OportunidadDetailPage";
+import { CentroNegociosPage } from "./pages/CentroNegociosPage";
+import { CentroNegociosDetailPage } from "./pages/CentroNegociosDetailPage";
+import { ArquitectoTransformacionPage } from "./pages/ArquitectoTransformacionPage";
+import { ResultadosInteligenciaPage } from "./pages/ResultadosInteligenciaPage";
+import { InformeImpactoPage } from "./pages/InformeImpactoPage";
 import { ComercialPage } from "./pages/ComercialPage";
 import { ComercialPropuestaDetailPage } from "./pages/ComercialPropuestaDetailPage";
 import { ComercialPlanDetailPage } from "./pages/ComercialPlanDetailPage";
@@ -136,6 +141,17 @@ export default function App() {
           <Route path="lineas-base" element={<LineasBasePage />} />
           <Route path="lineas-base/:lineaBaseId" element={<LineaBaseDetailPage />} />
           <Route path="comercial" element={<ComercialPage />} />
+          <Route element={<RequirePermission anyOf={["negocio.view"]} />}>
+            <Route path="centro-negocios" element={<CentroNegociosPage />} />
+            <Route path="centro-negocios/propuestas/:proposalId" element={<CentroNegociosDetailPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["transformacion.view"]} />}>
+            <Route path="arquitecto-transformacion" element={<ArquitectoTransformacionPage />} />
+          </Route>
+          <Route element={<RequirePermission anyOf={["resultados.view"]} />}>
+            <Route path="resultados" element={<ResultadosInteligenciaPage />} />
+            <Route path="resultados/informes/:informeId" element={<InformeImpactoPage />} />
+          </Route>
           <Route path="comercial/segmentacion" element={<SegmentacionPage />} />
           <Route path="comercial/planes/:planId" element={<ComercialPlanDetailPage />} />
           <Route path="comercial/propuestas/:proposalId" element={<ComercialPropuestaDetailPage />} />

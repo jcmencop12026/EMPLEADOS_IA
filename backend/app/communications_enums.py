@@ -55,6 +55,11 @@ ALLOWED_TEMPLATE_VARIABLES = frozenset({
     "organizacion",
     "evento",
     "correlation_id",
+    "informe_titulo",
+    "informe_version",
+    "expediente_titulo",
+    "expediente_codigo",
+    "destinatario",
 })
 
 MAX_REINTENTOS = 3

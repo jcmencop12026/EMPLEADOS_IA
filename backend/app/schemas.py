@@ -47,5 +47,6 @@ class AuditLogOut(BaseModel):
     detail: str | None
     user_id: str | None
     created_at: datetime
+    accion_etiqueta: str | None = None
 
     model_config = {"from_attributes": True}

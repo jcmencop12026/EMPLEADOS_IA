@@ -44,6 +44,9 @@ export const MENU: NavSection[] = [
     items: [
       { to: "/lineas-base", label: "Líneas base e impacto" },
       { to: "/comercial", label: "Comercial y valor" },
+      { to: "/centro-negocios", label: "Centro de Negocios" },
+      { to: "/arquitecto-transformacion", label: "Arquitecto de Transformación" },
+      { to: "/resultados", label: "Inteligencia de resultados" },
       { to: "/tco", label: "TCO y aliados" },
       { to: "/implementacion", label: "Implementación" },
       { to: "/comercial/segmentacion", label: "Segmentación y planes" },

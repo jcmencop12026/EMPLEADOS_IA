@@ -1,5 +1,5 @@
 {
-  "baseline_head": "1600a1b2c3d4e",
+  "baseline_head": "1770a1b2c3d4e",
   "protected_revisions": [
     "4355c73adcb8",
     "5b2eb2437398",
@@ -59,7 +59,16 @@
     "1420a1b2c3d4e",
     "1411a1b2c3d4e",
     "1412a1b2c3d4e",
-    "1600a1b2c3d4e"
+    "1600a1b2c3d4e",
+    "1610a1b2c3d4e",
+    "1700a1b2c3d4e",
+    "1710a1b2c3d4e",
+    "1720a1b2c3d4e",
+    "1730a1b2c3d4e",
+    "1740a1b2c3d4e",
+    "1750a1b2c3d4e",
+    "1760a1b2c3d4e",
+    "1770a1b2c3d4e"
   ],
   "upgrade_from_baseline": {
     "enabled": false,
