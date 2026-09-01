@@ -9,11 +9,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# DATABASE_URL debe fijarse antes de importar la app.
-DEFAULT_DATABASE_URL = "sqlite:////workspace/data/eiaax_integrado_demo.db"
-os.environ.setdefault("DATABASE_URL", DEFAULT_DATABASE_URL)
-
 BACKEND_DIR = Path(__file__).resolve().parents[1]
+REPO_ROOT = BACKEND_DIR.parent
+DATA_DIR = REPO_ROOT / "data"
+
+# DATABASE_URL debe fijarse antes de importar la app.
+DEFAULT_DATABASE_URL = f"sqlite:///{(DATA_DIR / 'eiaax_integrado_demo.db').as_posix()}"
+os.environ.setdefault("DATABASE_URL", DEFAULT_DATABASE_URL)
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
