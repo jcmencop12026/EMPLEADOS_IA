@@ -59,15 +59,19 @@ git worktree add D:\EMPLEADOS_IA_CONVERGENCIA cursor/convergencia-comercial-v1-8
 ### B. Arranque (un solo comando certificado)
 
 ```powershell
-cd D:\EMPLEADOS_IA_CONVERGENCIA
-git pull
-git checkout cursor/convergencia-comercial-v1-85e4
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\windows\arrancar_convergencia_windows.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File D:\EMPLEADOS_IA_CONVERGENCIA\scripts\windows\arrancar_convergencia_windows.ps1
 ```
 
-Un solo bloque fail-closed: repo, puertos, Python, preparacion, seed, Alembic 1820, arranque, identidad runtime.
+El script sincroniza git (`fetch`/`checkout`/`pull`) internamente. Un solo bloque fail-closed: repo, puertos, Python base (via `pyvenv.cfg` INTEGRADO), preparacion, seed, Alembic 1820, arranque, PID/comando, identidad runtime.
 
-Si falla cualquier paso critico: **CERTIFICACION ABORTADA** — no declarar operativo.
+Si falla cualquier paso critico:
+
+```
+EIAAX — WINDOWS NO CERTIFICADO
+CAUSA: <detalle>
+```
+
+No declarar operativo. Ver `06_ARRANQUE_ATOMICO_PYVENV.md`.
 
 Opcional si Python no se autodetecta:
 

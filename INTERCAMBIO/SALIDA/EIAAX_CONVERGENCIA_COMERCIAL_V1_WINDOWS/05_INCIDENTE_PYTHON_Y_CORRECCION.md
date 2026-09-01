@@ -98,13 +98,21 @@ Solo entonces imprime: `EIAAX <sha> - WINDOWS REAL OPERATIVO`
 ## Comando unico para el usuario
 
 ```powershell
-cd D:\EMPLEADOS_IA_CONVERGENCIA
-git pull
-git checkout cursor/convergencia-comercial-v1-85e4
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\windows\arrancar_convergencia_windows.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File D:\EMPLEADOS_IA_CONVERGENCIA\scripts\windows\arrancar_convergencia_windows.ps1
 ```
 
-Si falla: **no** declarar operativo. Revisar `logs\demo\arrancar_convergencia.log`.
+El script ejecuta internamente `git fetch`, `git checkout` y `git pull` de la rama del manifest. No requiere pasos previos manuales.
+
+Si falla:
+
+```
+EIAAX — WINDOWS NO CERTIFICADO
+CAUSA: <detalle>
+```
+
+Revise `logs\demo\arrancar_convergencia.log` y `preparar.log`. **No** declarar operativo.
+
+Ver también: `06_ARRANQUE_ATOMICO_PYVENV.md` (pyvenv.cfg + Python base).
 
 Opcional si Python no se autodetecta:
 

@@ -42,6 +42,13 @@ try {
 
     Assert-EiaaxDemoDatabasePath -DbFilePath $paths.DbFile -WorktreeRoot $worktree
 
+    if (Test-Path -LiteralPath $paths.Venv) {
+        $venvIntegrity = Test-EiaaxVenvIntegrity -VenvPath $paths.Venv
+        if (-not $venvIntegrity.Valid) {
+            Remove-EiaaxDamagedVenv -VenvPath $paths.Venv -Reason $venvIntegrity.Reason -LogFile $logFile
+        }
+    }
+
     $basePython = Find-EiaaxPython -LogFile $logFile -WorktreeRoot $worktree
     Write-Host "Base Python: $basePython"
     $pythonVersion = Get-EiaaxPythonVersionLine -PythonExe $basePython
