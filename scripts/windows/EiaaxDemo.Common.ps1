@@ -283,6 +283,67 @@ function Invoke-EiaaxNativeCommand {
     }
 }
 
+function ConvertTo-EiaaxExternalCommandOutput {
+    param(
+        $RawOutput
+    )
+
+    if ($null -eq $RawOutput) {
+        return ""
+    }
+
+    $lines = New-Object System.Collections.Generic.List[string]
+    foreach ($item in @($RawOutput)) {
+        if ($item -is [System.Management.Automation.ErrorRecord]) {
+            $lines.Add($item.ToString())
+        }
+        else {
+            $lines.Add([string]$item)
+        }
+    }
+
+    return ($lines -join "`n")
+}
+
+function Invoke-EiaaxExternalCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+        [AllowEmptyCollection()]
+        [string[]]$ArgumentList = @(),
+        [string]$WorkingDirectory = $null
+    )
+
+    if (Test-EiaaxInteractiveInvocationRisk -FilePath $FilePath -ArgumentList $ArgumentList) {
+        Exit-EiaaxFailure -Message ("Refusing interactive invocation without arguments: " + $FilePath)
+    }
+
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $locationPushed = $false
+    try {
+        if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
+            Push-Location $WorkingDirectory
+            $locationPushed = $true
+        }
+
+        $rawOutput = & $FilePath @ArgumentList 2>&1
+        $exitCode = $LASTEXITCODE
+        $output = ConvertTo-EiaaxExternalCommandOutput -RawOutput $rawOutput
+
+        return [ordered]@{
+            ExitCode = $exitCode
+            Output   = $output
+        }
+    }
+    finally {
+        if ($locationPushed) {
+            Pop-Location
+        }
+        $ErrorActionPreference = $previousPreference
+    }
+}
+
 function Test-EiaaxWindowsPythonStub {
     param(
         [Parameter(Mandatory = $true)]
@@ -957,49 +1018,49 @@ function Confirm-EiaaxAlembicState {
     )
 
     $env:DATABASE_URL = $DatabaseUrl
-    Push-Location $BackendDir
-    try {
-        $headsOutput = & $VenvPython -m alembic heads 2>&1 | Out-String
-        if ($LASTEXITCODE -ne 0) {
-            Exit-EiaaxFailure -Message ("alembic heads failed. ExitCode=" + $LASTEXITCODE + " Output=" + $headsOutput.Trim())
-        }
-
-        $headRevisions = Get-EiaaxAlembicHeadRevisions -Output $headsOutput
-        $headCount = Get-EiaaxCollectionCount $headRevisions
-        if ($headCount -eq 0) {
-            Exit-EiaaxFailure -Message ("alembic heads returned no head revisions. Output=" + $headsOutput.Trim())
-        }
-        if ($headCount -gt 1) {
-            Exit-EiaaxFailure -Message ("Multiple alembic heads detected (" + $headCount + "). Output=" + $headsOutput.Trim())
-        }
-
-        $headRevision = $headRevisions[0]
-        if ($headRevision -ne $script:ExpectedAlembicHead) {
-            Exit-EiaaxFailure -Message ("Expected alembic head " + $script:ExpectedAlembicHead + " but found " + $headRevision + ".")
-        }
-
-        $currentOutput = & $VenvPython -m alembic current 2>&1 | Out-String
-        if ($LASTEXITCODE -ne 0) {
-            Exit-EiaaxFailure -Message ("alembic current failed. ExitCode=" + $LASTEXITCODE + " Output=" + $currentOutput.Trim())
-        }
-
-        $currentRevisions = Get-EiaaxAlembicCurrentRevisions -Output $currentOutput
-        $currentCount = Get-EiaaxCollectionCount $currentRevisions
-        if ($currentCount -eq 0) {
-            Exit-EiaaxFailure -Message ("alembic current returned no revision. Output=" + $currentOutput.Trim())
-        }
-
-        $currentRevision = $currentRevisions[$currentCount - 1]
-        if ($currentRevision -ne $script:ExpectedAlembicHead) {
-            Exit-EiaaxFailure -Message ("Database is not at alembic head " + $script:ExpectedAlembicHead + "; current=" + $currentRevision + ".")
-        }
-
-        Write-Host ("Alembic heads OK: " + $headRevision + " (single head)")
-        Write-Host ("Alembic current OK: " + $currentRevision)
+    $headsResult = Invoke-EiaaxExternalCommand -FilePath $VenvPython `
+        -ArgumentList @("-m", "alembic", "heads") `
+        -WorkingDirectory $BackendDir
+    if ($headsResult.ExitCode -ne 0) {
+        Exit-EiaaxFailure -Message ("alembic heads failed. ExitCode=" + $headsResult.ExitCode + " Output=" + $headsResult.Output.Trim())
     }
-    finally {
-        Pop-Location
+
+    $headsOutput = $headsResult.Output
+    $headRevisions = Get-EiaaxAlembicHeadRevisions -Output $headsOutput
+    $headCount = Get-EiaaxCollectionCount $headRevisions
+    if ($headCount -eq 0) {
+        Exit-EiaaxFailure -Message ("alembic heads returned no head revisions. Output=" + $headsOutput.Trim())
     }
+    if ($headCount -gt 1) {
+        Exit-EiaaxFailure -Message ("Multiple alembic heads detected (" + $headCount + "). Output=" + $headsOutput.Trim())
+    }
+
+    $headRevision = $headRevisions[0]
+    if ($headRevision -ne $script:ExpectedAlembicHead) {
+        Exit-EiaaxFailure -Message ("Expected alembic head " + $script:ExpectedAlembicHead + " but found " + $headRevision + ".")
+    }
+
+    $currentResult = Invoke-EiaaxExternalCommand -FilePath $VenvPython `
+        -ArgumentList @("-m", "alembic", "current") `
+        -WorkingDirectory $BackendDir
+    if ($currentResult.ExitCode -ne 0) {
+        Exit-EiaaxFailure -Message ("alembic current failed. ExitCode=" + $currentResult.ExitCode + " Output=" + $currentResult.Output.Trim())
+    }
+
+    $currentOutput = $currentResult.Output
+    $currentRevisions = Get-EiaaxAlembicCurrentRevisions -Output $currentOutput
+    $currentCount = Get-EiaaxCollectionCount $currentRevisions
+    if ($currentCount -eq 0) {
+        Exit-EiaaxFailure -Message ("alembic current returned no revision. Output=" + $currentOutput.Trim())
+    }
+
+    $currentRevision = $currentRevisions[$currentCount - 1]
+    if ($currentRevision -ne $script:ExpectedAlembicHead) {
+        Exit-EiaaxFailure -Message ("Database is not at alembic head " + $script:ExpectedAlembicHead + "; current=" + $currentRevision + ".")
+    }
+
+    Write-Host ("Alembic heads OK: " + $headRevision + " (single head)")
+    Write-Host ("Alembic current OK: " + $currentRevision)
 }
 
 function Get-EiaaxWindowsPowerShellExecutable {

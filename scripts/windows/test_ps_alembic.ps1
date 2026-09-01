@@ -116,6 +116,72 @@ Assert-Test "Single-head pipeline count does not throw (regression 66db838)" {
     }
 }
 
+function Get-EiaaxTestPythonExecutable {
+    $python = Get-Command python3 -ErrorAction SilentlyContinue
+    if ($null -eq $python) {
+        $python = Get-Command python -ErrorAction SilentlyContinue
+    }
+    if ($null -eq $python) {
+        throw "python not found for external command regression tests"
+    }
+    return $python.Source
+}
+
+Assert-Test "Invoke-EiaaxExternalCommand tolerates stderr INFO with ExitCode 0 under Stop" {
+    $python = Get-EiaaxTestPythonExecutable
+    $snippet = "import sys; sys.stderr.write('INFO [alembic.runtime.migration] Context impl SQLiteImpl.\n')"
+    $result = Invoke-EiaaxExternalCommand -FilePath $python -ArgumentList @("-c", $snippet)
+    if ($result.ExitCode -ne 0) {
+        throw ("Expected ExitCode 0, got " + $result.ExitCode + " Output=" + $result.Output)
+    }
+    if ($result.Output -notmatch "Context impl SQLiteImpl") {
+        throw ("Expected Alembic INFO line in output: " + $result.Output)
+    }
+}
+
+Assert-Test "Invoke-EiaaxExternalCommand combines stdout and stderr with ExitCode 0" {
+    $python = Get-EiaaxTestPythonExecutable
+    $snippet = "import sys; print('stdout marker'); sys.stderr.write('stderr marker\n')"
+    $result = Invoke-EiaaxExternalCommand -FilePath $python -ArgumentList @("-c", $snippet)
+    if ($result.ExitCode -ne 0) {
+        throw ("Expected ExitCode 0, got " + $result.ExitCode)
+    }
+    if ($result.Output -notmatch "stdout marker" -or $result.Output -notmatch "stderr marker") {
+        throw ("Expected combined output, got: " + $result.Output)
+    }
+}
+
+Assert-Test "Invoke-EiaaxExternalCommand fails closed on non-zero ExitCode" {
+    $python = Get-EiaaxTestPythonExecutable
+    $snippet = "import sys; sys.stderr.write('ERROR real alembic failure\n'); sys.exit(3)"
+    $result = Invoke-EiaaxExternalCommand -FilePath $python -ArgumentList @("-c", $snippet)
+    if ($result.ExitCode -eq 0) {
+        throw "Expected non-zero ExitCode for real failure"
+    }
+    if ($result.Output -notmatch "ERROR real alembic failure") {
+        throw ("Expected stderr error text in output: " + $result.Output)
+    }
+}
+
+Assert-Test "Invoke-EiaaxExternalCommand succeeds under global Stop with stderr INFO" {
+    $python = Get-EiaaxTestPythonExecutable
+    $snippet = "import sys; sys.stderr.write('INFO [alembic.runtime.migration] Context impl SQLiteImpl.\n')"
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Stop"
+    try {
+        $result = Invoke-EiaaxExternalCommand -FilePath $python -ArgumentList @("-c", $snippet)
+        if ($result.ExitCode -ne 0) {
+            throw ("Expected ExitCode 0 under Stop, got " + $result.ExitCode)
+        }
+        if ($result.Output -notmatch "Context impl SQLiteImpl") {
+            throw ("Expected Alembic INFO in output under Stop: " + $result.Output)
+        }
+    }
+    finally {
+        $ErrorActionPreference = $previousPreference
+    }
+}
+
 Write-Host ""
 if ($failed -gt 0) {
     Write-Host ("PS ALEMBIC TESTS: FAIL (" + $failed + ")")
