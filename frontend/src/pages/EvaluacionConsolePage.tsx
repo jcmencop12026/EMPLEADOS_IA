@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   crearOportunidadDesdeHallazgo,
   evaluarExpediente,
@@ -7,7 +7,9 @@ import {
   fetchEvaluacionImpacto,
   fetchEvaluacionTrazabilidad,
   fetchVistaEntidad,
+  generarPropuestaDesdeDossier,
   setHallazgoVisibilidad,
+  syncFlujoInformacion,
   updateEvaluacionInformacion,
   type EvaluacionExpedienteDetail,
   type EvaluacionHallazgo,
@@ -37,6 +39,7 @@ const ESTADO_INFO_LABELS: Record<string, string> = {
 
 export function EvaluacionConsolePage() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
+  const navigate = useNavigate();
   const { has } = usePermissions();
   const [tab, setTab] = useState<Tab>("resumen");
   const [exp, setExp] = useState<EvaluacionExpedienteDetail | null>(null);
@@ -118,9 +121,31 @@ export function EvaluacionConsolePage() {
             <h1>{exp.titulo}</h1>
             <p className="muted">{exp.codigo}</p>
           </div>
-          <button type="button" className="btn primary" onClick={() => setAskOpen(true)}>
-            Preguntar a EIAAX
-          </button>
+          <div className="ops-actions">
+            {has("evaluacion.manage") && (
+              <button type="button" className="btn" onClick={async () => {
+                if (!evaluacionId) return;
+                await syncFlujoInformacion(evaluacionId);
+                load();
+                setMsg("Catálogo contextual sincronizado");
+              }}>Sincronizar info contextual</button>
+            )}
+            {has("negocio.manage") && (
+              <button type="button" className="btn primary" onClick={async () => {
+                if (!evaluacionId) return;
+                try {
+                  const r = await generarPropuestaDesdeDossier(evaluacionId, {});
+                  setMsg("Propuesta generada desde dossier");
+                  if (r.proposal_id) navigate(`/centro-negocios/propuestas/${r.proposal_id}`);
+                } catch (e) {
+                  setError(e instanceof Error ? e.message : "No se pudo generar propuesta");
+                }
+              }}>Generar propuesta →</button>
+            )}
+            <button type="button" className="btn" onClick={() => setAskOpen(true)}>
+              Preguntar a EIAAX
+            </button>
+          </div>
         </header>
 
         <div className="eval-metrics metrics-grid">

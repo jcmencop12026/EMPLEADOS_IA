@@ -36,6 +36,7 @@ from app import employee_audit_models  # noqa: F401 — auditor empleados MVP
 from app import consumption_planner_models  # noqa: F401 — planificador MB-07 portable
 from app import economic_motor_models  # noqa: F401 — motor económico EIAAX 1600
 from app import continuidad_comercial_models  # noqa: F401 — continuidad 1720
+from app import flujo_comercial_models  # noqa: F401 — flujo comercial V1 1730
 from app import communications_models  # noqa: F401 — comunicaciones MB-11
 from app.health import build_health_report, health_http_status
 from app.routers import (
@@ -84,6 +85,7 @@ from app.routers import (
     motor_economico,
     centro_negocios,
     continuidad_comercial,
+    flujo_comercial,
 )
 from app.seed import bootstrap
 from app.security_config import validate_security_settings
@@ -181,6 +183,7 @@ app.include_router(finops.router)
 app.include_router(motor_economico.router)
 app.include_router(centro_negocios.router)
 app.include_router(continuidad_comercial.router)
+app.include_router(flujo_comercial.router)
 app.include_router(salud.router)
 app.include_router(experience.router)
 app.include_router(oportunidades.router)

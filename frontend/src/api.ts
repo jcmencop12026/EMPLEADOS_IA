@@ -4196,3 +4196,20 @@ export async function preguntarEiaax(
     body: JSON.stringify({ mensaje, accion }),
   });
 }
+
+// --- Flujo comercial V1 (1730) ---
+
+export async function fetchFlujoSuficiencia(evaluacionId: string) {
+  return api(`/api/flujo-comercial/expedientes/${evaluacionId}/suficiencia`);
+}
+
+export async function generarPropuestaDesdeDossier(evaluacionId: string, data: Record<string, unknown> = {}) {
+  return api(`/api/flujo-comercial/expedientes/${evaluacionId}/generar-propuesta`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function syncFlujoInformacion(evaluacionId: string) {
+  return api(`/api/flujo-comercial/expedientes/${evaluacionId}/sync-informacion`, { method: "POST" });
+}
