@@ -313,6 +313,8 @@ def build_antes_proyectado_real(
             "confianza": ind["confianza"],
             "fuente": ind["fuente"],
             "tipo_analitica": ind["tipo_analitica"],
+            "visible_entidad": ind.get("visible_entidad", False),
+            "periodo": ind.get("periodo"),
         })
     return {
         "organization_id": organization_id,

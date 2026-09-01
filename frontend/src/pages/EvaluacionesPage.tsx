@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { createEvaluacion, fetchEvaluaciones, type EvaluacionExpedienteSummary } from "../api";
 import { ContextualHelp } from "../components/ContextualHelp";
 import { EiaaxTable, type EiaaxColumn } from "../components/EiaaxTable";
@@ -24,17 +24,20 @@ const ESTADOS_FILTRO = [
 
 export function EvaluacionesPage() {
   const { has } = usePermissions();
+  const [searchParams] = useSearchParams();
   const [items, setItems] = useState<EvaluacionExpedienteSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState("");
-  const [showForm, setShowForm] = useState(false);
+  const nuevoFromDemo = searchParams.get("nuevo") === "1";
+  const areaFromDemo = searchParams.get("area_label") || searchParams.get("area") || "";
+  const [showForm, setShowForm] = useState(nuevoFromDemo);
   const [form, setForm] = useState({
-    titulo: "",
+    titulo: areaFromDemo ? `Evaluación — ${areaFromDemo}` : "",
     entidad_nombre: "",
     necesidad: "",
-    objetivo: "",
-    area_proceso: "",
+    objetivo: areaFromDemo ? `Evaluar oportunidades en ${areaFromDemo}` : "",
+    area_proceso: areaFromDemo,
     nivel: "PRELIMINAR",
   });
 
@@ -119,6 +122,13 @@ export function EvaluacionesPage() {
           <ContextualHelp content={HELP_EVALUACIONES_LISTA} />
         </div>
       </header>
+
+      {nuevoFromDemo && (
+        <p className="panel muted-box">
+          Flujo real de evaluación — complete los datos de su organización. La demo ficticia permanece en{" "}
+          <Link to="/demo">Demo comercial</Link>.
+        </p>
+      )}
 
       {error && <p className="error">{error}</p>}
 

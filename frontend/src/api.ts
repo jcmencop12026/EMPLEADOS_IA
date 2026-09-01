@@ -3610,6 +3610,163 @@ export async function fetchLlmRoutingExplain(preferredProvider?: string): Promis
   return api(`/api/llm/routing/explain${q}`);
 }
 
+// --- Demo comercial ficticia (V1) ---
+
+export type DemoComercialManifest = {
+  es_demo: boolean;
+  etiqueta: string;
+  empresa_ficticia?: string;
+  problema?: string;
+  expediente_id?: string;
+  expediente_codigo?: string;
+  informe_id?: string;
+  semilla_disponible?: boolean;
+  areas?: Array<{ id: string; label: string }>;
+  enlaces?: Record<string, string | null>;
+  reused?: boolean;
+};
+
+export type DemoPresentacion = {
+  etiqueta: string;
+  audiencia: string;
+  empresa: string;
+  expediente_codigo: string;
+  secciones: Array<{ titulo: string; contenido: string[] }>;
+  informe_resumen?: { titulo?: string; version?: number; visibilidad?: string };
+};
+
+export type PresentacionIndicador = {
+  nombre: string;
+  unidad?: string;
+  antes?: number | null;
+  proyectado?: number | null;
+  real?: number | null;
+  simulado?: boolean;
+  periodo?: string | null;
+};
+
+export type PresentacionPayload = DemoPresentacion & {
+  es_demo?: boolean;
+  expediente_id?: string;
+  fecha?: string;
+  version?: number;
+  indicadores?: PresentacionIndicador[];
+  graficos?: {
+    tipo?: string;
+    nota?: string;
+    series?: PresentacionIndicador[];
+    adapter_centro_control?: string;
+  };
+  publicacion?: {
+    estado: string;
+    informe_visibilidad?: string | null;
+    adapter?: string;
+  };
+  proteccion_ip?: { oculto: string[] };
+};
+
+export type InformeComercialConfig = {
+  id: string;
+  nombre: string;
+  expediente_id?: string | null;
+  audiencia: string;
+  periodicidad: string;
+  destinatarios: string[];
+  resumen?: string | null;
+  enlace_seguro: boolean;
+  activo: boolean;
+  ultimo_envio?: string | null;
+  proximo_envio?: string | null;
+  estado: string;
+  error_ultimo?: string | null;
+  integracion?: Record<string, unknown>;
+};
+
+export async function fetchDemoComercialManifest(): Promise<DemoComercialManifest> {
+  return api("/api/demo-comercial/manifest");
+}
+
+export async function seedDemoComercial(): Promise<DemoComercialManifest> {
+  return api("/api/demo-comercial/semilla", { method: "POST" });
+}
+
+export async function fetchDemoPresentacion(
+  expedienteId: string,
+  audiencia: string,
+): Promise<PresentacionPayload> {
+  return api(`/api/demo-comercial/presentacion/${expedienteId}?audiencia=${encodeURIComponent(audiencia)}`);
+}
+
+export async function fetchPresentacionReal(
+  expedienteId: string,
+  audiencia: string,
+): Promise<PresentacionPayload> {
+  return api(`/api/presentacion/${expedienteId}?audiencia=${encodeURIComponent(audiencia)}`);
+}
+
+export async function downloadPresentacionPdf(
+  expedienteId: string,
+  audiencia: string,
+  esDemo: boolean,
+): Promise<void> {
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const base = esDemo
+    ? `/api/demo-comercial/presentacion/${expedienteId}/pdf`
+    : `/api/presentacion/${expedienteId}/pdf`;
+  const res = await fetch(`${base}?audiencia=${encodeURIComponent(audiencia)}`, { headers });
+  if (!res.ok) {
+    const text = await res.text();
+    const detail = parseDetail(text);
+    throw new ApiError(res.status, userMessage(res.status, detail), detail);
+  }
+  const blob = await res.blob();
+  const filename =
+    parseContentDispositionFilename(res.headers.get("Content-Disposition")) ||
+    `EIAAX-presentacion-${expedienteId}.pdf`;
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    anchor.rel = "noopener";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+export async function updatePresentacionPublicacion(
+  expedienteId: string,
+  estado: string,
+  notas?: string,
+): Promise<Record<string, unknown>> {
+  return api(`/api/presentacion/${expedienteId}/publicacion`, {
+    method: "PUT",
+    body: JSON.stringify({ estado, notas }),
+  });
+}
+
+export async function fetchInformesComercialesConfig(): Promise<{ items: InformeComercialConfig[] }> {
+  return api("/api/presentacion/informes-comerciales/config");
+}
+
+export async function createInformeComercialConfig(
+  data: Record<string, unknown>,
+): Promise<InformeComercialConfig> {
+  return api("/api/presentacion/informes-comerciales/config", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function fetchInformesPeriodicosPlantillas(): Promise<{ plantillas: Array<Record<string, unknown>> }> {
+  return api("/api/demo-comercial/informes-periodicos");
+}
+
 // --- Mesa de Ayuda y Soporte (MB-12) ---
 
 export type SupportCase = {

@@ -199,6 +199,11 @@ export function EvaluacionConsolePage() {
           </div>
           <div className="eval-console-header-actions">
             {tabHelp && <ContextualHelp content={tabHelp} />}
+            {!exp.entidad_nombre.startsWith("[DEMO]") && (
+              <Link to={`/presentacion/${evaluacionId}`} className="btn">
+                Presentación ejecutiva
+              </Link>
+            )}
             <button type="button" className="btn primary" onClick={() => setAskOpen(true)}>
               Preguntar a EIAAX
             </button>
