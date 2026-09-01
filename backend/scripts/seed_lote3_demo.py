@@ -58,6 +58,9 @@ from app import support_models  # noqa: F401, E402
 from app import tco_models  # noqa: F401, E402
 from app import transformacion_models  # noqa: F401, E402
 from app import valuation_models  # noqa: F401, E402
+from app import flujo_comercial_models  # noqa: F401, E402
+from app import presentacion_models  # noqa: F401, E402
+from app import espacio_externo_models  # noqa: F401, E402
 
 from app.database import SessionLocal  # noqa: E402
 from app.models import Organization, User  # noqa: E402

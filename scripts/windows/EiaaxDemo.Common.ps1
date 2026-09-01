@@ -14,7 +14,9 @@ $script:VenvDirName = ".venv-eiaax-demo"
 $script:StateDirName = ".runtime-eiaax-demo"
 $script:LogsDirName = "logs\demo"
 $script:DemoDbFileName = "eiaax_integrado_demo.db"
-$script:ExpectedAlembicHead = "1770a1b2c3d4e"
+$script:ExpectedAlembicHead = "1820a1b2c3d4e"
+$script:ExpectedConvergenceSha = "482ff6f"
+$script:ConvergenceWorktreeDefault = "D:\EMPLEADOS_IA_CONVERGENCIA"
 
 $script:ForbiddenWorktreeNames = @(
     "EMPLEADOS_IA",
