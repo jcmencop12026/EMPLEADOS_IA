@@ -15,7 +15,7 @@ $script:StateDirName = ".runtime-eiaax-demo"
 $script:LogsDirName = "logs\demo"
 $script:DemoDbFileName = "eiaax_integrado_demo.db"
 $script:ExpectedAlembicHead = "1820a1b2c3d4e"
-$script:ExpectedConvergenceSha = "482ff6f"
+$script:ExpectedConvergenceSha = "0b48139"
 $script:ConvergenceWorktreeDefault = "D:\EMPLEADOS_IA_CONVERGENCIA"
 
 $script:ForbiddenWorktreeNames = @(

@@ -9,7 +9,8 @@
 
 | Campo | Valor |
 |-------|-------|
-| SHA | `482ff6fd8685bbee3e88fb7d933ba04c546f2da6` (corto: `482ff6f`) |
+| SHA convergencia (integracion) | `482ff6f` |
+| SHA Windows arranque | `0b48139` (incluye preparador Alembic 1820) |
 | Rama | `cursor/convergencia-comercial-v1-85e4` |
 | PR | #159 |
 | Base protegida | `d034566` — tag `eiaax-v1-preconvergencia-windows-operativo` |
