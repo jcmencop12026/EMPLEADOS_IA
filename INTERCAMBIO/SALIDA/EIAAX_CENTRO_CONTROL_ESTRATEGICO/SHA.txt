@@ -1,3 +1,4 @@
-5c584895380031393def3751a1bbfcfa7bbf1a3f
-cursor/centro-control-estrategico-v1-dec7
-base: cursor/centro-control-operacional-mb08-dec7 @ a877572
+SHA inicial: 11eb979
+SHA final: 9c9e5eb3cf4f6ba61b5f88af3d7311c483838bfb
+rama: cursor/centro-control-estrategico-v1-dec7
+PR: #158
