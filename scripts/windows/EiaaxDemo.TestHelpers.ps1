@@ -115,6 +115,47 @@ function Get-EiaaxTestShellExecutable {
     return $null
 }
 
+function ConvertTo-EiaaxPlainShellOutput {
+    param(
+        [AllowNull()]
+        [string]$Text
+    )
+
+    if ([string]::IsNullOrEmpty($Text)) {
+        return ""
+    }
+    if ($Text -notmatch '(?s)<Objs Version=') {
+        return $Text
+    }
+
+    $lines = New-Object System.Collections.Generic.List[string]
+    $messageMatches = [regex]::Matches($Text, '<S N="Message">([^<]*)</S>')
+    foreach ($match in $messageMatches) {
+        if ($match.Groups.Count -gt 1) {
+            $line = $match.Groups[1].Value
+            if (-not [string]::IsNullOrWhiteSpace($line)) {
+                [void]$lines.Add($line)
+            }
+        }
+    }
+
+    $toStringMatches = [regex]::Matches($Text, '<ToString>([^<]*)</ToString>')
+    foreach ($match in $toStringMatches) {
+        if ($match.Groups.Count -gt 1) {
+            $line = $match.Groups[1].Value
+            if (-not [string]::IsNullOrWhiteSpace($line) -and -not $lines.Contains($line)) {
+                [void]$lines.Add($line)
+            }
+        }
+    }
+
+    if ($lines.Count -gt 0) {
+        return ($lines -join "`n")
+    }
+
+    return $Text
+}
+
 function Invoke-EiaaxTestShellCommand {
     param(
         [Parameter(Mandatory = $true)]
@@ -201,6 +242,14 @@ function Invoke-EiaaxTestShellCommand {
     Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
     if ($state -eq "Failed") {
         throw ($result | Out-String)
+    }
+
+    if ($null -ne $result) {
+        $plainOutput = ConvertTo-EiaaxPlainShellOutput -Text $result.Output
+        return [ordered]@{
+            ExitCode = [int]$result.ExitCode
+            Output   = $plainOutput
+        }
     }
 
     return $result

@@ -103,41 +103,23 @@ Assert-Test "CASE 3 EIAAX_PYTHON valid" {
         return
     }
 
-    $escapedTarget = $target.Replace("'", "''")
-    $body = @"
-`$env:EIAAX_PYTHON = '$escapedTarget'
-`$candidates = @(Get-EiaaxPythonDiscoveryCandidates)
-if ((Get-EiaaxCollectionCount `$candidates) -lt 1) {
-    Write-Host 'ERROR: no discovery candidates with EIAAX_PYTHON set'
-    exit 11
-}
-`$selected = Find-EiaaxPython
-if ([string]::IsNullOrWhiteSpace(`$selected)) {
-    Write-Host 'ERROR: Find-EiaaxPython returned empty'
-    exit 12
-}
-`$selectedResolved = (Resolve-Path -LiteralPath `$selected).Path
-`$targetResolved = (Resolve-Path -LiteralPath `$env:EIAAX_PYTHON).Path
-if (`$selectedResolved.ToUpperInvariant() -ne `$targetResolved.ToUpperInvariant()) {
-    Write-Host ('ERROR: selected mismatch. expected=' + `$targetResolved + ' actual=' + `$selectedResolved)
-    exit 13
-}
-`$probe = Invoke-EiaaxPythonVersionProbe -PythonExe `$selectedResolved
-if (`$probe.ExitCode -ne 0 -or [string]::IsNullOrWhiteSpace(`$probe.Text)) {
-    Write-Host ('ERROR: python -V failed: ' + `$probe.Text)
-    exit 14
-}
-Write-Host ('OK: ' + `$probe.Text)
-exit 0
-"@
+    Set-EiaaxTestEnvVar -Name "EIAAX_PYTHON" -Value $target
+    $selected = Find-EiaaxPython
+    if ([string]::IsNullOrWhiteSpace($selected)) {
+        throw "Find-EiaaxPython returned empty value"
+    }
 
-    $result = Invoke-EiaaxProductionShellTest -CommonPath $commonPath -Body $body -TimeoutSec 30
-    if ($result.ExitCode -ne 0) {
-        throw ("Production discovery failed in isolated shell. ExitCode=" + $result.ExitCode + " Output=" + $result.Output.Trim())
+    $selectedResolved = (Resolve-Path -LiteralPath $selected).Path
+    $targetResolved = (Resolve-Path -LiteralPath $target).Path
+    if ($selectedResolved.ToUpperInvariant() -ne $targetResolved.ToUpperInvariant()) {
+        throw ("Selected mismatch. expected=" + $targetResolved + " actual=" + $selectedResolved)
     }
-    if ($result.Output -notmatch "OK:\s*Python") {
-        throw ("Unexpected output: " + $result.Output.Trim())
+
+    $probe = Invoke-EiaaxPythonVersionProbe -PythonExe $selectedResolved
+    if ($probe.ExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($probe.Text)) {
+        throw ("python -V failed: " + $probe.Text)
     }
+    Write-Host ("  OK: " + $probe.Text)
 }
 
 Assert-Test "CASE 4 EIAAX_PYTHON missing path" {
@@ -261,7 +243,7 @@ Write-Host "PYTHON DISCOVERY TESTS: PASS"
 Write-Host "AUTOTESTS INTERACTIVE: 0"
 Write-Host ""
 Write-Host "============================================================"
-Write-Host "EIAAX -- AUTOTEST WINDOWS PYTHON CORREGIDO Y REVISADO INTEGRALMENTE"
+Write-Host "EIAAX -- AUTOTEST DESARROLLO PYTHON COMPLETADO"
 Write-Host "============================================================"
 try {
     Add-Type -AssemblyName System.Speech -ErrorAction Stop

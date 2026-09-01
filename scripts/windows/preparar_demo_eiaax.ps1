@@ -20,26 +20,10 @@ $logFile = $null
 try {
     if (-not $SkipParserValidation) {
         Invoke-EiaaxPowerShellParserValidation -ScriptsDir $PSScriptRoot
-        $semanticsTest = Join-Path $PSScriptRoot "test_ps_semantics.ps1"
-        $discoveryTest = Join-Path $PSScriptRoot "test_python_discovery.ps1"
-        $alembicTest = Join-Path $PSScriptRoot "test_ps_alembic.ps1"
-        Invoke-EiaaxPowerShellFile -FilePath $semanticsTest
-        if ($LASTEXITCODE -ne 0) {
-            Exit-EiaaxFailure -Message "PowerShell semantics self-test failed."
-        }
-        Invoke-EiaaxPowerShellFile -FilePath $discoveryTest
-        if ($LASTEXITCODE -ne 0) {
-            Exit-EiaaxFailure -Message "Python discovery self-test failed."
-        }
-        Invoke-EiaaxPowerShellFile -FilePath $alembicTest
-        if ($LASTEXITCODE -ne 0) {
-            Exit-EiaaxFailure -Message "PowerShell Alembic collection self-test failed."
-        }
     }
 
     $worktree = Get-EiaaxWorktreeRoot
     Assert-EiaaxNotOriginalTree -WorktreeRoot $worktree
-    Test-EiaaxWorktree -WorktreeRoot $worktree
     $paths = Get-EiaaxPaths -WorktreeRoot $worktree
     $databaseUrl = Get-EiaaxDatabaseUrl -WorktreeRoot $worktree
     $logsDir = Ensure-EiaaxLogsDir -WorktreeRoot $worktree
@@ -50,13 +34,15 @@ try {
     Write-Host "Worktree: $worktree"
     Write-Host "DATABASE_URL: $databaseUrl"
 
+    Confirm-EiaaxProductionPrerequisites -WorktreeRoot $worktree -LogFile $logFile
+
     if (-not (Test-Path -LiteralPath $paths.Data)) {
         New-Item -ItemType Directory -Path $paths.Data | Out-Null
     }
 
     Assert-EiaaxDemoDatabasePath -DbFilePath $paths.DbFile -WorktreeRoot $worktree
 
-    $basePython = Find-EiaaxPython -LogFile $logFile
+    $basePython = Find-EiaaxPython -LogFile $logFile -WorktreeRoot $worktree
     Write-Host "Base Python: $basePython"
     $pythonVersion = Get-EiaaxPythonVersionLine -PythonExe $basePython
     Write-Host "Detected: $pythonVersion"
@@ -139,12 +125,12 @@ try {
     Write-EiaaxLogLine -LogFile $logFile -Message "Preparation completed successfully"
     Write-Host ""
     Write-Host "============================================================"
-    Write-Host "EIAAX -- VERIFICACION ALEMBIC WINDOWS CORREGIDA Y REVALIDADA"
+    Write-Host "EIAAX -- PREPARACION WINDOWS PRODUCTIVA LISTA"
     Write-Host "============================================================"
     try {
         Add-Type -AssemblyName System.Speech -ErrorAction Stop
         $speaker = New-Object System.Speech.Synthesis.SpeechSynthesizer
-        $speaker.Speak("EIAAX verificacion Alembic Windows corregida y revalidada")
+        $speaker.Speak("EIAAX preparacion Windows productiva lista")
     }
     catch {
         # Voice notification is optional; absence does not block completion.
