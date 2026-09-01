@@ -4,7 +4,7 @@
 |-------|-------|
 | SHA base | `c536f24` |
 | Rama | `cursor/integracion-lote-3-85e4` |
-| SHA final | *(ver commit tras push — campo actualizado en CI)* |
+| SHA final | `580cc1b` |
 | Alembic head | `1770a1b2c3d4e` |
 | Tests focales | 170 passed |
 | Frontend build | PASS |
