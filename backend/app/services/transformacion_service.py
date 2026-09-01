@@ -700,8 +700,13 @@ def _siguiente_accion(
     return {"accion": "revisar_diagnostico", "mensaje": "Revise hallazgos y alternativas generadas."}
 
 
-def get_dossier_completo(db: Session, organization_id: str) -> dict[str, Any]:
-    dossier = get_or_create_dossier(db, organization_id)
+def get_dossier_completo(db: Session, organization_id: str, *, create: bool = True) -> dict[str, Any] | None:
+    if create:
+        dossier = get_or_create_dossier(db, organization_id)
+    else:
+        dossier = db.query(DossierEmpresarial).filter(DossierEmpresarial.organization_id == organization_id).first()
+        if dossier is None:
+            return None
     conocimiento = (
         db.query(DossierConocimientoItem)
         .filter(DossierConocimientoItem.dossier_id == dossier.id, DossierConocimientoItem.vigente.is_(True))
@@ -744,9 +749,16 @@ def get_dossier_completo(db: Session, organization_id: str) -> dict[str, Any]:
     }
 
 
-def get_recorrido_estado(db: Session, organization_id: str, expediente_id: str | None = None) -> dict[str, Any]:
+def get_recorrido_estado(
+    db: Session, organization_id: str, expediente_id: str | None = None, *, create: bool = True,
+) -> dict[str, Any]:
     """Estado del recorrido progresivo para UX."""
-    dossier = get_or_create_dossier(db, organization_id)
+    if create:
+        dossier = get_or_create_dossier(db, organization_id)
+    else:
+        dossier = db.query(DossierEmpresarial).filter(DossierEmpresarial.organization_id == organization_id).first()
+        if dossier is None:
+            return {"pasos": [], "dossier": None, "suficiencia": None}
     eid = expediente_id or dossier.expediente_activo_id
     pasos = [
         {"id": "necesidad", "label": "Necesidad", "completo": bool(dossier.resumen)},

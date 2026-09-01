@@ -303,6 +303,11 @@ CONTROL_CENTER_PERMISSIONS = {
     "control_center.view",
 }
 
+STRATEGIC_CONTROL_PERMISSIONS = {
+    "strategic_control.view",
+    "strategic_control.economia_privada",
+}
+
 CONTINUIDAD_PERMISSIONS = {
     "continuidad.view",
     "continuidad.manage",
@@ -510,6 +515,8 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "platform.organization.create": ("Plataforma", "Crear empresas"),
     "platform.organization.manage": ("Plataforma", "Activar o desactivar empresas"),
     "control_center.view": ("Centro de Control", "Ver centro de control ejecutivo"),
+    "strategic_control.view": ("Centro Estratégico", "Ver cockpit estratégico de empresa/dossier"),
+    "strategic_control.economia_privada": ("Centro Estratégico", "Ver economía privada interna (no publicable a entidad)"),
     "continuidad.view": ("Continuidad", "Consultar continuidad operativa y resiliencia"),
     "continuidad.manage": ("Continuidad", "Administrar servicios críticos y planes"),
     "continuidad.activate": ("Continuidad", "Activar planes de contingencia"),
@@ -559,6 +566,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | TRANSFORMACION_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
+        | STRATEGIC_CONTROL_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
         | INCIDENTES_PERMISSIONS
         | BACKUPS_PERMISSIONS
@@ -599,6 +607,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | TRANSFORMACION_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
+        | STRATEGIC_CONTROL_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
         | INCIDENTES_PERMISSIONS
         | BACKUPS_PERMISSIONS

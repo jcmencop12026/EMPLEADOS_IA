@@ -2612,6 +2612,46 @@ export async function fetchCentroControlResumen(periodo = "mtd", organizationId?
   return api(`/api/centro-control/resumen-ejecutivo?${qs.toString()}`);
 }
 
+export type CentroEstrategicoCockpit = {
+  generated_at: string;
+  organization_id: string;
+  dossier_id?: string | null;
+  lectura_activa: string;
+  modo_comite: boolean;
+  lecturas: Array<{ id: string; label: string; descripcion?: string }>;
+  semantica_valor: Record<string, string>;
+  contenido: Record<string, unknown>;
+  mismo_dossier: boolean;
+  nota_comite?: string;
+  graficos: Array<{
+    titulo: string;
+    tipo: string;
+    series: Array<{ etiqueta: string; valor: unknown; naturaleza: string }>;
+    confianza?: string;
+    nota?: string | null;
+  }>;
+  trazabilidad?: {
+    cadena_ejecutiva?: Array<Record<string, unknown>>;
+    recorrido?: Record<string, unknown>;
+  };
+  vista_entidad?: Record<string, unknown> | null;
+  publicacion?: Record<string, unknown>;
+  enlaces: Record<string, string>;
+  separacion_mb08: string;
+};
+
+export async function fetchCentroEstrategicoCockpit(
+  lectura = "resumen",
+  modoComite = false,
+  organizationId?: string,
+): Promise<CentroEstrategicoCockpit> {
+  const qs = new URLSearchParams({ lectura, modo_comite: String(modoComite) });
+  if (organizationId) {
+    qs.set("organization_id", organizationId);
+  }
+  return api(`/api/centro-estrategico/cockpit?${qs.toString()}`);
+}
+
 // --- Modelo comercial (1280) ---
 
 export type CommercialPlanItem = {

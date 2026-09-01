@@ -57,6 +57,7 @@ from app.routers import (
     experience,
     linea_base,
     control_center,
+    strategic_control,
     oportunidades,
     senales,
     valoracion,
@@ -190,6 +191,7 @@ app.include_router(transformacion.router)
 app.include_router(inteligencia_externa.router)
 app.include_router(continuidad.router)
 app.include_router(control_center.router)
+app.include_router(strategic_control.router)
 app.include_router(governance.router)
 app.include_router(integraciones.router)
 app.include_router(aprendizaje.router)

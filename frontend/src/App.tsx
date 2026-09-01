@@ -72,6 +72,7 @@ import { OperationsCenterPage } from "./pages/OperationsCenterPage";
 import { OperationsHubPage } from "./pages/OperationsHubPage";
 import { TestLabPage } from "./pages/TestLabPage";
 import { ToolsPage } from "./pages/ToolsPage";
+import { CentroEstrategicoPage } from "./pages/CentroEstrategicoPage";
 import { getToken } from "./api";
 
 export default function App() {
@@ -85,6 +86,14 @@ export default function App() {
         <Route element={<AppShell />}>
           <Route index element={<HomePage />} />
           <Route path="centro-control" element={<HomePage />} />
+          <Route
+            path="centro-estrategico"
+            element={
+              <RequirePermission anyOf={["strategic_control.view"]}>
+                <CentroEstrategicoPage />
+              </RequirePermission>
+            }
+          />
           <Route path="panel" element={<Navigate to="/" replace />} />
           <Route path="operaciones" element={<OperationsHubPage />} />
           <Route path="operaciones/solicitud" element={<OperationsCenterPage />} />

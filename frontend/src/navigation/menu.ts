@@ -6,7 +6,10 @@ export const MENU: NavSection[] = [
   {
     id: "inicio",
     label: "Inicio",
-    items: [{ to: "/", label: "Centro de Control", end: true }],
+    items: [
+      { to: "/", label: "Centro de Control", end: true },
+      { to: "/centro-estrategico", label: "Centro estratégico" },
+    ],
   },
   {
     id: "operaciones",
