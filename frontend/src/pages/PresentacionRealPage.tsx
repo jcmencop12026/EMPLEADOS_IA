@@ -2,15 +2,14 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   downloadPresentacionPdf,
-  fetchDemoPresentacion,
+  fetchPresentacionReal,
   type PresentacionPayload,
 } from "../api";
 import { ContextualHelp } from "../components/ContextualHelp";
-import { DemoBanner } from "../components/DemoBanner";
 import { PresentacionView } from "../components/PresentacionView";
 import { AUDIENCIAS, HELP_DEMO_COMERCIAL, type AudienciaId } from "../lib/demoComercialHelp";
 
-export function PresentacionEjecutivaPage() {
+export function PresentacionRealPage() {
   const { expedienteId } = useParams<{ expedienteId: string }>();
   const [audiencia, setAudiencia] = useState<AudienciaId>("GERENCIA");
   const [data, setData] = useState<PresentacionPayload | null>(null);
@@ -21,7 +20,7 @@ export function PresentacionEjecutivaPage() {
   useEffect(() => {
     if (!expedienteId) return;
     setLoading(true);
-    fetchDemoPresentacion(expedienteId, audiencia)
+    fetchPresentacionReal(expedienteId, audiencia)
       .then(setData)
       .catch((e) => setError(e instanceof Error ? e.message : "Error"))
       .finally(() => setLoading(false));
@@ -31,7 +30,7 @@ export function PresentacionEjecutivaPage() {
     if (!expedienteId) return;
     setPdfLoading(true);
     try {
-      await downloadPresentacionPdf(expedienteId, audiencia, true);
+      await downloadPresentacionPdf(expedienteId, audiencia, false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo generar el PDF");
     } finally {
@@ -43,15 +42,16 @@ export function PresentacionEjecutivaPage() {
 
   return (
     <div className="ops-page presentacion-ejecutiva-page">
-      <DemoBanner />
-      <p><Link to="/demo">← Volver a demo comercial</Link></p>
+      <p>
+        <Link to={`/evaluaciones/${expedienteId}`}>← Volver al expediente</Link>
+      </p>
 
       <header className="page-header">
         <div className="page-header-row">
           <div>
             <h1>Presentación ejecutiva</h1>
             <p className="muted">
-              {data?.empresa ?? "Empresa ficticia"} · {data?.expediente_codigo}
+              {data?.empresa ?? "Organización"} · {data?.expediente_codigo ?? expedienteId}
             </p>
           </div>
           <ContextualHelp content={HELP_DEMO_COMERCIAL} />
@@ -75,23 +75,14 @@ export function PresentacionEjecutivaPage() {
       {loading && <p className="muted">Cargando presentación…</p>}
 
       {data && !loading && (
-        <>
-          <PresentacionView
-            data={data}
-            expedienteId={expedienteId}
-            esDemo
-            onDownloadPdf={onPdf}
-            pdfLoading={pdfLoading}
-          />
-          <p>
-            <Link
-              to={`/evaluaciones?nuevo=1&area=${encodeURIComponent("Facturación y glosas")}`}
-              className="btn primary"
-            >
-              Quiero evaluar mi empresa
-            </Link>
-          </p>
-        </>
+        <PresentacionView
+          data={data}
+          expedienteId={expedienteId}
+          esDemo={false}
+          onDownloadPdf={onPdf}
+          pdfLoading={pdfLoading}
+          backLink={{ to: `/evaluaciones/${expedienteId}`, label: "← Expediente de evaluación" }}
+        />
       )}
     </div>
   );

@@ -54,6 +54,7 @@ import { OptimizacionPage } from "./pages/OptimizacionPage";
 import { OptimizacionDetailPage } from "./pages/OptimizacionDetailPage";
 import { DemoComercialPage } from "./pages/DemoComercialPage";
 import { PresentacionEjecutivaPage } from "./pages/PresentacionEjecutivaPage";
+import { PresentacionRealPage } from "./pages/PresentacionRealPage";
 import { InformesPeriodicosDemoPage } from "./pages/InformesPeriodicosDemoPage";
 import { DiagnosticoIpsPage } from "./pages/DiagnosticoIpsPage";
 import { DirectoryPage } from "./pages/DirectoryPage";
@@ -88,6 +89,7 @@ export default function App() {
           <Route index element={<HomePage />} />
           <Route path="demo" element={<DemoComercialPage />} />
           <Route path="demo/presentacion/:expedienteId" element={<PresentacionEjecutivaPage />} />
+          <Route path="presentacion/:expedienteId" element={<PresentacionRealPage />} />
           <Route path="demo/informes-periodicos" element={<InformesPeriodicosDemoPage />} />
           <Route path="centro-control" element={<HomePage />} />
           <Route path="panel" element={<Navigate to="/" replace />} />

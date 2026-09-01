@@ -126,3 +126,29 @@ def test_semilla_idempotente(client: TestClient, sdb):
     b = client.post("/api/demo-comercial/semilla", headers=headers).json()
     assert a["expediente_id"] == b["expediente_id"]
     assert b.get("reused") is True
+
+
+def test_presentacion_demo_pdf(client: TestClient, sdb):
+    _, admin = _tenant(sdb)
+    headers = _login(client, admin.username)
+    seed = client.post("/api/demo-comercial/semilla", headers=headers).json()
+    res = client.get(
+        f"/api/demo-comercial/presentacion/{seed['expediente_id']}/pdf?audiencia=GERENCIA",
+        headers=headers,
+    )
+    assert res.status_code == 200
+    assert res.content.startswith(b"%PDF")
+
+
+def test_presentacion_demo_incluye_graficos(client: TestClient, sdb):
+    _, admin = _tenant(sdb)
+    headers = _login(client, admin.username)
+    seed = client.post("/api/demo-comercial/semilla", headers=headers).json()
+    pres = client.get(
+        f"/api/demo-comercial/presentacion/{seed['expediente_id']}?audiencia=FINANCIERO",
+        headers=headers,
+    )
+    assert pres.status_code == 200
+    graficos = pres.json().get("graficos", {})
+    assert len(graficos.get("series", [])) >= 1
+    assert graficos["series"][0].get("simulado") is True

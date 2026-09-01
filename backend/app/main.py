@@ -36,6 +36,7 @@ from app import support_models  # noqa: F401 — mesa de ayuda MB-12
 from app import employee_audit_models  # noqa: F401 — auditor empleados MVP
 from app import consumption_planner_models  # noqa: F401 — planificador MB-07 portable
 from app import communications_models  # noqa: F401 — comunicaciones MB-11
+from app import presentacion_models  # noqa: F401 — presentación ejecutiva V1
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
@@ -82,6 +83,7 @@ from app.routers import (
     empleados_auditor,
     comunicaciones,
     demo_comercial,
+    presentacion,
 )
 from app.seed import bootstrap
 from app.security_config import validate_security_settings
@@ -185,6 +187,7 @@ app.include_router(valoracion.router)
 app.include_router(diagnosticos.router)
 app.include_router(evaluaciones.router)
 app.include_router(demo_comercial.router)
+app.include_router(presentacion.router)
 app.include_router(resultados.router)
 app.include_router(inteligencia_externa.router)
 app.include_router(continuidad.router)
