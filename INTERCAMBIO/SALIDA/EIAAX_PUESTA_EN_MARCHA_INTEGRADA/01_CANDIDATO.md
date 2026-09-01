@@ -3,7 +3,7 @@
 | Campo | Valor |
 |-------|-------|
 | SHA inicial (respaldo) | `e0f4b07` |
-| SHA final (puesta en marcha) | `233075a` |
+| SHA final (puesta en marcha) | `da81af7` |
 | Rama | `cursor/integracion-lote-3-85e4` |
 | Tag seguridad (intacto) | `eiaax-lote3-integrado-respaldo` → `e0f4b07` |
 | Alembic head | `1770a1b2c3d4e` |
