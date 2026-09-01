@@ -81,6 +81,7 @@ from app.routers import (
     trabajo,
     empleados_auditor,
     comunicaciones,
+    demo_comercial,
 )
 from app.seed import bootstrap
 from app.security_config import validate_security_settings
@@ -183,6 +184,7 @@ app.include_router(linea_base.router)
 app.include_router(valoracion.router)
 app.include_router(diagnosticos.router)
 app.include_router(evaluaciones.router)
+app.include_router(demo_comercial.router)
 app.include_router(resultados.router)
 app.include_router(inteligencia_externa.router)
 app.include_router(continuidad.router)

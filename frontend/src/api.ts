@@ -3610,6 +3610,50 @@ export async function fetchLlmRoutingExplain(preferredProvider?: string): Promis
   return api(`/api/llm/routing/explain${q}`);
 }
 
+// --- Demo comercial ficticia (V1) ---
+
+export type DemoComercialManifest = {
+  es_demo: boolean;
+  etiqueta: string;
+  empresa_ficticia?: string;
+  problema?: string;
+  expediente_id?: string;
+  expediente_codigo?: string;
+  informe_id?: string;
+  semilla_disponible?: boolean;
+  areas?: Array<{ id: string; label: string }>;
+  enlaces?: Record<string, string | null>;
+  reused?: boolean;
+};
+
+export type DemoPresentacion = {
+  etiqueta: string;
+  audiencia: string;
+  empresa: string;
+  expediente_codigo: string;
+  secciones: Array<{ titulo: string; contenido: string[] }>;
+  informe_resumen?: { titulo?: string; version?: number; visibilidad?: string };
+};
+
+export async function fetchDemoComercialManifest(): Promise<DemoComercialManifest> {
+  return api("/api/demo-comercial/manifest");
+}
+
+export async function seedDemoComercial(): Promise<DemoComercialManifest> {
+  return api("/api/demo-comercial/semilla", { method: "POST" });
+}
+
+export async function fetchDemoPresentacion(
+  expedienteId: string,
+  audiencia: string,
+): Promise<DemoPresentacion> {
+  return api(`/api/demo-comercial/presentacion/${expedienteId}?audiencia=${encodeURIComponent(audiencia)}`);
+}
+
+export async function fetchInformesPeriodicosPlantillas(): Promise<{ plantillas: Array<Record<string, unknown>> }> {
+  return api("/api/demo-comercial/informes-periodicos");
+}
+
 // --- Mesa de Ayuda y Soporte (MB-12) ---
 
 export type SupportCase = {
