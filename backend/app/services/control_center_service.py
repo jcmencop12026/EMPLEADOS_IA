@@ -70,9 +70,10 @@ INTEGRACIONES_FUTURAS = {
     "MB-12": "Integrado — mesa de ayuda",
     "AUDITOR": "Integrado — auditor empleados IA (solo lectura)",
     "FABRICA": "Integrado vía empleados IA y auditor",
+    "FABRICA_OPERACIONAL": "Integrado — MB-06 fuerza laboral",
     "MI_TRABAJO": "Integrado — resumen Mi Trabajo",
     "CONTINUIDAD": "Integrado — continuidad y resiliencia",
-    "CONOCIMIENTO_930": "Pendiente — Conocimiento",
+    "CONOCIMIENTO_930": "Integrado — fuentes y documentos",
     "INTEGRACIONES_T5": "Pendiente — Integraciones visuales Tramo 5",
 }
 
@@ -703,7 +704,7 @@ def get_executive_summary(
     permissions = user_permissions(user, db)
     period_start = _period_start(periodo)
 
-    employees = _employees_section(db, org_id, employee_id=employee_id) if _has(permissions, "employee.view") else None
+    employees = None  # sustituido por bloque operacional.fuerza_laboral
     ops_summary = operations_center.get_summary(db, org_id) if _has(permissions, "operations.view") else None
 
     automations_active = None
@@ -808,6 +809,8 @@ def get_executive_summary(
         adapters.AuditorEmpleadosAdapter(),
         adapters.MiTrabajoAdapter(),
         adapters.ContinuidadAdapter(),
+        adapters.ConocimientoAdapter(),
+        adapters.FabricaOperacionalAdapter(),
         adapters.MotorEconomicoAdapter(),
     ]
     modulos = _fetch_module_adapters(
@@ -862,6 +865,33 @@ def get_executive_summary(
         "semantica": adapters.SEMANTICA_VALOR,
     }
 
+    operacional = None
+    try:
+        from app.services import operational_control_service as ops_ctrl
+
+        operacional = ops_ctrl.get_operational_summary(
+            db,
+            user,
+            org_id,
+            periodo=periodo,
+            employee_id=employee_id,
+            proceso=proceso,
+            estado=estado,
+        )
+    except Exception:
+        operacional = {"error": "operacional_no_disponible"}
+
+    secciones_operacionales = [
+        {"id": "resumen", "label": "Resumen operacional"},
+        {"id": "empleados_ia", "label": "Empleados IA"},
+        {"id": "ejecuciones", "label": "Ejecuciones"},
+        {"id": "atencion", "label": "Requiere atención"},
+        {"id": "capacidad_consumo", "label": "Capacidad y consumo"},
+        {"id": "aprobaciones", "label": "Aprobaciones"},
+        {"id": "salud", "label": "Salud de servicios"},
+        {"id": "valor", "label": "Valor"},
+    ]
+
     return {
         "generated_at": _utcnow().isoformat(),
         "organization_id": org_id,
@@ -872,21 +902,15 @@ def get_executive_summary(
             "estado": estado,
         },
         "semantica": SEMANTICA_CONTRATO,
-        "secciones": [
-            {"id": "resumen", "label": "Resumen"},
-            {"id": "valor", "label": "Valor"},
-            {"id": "operacion", "label": "Operación"},
-            {"id": "ia_costos", "label": "IA y costos"},
-            {"id": "implementacion", "label": "Implementación"},
-            {"id": "salud", "label": "Salud"},
-        ],
+        "secciones": secciones_operacionales,
         "resumen_ejecutivo": {
             "indicadores": _build_indicators(ctx, permissions),
             "operaciones": ops_summary,
             "valor": valor_consolidado,
         },
-        "atencion_requerida": _atencion_requerida(db, org_id, permissions) if _has(permissions, "control_center.view") else [],
-        "empleados_ia": employees,
+        "atencion_requerida": (operacional or {}).get("requiere_atencion", []) if _has(permissions, "control_center.view") else [],
+        "operacional": operacional,
+        "empleados_ia": (operacional or {}).get("fuerza_laboral") if operacional else None,
         "oportunidades": modulos.get("oportunidades"),
         "linea_base": modulos.get("impacto"),
         "impacto": modulos.get("impacto"),
@@ -910,6 +934,8 @@ def get_executive_summary(
         "auditor_empleados": modulos.get("auditor_empleados"),
         "mi_trabajo": modulos.get("mi_trabajo"),
         "continuidad": modulos.get("continuidad"),
+        "conocimiento": modulos.get("conocimiento"),
+        "fabrica_operacional": modulos.get("fabrica_operacional"),
         "cadena_ejecutiva": _cadena_ejecutiva(db, org_id, permissions, period_start=period_start),
         "salud_plataforma": build_health_report(include_schedulers=True) if _has(permissions, "control_center.view") else None,
         "auditoria_reciente": _audit_section(db, org_id) if _has(permissions, "audit.view") else None,

@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -23,6 +23,9 @@ ESTADOS_SOLICITUD = frozenset(
 )
 DOMINIOS_VISIBILIDAD = frozenset(
     {"evaluacion", "hallazgo", "indicador", "oportunidad", "informe", "plan", "resultado"}
+)
+NIVELES_VISIBILIDAD = frozenset(
+    {"INTERNO_EIAAX", "VISIBLE_ENTIDAD", "COMPARTIDO_ESPECIFICO", "RESTRINGIDO"}
 )
 
 
@@ -82,6 +85,10 @@ class GobiernoVisibilidadLog(Base):
     objeto_tipo: Mapped[str] = mapped_column(String(40), nullable=False)
     objeto_id: Mapped[str] = mapped_column(String(36), nullable=False)
     visible: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    nivel_visibilidad: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    estado_anterior: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    motivo: Mapped[str | None] = mapped_column(Text, nullable=True)
+    version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     changed_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
     correlation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
@@ -101,6 +108,9 @@ class GobiernoIaPolicy(Base):
     requiere_aprobacion_humana_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     datos_permitidos_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     auto_ejecutar: Mapped[bool] = mapped_column(Boolean, default=False)
+    trazabilidad_obligatoria: Mapped[bool] = mapped_column(Boolean, default=True)
+    catalogo_proveedores_ref: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    registro_detalle_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)

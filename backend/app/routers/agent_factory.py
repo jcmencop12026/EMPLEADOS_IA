@@ -20,6 +20,7 @@ from app.schemas_factory import (
 )
 from app.schemas_orchestration import ApprovalDecisionRequest, PlanResponse, RouteTaskRequest
 from app.services import agent_factory, employee_lifecycle_service
+from app.services import factory_bridge_service as bridge_svc
 from app.services.coordinator import route_task
 
 router = APIRouter(prefix="/api/agent-factory", tags=["agent-factory"])
@@ -369,3 +370,69 @@ def list_capabilities(db: Session = Depends(get_db), user: User = Depends(get_cu
 def list_tools(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     check_permission(user, "employee.view", db)
     return agent_factory.list_tools(db, user.organization_id)
+
+
+@router.get("/biblioteca")
+def biblioteca(
+    q: str | None = None,
+    status: str | None = None,
+    source_type: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "employee.view", db)
+    return bridge_svc.list_biblioteca(
+        db, user.organization_id, q=q, lifecycle_status=status, source_type=source_type,
+    )
+
+
+@router.post("/employees/from-requerimiento/{requerimiento_id}")
+def create_from_requerimiento(
+    requerimiento_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "employee.create", db)
+    result = bridge_svc.create_employee_from_requerimiento(
+        db, user.organization_id, user.id, requerimiento_id,
+    )
+    db.commit()
+    return result
+
+
+@router.post("/employees/{employee_id}/clone")
+def clone_employee(
+    employee_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "employee.create", db)
+    result = bridge_svc.clone_employee_as_draft(db, user.organization_id, user.id, employee_id)
+    db.commit()
+    return result
+
+
+@router.get("/employees/{employee_id}/estimate-capacity")
+def estimate_capacity(
+    employee_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "employee.view", db)
+    return bridge_svc.estimate_capacity_cost(db, user.organization_id, employee_id)
+
+
+@router.get("/employees/{employee_id}/validate-provider")
+def validate_provider(
+    employee_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "employee.test", db)
+    return bridge_svc.validate_provider_for_test(db, user.organization_id, employee_id)
+
+
+@router.get("/gobierno-operacional/boundary")
+def gobierno_boundary(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "employee.view", db)
+    return bridge_svc.gobierno_operacional_boundary(db, user.organization_id)

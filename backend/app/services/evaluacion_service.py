@@ -822,13 +822,39 @@ def get_impacto_resumen(
     if vista_entidad:
         hallazgos = [h for h in hallazgos if h.visible_entidad]
 
-    indicadores_db = acc_svc.list_indicadores(db, expediente_id, organization_id, vista_entidad=vista_entidad)
     indicadores: list[dict[str, Any]] = []
 
-    for ind in indicadores_db:
+    try:
+        from app.services import resultados_service as res_svc
+
+        for ind in res_svc.list_indicadores(db, organization_id, expediente_id=exp.id):
+            if vista_entidad and not ind.get("visible_entidad"):
+                continue
+            indicadores.append({
+                "id": ind["id"],
+                "nombre": ind["nombre"],
+                "hallazgo": ind["nombre"],
+                "antes": ind["antes"],
+                "proyectado": ind["proyectado"],
+                "real": ind["real"],
+                "etiqueta_proyeccion": ind["proyectado"] is not None and ind["real"] is None,
+                "sin_medicion_posterior": ind.get("sin_medicion_posterior", False),
+                "confianza": ind["confianza"],
+                "unidad": ind["unidad"],
+                "fuente": ind["fuente"],
+                "indicador_id": ind["id"],
+                "grafico": None,
+            })
+    except Exception:
+        pass
+
+    for ind in acc_svc.list_indicadores(db, expediente_id, organization_id, vista_entidad=vista_entidad):
+        if any(i.get("indicador_id") == ind["id"] or i.get("nombre") == ind["nombre"] for i in indicadores):
+            continue
         indicadores.append({
             "id": ind["id"],
             "nombre": ind["nombre"],
+            "hallazgo": ind["nombre"],
             "unidad": ind.get("unidad"),
             "antes": ind.get("valor_antes"),
             "proyectado": ind.get("valor_proyectado"),
@@ -841,11 +867,12 @@ def get_impacto_resumen(
     for h in hallazgos:
         if not h.impacto_resumen:
             continue
-        if any(i["nombre"] == h.titulo for i in indicadores):
+        if any(i.get("nombre") == h.titulo for i in indicadores):
             continue
         indicadores.append({
             "id": h.id,
             "nombre": h.titulo,
+            "hallazgo": h.titulo,
             "unidad": None,
             "antes": None,
             "proyectado": h.impacto_resumen if h.tipo_contenido == "PROYECCION" else None,

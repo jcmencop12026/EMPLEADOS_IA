@@ -38,6 +38,11 @@ from app import economic_motor_models  # noqa: F401 — motor económico EIAAX 1
 from app import communications_models  # noqa: F401 — comunicaciones MB-11
 from app import gobierno_operacional_models  # noqa: F401 — gobierno operacional EIAAX
 from app import partner_models  # noqa: F401 — partners MB-03
+from app import empresa_seguridad_models  # noqa: F401 — seguridad y gobierno datos Lote 3
+from app import negocio_models  # noqa: F401 — centro de negocios Lote 3
+from app import continuidad_comercial_models  # noqa: F401 — continuidad comercial Lote 3
+from app import transformacion_models  # noqa: F401 — arquitecto transformación Lote 3
+from app import resultados_models  # noqa: F401 — inteligencia resultados Lote 3
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
@@ -66,6 +71,11 @@ from app.routers import (
     gobierno_operacional,
     partners,
     motor_economico,
+    empresa_seguridad,
+    centro_negocios,
+    continuidad_comercial,
+    transformacion,
+    resultados,
     inteligencia_externa,
     continuidad,
     governance,
@@ -190,6 +200,11 @@ app.include_router(diagnosticos.router)
 app.include_router(evaluaciones.router)
 app.include_router(gobierno_operacional.router)
 app.include_router(partners.router)
+app.include_router(empresa_seguridad.router)
+app.include_router(centro_negocios.router)
+app.include_router(continuidad_comercial.router)
+app.include_router(transformacion.router)
+app.include_router(resultados.router)
 app.include_router(inteligencia_externa.router)
 app.include_router(continuidad.router)
 app.include_router(control_center.router)

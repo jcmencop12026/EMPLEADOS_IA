@@ -306,6 +306,40 @@ GOBIERNO_OPERACIONAL_PERMISSIONS = {
     "gobierno.ia_policy",
     "gobierno.audit",
     "gobierno.confianza.view",
+    "gobierno.clasificacion.view",
+    "gobierno.clasificacion.assign",
+    "gobierno.trazabilidad.view",
+    "gobierno.evidencia.view",
+    "gobierno.evidencia.link",
+    "gobierno.auditoria.consulta",
+}
+
+NEGOCIO_PERMISSIONS = {
+    "negocio.view",
+    "negocio.manage",
+    "negocio.economy.private",
+    "negocio.proposal.approve",
+    "negocio.proposal.present",
+    "negocio.contract",
+}
+
+CONTINUIDAD_COMERCIAL_PERMISSIONS = {
+    "continuidad_comercial.view",
+    "continuidad_comercial.manage",
+    "continuidad_comercial.close",
+}
+
+TRANSFORMACION_PERMISSIONS = {
+    "transformacion.view",
+    "transformacion.manage",
+    "transformacion.execute",
+}
+
+RESULTADOS_PERMISSIONS = {
+    "resultados.view",
+    "resultados.manage",
+    "resultados.validate",
+    "resultados.informe.generate",
 }
 
 PARTNER_PERMISSIONS = {
@@ -473,6 +507,28 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "gobierno.ia_policy": ("Gobierno operacional", "Gestionar políticas de gobierno IA"),
     "gobierno.audit": ("Gobierno operacional", "Consultar eventos de gobierno operacional"),
     "gobierno.confianza.view": ("Gobierno operacional", "Ver Centro de Confianza"),
+    "gobierno.clasificacion.view": ("Gobierno operacional", "Consultar clasificación de información"),
+    "gobierno.clasificacion.assign": ("Gobierno operacional", "Asignar clasificación a objetos"),
+    "gobierno.trazabilidad.view": ("Gobierno operacional", "Consultar trazabilidad empresarial"),
+    "gobierno.evidencia.view": ("Gobierno operacional", "Consultar evidencia vinculada"),
+    "gobierno.evidencia.link": ("Gobierno operacional", "Vincular evidencia a decisiones"),
+    "gobierno.auditoria.consulta": ("Gobierno operacional", "Consultar auditoría federada en español"),
+    "negocio.view": ("Centro de Negocios", "Consultar oportunidades y propuestas comerciales"),
+    "negocio.manage": ("Centro de Negocios", "Gestionar ciclo comercial y propuestas"),
+    "negocio.economy.private": ("Centro de Negocios", "Ver economía privada en propuestas"),
+    "negocio.proposal.approve": ("Centro de Negocios", "Aprobar propuestas y decidir precio"),
+    "negocio.proposal.present": ("Centro de Negocios", "Presentar propuestas al cliente"),
+    "negocio.contract": ("Centro de Negocios", "Contratar y convertir a implementación"),
+    "continuidad_comercial.view": ("Continuidad comercial", "Ver continuidad contrato→resultado"),
+    "continuidad_comercial.manage": ("Continuidad comercial", "Gestionar cambios de alcance"),
+    "continuidad_comercial.close": ("Continuidad comercial", "Cerrar contratos y offboarding"),
+    "transformacion.view": ("Transformación", "Consultar dossier y diagnóstico adaptativo"),
+    "transformacion.manage": ("Transformación", "Registrar necesidades y gestionar dossier"),
+    "transformacion.execute": ("Transformación", "Ejecutar diagnóstico y motor de transformación"),
+    "resultados.view": ("Inteligencia de resultados", "Consultar indicadores e informes de impacto"),
+    "resultados.manage": ("Inteligencia de resultados", "Gestionar indicadores y plan de mejoramiento"),
+    "resultados.validate": ("Inteligencia de resultados", "Registrar mediciones REAL con evidencia"),
+    "resultados.informe.generate": ("Inteligencia de resultados", "Generar informes de impacto"),
     "partners.view": ("Partners", "Consultar partners y aliados comerciales"),
     "partners.manage": ("Partners", "Crear y administrar partners"),
     "partners.org.grant": ("Partners", "Asociar organizaciones a partners"),
@@ -581,6 +637,10 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | EVALUACION_PERMISSIONS
         | PARTNER_PERMISSIONS
         | GOBIERNO_OPERACIONAL_PERMISSIONS
+        | NEGOCIO_PERMISSIONS
+        | CONTINUIDAD_COMERCIAL_PERMISSIONS
+        | TRANSFORMACION_PERMISSIONS
+        | RESULTADOS_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
@@ -622,6 +682,10 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | EVALUACION_PERMISSIONS
         | PARTNER_PERMISSIONS
         | GOBIERNO_OPERACIONAL_PERMISSIONS
+        | NEGOCIO_PERMISSIONS
+        | CONTINUIDAD_COMERCIAL_PERMISSIONS
+        | TRANSFORMACION_PERMISSIONS
+        | RESULTADOS_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
@@ -775,6 +839,14 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "gobierno.ia_policy",
         "gobierno.audit",
         "gobierno.confianza.view",
+        "gobierno.clasificacion.view",
+        "gobierno.trazabilidad.view",
+        "negocio.view",
+        "continuidad_comercial.view",
+        "transformacion.view",
+        "transformacion.manage",
+        "transformacion.execute",
+        "resultados.view",
         "partners.view",
     },
     "viewer": {
@@ -820,6 +892,10 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "support.create",
         "gobierno.view",
         "gobierno.confianza.view",
+        "gobierno.clasificacion.view",
+        "gobierno.trazabilidad.view",
+        "transformacion.view",
+        "resultados.view",
         "partners.view",
     },
 }
