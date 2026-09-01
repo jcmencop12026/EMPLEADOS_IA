@@ -4679,3 +4679,369 @@ export async function registerMedicionReal(indicadorId: string, valorReal: numbe
     body: JSON.stringify({ valor_real: valorReal, evidencia_ref: evidenciaRef }),
   });
 }
+export type CentroEstrategicoCockpit = {
+  generated_at: string;
+  organization_id: string;
+  dossier_id?: string | null;
+  lectura_activa: string;
+  modo_comite: boolean;
+  lecturas: Array<{ id: string; label: string; descripcion?: string }>;
+  semantica_valor: Record<string, string>;
+  contenido: Record<string, unknown>;
+  mismo_dossier: boolean;
+  nota_comite?: string;
+  graficos: Array<{
+    titulo: string;
+    tipo: string;
+    series: Array<{ etiqueta: string; valor: unknown; naturaleza: string }>;
+    confianza?: string;
+    nota?: string | null;
+  }>;
+  trazabilidad?: {
+    cadena_ejecutiva?: Array<Record<string, unknown>>;
+    recorrido?: Record<string, unknown>;
+  };
+  vista_entidad?: Record<string, unknown> | null;
+  publicacion?: Record<string, unknown>;
+  enlaces: Record<string, string>;
+  separacion_mb08: string;
+};
+
+export async function fetchCentroEstrategicoCockpit(
+  lectura = "resumen",
+  modoComite = false,
+  organizationId?: string,
+): Promise<CentroEstrategicoCockpit> {
+  const qs = new URLSearchParams({ lectura, modo_comite: String(modoComite) });
+  if (organizationId) {
+    qs.set("organization_id", organizationId);
+  }
+  return api(`/api/centro-estrategico/cockpit?${qs.toString()}`);
+}
+
+// --- Modelo comercial (1280) ---
+export type DemoComercialManifest = {
+  es_demo: boolean;
+  etiqueta: string;
+  empresa_ficticia?: string;
+  problema?: string;
+  expediente_id?: string;
+  expediente_codigo?: string;
+  informe_id?: string;
+  semilla_disponible?: boolean;
+  areas?: Array<{ id: string; label: string }>;
+  enlaces?: Record<string, string | null>;
+  reused?: boolean;
+};
+
+export type DemoPresentacion = {
+  etiqueta: string;
+  audiencia: string;
+  empresa: string;
+  expediente_codigo: string;
+  secciones: Array<{ titulo: string; contenido: string[] }>;
+  informe_resumen?: { titulo?: string; version?: number; visibilidad?: string };
+};
+
+export type PresentacionIndicador = {
+  nombre: string;
+  unidad?: string;
+  antes?: number | null;
+  proyectado?: number | null;
+  real?: number | null;
+  simulado?: boolean;
+  periodo?: string | null;
+};
+
+export type PresentacionPayload = DemoPresentacion & {
+  es_demo?: boolean;
+  expediente_id?: string;
+  fecha?: string;
+  version?: number;
+  indicadores?: PresentacionIndicador[];
+  graficos?: {
+    tipo?: string;
+    nota?: string;
+    series?: PresentacionIndicador[];
+    adapter_centro_control?: string;
+  };
+  publicacion?: {
+    estado: string;
+    informe_visibilidad?: string | null;
+    adapter?: string;
+  };
+  proteccion_ip?: { oculto: string[] };
+};
+
+export type InformeComercialConfig = {
+  id: string;
+  nombre: string;
+  expediente_id?: string | null;
+  audiencia: string;
+  periodicidad: string;
+  destinatarios: string[];
+  resumen?: string | null;
+  enlace_seguro: boolean;
+  activo: boolean;
+  ultimo_envio?: string | null;
+  proximo_envio?: string | null;
+  estado: string;
+  error_ultimo?: string | null;
+  integracion?: Record<string, unknown>;
+};
+
+export async function fetchDemoComercialManifest(): Promise<DemoComercialManifest> {
+  return api("/api/demo-comercial/manifest");
+}
+
+export async function seedDemoComercial(): Promise<DemoComercialManifest> {
+  return api("/api/demo-comercial/semilla", { method: "POST" });
+}
+
+export async function fetchDemoPresentacion(
+  expedienteId: string,
+  audiencia: string,
+): Promise<PresentacionPayload> {
+  return api(`/api/demo-comercial/presentacion/${expedienteId}?audiencia=${encodeURIComponent(audiencia)}`);
+}
+
+export async function fetchPresentacionReal(
+  expedienteId: string,
+  audiencia: string,
+): Promise<PresentacionPayload> {
+  return api(`/api/presentacion/${expedienteId}?audiencia=${encodeURIComponent(audiencia)}`);
+}
+
+export async function downloadPresentacionPdf(
+  expedienteId: string,
+  audiencia: string,
+  esDemo: boolean,
+): Promise<void> {
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const base = esDemo
+    ? `/api/demo-comercial/presentacion/${expedienteId}/pdf`
+    : `/api/presentacion/${expedienteId}/pdf`;
+  const res = await fetch(`${base}?audiencia=${encodeURIComponent(audiencia)}`, { headers });
+  if (!res.ok) {
+    const text = await res.text();
+    const detail = parseDetail(text);
+    throw new ApiError(res.status, userMessage(res.status, detail), detail);
+  }
+  const blob = await res.blob();
+  const filename =
+    parseContentDispositionFilename(res.headers.get("Content-Disposition")) ||
+    `EIAAX-presentacion-${expedienteId}.pdf`;
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    anchor.rel = "noopener";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+export async function updatePresentacionPublicacion(
+  expedienteId: string,
+  estado: string,
+  notas?: string,
+): Promise<Record<string, unknown>> {
+  return api(`/api/presentacion/${expedienteId}/publicacion`, {
+    method: "PUT",
+    body: JSON.stringify({ estado, notas }),
+  });
+}
+
+export async function fetchInformesComercialesConfig(): Promise<{ items: InformeComercialConfig[] }> {
+  return api("/api/presentacion/informes-comerciales/config");
+}
+
+export async function createInformeComercialConfig(
+  data: Record<string, unknown>,
+): Promise<InformeComercialConfig> {
+  return api("/api/presentacion/informes-comerciales/config", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function fetchInformesPeriodicosPlantillas(): Promise<{ plantillas: Array<Record<string, unknown>> }> {
+  return api("/api/demo-comercial/informes-periodicos");
+}
+
+// --- Espacio externo V1 ---
+
+export type MiEspacioContext = {
+  entidad: { id: string; nombre: string; estado_relacion: string; expediente_id: string };
+  rol_externo: string;
+  estado_relacion: string;
+  secciones: Array<{ paquete: string; estado_publicacion: string; accesible: boolean; version: number }>;
+};
+
+export async function createEntidadExterna(expedienteId: string, contactoEmail?: string): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/entidades", {
+    method: "POST",
+    body: JSON.stringify({ expediente_id: expedienteId, contacto_email: contactoEmail }),
+  });
+}
+
+export async function fetchEntidadExterna(entidadId: string): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/entidades/${entidadId}`);
+}
+
+export async function inviteAccesoExterno(
+  entidadId: string,
+  payload: { email: string; full_name: string; rol_externo?: string; password?: string },
+): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/entidades/${entidadId}/accesos`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function setPublicacionEstado(
+  publicacionId: string,
+  estado: string,
+  destinatario?: string,
+  motivo?: string,
+): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/publicaciones/${publicacionId}/estado`, {
+    method: "PATCH",
+    body: JSON.stringify({ estado, destinatario, motivo }),
+  });
+}
+
+export async function promoverEntidadCliente(entidadId: string, contratoRef?: string): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/entidades/${entidadId}/promover-cliente`, {
+    method: "POST",
+    body: JSON.stringify({ contrato_ref: contratoRef }),
+  });
+}
+
+export async function fetchMiEspacioInicio(): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/inicio");
+}
+
+export async function fetchMiEspacioInformacion(): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/informacion");
+}
+
+export async function fetchMiEspacioEstado(): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/estado");
+}
+
+export async function fetchMiEspacioVistaEntidad(paquete = "RESULTADOS"): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/mi-espacio/vista-entidad?paquete=${encodeURIComponent(paquete)}`);
+}
+
+export async function entregarInformacionExterna(payload: {
+  item_id?: string;
+  entrega_id?: string;
+  contenido: string;
+  evidencia_ref?: string;
+  fuente_tipo?: string;
+}): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/entregas", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function subirAdjuntosExternos(
+  itemId: string,
+  files: File[],
+  observacion?: string,
+): Promise<Record<string, unknown>> {
+  const form = new FormData();
+  form.append("item_id", itemId);
+  if (observacion) form.append("observacion", observacion);
+  for (const f of files) form.append("files", f);
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch("/api/espacio-externo/mi-espacio/adjuntos", { method: "POST", headers, body: form });
+  if (!res.ok) throw new Error(await res.text() || res.statusText);
+  return res.json() as Promise<Record<string, unknown>>;
+}
+
+export function urlDescargaAdjuntoExterno(adjuntoId: string): string {
+  return `/api/espacio-externo/mi-espacio/adjuntos/${encodeURIComponent(adjuntoId)}/descarga`;
+}
+
+export async function descargarAdjuntoExterno(adjuntoId: string, filename: string): Promise<void> {
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(urlDescargaAdjuntoExterno(adjuntoId), { headers });
+  if (!res.ok) throw new Error(await res.text() || res.statusText);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function validarEntregaExterna(
+  entregaId: string,
+  estado: string,
+  marcarSuficiencia = false,
+): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/entregas/${entregaId}/validar`, {
+    method: "POST",
+    body: JSON.stringify({ estado, marcar_suficiencia: marcarSuficiencia }),
+  });
+}
+
+export async function fetchMiEspacioImplementacion(): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/implementacion");
+}
+
+export async function fetchMiEspacioEmpleadosIa(): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/empleados-ia");
+}
+
+export async function fetchMiEspacioInformes(): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/informes");
+}
+
+export async function fetchMiEspacioSoporte(): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/soporte");
+}
+
+export async function crearCasoSoporteExterno(payload: {
+  asunto: string;
+  descripcion: string;
+  tipo?: string;
+  prioridad?: string;
+}): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/soporte/casos", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function configureContratoEntidad(
+  entidadId: string,
+  capacidades: string[],
+  empleadosIaIds?: string[],
+): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/entidades/${entidadId}/contrato`, {
+    method: "PATCH",
+    body: JSON.stringify({ capacidades, empleados_ia_ids: empleadosIaIds }),
+  });
+}
+
+export async function linkProyectoEntidad(entidadId: string, proyectoId: string): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/entidades/${entidadId}/link-proyecto`, {
+    method: "POST",
+    body: JSON.stringify({ proyecto_id: proyectoId }),
+  });
+}

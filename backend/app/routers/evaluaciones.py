@@ -27,6 +27,7 @@ class ExpedienteCreate(BaseModel):
     necesidad: str | None = None
     objetivo: str | None = None
     area_proceso: str | None = Field(None, max_length=120)
+    sector: str | None = Field(None, max_length=80)
     nivel: str = "PRELIMINAR"
 
 
@@ -167,6 +168,7 @@ def create_expediente(
         necesidad=body.necesidad,
         objetivo=body.objetivo,
         area_proceso=body.area_proceso,
+        sector=body.sector,
         nivel=body.nivel,
     )
     db.commit()

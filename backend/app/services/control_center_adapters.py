@@ -1509,9 +1509,14 @@ class ContinuidadAdapter:
         from app.services import continuidad_service as cont
 
         resumen = cont.centro_control_resumen(db, organization_id)
+        degradados = resumen.get("degradados") or []
+        if isinstance(degradados, int):
+            degradados_count = degradados
+        else:
+            degradados_count = len(degradados)
         tiene = (
             resumen.get("incidentes_abiertos", 0) > 0
-            or resumen.get("degradados", 0) > 0
+            or degradados_count > 0
             or resumen.get("backups_fallidos", 0) > 0
             or len(resumen.get("disponibilidad") or []) > 0
         )

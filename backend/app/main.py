@@ -43,6 +43,9 @@ from app import negocio_models  # noqa: F401 — centro de negocios Lote 3
 from app import continuidad_comercial_models  # noqa: F401 — continuidad comercial Lote 3
 from app import transformacion_models  # noqa: F401 — arquitecto transformación Lote 3
 from app import resultados_models  # noqa: F401 — inteligencia resultados Lote 3
+from app import flujo_comercial_models  # noqa: F401 — flujo comercial V1 convergencia
+from app import presentacion_models  # noqa: F401 — presentación ejecutiva convergencia
+from app import espacio_externo_models  # noqa: F401 — espacio externo convergencia
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
@@ -76,6 +79,11 @@ from app.routers import (
     continuidad_comercial,
     transformacion,
     resultados,
+    strategic_control,
+    flujo_comercial,
+    presentacion,
+    demo_comercial,
+    espacio_externo,
     inteligencia_externa,
     continuidad,
     governance,
@@ -205,6 +213,11 @@ app.include_router(centro_negocios.router)
 app.include_router(continuidad_comercial.router)
 app.include_router(transformacion.router)
 app.include_router(resultados.router)
+app.include_router(strategic_control.router)
+app.include_router(flujo_comercial.router)
+app.include_router(presentacion.router)
+app.include_router(demo_comercial.router)
+app.include_router(espacio_externo.router)
 app.include_router(inteligencia_externa.router)
 app.include_router(continuidad.router)
 app.include_router(control_center.router)

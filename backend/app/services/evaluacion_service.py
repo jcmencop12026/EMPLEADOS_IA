@@ -310,6 +310,7 @@ def create_expediente(
     necesidad: str | None = None,
     objetivo: str | None = None,
     area_proceso: str | None = None,
+    sector: str | None = None,
     nivel: str = "PRELIMINAR",
 ) -> EvaluacionExpediente:
     if nivel not in EVALUACION_NIVELES:
@@ -323,6 +324,7 @@ def create_expediente(
         necesidad=necesidad,
         objetivo=objetivo,
         area_proceso=area_proceso,
+        sector=sector,
         nivel=nivel,
         estado="BORRADOR",
         correlation_id=_new_correlation(),
