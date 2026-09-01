@@ -12,7 +12,10 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.audit import write_audit
+from app.communications_models import CommMessage
 from app.espacio_externo_models import (
+    AUDIENCIAS_PUBLICACION,
+    CAPACIDADES_CONTRATO_CLIENTE,
     ESTADOS_PUBLICACION,
     ESTADOS_RELACION,
     ESTADOS_VALIDACION_EXTERNA,
@@ -27,8 +30,23 @@ from app.espacio_externo_models import (
 )
 from app.evaluacion_models import EvaluacionExpediente, EvaluacionInformacionItem
 from app.models import User
+from app.orchestration_models import AIEmployee
 from app.security import hash_password
+from app.services import agent_factory as agent_svc
+from app.services import communications_service as comm_svc
 from app.services import evaluacion_service as eval_svc
+from app.services import implementacion_service as impl_svc
+from app.services import support_service as support_svc
+from app.services.espacio_externo_adapters import (
+    adaptar_empleado_ia_detalle_externo,
+    adaptar_empleados_ia_externo,
+    adaptar_implementacion_externa,
+    adaptar_informe_detalle_externo,
+    adaptar_informes_externo,
+    adaptar_resultados_externo,
+    adaptar_soporte_caso_externo,
+    adaptar_soporte_lista_externa,
+)
 
 # Paquetes visibles por estado de relación
 _PAQUETES_POR_ESTADO: dict[str, frozenset[str]] = {
@@ -48,7 +66,41 @@ def _uuid() -> str:
     return str(uuid.uuid4())
 
 
+def _parse_contrato(raw: str | None) -> dict[str, Any]:
+    if not raw:
+        return {"capacidades": [], "empleados_ia_ids": []}
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return {"capacidades": [], "empleados_ia_ids": []}
+    if isinstance(parsed, list):
+        return {"capacidades": list(parsed), "empleados_ia_ids": []}
+    return {
+        "capacidades": list(parsed.get("capacidades") or []),
+        "empleados_ia_ids": list(parsed.get("empleados_ia_ids") or []),
+    }
+
+
+def _dump_contrato(capacidades: list[str], empleados_ia_ids: list[str] | None = None) -> str:
+    payload: dict[str, Any] = {"capacidades": capacidades}
+    if empleados_ia_ids:
+        payload["empleados_ia_ids"] = empleados_ia_ids
+    return json.dumps(payload)
+
+
+def _cliente_tiene_capacidad(entidad: EntidadEmpresa, capacidad: str) -> bool:
+    if entidad.estado_relacion != "CLIENTE_CONTRATADO":
+        return False
+    return capacidad in _parse_contrato(entidad.capacidades_contrato_json)["capacidades"]
+
+
+def _assert_cliente_capacidad(entidad: EntidadEmpresa, capacidad: str) -> None:
+    if not _cliente_tiene_capacidad(entidad, capacidad):
+        raise HTTPException(status_code=403, detail=f"Contrato sin capacidad {capacidad}")
+
+
 def _entidad_dict(e: EntidadEmpresa) -> dict[str, Any]:
+    contrato = _parse_contrato(e.capacidades_contrato_json)
     return {
         "id": e.id,
         "expediente_id": e.expediente_id,
@@ -56,6 +108,9 @@ def _entidad_dict(e: EntidadEmpresa) -> dict[str, Any]:
         "contacto_email": e.contacto_email,
         "estado_relacion": e.estado_relacion,
         "contrato_ref": e.contrato_ref,
+        "proyecto_id": e.proyecto_id,
+        "capacidades_contrato": contrato["capacidades"],
+        "empleados_ia_ids": contrato["empleados_ia_ids"],
         "correlation_id": e.correlation_id,
         "promoted_at": e.promoted_at.isoformat() if e.promoted_at else None,
         "created_at": e.created_at.isoformat() if e.created_at else None,
@@ -69,6 +124,7 @@ def _publicacion_dict(p: EmpresaPublicacion) -> dict[str, Any]:
         "estado": p.estado,
         "version": p.version,
         "destinatario": p.destinatario,
+        "audiencia": p.audiencia,
         "snapshot_hash": p.snapshot_hash,
         "publicado_por": p.publicado_por,
         "publicado_at": p.publicado_at.isoformat() if p.publicado_at else None,
@@ -275,6 +331,7 @@ def promote_to_cliente(
     entidad_id: str,
     *,
     contrato_ref: str | None = None,
+    capacidades: list[str] | None = None,
 ) -> dict[str, Any]:
     entidad = _get_entidad(db, entidad_id, organization_id)
     prev = entidad.estado_relacion
@@ -282,6 +339,14 @@ def promote_to_cliente(
     entidad.contrato_ref = contrato_ref or entidad.contrato_ref
     entidad.promoted_at = _utcnow()
     entidad.updated_at = _utcnow()
+    if capacidades is not None:
+        invalid = [c for c in capacidades if c not in CAPACIDADES_CONTRATO_CLIENTE]
+        if invalid:
+            raise HTTPException(status_code=422, detail=f"Capacidades inválidas: {invalid}")
+        contrato = _parse_contrato(entidad.capacidades_contrato_json)
+        entidad.capacidades_contrato_json = _dump_contrato(capacidades, contrato["empleados_ia_ids"])
+    elif not entidad.capacidades_contrato_json:
+        entidad.capacidades_contrato_json = _dump_contrato(["RESULTADOS", "INFORMES", "SOPORTE"])
     for acc in (
         db.query(EntidadEmpresaAcceso)
         .filter(EntidadEmpresaAcceso.entidad_id == entidad.id, EntidadEmpresaAcceso.activo.is_(True))
@@ -299,6 +364,55 @@ def promote_to_cliente(
     return _entidad_dict(entidad)
 
 
+def link_proyecto(
+    db: Session,
+    organization_id: str,
+    user_id: str,
+    entidad_id: str,
+    *,
+    proyecto_id: str,
+) -> dict[str, Any]:
+    entidad = _get_entidad(db, entidad_id, organization_id)
+    impl_svc._get_proyecto(db, organization_id, proyecto_id)  # noqa: SLF001
+    entidad.proyecto_id = proyecto_id
+    entidad.updated_at = _utcnow()
+    write_audit(
+        db,
+        organization_id=organization_id,
+        user_id=user_id,
+        action="espacio_externo.link_proyecto",
+        detail=json.dumps({"entidad_id": entidad.id, "proyecto_id": proyecto_id}),
+        commit=False,
+    )
+    return _entidad_dict(entidad)
+
+
+def configure_contrato(
+    db: Session,
+    organization_id: str,
+    user_id: str,
+    entidad_id: str,
+    *,
+    capacidades: list[str],
+    empleados_ia_ids: list[str] | None = None,
+) -> dict[str, Any]:
+    invalid = [c for c in capacidades if c not in CAPACIDADES_CONTRATO_CLIENTE]
+    if invalid:
+        raise HTTPException(status_code=422, detail=f"Capacidades inválidas: {invalid}")
+    entidad = _get_entidad(db, entidad_id, organization_id)
+    entidad.capacidades_contrato_json = _dump_contrato(capacidades, empleados_ia_ids)
+    entidad.updated_at = _utcnow()
+    write_audit(
+        db,
+        organization_id=organization_id,
+        user_id=user_id,
+        action="espacio_externo.configure_contrato",
+        detail=json.dumps({"entidad_id": entidad.id, "capacidades": capacidades}),
+        commit=False,
+    )
+    return _entidad_dict(entidad)
+
+
 def set_publicacion_estado(
     db: Session,
     organization_id: str,
@@ -308,9 +422,12 @@ def set_publicacion_estado(
     estado: str,
     destinatario: str | None = None,
     motivo: str | None = None,
+    audiencia: str | None = None,
 ) -> dict[str, Any]:
     if estado not in ESTADOS_PUBLICACION:
         raise HTTPException(status_code=422, detail="estado de publicación inválido")
+    if audiencia is not None and audiencia not in AUDIENCIAS_PUBLICACION:
+        raise HTTPException(status_code=422, detail="audiencia inválida")
     pub = (
         db.query(EmpresaPublicacion)
         .filter(
@@ -336,6 +453,8 @@ def set_publicacion_estado(
     pub.estado = estado
     if destinatario:
         pub.destinatario = destinatario
+    if audiencia is not None:
+        pub.audiencia = audiencia
     pub.updated_at = _utcnow()
     hist = EmpresaPublicacionHistorial(
         publicacion_id=pub.id,
@@ -699,19 +818,285 @@ def get_portal_vista_entidad(db: Session, user: User, paquete: str = "RESULTADOS
     _assert_paquete_accesible(entidad, paquete)
     if not _paquete_publicado(db, entidad.id, paquete):
         raise HTTPException(status_code=403, detail="Contenido no publicado para la empresa")
-    vista = eval_svc.get_vista_entidad(db, entidad.expediente_id, user.organization_id)
-    # Strip any residual internal fields — backend enforcement
-    for key in ("notas_internas", "valor_potencial", "prompts", "costos", "margen"):
-        vista.pop(key, None)
+    vista = adaptar_resultados_externo(
+        eval_svc.get_vista_entidad(db, entidad.expediente_id, user.organization_id)
+    )
+    pub = (
+        db.query(EmpresaPublicacion)
+        .filter(EmpresaPublicacion.entidad_id == entidad.id, EmpresaPublicacion.paquete == paquete)
+        .first()
+    )
     return {
         "paquete": paquete,
-        "version": (
-            db.query(EmpresaPublicacion)
-            .filter(EmpresaPublicacion.entidad_id == entidad.id, EmpresaPublicacion.paquete == paquete)
-            .first()
-        ).version,
+        "version": pub.version if pub else 0,
+        "audiencia": pub.audiencia if pub else None,
         "vista": vista,
     }
+
+
+def get_portal_implementacion(db: Session, user: User) -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    _assert_paquete_accesible(entidad, "IMPLEMENTACION")
+    _assert_cliente_capacidad(entidad, "IMPLEMENTACION")
+    if not _paquete_publicado(db, entidad.id, "IMPLEMENTACION"):
+        raise HTTPException(status_code=403, detail="Implementación no publicada para la empresa")
+    if not entidad.proyecto_id:
+        raise HTTPException(status_code=404, detail="Proyecto de implementación no vinculado")
+    tablero = impl_svc.tablero_proyecto(db, user.organization_id, entidad.proyecto_id)
+    detalle = impl_svc.detalle_proyecto(db, user.organization_id, entidad.proyecto_id)
+    return {
+        "adaptador": "implementacion_service.tablero_proyecto",
+        "implementacion": adaptar_implementacion_externa(tablero, detalle),
+    }
+
+
+def get_portal_empleados_ia(db: Session, user: User) -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    _assert_paquete_accesible(entidad, "EMPLEADOS_IA")
+    _assert_cliente_capacidad(entidad, "EMPLEADOS_IA")
+    if not _paquete_publicado(db, entidad.id, "EMPLEADOS_IA"):
+        raise HTTPException(status_code=403, detail="Empleados IA no publicados para la empresa")
+    contrato = _parse_contrato(entidad.capacidades_contrato_json)
+    employees = agent_svc.list_employees(db, user.organization_id, status=None)
+    if contrato["empleados_ia_ids"]:
+        allowed = set(contrato["empleados_ia_ids"])
+        employees = [e for e in employees if e["id"] in allowed]
+    else:
+        employees = [
+            e for e in employees
+            if (e.get("lifecycle_status") or "").upper() in ("PRODUCTION", "ACTIVE", "CERTIFIED")
+        ]
+    return {
+        "adaptador": "agent_factory.list_employees",
+        "empleados": adaptar_empleados_ia_externo(employees),
+    }
+
+
+def get_portal_empleado_ia(db: Session, user: User, employee_id: str) -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    _assert_paquete_accesible(entidad, "EMPLEADOS_IA")
+    _assert_cliente_capacidad(entidad, "EMPLEADOS_IA")
+    if not _paquete_publicado(db, entidad.id, "EMPLEADOS_IA"):
+        raise HTTPException(status_code=403, detail="Empleados IA no publicados para la empresa")
+    contrato = _parse_contrato(entidad.capacidades_contrato_json)
+    if contrato["empleados_ia_ids"] and employee_id not in contrato["empleados_ia_ids"]:
+        raise HTTPException(status_code=403, detail="Empleado IA no asignado a su organización")
+    emp_org = db.query(AIEmployee).filter(
+        AIEmployee.id == employee_id,
+        AIEmployee.organization_id == user.organization_id,
+    ).first()
+    if not emp_org:
+        raise HTTPException(status_code=404, detail="Empleado IA no encontrado")
+    detail = agent_svc.get_employee_detail(db, user.organization_id, employee_id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Empleado IA no encontrado")
+    safe = adaptar_empleado_ia_detalle_externo(detail)
+    safe.pop("instructions_full", None)
+    return {"adaptador": "agent_factory.get_employee_detail", "empleado": safe}
+
+
+def _informes_autorizados(
+    db: Session,
+    organization_id: str,
+    user: User,
+    entidad: EntidadEmpresa,
+) -> list[dict[str, Any]]:
+    pub = (
+        db.query(EmpresaPublicacion)
+        .filter(
+            EmpresaPublicacion.entidad_id == entidad.id,
+            EmpresaPublicacion.paquete == "INFORMES",
+        )
+        .first()
+    )
+    audiencia = pub.audiencia if pub else None
+    rows = (
+        db.query(CommMessage)
+        .filter(
+            CommMessage.organization_id == organization_id,
+            CommMessage.estado.in_(("ENVIADA", "ENTREGADA")),
+        )
+        .order_by(CommMessage.created_at.desc())
+        .limit(200)
+        .all()
+    )
+    email = (user.email or entidad.contacto_email or "").strip().lower()
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        tipo = (row.tipo_comunicacion or "").upper()
+        if "INFORME" not in tipo and tipo not in ("REPORTE", "REPORT", "INFORME_MENSUAL"):
+            continue
+        dest_ok = (
+            row.destinatario_id == user.id
+            or (row.destinatario_externo and row.destinatario_externo.strip().lower() == email)
+            or row.destinatario_externo == entidad.contacto_email
+        )
+        if not dest_ok:
+            continue
+        out.append(comm_svc.message_to_dict(row, db))
+    return adaptar_informes_externo(out, audiencia=audiencia)
+
+
+def get_portal_informes(db: Session, user: User) -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    _assert_paquete_accesible(entidad, "INFORMES")
+    _assert_cliente_capacidad(entidad, "INFORMES")
+    if not _paquete_publicado(db, entidad.id, "INFORMES"):
+        raise HTTPException(status_code=403, detail="Informes no publicados para la empresa")
+    return {
+        "adaptador": "communications_service.list_messages",
+        "informes": _informes_autorizados(db, user.organization_id, user, entidad),
+    }
+
+
+def get_portal_informe(db: Session, user: User, message_id: str) -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    _assert_paquete_accesible(entidad, "INFORMES")
+    _assert_cliente_capacidad(entidad, "INFORMES")
+    if not _paquete_publicado(db, entidad.id, "INFORMES"):
+        raise HTTPException(status_code=403, detail="Informes no publicados para la empresa")
+    try:
+        detail = comm_svc.get_message_detail(db, user.organization_id, message_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    if detail.get("estado") not in ("ENVIADA", "ENTREGADA"):
+        raise HTTPException(status_code=403, detail="Informe no publicado")
+    email = (user.email or entidad.contacto_email or "").strip().lower()
+    dest_ok = (
+        detail.get("destinatario_id") == user.id
+        or (detail.get("destinatario_externo") or "").strip().lower() == email
+    )
+    if not dest_ok:
+        raise HTTPException(status_code=403, detail="Informe no autorizado para su organización")
+    pub = (
+        db.query(EmpresaPublicacion)
+        .filter(EmpresaPublicacion.entidad_id == entidad.id, EmpresaPublicacion.paquete == "INFORMES")
+        .first()
+    )
+    return {
+        "adaptador": "communications_service.get_message_detail",
+        "informe": adaptar_informe_detalle_externo(detail, audiencia=pub.audiencia if pub else None),
+    }
+
+
+def get_portal_soporte(db: Session, user: User) -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    _assert_paquete_accesible(entidad, "SOPORTE")
+    _assert_cliente_capacidad(entidad, "SOPORTE")
+    if not _paquete_publicado(db, entidad.id, "SOPORTE"):
+        raise HTTPException(status_code=403, detail="Soporte no publicado para la empresa")
+    cases = support_svc.list_cases(
+        db,
+        user.organization_id,
+        user=user,
+        can_view_all=False,
+        solo_mios=True,
+    )
+    return {
+        "adaptador": "support_service.list_cases",
+        "casos": adaptar_soporte_lista_externa(cases),
+    }
+
+
+def create_portal_soporte_caso(
+    db: Session,
+    user: User,
+    *,
+    asunto: str,
+    descripcion: str,
+    tipo: str = "SOLICITUD",
+    prioridad: str = "MEDIA",
+) -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    _assert_paquete_accesible(entidad, "SOPORTE")
+    _assert_cliente_capacidad(entidad, "SOPORTE")
+    if not _paquete_publicado(db, entidad.id, "SOPORTE"):
+        raise HTTPException(status_code=403, detail="Soporte no publicado para la empresa")
+    try:
+        case = support_svc.create_case_manual(
+            db,
+            user.organization_id,
+            user,
+            {
+                "asunto": asunto,
+                "descripcion": descripcion,
+                "tipo": tipo,
+                "prioridad": prioridad,
+                "entidad_relacionada": entidad.nombre,
+                "correlation_id": entidad.correlation_id,
+            },
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    write_audit(
+        db,
+        organization_id=user.organization_id,
+        user_id=user.id,
+        action="espacio_externo.soporte_caso",
+        detail=json.dumps({"case_id": case["id"]}),
+        commit=False,
+    )
+    return adaptar_soporte_caso_externo(case)
+
+
+def get_portal_soporte_caso(db: Session, user: User, case_id: str) -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    _assert_paquete_accesible(entidad, "SOPORTE")
+    _assert_cliente_capacidad(entidad, "SOPORTE")
+    if not _paquete_publicado(db, entidad.id, "SOPORTE"):
+        raise HTTPException(status_code=403, detail="Soporte no publicado para la empresa")
+    detail = support_svc.get_case_detail(
+        db,
+        user.organization_id,
+        case_id,
+        can_view_internal=False,
+    )
+    if not detail:
+        raise HTTPException(status_code=404, detail="Caso no encontrado")
+    if detail.get("solicitante_id") != user.id:
+        raise HTTPException(status_code=403, detail="Caso de otro solicitante")
+    return {
+        "adaptador": "support_service.get_case_detail",
+        "caso": adaptar_soporte_caso_externo(detail),
+    }
+
+
+def add_portal_soporte_comentario(
+    db: Session,
+    user: User,
+    case_id: str,
+    *,
+    cuerpo: str,
+    evidencia_ref: str | None = None,
+) -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    _assert_cliente_capacidad(entidad, "SOPORTE")
+    detail = support_svc.get_case_detail(db, user.organization_id, case_id, can_view_internal=False)
+    if not detail or detail.get("solicitante_id") != user.id:
+        raise HTTPException(status_code=403, detail="Caso no autorizado")
+    try:
+        comment = support_svc.add_comment(
+            db,
+            user.organization_id,
+            case_id,
+            user,
+            cuerpo=cuerpo,
+            evidencia_ref=evidencia_ref,
+            es_interno=False,
+            can_view_internal=False,
+        )
+    except (LookupError, PermissionError) as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    return comment
 
 
 def crear_solicitud_informacion(

@@ -33,10 +33,33 @@ class PublicacionEstado(BaseModel):
     estado: str
     destinatario: str | None = None
     motivo: str | None = None
+    audiencia: str | None = None
 
 
 class PromoverCliente(BaseModel):
     contrato_ref: str | None = None
+    capacidades: list[str] | None = None
+
+
+class LinkProyecto(BaseModel):
+    proyecto_id: str
+
+
+class ConfigureContrato(BaseModel):
+    capacidades: list[str]
+    empleados_ia_ids: list[str] | None = None
+
+
+class SoporteCasoCreate(BaseModel):
+    asunto: str = Field(..., min_length=3, max_length=200)
+    descripcion: str = Field(..., min_length=3)
+    tipo: str = "SOLICITUD"
+    prioridad: str = "MEDIA"
+
+
+class SoporteComentarioCreate(BaseModel):
+    cuerpo: str = Field(..., min_length=1)
+    evidencia_ref: str | None = None
 
 
 class SolicitudInformacion(BaseModel):
@@ -140,6 +163,44 @@ def promover_cliente(
         user.id,
         entidad_id,
         contrato_ref=body.contrato_ref,
+        capacidades=body.capacidades,
+    )
+    db.commit()
+    return result
+
+
+@router.post("/entidades/{entidad_id}/link-proyecto")
+def link_proyecto(
+    entidad_id: str,
+    body: LinkProyecto,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.manage")),
+):
+    result = svc.link_proyecto(
+        db,
+        user.organization_id,
+        user.id,
+        entidad_id,
+        proyecto_id=body.proyecto_id,
+    )
+    db.commit()
+    return result
+
+
+@router.patch("/entidades/{entidad_id}/contrato")
+def configure_contrato(
+    entidad_id: str,
+    body: ConfigureContrato,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.manage")),
+):
+    result = svc.configure_contrato(
+        db,
+        user.organization_id,
+        user.id,
+        entidad_id,
+        capacidades=body.capacidades,
+        empleados_ia_ids=body.empleados_ia_ids,
     )
     db.commit()
     return result
@@ -160,6 +221,7 @@ def set_publicacion(
         estado=body.estado,
         destinatario=body.destinatario,
         motivo=body.motivo,
+        audiencia=body.audiencia,
     )
     db.commit()
     return result
@@ -270,6 +332,101 @@ def mi_entrega(
         contenido=body.contenido,
         evidencia_ref=body.evidencia_ref,
         fuente_tipo=body.fuente_tipo,
+    )
+    db.commit()
+    return result
+
+
+@router.get("/mi-espacio/implementacion")
+def mi_implementacion(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.portal")),
+):
+    return svc.get_portal_implementacion(db, user)
+
+
+@router.get("/mi-espacio/empleados-ia")
+def mi_empleados_ia(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.portal")),
+):
+    return svc.get_portal_empleados_ia(db, user)
+
+
+@router.get("/mi-espacio/empleados-ia/{employee_id}")
+def mi_empleado_ia(
+    employee_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.portal")),
+):
+    return svc.get_portal_empleado_ia(db, user, employee_id)
+
+
+@router.get("/mi-espacio/informes")
+def mi_informes(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.portal")),
+):
+    return svc.get_portal_informes(db, user)
+
+
+@router.get("/mi-espacio/informes/{message_id}")
+def mi_informe(
+    message_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.portal")),
+):
+    return svc.get_portal_informe(db, user, message_id)
+
+
+@router.get("/mi-espacio/soporte")
+def mi_soporte(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.portal")),
+):
+    return svc.get_portal_soporte(db, user)
+
+
+@router.post("/mi-espacio/soporte/casos", status_code=201)
+def mi_soporte_crear(
+    body: SoporteCasoCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.portal")),
+):
+    result = svc.create_portal_soporte_caso(
+        db,
+        user,
+        asunto=body.asunto,
+        descripcion=body.descripcion,
+        tipo=body.tipo,
+        prioridad=body.prioridad,
+    )
+    db.commit()
+    return result
+
+
+@router.get("/mi-espacio/soporte/casos/{case_id}")
+def mi_soporte_caso(
+    case_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.portal")),
+):
+    return svc.get_portal_soporte_caso(db, user, case_id)
+
+
+@router.post("/mi-espacio/soporte/casos/{case_id}/comentarios", status_code=201)
+def mi_soporte_comentario(
+    case_id: str,
+    body: SoporteComentarioCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("espacio_externo.portal")),
+):
+    result = svc.add_portal_soporte_comentario(
+        db,
+        user,
+        case_id,
+        cuerpo=body.cuerpo,
+        evidencia_ref=body.evidencia_ref,
     )
     db.commit()
     return result

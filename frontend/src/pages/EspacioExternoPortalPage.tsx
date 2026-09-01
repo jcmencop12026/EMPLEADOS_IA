@@ -1,10 +1,15 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import {
+  crearCasoSoporteExterno,
   entregarInformacionExterna,
+  fetchMiEspacioEmpleadosIa,
   fetchMiEspacioEstado,
+  fetchMiEspacioImplementacion,
+  fetchMiEspacioInformes,
   fetchMiEspacioInicio,
   fetchMiEspacioInformacion,
+  fetchMiEspacioSoporte,
   fetchMiEspacioVistaEntidad,
   type MiEspacioContext,
 } from "../api";
@@ -12,7 +17,17 @@ import { VistaEntidadPreview } from "../components/evaluacion/VistaEntidadPrevie
 import { usePermissions } from "../hooks/usePermissions";
 import { labelEstadoPublicacion, labelEstadoRelacion } from "../lib/evaluacionLabels";
 
-type Tab = "inicio" | "informacion" | "entregas" | "estado" | "resultados" | "propuesta";
+type Tab =
+  | "inicio"
+  | "informacion"
+  | "entregas"
+  | "estado"
+  | "resultados"
+  | "propuesta"
+  | "implementacion"
+  | "empleados_ia"
+  | "informes"
+  | "soporte";
 
 export function EspacioExternoPortalPage() {
   const { has } = usePermissions();
@@ -22,6 +37,10 @@ export function EspacioExternoPortalPage() {
   const [informacion, setInformacion] = useState<Record<string, unknown> | null>(null);
   const [estado, setEstado] = useState<Record<string, unknown> | null>(null);
   const [vista, setVista] = useState<Record<string, unknown> | null>(null);
+  const [implementacion, setImplementacion] = useState<Record<string, unknown> | null>(null);
+  const [empleadosIa, setEmpleadosIa] = useState<Record<string, unknown> | null>(null);
+  const [informes, setInformes] = useState<Record<string, unknown> | null>(null);
+  const [soporte, setSoporte] = useState<Record<string, unknown> | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +74,18 @@ export function EspacioExternoPortalPage() {
     if (tab === "propuesta") {
       fetchMiEspacioVistaEntidad("PROPUESTA").then(setVista).catch((e) => setError(String(e)));
     }
+    if (tab === "implementacion") {
+      fetchMiEspacioImplementacion().then(setImplementacion).catch((e) => setError(String(e)));
+    }
+    if (tab === "empleados_ia") {
+      fetchMiEspacioEmpleadosIa().then(setEmpleadosIa).catch((e) => setError(String(e)));
+    }
+    if (tab === "informes") {
+      fetchMiEspacioInformes().then(setInformes).catch((e) => setError(String(e)));
+    }
+    if (tab === "soporte") {
+      fetchMiEspacioSoporte().then(setSoporte).catch((e) => setError(String(e)));
+    }
   }, [tab]);
 
   if (!has("espacio_externo.portal")) {
@@ -62,13 +93,21 @@ export function EspacioExternoPortalPage() {
   }
 
   const relacion = ctx?.estado_relacion ?? "";
+  const esCliente = relacion === "CLIENTE_CONTRATADO";
+  const seccionAccesible = (paquete: string) =>
+    (ctx?.secciones ?? []).some((s) => s.paquete === paquete && s.accesible);
+
   const tabs: { id: Tab; label: string; show: boolean }[] = [
     { id: "inicio", label: "Inicio", show: true },
-    { id: "informacion", label: "Información requerida", show: relacion === "PROSPECTO_EVALUACION" || relacion === "PROSPECTO_RESULTADOS" || relacion === "CLIENTE_CONTRATADO" },
+    { id: "informacion", label: "Información requerida", show: true },
     { id: "entregas", label: "Mis entregas", show: true },
     { id: "estado", label: "Estado", show: true },
     { id: "resultados", label: "Resumen ejecutivo", show: relacion !== "PROSPECTO_EVALUACION" },
-    { id: "propuesta", label: "Propuesta", show: relacion === "PROSPECTO_RESULTADOS" || relacion === "CLIENTE_CONTRATADO" },
+    { id: "propuesta", label: "Propuesta", show: relacion === "PROSPECTO_RESULTADOS" || esCliente },
+    { id: "implementacion", label: "Implementación", show: esCliente && seccionAccesible("IMPLEMENTACION") },
+    { id: "empleados_ia", label: "Empleados IA", show: esCliente && seccionAccesible("EMPLEADOS_IA") },
+    { id: "informes", label: "Informes", show: esCliente && seccionAccesible("INFORMES") },
+    { id: "soporte", label: "Soporte", show: esCliente && seccionAccesible("SOPORTE") },
   ];
 
   async function onEntregar(e: FormEvent<HTMLFormElement>, itemId: string) {
@@ -82,6 +121,21 @@ export function EspacioExternoPortalPage() {
       fetchMiEspacioInformacion().then(setInformacion);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al entregar");
+    }
+  }
+
+  async function onCrearCaso(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const asunto = String(fd.get("asunto") ?? "").trim();
+    const descripcion = String(fd.get("descripcion") ?? "").trim();
+    if (!asunto || !descripcion) return;
+    try {
+      await crearCasoSoporteExterno({ asunto, descripcion });
+      setMsg("Caso de soporte creado");
+      fetchMiEspacioSoporte().then(setSoporte);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al crear caso");
     }
   }
 
@@ -181,6 +235,59 @@ export function EspacioExternoPortalPage() {
       {(tab === "resultados" || tab === "propuesta") && vista && (
         <section className="panel vista-entidad-preview">
           <VistaEntidadPreview data={(vista.vista as Record<string, unknown>) ?? {}} />
+        </section>
+      )}
+
+      {tab === "implementacion" && implementacion && (
+        <section className="panel">
+          <h2>Implementación</h2>
+          <pre className="json-preview">{JSON.stringify(implementacion.implementacion, null, 2)}</pre>
+        </section>
+      )}
+
+      {tab === "empleados_ia" && empleadosIa && (
+        <section className="panel">
+          <h2>Empleados IA</h2>
+          <ul>
+            {((empleadosIa.empleados as Record<string, unknown>[]) ?? []).map((e) => (
+              <li key={String(e.id)}>
+                <strong>{String(e.nombre)}</strong> — {String(e.estado)}
+                <p className="muted small">{String(e.proposito ?? "")}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {tab === "informes" && informes && (
+        <section className="panel">
+          <h2>Informes autorizados</h2>
+          <ul>
+            {((informes.informes as Record<string, unknown>[]) ?? []).map((i) => (
+              <li key={String(i.id)}>
+                {String(i.nombre)} — {String(i.estado)} — {String(i.fecha ?? "")}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {tab === "soporte" && soporte && (
+        <section className="panel">
+          <h2>Soporte</h2>
+          <form onSubmit={onCrearCaso} className="entrega-form">
+            <input name="asunto" placeholder="Asunto" required />
+            <textarea name="descripcion" rows={3} placeholder="Descripción del caso" required />
+            <button type="submit" className="btn primary">Crear caso</button>
+          </form>
+          <h3>Mis casos</h3>
+          <ul>
+            {((soporte.casos as Record<string, unknown>[]) ?? []).map((c) => (
+              <li key={String(c.id)}>
+                #{String(c.numero)} — {String(c.asunto)} — {String(c.estado)}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
     </div>

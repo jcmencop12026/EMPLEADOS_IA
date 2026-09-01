@@ -4063,6 +4063,52 @@ export async function validarEntregaExterna(
   });
 }
 
+export async function fetchMiEspacioImplementacion(): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/implementacion");
+}
+
+export async function fetchMiEspacioEmpleadosIa(): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/empleados-ia");
+}
+
+export async function fetchMiEspacioInformes(): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/informes");
+}
+
+export async function fetchMiEspacioSoporte(): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/soporte");
+}
+
+export async function crearCasoSoporteExterno(payload: {
+  asunto: string;
+  descripcion: string;
+  tipo?: string;
+  prioridad?: string;
+}): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/soporte/casos", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function configureContratoEntidad(
+  entidadId: string,
+  capacidades: string[],
+  empleadosIaIds?: string[],
+): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/entidades/${entidadId}/contrato`, {
+    method: "PATCH",
+    body: JSON.stringify({ capacidades, empleados_ia_ids: empleadosIaIds }),
+  });
+}
+
+export async function linkProyectoEntidad(entidadId: string, proyectoId: string): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/entidades/${entidadId}/link-proyecto`, {
+    method: "POST",
+    body: JSON.stringify({ proyecto_id: proyectoId }),
+  });
+}
+
 export type ConfianzaControl = {
   id: string;
   nombre: string;

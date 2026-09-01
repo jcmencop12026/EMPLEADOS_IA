@@ -42,6 +42,22 @@ PAQUETES_PUBLICACION = frozenset({
     "SOPORTE",
 })
 
+# Alcance de audiencia sobre una misma publicación/version — NO duplica datos.
+AUDIENCIAS_PUBLICACION = frozenset({
+    "GERENCIA",
+    "OPERACION",
+    "SISTEMAS",
+    "FINANCIERO",
+})
+
+CAPACIDADES_CONTRATO_CLIENTE = frozenset({
+    "IMPLEMENTACION",
+    "EMPLEADOS_IA",
+    "RESULTADOS",
+    "INFORMES",
+    "SOPORTE",
+})
+
 ROLES_ACCESO_EXTERNO = frozenset({"PROSPECTO", "CLIENTE"})
 
 FUENTES_INFORMACION = frozenset({
@@ -75,6 +91,8 @@ class EntidadEmpresa(Base):
     contacto_email: Mapped[str | None] = mapped_column(String(200), nullable=True)
     estado_relacion: Mapped[str] = mapped_column(String(30), nullable=False, default="PROSPECTO_EVALUACION", index=True)
     contrato_ref: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    proyecto_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    capacidades_contrato_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     correlation_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_by: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
@@ -119,6 +137,7 @@ class EmpresaPublicacion(Base):
     estado: Mapped[str] = mapped_column(String(30), nullable=False, default="PRIVADO", index=True)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     destinatario: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    audiencia: Mapped[str | None] = mapped_column(String(30), nullable=True)
     snapshot_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     publicado_por: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
     publicado_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
