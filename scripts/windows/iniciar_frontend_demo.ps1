@@ -24,6 +24,14 @@ try {
     $stateDir = Ensure-EiaaxStateDir -WorktreeRoot $worktree
 
     $port = $FrontendPort
+    if (Test-EiaaxReuseRunningService -Port $port -WorktreeRoot $worktree -ServiceName "frontend" `
+            -ReadyTest { Test-EiaaxFrontendReady -Port $port -TimeoutSec 5 } -ReadyLabel "HTTP") {
+        $listenerPid = Get-EiaaxListenerPid -Port $port
+        Write-EiaaxPidFile -StateDir $stateDir -Name "frontend" -ProcessId $listenerPid
+        Write-Host "Frontend ready: http://127.0.0.1:${port}"
+        exit 0
+    }
+
     Assert-EiaaxPortAvailable -Port $port -Label "frontend"
 
     $nodeModules = Join-Path $paths.Frontend "node_modules"
@@ -31,12 +39,8 @@ try {
         Exit-EiaaxFailure -Message "node_modules missing. Run scripts\windows\preparar_demo_eiaax.ps1 first."
     }
 
-    $npm = Get-Command npm -ErrorAction SilentlyContinue
-    if ($null -eq $npm) {
-        Exit-EiaaxFailure -Message "npm not found in PATH."
-    }
-
-    $npmCmd = $npm.Source
+    $npmCmd = Resolve-EiaaxNpmCmdExecutable
+    Write-Host ("Using npm executable: " + $npmCmd)
     $logFile = Join-Path $logsDir "frontend.log"
     if (Test-Path -LiteralPath $logFile) {
         Remove-Item -LiteralPath $logFile -Force
@@ -54,7 +58,11 @@ try {
 
     $listenerPid = Wait-EiaaxListenerPid -Port $port -TimeoutSec 45
     if ($null -eq $listenerPid) {
-        Exit-EiaaxFailure -Message "Frontend process did not open port 5180 in time. See logs\demo\frontend.log"
+        $failure = New-EiaaxStartupFailureMessage `
+            -Summary "Frontend process did not open port 5180 in time." `
+            -LogFile $logFile `
+            -WrapperPid $proc.Id
+        Exit-EiaaxFailure -Message $failure
     }
 
     if (-not (Test-EiaaxManagedProcess -ProcessId $listenerPid -WorktreeRoot $worktree -ServiceName "frontend")) {
@@ -65,7 +73,11 @@ try {
     Write-EiaaxStateValue -StateDir $stateDir -Name "frontend-wrapper" -Value ([string]$proc.Id)
 
     if (-not (Test-EiaaxFrontendReady -Port $port -TimeoutSec 45)) {
-        Exit-EiaaxFailure -Message "Frontend did not respond in time. See logs\demo\frontend.log"
+        $failure = New-EiaaxStartupFailureMessage `
+            -Summary "Frontend did not respond over HTTP in time." `
+            -LogFile $logFile `
+            -WrapperPid $proc.Id
+        Exit-EiaaxFailure -Message $failure
     }
 
     Write-Host "Frontend ready: http://127.0.0.1:${port}"

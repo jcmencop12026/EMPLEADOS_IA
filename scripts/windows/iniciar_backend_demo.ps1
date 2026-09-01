@@ -26,6 +26,14 @@ try {
     $stateDir = Ensure-EiaaxStateDir -WorktreeRoot $worktree
 
     $port = $BackendPort
+    if (Test-EiaaxReuseRunningService -Port $port -WorktreeRoot $worktree -ServiceName "backend" `
+            -ReadyTest { Test-EiaaxHealth -Port $port -TimeoutSec 5 } -ReadyLabel "/health") {
+        $listenerPid = Get-EiaaxListenerPid -Port $port
+        Write-EiaaxPidFile -StateDir $stateDir -Name "backend" -ProcessId $listenerPid
+        Write-Host "Backend health OK: http://127.0.0.1:${port}/health"
+        exit 0
+    }
+
     Assert-EiaaxPortAvailable -Port $port -Label "backend"
 
     $logFile = Join-Path $logsDir "backend.log"
@@ -45,7 +53,11 @@ try {
 
     $listenerPid = Wait-EiaaxListenerPid -Port $port -TimeoutSec 45
     if ($null -eq $listenerPid) {
-        Exit-EiaaxFailure -Message "Backend process did not open port 8000 in time. See logs\demo\backend.log"
+        $failure = New-EiaaxStartupFailureMessage `
+            -Summary "Backend process did not open port 8000 in time." `
+            -LogFile $logFile `
+            -WrapperPid $proc.Id
+        Exit-EiaaxFailure -Message $failure
     }
 
     if (-not (Test-EiaaxManagedProcess -ProcessId $listenerPid -WorktreeRoot $worktree -ServiceName "backend")) {

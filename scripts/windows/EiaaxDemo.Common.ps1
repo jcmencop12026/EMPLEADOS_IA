@@ -805,6 +805,115 @@ function Assert-EiaaxPortAvailable {
     }
 }
 
+function Resolve-EiaaxNpmCmdExecutable {
+    $npmCmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
+    if ($null -ne $npmCmd) {
+        return $npmCmd.Source
+    }
+
+    $npm = Get-Command npm -ErrorAction SilentlyContinue
+    if ($null -ne $npm) {
+        $source = $npm.Source
+        if ($source -match '\.cmd$') {
+            return $source
+        }
+
+        $parent = Split-Path -Parent $source
+        $siblingCmd = Join-Path $parent "npm.cmd"
+        if (Test-Path -LiteralPath $siblingCmd) {
+            return $siblingCmd
+        }
+    }
+
+    Exit-EiaaxFailure -Message "npm.cmd not found in PATH. Install Node.js and ensure npm.cmd is available."
+}
+
+function Get-EiaaxBatchQuotedArgument {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Value
+    )
+
+    $escaped = $Value -replace '"', '""'
+    return '"' + $escaped + '"'
+}
+
+function Get-EiaaxLogTail {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$LogFile,
+        [int]$MaxLines = 30
+    )
+
+    if (-not (Test-Path -LiteralPath $LogFile)) {
+        return "(log file not found: " + $LogFile + ")"
+    }
+
+    $lines = @(Get-Content -LiteralPath $LogFile -ErrorAction SilentlyContinue)
+    if ($lines.Count -eq 0) {
+        return "(log file empty)"
+    }
+
+    $start = [Math]::Max(0, $lines.Count - $MaxLines)
+    return ($lines[$start..($lines.Count - 1)] -join "`n")
+}
+
+function New-EiaaxStartupFailureMessage {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Summary,
+        [Parameter(Mandatory = $true)]
+        [string]$LogFile,
+        [int]$WrapperPid = 0
+    )
+
+    $parts = New-Object System.Collections.Generic.List[string]
+    [void]$parts.Add($Summary)
+    if ($WrapperPid -gt 0) {
+        $wrapperProc = Get-Process -Id $WrapperPid -ErrorAction SilentlyContinue
+        if ($null -eq $wrapperProc) {
+            [void]$parts.Add("Wrapper process PID " + $WrapperPid + " has exited.")
+        }
+        else {
+            [void]$parts.Add("Wrapper process PID " + $WrapperPid + " is still running.")
+        }
+    }
+    [void]$parts.Add("Recent log output:")
+    [void]$parts.Add((Get-EiaaxLogTail -LogFile $LogFile))
+    return ($parts -join "`n")
+}
+
+function Test-EiaaxReuseRunningService {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$Port,
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$ServiceName,
+        [Parameter(Mandatory = $true)]
+        [scriptblock]$ReadyTest,
+        [Parameter(Mandatory = $true)]
+        [string]$ReadyLabel
+    )
+
+    $listener = Get-EiaaxListenerPid -Port $Port
+    if ($null -eq $listener) {
+        return $false
+    }
+
+    if (-not (Test-EiaaxManagedProcess -ProcessId $listener -WorktreeRoot $WorktreeRoot -ServiceName $ServiceName)) {
+        Exit-EiaaxFailure -Message ("Port " + $Port + " is already in use by PID " + $listener + " (not an EIAAX " + $ServiceName + "). Stop it manually before retrying.")
+    }
+
+    if (-not (& $ReadyTest)) {
+        Exit-EiaaxFailure -Message ("Port " + $Port + " is used by EIAAX " + $ServiceName + " PID " + $listener + " but " + $ReadyLabel + " check failed.")
+    }
+
+    Write-Host ($ServiceName + " already running at http://127.0.0.1:" + $Port + " (PID " + $listener + "); reusing.")
+    return $true
+}
+
 function Get-EiaaxProcessCommandLine {
     param(
         [Parameter(Mandatory = $true)]
@@ -881,15 +990,20 @@ function Start-EiaaxManagedProcess {
     foreach ($key in $Environment.Keys) {
         [void]$lines.Add("set " + $key + "=" + $Environment[$key])
     }
-    [void]$lines.Add("cd /d """ + $WorkingDirectory + """")
+    [void]$lines.Add("cd /d " + (Get-EiaaxBatchQuotedArgument -Value $WorkingDirectory))
 
     $commandParts = New-Object System.Collections.Generic.List[string]
-    [void]$commandParts.Add('"' + $FilePath + '"')
-    foreach ($arg in $ArgumentList) {
-        [void]$commandParts.Add($arg)
+    $executableLower = $FilePath.ToLowerInvariant()
+    if ($executableLower.EndsWith(".cmd") -or $executableLower.EndsWith(".bat")) {
+        [void]$commandParts.Add("call")
     }
-    $command = ($commandParts -join ' ')
-    [void]$lines.Add($command + ' >> "' + $LogFile + '" 2>>&1')
+    [void]$commandParts.Add((Get-EiaaxBatchQuotedArgument -Value $FilePath))
+    foreach ($arg in $ArgumentList) {
+        [void]$commandParts.Add((Get-EiaaxBatchQuotedArgument -Value ([string]$arg)))
+    }
+    $command = ($commandParts -join " ")
+    [void]$lines.Add($command + " >> " + (Get-EiaaxBatchQuotedArgument -Value $LogFile) + " 2>>&1")
+    [void]$lines.Add("echo [EIAAX] EXIT_CODE=%ERRORLEVEL%>> " + (Get-EiaaxBatchQuotedArgument -Value $LogFile))
 
     [System.IO.File]::WriteAllLines($wrapperBat, $lines.ToArray())
 
