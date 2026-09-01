@@ -38,6 +38,7 @@ import { DiagnosticosPage } from "./pages/DiagnosticosPage";
 import { DiagnosticoDetailPage } from "./pages/DiagnosticoDetailPage";
 import { EvaluacionesPage } from "./pages/EvaluacionesPage";
 import { EvaluacionConsolePage } from "./pages/EvaluacionConsolePage";
+import { EspacioExternoPortalPage } from "./pages/EspacioExternoPortalPage";
 import { InteligenciaExternaPage } from "./pages/InteligenciaExternaPage";
 import { InteligenciaExternaDetailPage } from "./pages/InteligenciaExternaDetailPage";
 import { ContinuidadPage } from "./pages/ContinuidadPage";
@@ -150,6 +151,7 @@ export default function App() {
           <Route element={<RequirePermission anyOf={["evaluacion.view"]} />}>
             <Route path="evaluaciones" element={<EvaluacionesPage />} />
             <Route path="evaluaciones/:evaluacionId" element={<EvaluacionConsolePage />} />
+            <Route path="mi-espacio" element={<EspacioExternoPortalPage />} />
           </Route>
           <Route path="inteligencia-externa" element={<InteligenciaExternaPage />} />
           <Route path="inteligencia-externa/senales/:signalId" element={<InteligenciaExternaDetailPage />} />

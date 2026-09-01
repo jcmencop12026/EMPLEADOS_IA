@@ -3974,6 +3974,95 @@ export async function preguntarEiaax(
   });
 }
 
+// --- Espacio externo V1 ---
+
+export type MiEspacioContext = {
+  entidad: { id: string; nombre: string; estado_relacion: string; expediente_id: string };
+  rol_externo: string;
+  estado_relacion: string;
+  secciones: Array<{ paquete: string; estado_publicacion: string; accesible: boolean; version: number }>;
+};
+
+export async function createEntidadExterna(expedienteId: string, contactoEmail?: string): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/entidades", {
+    method: "POST",
+    body: JSON.stringify({ expediente_id: expedienteId, contacto_email: contactoEmail }),
+  });
+}
+
+export async function fetchEntidadExterna(entidadId: string): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/entidades/${entidadId}`);
+}
+
+export async function inviteAccesoExterno(
+  entidadId: string,
+  payload: { email: string; full_name: string; rol_externo?: string; password?: string },
+): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/entidades/${entidadId}/accesos`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function setPublicacionEstado(
+  publicacionId: string,
+  estado: string,
+  destinatario?: string,
+  motivo?: string,
+): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/publicaciones/${publicacionId}/estado`, {
+    method: "PATCH",
+    body: JSON.stringify({ estado, destinatario, motivo }),
+  });
+}
+
+export async function promoverEntidadCliente(entidadId: string, contratoRef?: string): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/entidades/${entidadId}/promover-cliente`, {
+    method: "POST",
+    body: JSON.stringify({ contrato_ref: contratoRef }),
+  });
+}
+
+export async function fetchMiEspacioInicio(): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/inicio");
+}
+
+export async function fetchMiEspacioInformacion(): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/informacion");
+}
+
+export async function fetchMiEspacioEstado(): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/estado");
+}
+
+export async function fetchMiEspacioVistaEntidad(paquete = "RESULTADOS"): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/mi-espacio/vista-entidad?paquete=${encodeURIComponent(paquete)}`);
+}
+
+export async function entregarInformacionExterna(payload: {
+  item_id?: string;
+  entrega_id?: string;
+  contenido: string;
+  evidencia_ref?: string;
+  fuente_tipo?: string;
+}): Promise<Record<string, unknown>> {
+  return api("/api/espacio-externo/mi-espacio/entregas", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function validarEntregaExterna(
+  entregaId: string,
+  estado: string,
+  marcarSuficiencia = false,
+): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/entregas/${entregaId}/validar`, {
+    method: "POST",
+    body: JSON.stringify({ estado, marcar_suficiencia: marcarSuficiencia }),
+  });
+}
+
 export type ConfianzaControl = {
   id: string;
   nombre: string;

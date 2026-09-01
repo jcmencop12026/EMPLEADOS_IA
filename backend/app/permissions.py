@@ -306,6 +306,14 @@ GOBIERNO_OPERACIONAL_PERMISSIONS = {
     "gobierno.auditoria.consulta",
 }
 
+ESPACIO_EXTERNO_PERMISSIONS = {
+    "espacio_externo.manage",
+    "espacio_externo.publish",
+    "espacio_externo.acceso",
+    "espacio_externo.portal",
+    "espacio_externo.entregar",
+}
+
 CONTINUIDAD_PERMISSIONS = {
     "continuidad.view",
     "continuidad.manage",
@@ -464,6 +472,11 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "gobierno.evidencia.view": ("Gobierno operacional", "Consultar evidencia vinculada"),
     "gobierno.evidencia.link": ("Gobierno operacional", "Vincular evidencia a decisiones"),
     "gobierno.auditoria.consulta": ("Gobierno operacional", "Consultar auditoría federada en español"),
+    "espacio_externo.manage": ("Espacio externo", "Gestionar entidades empresa/prospecto/cliente"),
+    "espacio_externo.publish": ("Espacio externo", "Publicar contenido a empresa"),
+    "espacio_externo.acceso": ("Espacio externo", "Invitar y revocar accesos externos"),
+    "espacio_externo.portal": ("Espacio externo", "Acceder al portal mi-espacio"),
+    "espacio_externo.entregar": ("Espacio externo", "Entregar información solicitada"),
     "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
     "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
     "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
@@ -538,7 +551,7 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "support.admin": ("Soporte", "Administrar mesa de ayuda y SLA"),
 }
 
-SYSTEM_ROLE_CODES = {"admin", "operator", "viewer", "superadmin"}
+SYSTEM_ROLE_CODES = {"admin", "operator", "viewer", "superadmin", "external_prospect"}
 
 PROTECTED_ASSIGNMENT_ROLE_CODES = {"superadmin", "platform_admin", "SUPERADMIN"}
 
@@ -582,6 +595,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | SEGMENTATION_PERMISSIONS
         | EMPLOYEE_AUDIT_PERMISSIONS
         | GOBIERNO_OPERACIONAL_PERMISSIONS
+        | ESPACIO_EXTERNO_PERMISSIONS
     ),
     "superadmin": (
         EMPLOYEE_PERMISSIONS
@@ -622,6 +636,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | IDENTITY_PERMISSIONS
         | EMPLOYEE_AUDIT_PERMISSIONS
         | GOBIERNO_OPERACIONAL_PERMISSIONS
+        | ESPACIO_EXTERNO_PERMISSIONS
     ),
     "operator": {
         "employee.view",
@@ -760,6 +775,13 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "gobierno.evidencia.view",
         "gobierno.evidencia.link",
         "gobierno.auditoria.consulta",
+        "espacio_externo.manage",
+        "espacio_externo.publish",
+        "espacio_externo.acceso",
+    },
+    "external_prospect": {
+        "espacio_externo.portal",
+        "espacio_externo.entregar",
     },
     "viewer": {
         "employee.view",

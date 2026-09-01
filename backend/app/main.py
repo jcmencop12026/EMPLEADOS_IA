@@ -37,6 +37,7 @@ from app import consumption_planner_models  # noqa: F401 — planificador MB-07 
 from app import communications_models  # noqa: F401 — comunicaciones MB-11
 from app import gobierno_operacional_models  # noqa: F401 — gobierno operacional EIAAX
 from app import empresa_seguridad_models  # noqa: F401 — seguridad y gobierno datos transversal
+from app import espacio_externo_models  # noqa: F401 — espacio externo V1
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
@@ -83,6 +84,7 @@ from app.routers import (
     comunicaciones,
     gobierno_operacional,
     empresa_seguridad,
+    espacio_externo,
 )
 from app.seed import bootstrap
 from app.security_config import validate_security_settings
@@ -201,6 +203,7 @@ app.include_router(soporte.router)
 app.include_router(empleados_auditor.router)
 app.include_router(gobierno_operacional.router)
 app.include_router(empresa_seguridad.router)
+app.include_router(espacio_externo.router)
 
 
 @app.get("/health")

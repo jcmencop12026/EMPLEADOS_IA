@@ -14,9 +14,11 @@ import {
   type EvaluacionInfoItem,
 } from "../api";
 import { EiaaxAskPanel } from "../components/evaluacion/EiaaxAskPanel";
+import { VistaEntidadPreview } from "../components/evaluacion/VistaEntidadPreview";
+import { EspacioExternoAdminPanel } from "../components/espacioExterno/EspacioExternoAdminPanel";
 import { usePermissions } from "../hooks/usePermissions";
 
-type Tab = "resumen" | "informacion" | "analisis" | "impacto" | "oportunidades" | "vista-entidad" | "trazabilidad";
+type Tab = "resumen" | "informacion" | "analisis" | "impacto" | "oportunidades" | "vista-entidad" | "trazabilidad" | "espacio-externo";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "resumen", label: "Resumen" },
@@ -25,6 +27,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "impacto", label: "Impacto e Indicadores" },
   { id: "oportunidades", label: "Oportunidades" },
   { id: "vista-entidad", label: "Vista Entidad" },
+  { id: "espacio-externo", label: "Espacio externo" },
   { id: "trazabilidad", label: "Trazabilidad" },
 ];
 
@@ -227,13 +230,17 @@ export function EvaluacionConsolePage() {
         {tab === "vista-entidad" && has("evaluacion.vista_entidad") && (
           <section className="panel compact-panel vista-entidad-preview">
             <h2>Vista Entidad (previsualización)</h2>
-            <p className="muted small">Lo que la entidad vería según permisos y banderas de visibilidad reales.</p>
+            <p className="muted small">Lo que la entidad vería según publicación y visibilidad reales.</p>
             {vistaEntidad ? (
-              <pre className="code-block">{JSON.stringify(vistaEntidad, null, 2)}</pre>
+              <VistaEntidadPreview data={vistaEntidad} />
             ) : (
               <p className="muted">Cargando vista entidad…</p>
             )}
           </section>
+        )}
+
+        {tab === "espacio-externo" && has("espacio_externo.manage") && evaluacionId && (
+          <EspacioExternoAdminPanel expedienteId={evaluacionId} />
         )}
 
         {tab === "trazabilidad" && trazabilidad && (

@@ -825,7 +825,7 @@ def get_impacto_resumen(
 
     return {
         "expediente_id": exp.id,
-        "valor_potencial": exp.valor_potencial if not vista_entidad else None,
+        **({"valor_potencial": exp.valor_potencial} if not vista_entidad else {}),
         "indicadores": indicadores,
         "nota": "PROYECTADO identifica estimaciones; REAL solo con evidencia verificada.",
     }

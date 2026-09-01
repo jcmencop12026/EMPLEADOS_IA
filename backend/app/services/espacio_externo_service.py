@@ -1,0 +1,741 @@
+"""Servicio — espacio externo controlado empresa/prospecto/cliente V1."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+
+from app.audit import write_audit
+from app.espacio_externo_models import (
+    ESTADOS_PUBLICACION,
+    ESTADOS_RELACION,
+    ESTADOS_VALIDACION_EXTERNA,
+    FUENTES_INFORMACION,
+    PAQUETES_PUBLICACION,
+    ROLES_ACCESO_EXTERNO,
+    EmpresaPublicacion,
+    EmpresaPublicacionHistorial,
+    EntidadEmpresa,
+    EntidadEmpresaAcceso,
+    EvaluacionEntregaExterna,
+)
+from app.evaluacion_models import EvaluacionExpediente, EvaluacionInformacionItem
+from app.models import User
+from app.security import hash_password
+from app.services import evaluacion_service as eval_svc
+
+# Paquetes visibles por estado de relación
+_PAQUETES_POR_ESTADO: dict[str, frozenset[str]] = {
+    "PROSPECTO_EVALUACION": frozenset({"INICIO", "INFORMACION"}),
+    "PROSPECTO_RESULTADOS": frozenset({"INICIO", "INFORMACION", "RESULTADOS", "PROPUESTA"}),
+    "CLIENTE_CONTRATADO": frozenset(PAQUETES_PUBLICACION),
+}
+
+_DEFAULT_PAQUETES = tuple(sorted(PAQUETES_PUBLICACION))
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _uuid() -> str:
+    return str(uuid.uuid4())
+
+
+def _entidad_dict(e: EntidadEmpresa) -> dict[str, Any]:
+    return {
+        "id": e.id,
+        "expediente_id": e.expediente_id,
+        "nombre": e.nombre,
+        "contacto_email": e.contacto_email,
+        "estado_relacion": e.estado_relacion,
+        "contrato_ref": e.contrato_ref,
+        "correlation_id": e.correlation_id,
+        "promoted_at": e.promoted_at.isoformat() if e.promoted_at else None,
+        "created_at": e.created_at.isoformat() if e.created_at else None,
+    }
+
+
+def _publicacion_dict(p: EmpresaPublicacion) -> dict[str, Any]:
+    return {
+        "id": p.id,
+        "paquete": p.paquete,
+        "estado": p.estado,
+        "version": p.version,
+        "destinatario": p.destinatario,
+        "snapshot_hash": p.snapshot_hash,
+        "publicado_por": p.publicado_por,
+        "publicado_at": p.publicado_at.isoformat() if p.publicado_at else None,
+    }
+
+
+def _entrega_dict(e: EvaluacionEntregaExterna) -> dict[str, Any]:
+    return {
+        "id": e.id,
+        "titulo": e.titulo,
+        "descripcion": e.descripcion,
+        "estado": e.estado,
+        "fuente_tipo": e.fuente_tipo,
+        "contenido": e.contenido,
+        "evidencia_ref": e.evidencia_ref,
+        "version": e.version,
+        "informacion_item_id": e.informacion_item_id,
+        "solicitado_at": e.solicitado_at.isoformat() if e.solicitado_at else None,
+        "entregado_at": e.entregado_at.isoformat() if e.entregado_at else None,
+        "validado_at": e.validado_at.isoformat() if e.validado_at else None,
+        "suficiencia_minima_at": e.suficiencia_minima_at.isoformat() if e.suficiencia_minima_at else None,
+    }
+
+
+def _get_entidad(db: Session, entidad_id: str, organization_id: str) -> EntidadEmpresa:
+    row = (
+        db.query(EntidadEmpresa)
+        .filter(EntidadEmpresa.id == entidad_id, EntidadEmpresa.organization_id == organization_id)
+        .first()
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Entidad empresa no encontrada")
+    return row
+
+
+def _ensure_publicaciones_default(db: Session, entidad: EntidadEmpresa) -> list[EmpresaPublicacion]:
+    existing = {
+        p.paquete: p
+        for p in db.query(EmpresaPublicacion)
+        .filter(EmpresaPublicacion.entidad_id == entidad.id)
+        .all()
+    }
+    out: list[EmpresaPublicacion] = []
+    for paquete in _DEFAULT_PAQUETES:
+        if paquete in existing:
+            out.append(existing[paquete])
+            continue
+        p = EmpresaPublicacion(
+            organization_id=entidad.organization_id,
+            entidad_id=entidad.id,
+            expediente_id=entidad.expediente_id,
+            paquete=paquete,
+            estado="PRIVADO",
+            version=1,
+        )
+        db.add(p)
+        out.append(p)
+    db.flush()
+    return out
+
+
+def create_entidad_from_expediente(
+    db: Session,
+    organization_id: str,
+    user_id: str,
+    *,
+    expediente_id: str,
+    contacto_email: str | None = None,
+) -> dict[str, Any]:
+    exp = eval_svc._get_expediente(db, expediente_id, organization_id)  # noqa: SLF001
+    existing = (
+        db.query(EntidadEmpresa)
+        .filter(
+            EntidadEmpresa.organization_id == organization_id,
+            EntidadEmpresa.expediente_id == expediente_id,
+        )
+        .first()
+    )
+    if existing:
+        return {"entidad": _entidad_dict(existing), "reused": True}
+    entidad = EntidadEmpresa(
+        organization_id=organization_id,
+        expediente_id=exp.id,
+        nombre=exp.entidad_nombre,
+        contacto_email=contacto_email,
+        estado_relacion="PROSPECTO_EVALUACION",
+        correlation_id=exp.correlation_id,
+        created_by=user_id,
+    )
+    db.add(entidad)
+    db.flush()
+    pubs = _ensure_publicaciones_default(db, entidad)
+    write_audit(
+        db,
+        organization_id=organization_id,
+        user_id=user_id,
+        action="espacio_externo.entidad_created",
+        detail=json.dumps({"entidad_id": entidad.id, "expediente_id": exp.id}),
+        commit=False,
+    )
+    return {
+        "entidad": _entidad_dict(entidad),
+        "publicaciones": [_publicacion_dict(p) for p in pubs],
+        "reused": False,
+    }
+
+
+def invite_external_user(
+    db: Session,
+    organization_id: str,
+    admin_id: str,
+    *,
+    entidad_id: str,
+    email: str,
+    full_name: str,
+    rol_externo: str = "PROSPECTO",
+    password: str | None = None,
+) -> dict[str, Any]:
+    if rol_externo not in ROLES_ACCESO_EXTERNO:
+        raise HTTPException(status_code=422, detail="rol_externo inválido")
+    entidad = _get_entidad(db, entidad_id, organization_id)
+    username = email.strip().lower()
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        pwd = password or f"Ext-{uuid.uuid4().hex[:10]}!"
+        user = User(
+            organization_id=organization_id,
+            username=username,
+            email=email,
+            full_name=full_name,
+            password_hash=hash_password(pwd),
+            role="external_prospect",
+            status="ACTIVE",
+            is_active=True,
+            created_by_id=admin_id,
+        )
+        db.add(user)
+        db.flush()
+    acceso = (
+        db.query(EntidadEmpresaAcceso)
+        .filter(EntidadEmpresaAcceso.entidad_id == entidad.id, EntidadEmpresaAcceso.user_id == user.id)
+        .first()
+    )
+    if acceso:
+        acceso.activo = True
+        acceso.revoked_at = None
+        acceso.revoked_by = None
+        acceso.rol_externo = rol_externo
+    else:
+        acceso = EntidadEmpresaAcceso(
+            organization_id=organization_id,
+            entidad_id=entidad.id,
+            user_id=user.id,
+            rol_externo=rol_externo,
+            invited_by=admin_id,
+            activo=True,
+        )
+        db.add(acceso)
+    write_audit(
+        db,
+        organization_id=organization_id,
+        user_id=admin_id,
+        action="espacio_externo.acceso_invited",
+        detail=json.dumps({"entidad_id": entidad.id, "user_id": user.id, "rol": rol_externo}),
+        commit=False,
+    )
+    return {"user_id": user.id, "username": user.username, "acceso_id": acceso.id, "rol_externo": rol_externo}
+
+
+def revoke_access(
+    db: Session,
+    organization_id: str,
+    admin_id: str,
+    acceso_id: str,
+) -> dict[str, Any]:
+    acceso = (
+        db.query(EntidadEmpresaAcceso)
+        .filter(
+            EntidadEmpresaAcceso.id == acceso_id,
+            EntidadEmpresaAcceso.organization_id == organization_id,
+        )
+        .first()
+    )
+    if not acceso:
+        raise HTTPException(status_code=404, detail="Acceso no encontrado")
+    acceso.activo = False
+    acceso.revoked_by = admin_id
+    acceso.revoked_at = _utcnow()
+    write_audit(
+        db,
+        organization_id=organization_id,
+        user_id=admin_id,
+        action="espacio_externo.acceso_revoked",
+        detail=json.dumps({"acceso_id": acceso.id}),
+        commit=False,
+    )
+    return {"id": acceso.id, "activo": False}
+
+
+def promote_to_cliente(
+    db: Session,
+    organization_id: str,
+    user_id: str,
+    entidad_id: str,
+    *,
+    contrato_ref: str | None = None,
+) -> dict[str, Any]:
+    entidad = _get_entidad(db, entidad_id, organization_id)
+    prev = entidad.estado_relacion
+    entidad.estado_relacion = "CLIENTE_CONTRATADO"
+    entidad.contrato_ref = contrato_ref or entidad.contrato_ref
+    entidad.promoted_at = _utcnow()
+    entidad.updated_at = _utcnow()
+    for acc in (
+        db.query(EntidadEmpresaAcceso)
+        .filter(EntidadEmpresaAcceso.entidad_id == entidad.id, EntidadEmpresaAcceso.activo.is_(True))
+        .all()
+    ):
+        acc.rol_externo = "CLIENTE"
+    write_audit(
+        db,
+        organization_id=organization_id,
+        user_id=user_id,
+        action="espacio_externo.promoted_cliente",
+        detail=json.dumps({"entidad_id": entidad.id, "antes": prev}),
+        commit=False,
+    )
+    return _entidad_dict(entidad)
+
+
+def set_publicacion_estado(
+    db: Session,
+    organization_id: str,
+    user_id: str,
+    *,
+    publicacion_id: str,
+    estado: str,
+    destinatario: str | None = None,
+    motivo: str | None = None,
+) -> dict[str, Any]:
+    if estado not in ESTADOS_PUBLICACION:
+        raise HTTPException(status_code=422, detail="estado de publicación inválido")
+    pub = (
+        db.query(EmpresaPublicacion)
+        .filter(
+            EmpresaPublicacion.id == publicacion_id,
+            EmpresaPublicacion.organization_id == organization_id,
+        )
+        .first()
+    )
+    if not pub:
+        raise HTTPException(status_code=404, detail="Publicación no encontrada")
+    prev = pub.estado
+    if estado == "PUBLICADO_EMPRESA" and prev == "PUBLICADO_EMPRESA":
+        raise HTTPException(
+            status_code=409,
+            detail="Versión ya publicada; cree nueva versión antes de modificar contenido compartido",
+        )
+    if estado == "PUBLICADO_EMPRESA":
+        vista = eval_svc.get_vista_entidad(db, pub.expediente_id, organization_id)
+        pub.snapshot_hash = hashlib.sha256(json.dumps(vista, sort_keys=True, default=str).encode()).hexdigest()[:16]
+        pub.publicado_por = user_id
+        pub.publicado_at = _utcnow()
+        pub.version += 1 if prev == "PUBLICADO_EMPRESA" else 0
+    pub.estado = estado
+    if destinatario:
+        pub.destinatario = destinatario
+    pub.updated_at = _utcnow()
+    hist = EmpresaPublicacionHistorial(
+        publicacion_id=pub.id,
+        organization_id=organization_id,
+        estado_anterior=prev,
+        estado_nuevo=estado,
+        version=pub.version,
+        destinatario=pub.destinatario,
+        motivo=motivo,
+        changed_by=user_id,
+    )
+    db.add(hist)
+    if estado == "PUBLICADO_EMPRESA":
+        entidad = _get_entidad(db, pub.entidad_id, organization_id)
+        if entidad.estado_relacion == "PROSPECTO_EVALUACION" and pub.paquete in ("RESULTADOS", "PROPUESTA"):
+            entidad.estado_relacion = "PROSPECTO_RESULTADOS"
+            entidad.updated_at = _utcnow()
+    write_audit(
+        db,
+        organization_id=organization_id,
+        user_id=user_id,
+        action="espacio_externo.publicacion",
+        detail=json.dumps({"publicacion_id": pub.id, "estado": estado, "version": pub.version}),
+        commit=False,
+    )
+    return _publicacion_dict(pub)
+
+
+def get_publicacion_historial(db: Session, organization_id: str, publicacion_id: str) -> list[dict[str, Any]]:
+    rows = (
+        db.query(EmpresaPublicacionHistorial)
+        .filter(
+            EmpresaPublicacionHistorial.publicacion_id == publicacion_id,
+            EmpresaPublicacionHistorial.organization_id == organization_id,
+        )
+        .order_by(EmpresaPublicacionHistorial.created_at.desc())
+        .all()
+    )
+    return [
+        {
+            "id": r.id,
+            "estado_anterior": r.estado_anterior,
+            "estado_nuevo": r.estado_nuevo,
+            "version": r.version,
+            "destinatario": r.destinatario,
+            "motivo": r.motivo,
+            "changed_by": r.changed_by,
+            "fecha": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in rows
+    ]
+
+
+def list_entidades(db: Session, organization_id: str, *, expediente_id: str | None = None) -> list[dict[str, Any]]:
+    q = db.query(EntidadEmpresa).filter(EntidadEmpresa.organization_id == organization_id)
+    if expediente_id:
+        q = q.filter(EntidadEmpresa.expediente_id == expediente_id)
+    return [_entidad_dict(e) for e in q.order_by(EntidadEmpresa.created_at.desc()).all()]
+
+
+def get_entidad_detail(db: Session, organization_id: str, entidad_id: str) -> dict[str, Any]:
+    entidad = _get_entidad(db, entidad_id, organization_id)
+    pubs = (
+        db.query(EmpresaPublicacion)
+        .filter(EmpresaPublicacion.entidad_id == entidad.id)
+        .order_by(EmpresaPublicacion.paquete)
+        .all()
+    )
+    accesos = (
+        db.query(EntidadEmpresaAcceso)
+        .filter(EntidadEmpresaAcceso.entidad_id == entidad.id)
+        .all()
+    )
+    return {
+        "entidad": _entidad_dict(entidad),
+        "publicaciones": [_publicacion_dict(p) for p in pubs],
+        "accesos": [
+            {
+                "id": a.id,
+                "user_id": a.user_id,
+                "rol_externo": a.rol_externo,
+                "activo": a.activo,
+                "revoked_at": a.revoked_at.isoformat() if a.revoked_at else None,
+            }
+            for a in accesos
+        ],
+    }
+
+
+def _resolve_external_acceso(db: Session, user: User) -> EntidadEmpresaAcceso:
+    acceso = (
+        db.query(EntidadEmpresaAcceso)
+        .filter(
+            EntidadEmpresaAcceso.user_id == user.id,
+            EntidadEmpresaAcceso.organization_id == user.organization_id,
+            EntidadEmpresaAcceso.activo.is_(True),
+        )
+        .first()
+    )
+    if not acceso:
+        raise HTTPException(status_code=403, detail="Sin acceso al espacio externo")
+    return acceso
+
+
+def _paquete_publicado(db: Session, entidad_id: str, paquete: str) -> bool:
+    pub = (
+        db.query(EmpresaPublicacion)
+        .filter(
+            EmpresaPublicacion.entidad_id == entidad_id,
+            EmpresaPublicacion.paquete == paquete,
+        )
+        .first()
+    )
+    return pub is not None and pub.estado == "PUBLICADO_EMPRESA"
+
+
+def _assert_paquete_accesible(entidad: EntidadEmpresa, paquete: str, *, requiere_publicado: bool = True) -> None:
+    permitidos = _PAQUETES_POR_ESTADO.get(entidad.estado_relacion, frozenset())
+    if paquete not in permitidos:
+        raise HTTPException(status_code=403, detail=f"Paquete {paquete} no disponible en esta etapa")
+
+
+def get_portal_context(db: Session, user: User) -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    pubs = (
+        db.query(EmpresaPublicacion)
+        .filter(EmpresaPublicacion.entidad_id == entidad.id)
+        .all()
+    )
+    paquetes_visibles = _PAQUETES_POR_ESTADO.get(entidad.estado_relacion, frozenset())
+    secciones: list[dict[str, Any]] = []
+    for paquete in sorted(paquetes_visibles):
+        pub = next((p for p in pubs if p.paquete == paquete), None)
+        secciones.append({
+            "paquete": paquete,
+            "estado_publicacion": pub.estado if pub else "PRIVADO",
+            "accesible": pub is not None and pub.estado == "PUBLICADO_EMPRESA",
+            "version": pub.version if pub else 0,
+        })
+    return {
+        "entidad": _entidad_dict(entidad),
+        "rol_externo": acceso.rol_externo,
+        "estado_relacion": entidad.estado_relacion,
+        "contrato_ref": entidad.contrato_ref if entidad.estado_relacion == "CLIENTE_CONTRATADO" else None,
+        "secciones": secciones,
+    }
+
+
+def get_portal_inicio(db: Session, user: User) -> dict[str, Any]:
+    ctx = get_portal_context(db, user)
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    exp = eval_svc._get_expediente(db, entidad.expediente_id, user.organization_id)  # noqa: SLF001
+    return {
+        **ctx,
+        "expediente": {
+            "codigo": exp.codigo,
+            "titulo": exp.titulo,
+            "estado": exp.estado,
+            "nivel": exp.nivel,
+            "objetivo": exp.objetivo,
+        },
+    }
+
+
+def get_portal_informacion(db: Session, user: User) -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    _assert_paquete_accesible(entidad, "INFORMACION", requiere_publicado=False)
+    items = (
+        db.query(EvaluacionInformacionItem)
+        .filter(EvaluacionInformacionItem.expediente_id == entidad.expediente_id)
+        .order_by(EvaluacionInformacionItem.orden)
+        .all()
+    )
+    entregas = (
+        db.query(EvaluacionEntregaExterna)
+        .filter(EvaluacionEntregaExterna.entidad_id == entidad.id)
+        .order_by(EvaluacionEntregaExterna.solicitado_at.desc())
+        .all()
+    )
+    return {
+        "solicitudes": [
+            {
+                "id": i.id,
+                "etiqueta": i.etiqueta,
+                "explicacion": i.explicacion,
+                "obligatorio": i.obligatorio,
+                "estado": i.estado,
+                "estado_validacion": i.estado_validacion or "PENDIENTE",
+                "puede_entregar": i.estado in ("PENDIENTE", "INCOMPLETO") or i.estado_validacion == "REQUIERE_COMPLEMENTO",
+            }
+            for i in items
+            if i.obligatorio or i.estado != "OPCIONAL"
+        ],
+        "entregas": [_entrega_dict(e) for e in entregas],
+    }
+
+
+def external_entregar(
+    db: Session,
+    user: User,
+    *,
+    item_id: str | None = None,
+    entrega_id: str | None = None,
+    contenido: str,
+    evidencia_ref: str | None = None,
+    fuente_tipo: str = "SUMINISTRADA_EMPRESA",
+) -> dict[str, Any]:
+    if fuente_tipo not in FUENTES_INFORMACION:
+        raise HTTPException(status_code=422, detail="fuente_tipo inválida")
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    now = _utcnow()
+    if entrega_id:
+        entrega = (
+            db.query(EvaluacionEntregaExterna)
+            .filter(
+                EvaluacionEntregaExterna.id == entrega_id,
+                EvaluacionEntregaExterna.entidad_id == entidad.id,
+            )
+            .first()
+        )
+        if not entrega:
+            raise HTTPException(status_code=404, detail="Entrega no encontrada")
+        if entrega.estado == "VALIDADO":
+            entrega.version += 1
+        entrega.contenido = contenido
+        entrega.evidencia_ref = evidencia_ref
+        entrega.fuente_tipo = fuente_tipo
+        entrega.estado = "RECIBIDO"
+        entrega.entregado_por = user.id
+        entrega.entregado_at = now
+        item_id = entrega.informacion_item_id
+    elif item_id:
+        item = (
+            db.query(EvaluacionInformacionItem)
+            .filter(
+                EvaluacionInformacionItem.id == item_id,
+                EvaluacionInformacionItem.expediente_id == entidad.expediente_id,
+            )
+            .first()
+        )
+        if not item:
+            raise HTTPException(status_code=404, detail="Ítem de información no encontrado")
+        entrega = EvaluacionEntregaExterna(
+            organization_id=user.organization_id,
+            expediente_id=entidad.expediente_id,
+            entidad_id=entidad.id,
+            informacion_item_id=item.id,
+            titulo=item.etiqueta,
+            descripcion=item.explicacion,
+            estado="RECIBIDO",
+            fuente_tipo=fuente_tipo,
+            contenido=contenido,
+            evidencia_ref=evidencia_ref,
+            entregado_por=user.id,
+            entregado_at=now,
+            correlation_id=entidad.correlation_id,
+        )
+        db.add(entrega)
+        item.respuesta = contenido
+        item.evidencia_ref = evidencia_ref
+        item.fuente_tipo = fuente_tipo
+        item.estado = "RECIBIDO"
+        item.estado_validacion = "EN_VALIDACION"
+        item.entregado_por = user.id
+        item.entregado_at = now
+        item.updated_at = now
+    else:
+        raise HTTPException(status_code=422, detail="item_id o entrega_id requerido")
+    write_audit(
+        db,
+        organization_id=user.organization_id,
+        user_id=user.id,
+        action="espacio_externo.entrega",
+        detail=json.dumps({"entrega_id": entrega.id, "item_id": item_id}),
+        commit=False,
+    )
+    db.flush()
+    return _entrega_dict(entrega)
+
+
+def validar_entrega_interna(
+    db: Session,
+    organization_id: str,
+    user_id: str,
+    entrega_id: str,
+    *,
+    estado: str,
+    marcar_suficiencia: bool = False,
+) -> dict[str, Any]:
+    if estado not in ESTADOS_VALIDACION_EXTERNA:
+        raise HTTPException(status_code=422, detail="estado de validación inválido")
+    entrega = (
+        db.query(EvaluacionEntregaExterna)
+        .filter(
+            EvaluacionEntregaExterna.id == entrega_id,
+            EvaluacionEntregaExterna.organization_id == organization_id,
+        )
+        .first()
+    )
+    if not entrega:
+        raise HTTPException(status_code=404, detail="Entrega no encontrada")
+    now = _utcnow()
+    entrega.estado = estado
+    entrega.validado_por = user_id
+    entrega.validado_at = now
+    if marcar_suficiencia:
+        entrega.suficiencia_minima_at = now
+    if entrega.informacion_item_id:
+        item = db.query(EvaluacionInformacionItem).filter(EvaluacionInformacionItem.id == entrega.informacion_item_id).first()
+        if item:
+            item.estado_validacion = estado
+            if estado == "VALIDADO":
+                item.estado = "RECIBIDO"
+            elif estado == "REQUIERE_COMPLEMENTO":
+                item.estado = "INCOMPLETO"
+            item.validado_at = now
+            if marcar_suficiencia:
+                item.suficiencia_minima_at = now
+    write_audit(
+        db,
+        organization_id=organization_id,
+        user_id=user_id,
+        action="espacio_externo.validacion",
+        detail=json.dumps({"entrega_id": entrega.id, "estado": estado}),
+        commit=False,
+    )
+    return _entrega_dict(entrega)
+
+
+def get_portal_estado(db: Session, user: User) -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    exp = eval_svc._get_expediente(db, entidad.expediente_id, user.organization_id)  # noqa: SLF001
+    items = (
+        db.query(EvaluacionInformacionItem)
+        .filter(EvaluacionInformacionItem.expediente_id == entidad.expediente_id)
+        .all()
+    )
+    obligatorios = [i for i in items if i.obligatorio]
+    recibidos = sum(1 for i in obligatorios if i.estado == "RECIBIDO")
+    suficiencia = any(i.suficiencia_minima_at for i in obligatorios)
+    return {
+        "estado_relacion": entidad.estado_relacion,
+        "expediente_estado": exp.estado,
+        "porcentaje_informacion": exp.porcentaje_informacion,
+        "informacion_minima_suficiente": suficiencia,
+        "pendientes": [
+            i.etiqueta for i in obligatorios
+            if i.estado in ("PENDIENTE", "INCOMPLETO") and i.estado_validacion != "VALIDADO"
+        ],
+    }
+
+
+def get_portal_vista_entidad(db: Session, user: User, paquete: str = "RESULTADOS") -> dict[str, Any]:
+    acceso = _resolve_external_acceso(db, user)
+    entidad = _get_entidad(db, acceso.entidad_id, user.organization_id)
+    _assert_paquete_accesible(entidad, paquete)
+    if not _paquete_publicado(db, entidad.id, paquete):
+        raise HTTPException(status_code=403, detail="Contenido no publicado para la empresa")
+    vista = eval_svc.get_vista_entidad(db, entidad.expediente_id, user.organization_id)
+    # Strip any residual internal fields — backend enforcement
+    for key in ("notas_internas", "valor_potencial", "prompts", "costos", "margen"):
+        vista.pop(key, None)
+    return {
+        "paquete": paquete,
+        "version": (
+            db.query(EmpresaPublicacion)
+            .filter(EmpresaPublicacion.entidad_id == entidad.id, EmpresaPublicacion.paquete == paquete)
+            .first()
+        ).version,
+        "vista": vista,
+    }
+
+
+def crear_solicitud_informacion(
+    db: Session,
+    organization_id: str,
+    user_id: str,
+    entidad_id: str,
+    *,
+    titulo: str,
+    descripcion: str | None = None,
+    informacion_item_id: str | None = None,
+) -> dict[str, Any]:
+    entidad = _get_entidad(db, entidad_id, organization_id)
+    entrega = EvaluacionEntregaExterna(
+        organization_id=organization_id,
+        expediente_id=entidad.expediente_id,
+        entidad_id=entidad.id,
+        informacion_item_id=informacion_item_id,
+        titulo=titulo,
+        descripcion=descripcion,
+        estado="SOLICITADO",
+        solicitado_por=user_id,
+        correlation_id=entidad.correlation_id,
+    )
+    db.add(entrega)
+    db.flush()
+    return _entrega_dict(entrega)

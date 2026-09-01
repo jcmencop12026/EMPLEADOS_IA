@@ -4,6 +4,11 @@ export type NavSection = { id: string; label: string; items: NavItem[]; future?:
 
 export const MENU: NavSection[] = [
   {
+    id: "externo",
+    label: "Mi empresa",
+    items: [{ to: "/mi-espacio", label: "Mi espacio" }],
+  },
+  {
     id: "inicio",
     label: "Inicio",
     items: [{ to: "/", label: "Centro de Control", end: true }],
