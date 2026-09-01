@@ -41,7 +41,7 @@ try {
 
     Assert-EiaaxDemoDatabasePath -DbFilePath $paths.DbFile -WorktreeRoot $worktree
 
-    $basePython = Find-EiaaxPython
+    $basePython = Find-EiaaxPython -LogFile $logFile
     Write-Host "Base Python: $basePython"
     $pythonVersion = Get-EiaaxPythonVersionLine -PythonExe $basePython
     Write-Host "Detected: $pythonVersion"
@@ -49,8 +49,12 @@ try {
 
     if (-not (Test-Path -LiteralPath $paths.Venv)) {
         Write-Host "Creating virtualenv at $($paths.Venv)"
+        $venvProbeError = Test-EiaaxPythonVenvCapability -PythonExe $basePython -ProbeDirectory $logsDir
+        if ($null -ne $venvProbeError) {
+            Exit-EiaaxFailure -Message ("PYTHON " + $pythonVersion + " DETECTED BUT INCOMPATIBLE: " + $venvProbeError)
+        }
         Invoke-EiaaxNativeCommand -FilePath $basePython -ArgumentList @("-m", "venv", $paths.Venv) `
-            -FailureMessage "PYTHON 3.14 INCOMPATIBLE or venv creation failed. Set EIAAX_PYTHON to a supported python.exe."
+            -FailureMessage ("PYTHON " + $pythonVersion + " DETECTED BUT INCOMPATIBLE: venv creation failed.")
     }
 
     $venvPython = Get-EiaaxVenvPython -WorktreeRoot $worktree
@@ -62,7 +66,7 @@ try {
     Write-Host "Installing backend dependencies..."
     $requirements = Join-Path $paths.Backend "requirements.txt"
     Invoke-EiaaxNativeCommand -FilePath $venvPython -ArgumentList @("-m", "pip", "install", "-r", $requirements) `
-        -FailureMessage "PYTHON 3.14 INCOMPATIBLE or backend install failed. Set EIAAX_PYTHON to a supported version."
+        -FailureMessage ("PYTHON " + $pythonVersion + " DETECTED BUT INCOMPATIBLE: requirements install failed. See logs\demo\preparar.log")
 
     Write-Host "Verifying backend imports..."
     Test-EiaaxBackendImports -VenvPython $venvPython
