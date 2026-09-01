@@ -1,0 +1,87 @@
+/** Navegacion principal — fuente unica para sidebar y resolucion de home. */
+export type NavItem = { to: string; label: string; end?: boolean };
+export type NavSection = { id: string; label: string; items: NavItem[]; future?: boolean };
+
+export const MENU: NavSection[] = [
+  {
+    id: "inicio",
+    label: "Inicio",
+    items: [
+      { to: "/", label: "Centro de Control", end: true },
+      { to: "/centro-estrategico", label: "Centro estratégico" },
+    ],
+  },
+  {
+    id: "operaciones",
+    label: "Operaciones",
+    items: [
+      { to: "/trabajo", label: "Mi trabajo" },
+      { to: "/operaciones", label: "Centro de operaciones" },
+      { to: "/operaciones/solicitud", label: "Nueva solicitud" },
+      { to: "/ejecuciones", label: "Ejecuciones" },
+      { to: "/aprobaciones", label: "Aprobaciones" },
+      { to: "/automatizaciones", label: "Automatizaciones" },
+    ],
+  },
+  {
+    id: "salud",
+    label: "Salud",
+    items: [{ to: "/salud/diagnostico", label: "Diagnóstico IPS" }],
+  },
+  {
+    id: "empleados",
+    label: "Empleados IA",
+    items: [
+      { to: "/directorio", label: "Directorio" },
+      { to: "/empleados/auditoria", label: "Auditoría empleados" },
+      { to: "/empleados/nuevo", label: "Crear empleado" },
+      { to: "/capacidades", label: "Capacidades" },
+      { to: "/herramientas", label: "Herramientas" },
+      { to: "/conocimiento", label: "Conocimiento" },
+      { to: "/test-lab", label: "Laboratorio de pruebas" },
+    ],
+  },
+  {
+    id: "analisis",
+    label: "Análisis y control",
+    items: [
+      { to: "/lineas-base", label: "Líneas base e impacto" },
+      { to: "/comercial", label: "Comercial y valor" },
+      { to: "/tco", label: "TCO y aliados" },
+      { to: "/implementacion", label: "Implementación" },
+      { to: "/comercial/segmentacion", label: "Segmentación y planes" },
+      { to: "/evaluaciones", label: "Evaluaciones EIAAX" },
+      { to: "/arquitecto-transformacion", label: "Arquitecto de Transformación" },
+      { to: "/partners", label: "Partners y aliados" },
+      { to: "/oportunidades", label: "Centro de oportunidades" },
+      { to: "/senales", label: "Señales y fuentes" },
+      { to: "/diagnosticos", label: "Diagnósticos" },
+      { to: "/inteligencia-externa", label: "Inteligencia externa" },
+      { to: "/continuidad", label: "Continuidad" },
+      { to: "/soporte", label: "Mesa de Ayuda" },
+      { to: "/integraciones", label: "Integraciones" },
+      { to: "/aprendizaje", label: "Aprendizaje" },
+      { to: "/optimizacion", label: "Optimización" },
+      { to: "/costos-valor", label: "Costos y valor" },
+      { to: "/gobernanza-datos", label: "Gobierno de datos" },
+      { to: "/mi-seguridad", label: "Mi seguridad" },
+      { to: "/notificaciones", label: "Notificaciones" },
+      { to: "/comunicaciones", label: "Comunicaciones" },
+      { to: "/auditoria", label: "Auditoría" },
+    ],
+  },
+  {
+    id: "admin",
+    label: "Administración",
+    items: [
+      { to: "/administracion/empresas", label: "Empresas" },
+      { to: "/administracion/usuarios", label: "Usuarios" },
+      { to: "/administracion/roles", label: "Roles y permisos" },
+      { to: "/administracion/organizacion", label: "Organización" },
+      { to: "/administracion/configuracion", label: "Configuración" },
+      { to: "/administracion/proveedores-ia", label: "Proveedores IA" },
+      { to: "/administracion/seguridad", label: "Seguridad" },
+      { to: "/administracion/identidad", label: "Identidad empresarial" },
+    ],
+  },
+];

@@ -1,0 +1,5 @@
+SHA_INICIAL=2afd673
+SHA_FINAL=ad0c511
+RAMA=cursor/centro-control-operacional-mb08-dec7
+BASE=cursor/fabrica-empleados-ia-mb06-dec7
+MIGRACION=ninguna_nueva
