@@ -1,0 +1,3 @@
+5c584895380031393def3751a1bbfcfa7bbf1a3f
+cursor/centro-control-estrategico-v1-dec7
+base: cursor/centro-control-operacional-mb08-dec7 @ a877572
