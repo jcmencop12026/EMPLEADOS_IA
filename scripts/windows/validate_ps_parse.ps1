@@ -24,7 +24,7 @@ foreach ($file in $files) {
     [void][System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors)
     $errorCount = 0
     if ($null -ne $errors) {
-        $errorCount = $errors.Count
+        $errorCount = @($errors).Count
     }
 
     Write-Host ("FILE: " + $file.Name)

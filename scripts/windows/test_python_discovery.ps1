@@ -66,7 +66,7 @@ Assert-Test "CASE 3 EIAAX_PYTHON valid" {
     try {
         $env:EIAAX_PYTHON = $python.Source
         $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
-        if ($candidates.Count -lt 1) {
+        if ((Get-EiaaxCollectionCount $candidates) -lt 1) {
             throw "Expected at least one candidate with EIAAX_PYTHON set"
         }
         $selected = Find-EiaaxPython

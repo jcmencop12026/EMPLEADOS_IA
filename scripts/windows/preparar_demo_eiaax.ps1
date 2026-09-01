@@ -22,6 +22,7 @@ try {
         Invoke-EiaaxPowerShellParserValidation -ScriptsDir $PSScriptRoot
         $semanticsTest = Join-Path $PSScriptRoot "test_ps_semantics.ps1"
         $discoveryTest = Join-Path $PSScriptRoot "test_python_discovery.ps1"
+        $alembicTest = Join-Path $PSScriptRoot "test_ps_alembic.ps1"
         Invoke-EiaaxPowerShellFile -FilePath $semanticsTest
         if ($LASTEXITCODE -ne 0) {
             Exit-EiaaxFailure -Message "PowerShell semantics self-test failed."
@@ -29,6 +30,10 @@ try {
         Invoke-EiaaxPowerShellFile -FilePath $discoveryTest
         if ($LASTEXITCODE -ne 0) {
             Exit-EiaaxFailure -Message "Python discovery self-test failed."
+        }
+        Invoke-EiaaxPowerShellFile -FilePath $alembicTest
+        if ($LASTEXITCODE -ne 0) {
+            Exit-EiaaxFailure -Message "PowerShell Alembic collection self-test failed."
         }
     }
 
@@ -134,12 +139,12 @@ try {
     Write-EiaaxLogLine -LogFile $logFile -Message "Preparation completed successfully"
     Write-Host ""
     Write-Host "============================================================"
-    Write-Host "EIAAX -- PREPARACION WINDOWS NO INTERACTIVA REVALIDADA"
+    Write-Host "EIAAX -- VERIFICACION ALEMBIC WINDOWS CORREGIDA Y REVALIDADA"
     Write-Host "============================================================"
     try {
         Add-Type -AssemblyName System.Speech -ErrorAction Stop
         $speaker = New-Object System.Speech.Synthesis.SpeechSynthesizer
-        $speaker.Speak("EIAAX preparacion Windows no interactiva revalidada")
+        $speaker.Speak("EIAAX verificacion Alembic Windows corregida y revalidada")
     }
     catch {
         # Voice notification is optional; absence does not block completion.

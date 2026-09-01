@@ -176,6 +176,67 @@ function Test-EiaaxWorktree {
     }
 }
 
+function ConvertTo-EiaaxArray {
+    param(
+        [Parameter(ValueFromPipeline = $true)]
+        $InputObject
+    )
+
+    return @($InputObject)
+}
+
+function Get-EiaaxCollectionCount {
+    param(
+        $Value
+    )
+
+    if ($null -eq $Value) {
+        return 0
+    }
+
+    return @( $Value ).Count
+}
+
+function Get-EiaaxAlembicHeadRevisions {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Output
+    )
+
+    $revisions = New-Object System.Collections.Generic.List[string]
+    foreach ($line in ($Output -split "`r?`n")) {
+        $trimmed = $line.Trim()
+        if ([string]::IsNullOrWhiteSpace($trimmed)) {
+            continue
+        }
+        if ($trimmed -match '^([0-9a-f]+)\s+\(head\)') {
+            [void]$revisions.Add($Matches[1])
+        }
+    }
+
+    return ,@($revisions.ToArray())
+}
+
+function Get-EiaaxAlembicCurrentRevisions {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Output
+    )
+
+    $revisions = New-Object System.Collections.Generic.List[string]
+    foreach ($line in ($Output -split "`r?`n")) {
+        $trimmed = $line.Trim()
+        if ([string]::IsNullOrWhiteSpace($trimmed)) {
+            continue
+        }
+        if ($trimmed -match '^([0-9a-f]+)\b') {
+            [void]$revisions.Add($Matches[1])
+        }
+    }
+
+    return ,@($revisions.ToArray())
+}
+
 function Test-EiaaxInteractiveInvocationRisk {
     param(
         [Parameter(Mandatory = $true)]
@@ -195,7 +256,7 @@ function Test-EiaaxInteractiveInvocationRisk {
         "node"
     )
 
-    if ($interactiveExecutables -contains $executableName -and $ArgumentList.Count -eq 0) {
+    if ($interactiveExecutables -contains $executableName -and (Get-EiaaxCollectionCount $ArgumentList) -eq 0) {
         return $true
     }
 
@@ -418,7 +479,7 @@ function Find-EiaaxPython {
     }
 
     $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
-    if ($null -eq $candidates -or $candidates.Count -eq 0) {
+    if (Get-EiaaxCollectionCount $candidates -eq 0) {
         Exit-EiaaxFailure -Message "PYTHON NOT FOUND: no python.exe candidates detected on this machine."
     }
 
@@ -828,22 +889,41 @@ function Confirm-EiaaxAlembicState {
     try {
         $headsOutput = & $VenvPython -m alembic heads 2>&1 | Out-String
         if ($LASTEXITCODE -ne 0) {
-            Exit-EiaaxFailure -Message "alembic heads failed."
+            Exit-EiaaxFailure -Message ("alembic heads failed. ExitCode=" + $LASTEXITCODE + " Output=" + $headsOutput.Trim())
         }
-        if ($headsOutput -notmatch $script:ExpectedAlembicHead) {
-            Exit-EiaaxFailure -Message ("Expected alembic head " + $script:ExpectedAlembicHead + " not found.")
+
+        $headRevisions = Get-EiaaxAlembicHeadRevisions -Output $headsOutput
+        $headCount = Get-EiaaxCollectionCount $headRevisions
+        if ($headCount -eq 0) {
+            Exit-EiaaxFailure -Message ("alembic heads returned no head revisions. Output=" + $headsOutput.Trim())
         }
-        if (($headsOutput -split "`n" | Where-Object { $_ -match '\(head\)' }).Count -gt 1) {
-            Exit-EiaaxFailure -Message "Multiple alembic heads detected."
+        if ($headCount -gt 1) {
+            Exit-EiaaxFailure -Message ("Multiple alembic heads detected (" + $headCount + "). Output=" + $headsOutput.Trim())
+        }
+
+        $headRevision = $headRevisions[0]
+        if ($headRevision -ne $script:ExpectedAlembicHead) {
+            Exit-EiaaxFailure -Message ("Expected alembic head " + $script:ExpectedAlembicHead + " but found " + $headRevision + ".")
         }
 
         $currentOutput = & $VenvPython -m alembic current 2>&1 | Out-String
         if ($LASTEXITCODE -ne 0) {
-            Exit-EiaaxFailure -Message "alembic current failed."
+            Exit-EiaaxFailure -Message ("alembic current failed. ExitCode=" + $LASTEXITCODE + " Output=" + $currentOutput.Trim())
         }
-        if ($currentOutput -notmatch $script:ExpectedAlembicHead) {
-            Exit-EiaaxFailure -Message ("Database is not at alembic head " + $script:ExpectedAlembicHead + ".")
+
+        $currentRevisions = Get-EiaaxAlembicCurrentRevisions -Output $currentOutput
+        $currentCount = Get-EiaaxCollectionCount $currentRevisions
+        if ($currentCount -eq 0) {
+            Exit-EiaaxFailure -Message ("alembic current returned no revision. Output=" + $currentOutput.Trim())
         }
+
+        $currentRevision = $currentRevisions[$currentCount - 1]
+        if ($currentRevision -ne $script:ExpectedAlembicHead) {
+            Exit-EiaaxFailure -Message ("Database is not at alembic head " + $script:ExpectedAlembicHead + "; current=" + $currentRevision + ".")
+        }
+
+        Write-Host ("Alembic heads OK: " + $headRevision + " (single head)")
+        Write-Host ("Alembic current OK: " + $currentRevision)
     }
     finally {
         Pop-Location

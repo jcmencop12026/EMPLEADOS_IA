@@ -88,7 +88,38 @@ el error terminaba `Find-EiaaxPython` antes de validar `C:\Python314\python.exe`
 
 ---
 
-## INCIDENTE COLECCION VACIA List (SHA 115265a)
+## INCIDENTE ALEMBIC .Count (SHA 66db838)
+
+### Fallo real
+
+Tras seed exitoso (`"status": "ok"`), la preparacion fallo en `Verifying Alembic state...` con:
+
+`No se encuentra la propiedad 'Count' en este objeto. Compruebe que existe.`
+
+### Causa raiz
+
+En `Confirm-EiaaxAlembicState`, la comprobacion de multiples heads usaba:
+
+`($headsOutput -split ... | Where-Object { ... }).Count`
+
+En Windows PowerShell 5.1, cuando `Where-Object` devuelve **un solo** elemento, el resultado es un **escalar** (string), no un array. Los escalares no tienen propiedad `.Count`. Con un unico head (caso normal tras seed) la verificacion fallaba.
+
+### Correccion
+
+- Helpers `Get-EiaaxCollectionCount`, `ConvertTo-EiaaxArray`, `Get-EiaaxAlembicHeadRevisions`, `Get-EiaaxAlembicCurrentRevisions`
+- Verificacion Alembic por revision ID parseada, no por conteo fragil de pipeline
+- Nuevo `test_ps_alembic.ps1` con regresion 0/1/N elementos
+- Auditoria de todos los usos `.Count` en scripts Windows
+
+### Evidencia Windows real confirmada (no revertir)
+
+- PowerShell ejecutando scripts: OK
+- Python 3.14.5 (`C:\Python314\python.exe`): OK
+- venv, pip, requirements: OK
+- Seed demo (`Empresa Demo A/B`, `status: ok`): OK
+- Fallo unicamente en verificacion Alembic post-seed
+
+---
 
 ### Fallo real
 
