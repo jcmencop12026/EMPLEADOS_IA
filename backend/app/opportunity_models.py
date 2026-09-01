@@ -101,6 +101,8 @@ class Opportunity(Base):
     costo_estimado: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
     valor_potencial: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
     valor_potencial_certidumbre: Mapped[str] = mapped_column(String(30), nullable=False, default="ESTIMADO")
+    origen_comercial: Mapped[str] = mapped_column(String(20), nullable=False, default="SOLICITADA", index=True)
+    presentar_cliente: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     valor_materializado: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
     confianza: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, default=0.5)
     pertinencia: Mapped[str | None] = mapped_column(String(30), nullable=True)

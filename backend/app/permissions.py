@@ -256,6 +256,11 @@ CONTINUIDAD_COMERCIAL_PERMISSIONS = {
     "continuidad_comercial.close",
 }
 
+FLUJO_COMERCIAL_PERMISSIONS = {
+    "flujo_comercial.view",
+    "flujo_comercial.manage",
+}
+
 NEGOCIO_PERMISSIONS = {
     "negocio.view",
     "negocio.manage",
@@ -496,6 +501,8 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "continuidad_comercial.view": ("Continuidad comercial", "Ver continuidad contrato→resultado"),
     "continuidad_comercial.manage": ("Continuidad comercial", "Gestionar cambios de alcance"),
     "continuidad_comercial.close": ("Continuidad comercial", "Cerrar contratos y offboarding"),
+    "flujo_comercial.view": ("Flujo comercial", "Ver flujo prospecto→contratación"),
+    "flujo_comercial.manage": ("Flujo comercial", "Gestionar presentación, instrumentos y garantías"),
     "tco.view": ("TCO", "Consultar costo total y tablero"),
     "tco.manage": ("TCO", "Gestionar costos y distribuciones"),
     "tco.simulate": ("TCO", "Simular escenarios de costo"),
@@ -579,6 +586,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | COMMERCIAL_PERMISSIONS
         | NEGOCIO_PERMISSIONS
         | CONTINUIDAD_COMERCIAL_PERMISSIONS
+        | FLUJO_COMERCIAL_PERMISSIONS
         | TCO_PERMISSIONS
         | IMPLEMENTACION_PERMISSIONS
         | SEGMENTATION_PERMISSIONS
@@ -618,6 +626,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | COMMERCIAL_PERMISSIONS
         | NEGOCIO_PERMISSIONS
         | CONTINUIDAD_COMERCIAL_PERMISSIONS
+        | FLUJO_COMERCIAL_PERMISSIONS
         | TCO_PERMISSIONS
         | IMPLEMENTACION_PERMISSIONS
         | SEGMENTATION_PERMISSIONS

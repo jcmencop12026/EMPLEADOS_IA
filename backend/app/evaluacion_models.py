@@ -55,6 +55,7 @@ class EvaluacionExpediente(Base):
     necesidad: Mapped[str | None] = mapped_column(Text, nullable=True)
     objetivo: Mapped[str | None] = mapped_column(Text, nullable=True)
     area_proceso: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    sector: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
     estado: Mapped[str] = mapped_column(String(30), nullable=False, default="BORRADOR", index=True)
     nivel: Mapped[str] = mapped_column(String(20), nullable=False, default="PRELIMINAR")
     confianza_global: Mapped[str] = mapped_column(String(10), nullable=False, default="MEDIA")
