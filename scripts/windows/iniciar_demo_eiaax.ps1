@@ -20,21 +20,21 @@ try {
         Exit-EiaaxFailure -Message "Demo not prepared. Run scripts\windows\preparar_demo_eiaax.ps1 first."
     }
 
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $backendScript
+    Invoke-EiaaxPowerShellFile -FilePath $backendScript
     if ($LASTEXITCODE -ne 0) {
         exit $LASTEXITCODE
     }
 
     Start-Sleep -Seconds 2
 
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $frontendScript
+    Invoke-EiaaxPowerShellFile -FilePath $frontendScript
     if ($LASTEXITCODE -ne 0) {
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $stopScript | Out-Null
+        Invoke-EiaaxPowerShellFile -FilePath $stopScript | Out-Null
         exit $LASTEXITCODE
     }
 
     if (-not (Test-EiaaxFrontendProxyHealth -Port $FrontendPort -TimeoutSec 30)) {
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $stopScript | Out-Null
+        Invoke-EiaaxPowerShellFile -FilePath $stopScript | Out-Null
         Exit-EiaaxFailure -Message "Frontend proxy to backend failed on /health."
     }
 

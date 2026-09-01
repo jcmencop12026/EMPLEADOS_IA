@@ -7,6 +7,9 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+$common = Join-Path $PSScriptRoot "EiaaxDemo.Common.ps1"
+. $common
+
 $prepareScript = Join-Path $PSScriptRoot "preparar_demo_eiaax.ps1"
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $prepareScript
+Invoke-EiaaxPowerShellFile -FilePath $prepareScript
 exit $LASTEXITCODE

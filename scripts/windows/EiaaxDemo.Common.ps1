@@ -176,6 +176,32 @@ function Test-EiaaxWorktree {
     }
 }
 
+function Test-EiaaxInteractiveInvocationRisk {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+        [AllowEmptyCollection()]
+        [string[]]$ArgumentList = @()
+    )
+
+    $executableName = [System.IO.Path]::GetFileName($FilePath).ToLowerInvariant()
+    $interactiveExecutables = @(
+        "python.exe",
+        "python",
+        "python3.exe",
+        "python3",
+        "pythonw.exe",
+        "node.exe",
+        "node"
+    )
+
+    if ($interactiveExecutables -contains $executableName -and $ArgumentList.Count -eq 0) {
+        return $true
+    }
+
+    return $false
+}
+
 function Invoke-EiaaxNativeCommand {
     param(
         [Parameter(Mandatory = $true)]
@@ -184,6 +210,10 @@ function Invoke-EiaaxNativeCommand {
         [string[]]$ArgumentList = @(),
         [string]$FailureMessage = "Command failed."
     )
+
+    if (Test-EiaaxInteractiveInvocationRisk -FilePath $FilePath -ArgumentList $ArgumentList) {
+        Exit-EiaaxFailure -Message ("Refusing interactive invocation without arguments: " + $FilePath)
+    }
 
     & $FilePath @ArgumentList
     if ($LASTEXITCODE -ne 0) {
@@ -820,6 +850,38 @@ function Confirm-EiaaxAlembicState {
     }
 }
 
+function Get-EiaaxWindowsPowerShellExecutable {
+    if (-not [string]::IsNullOrWhiteSpace($env:WINDIR)) {
+        $windowsPowerShell = Join-Path $env:WINDIR "System32\WindowsPowerShell\v1.0\powershell.exe"
+        if (Test-Path -LiteralPath $windowsPowerShell) {
+            return $windowsPowerShell
+        }
+    }
+
+    $powershell = Get-Command powershell.exe -ErrorAction SilentlyContinue
+    if ($null -ne $powershell) {
+        return $powershell.Source
+    }
+
+    $pwsh = Get-Command pwsh -ErrorAction SilentlyContinue
+    if ($null -ne $pwsh) {
+        return $pwsh.Source
+    }
+
+    Exit-EiaaxFailure -Message "PowerShell executable not found."
+}
+
+function Invoke-EiaaxPowerShellFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+        [string[]]$ArgumentList = @()
+    )
+
+    $shell = Get-EiaaxWindowsPowerShellExecutable
+    & $shell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $FilePath @ArgumentList
+}
+
 function Invoke-EiaaxPowerShellParserValidation {
     param(
         [Parameter(Mandatory = $true)]
@@ -831,7 +893,7 @@ function Invoke-EiaaxPowerShellParserValidation {
         Exit-EiaaxFailure -Message "Missing validate_ps_parse.ps1"
     }
 
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $validator
+    Invoke-EiaaxPowerShellFile -FilePath $validator
     if ($LASTEXITCODE -ne 0) {
         Exit-EiaaxFailure -Message "PowerShell parser validation failed."
     }

@@ -22,11 +22,11 @@ try {
         Invoke-EiaaxPowerShellParserValidation -ScriptsDir $PSScriptRoot
         $semanticsTest = Join-Path $PSScriptRoot "test_ps_semantics.ps1"
         $discoveryTest = Join-Path $PSScriptRoot "test_python_discovery.ps1"
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $semanticsTest
+        Invoke-EiaaxPowerShellFile -FilePath $semanticsTest
         if ($LASTEXITCODE -ne 0) {
             Exit-EiaaxFailure -Message "PowerShell semantics self-test failed."
         }
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $discoveryTest
+        Invoke-EiaaxPowerShellFile -FilePath $discoveryTest
         if ($LASTEXITCODE -ne 0) {
             Exit-EiaaxFailure -Message "Python discovery self-test failed."
         }
@@ -132,6 +132,18 @@ try {
     Confirm-EiaaxAlembicState -VenvPython $venvPython -BackendDir $paths.Backend -DatabaseUrl $databaseUrl
 
     Write-EiaaxLogLine -LogFile $logFile -Message "Preparation completed successfully"
+    Write-Host ""
+    Write-Host "============================================================"
+    Write-Host "EIAAX -- PREPARACION WINDOWS NO INTERACTIVA REVALIDADA"
+    Write-Host "============================================================"
+    try {
+        Add-Type -AssemblyName System.Speech -ErrorAction Stop
+        $speaker = New-Object System.Speech.Synthesis.SpeechSynthesizer
+        $speaker.Speak("EIAAX preparacion Windows no interactiva revalidada")
+    }
+    catch {
+        # Voice notification is optional; absence does not block completion.
+    }
     Write-Host ""
     Write-Host "EIAAX demo preparation completed successfully."
     Write-Host "Next step: scripts\windows\iniciar_demo_eiaax.ps1"

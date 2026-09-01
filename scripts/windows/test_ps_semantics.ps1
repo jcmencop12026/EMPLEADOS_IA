@@ -1,11 +1,14 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Semantic helper tests for EIAAX Windows scripts (PowerShell runtime).
+    Semantic helper tests for EIAAX Windows scripts (non-interactive only).
 #>
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+$helpers = Join-Path $PSScriptRoot "EiaaxDemo.TestHelpers.ps1"
+. $helpers
 
 $failed = 0
 
@@ -61,13 +64,34 @@ Assert-Test "Get-EiaaxPythonDiscoveryCandidates returns array on empty start" {
     }
 }
 
-Assert-Test "Invoke-EiaaxNativeCommand accepts empty ArgumentList" {
-    $python = (Get-Command python -ErrorAction SilentlyContinue)
+Assert-Test "Invoke-EiaaxNativeCommand accepts empty ArgumentList without interactive shell" {
+    $executable = Get-EiaaxNonInteractiveTestExecutable
+    if ($null -eq $executable) {
+        Write-Host "  SKIP: no non-interactive test executable available"
+        return
+    }
+
+    $executableName = [System.IO.Path]::GetFileName($executable).ToLowerInvariant()
+    if ($executableName -eq "cmd.exe") {
+        Invoke-EiaaxAutotestNativeCommand -CommonPath $common -FilePath $executable `
+            -ArgumentList @("/d", "/c", "exit 0") -FailureMessage "cmd.exe smoke command failed"
+        return
+    }
+
+    Invoke-EiaaxAutotestNativeCommand -CommonPath $common -FilePath $executable -ArgumentList @() `
+        -FailureMessage ("Non-interactive smoke command failed for " + $executable)
+}
+
+Assert-Test "Invoke-EiaaxNativeCommand blocks bare python.exe" {
+    $python = Get-Command python -ErrorAction SilentlyContinue
     if ($null -eq $python) {
         Write-Host "  SKIP: python not available"
         return
     }
-    Invoke-EiaaxNativeCommand -FilePath $python.Source -ArgumentList @() -FailureMessage "python without args failed"
+
+    if (-not (Test-EiaaxInteractiveInvocationRisk -FilePath $python.Source -ArgumentList @())) {
+        throw "Expected interactive risk for python.exe without arguments"
+    }
 }
 
 Write-Host ""
@@ -77,4 +101,5 @@ if ($failed -gt 0) {
 }
 
 Write-Host "PS SEMANTICS TESTS: PASS"
+Write-Host "AUTOTESTS INTERACTIVE: 0"
 exit 0

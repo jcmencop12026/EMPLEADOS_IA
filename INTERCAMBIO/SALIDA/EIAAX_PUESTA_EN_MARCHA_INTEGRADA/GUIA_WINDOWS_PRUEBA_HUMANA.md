@@ -65,6 +65,29 @@ el error terminaba `Find-EiaaxPython` antes de validar `C:\Python314\python.exe`
 
 ---
 
+## INCIDENTE REPL INTERACTIVO (SHA 68112b0)
+
+### Fallo real
+
+`test_ps_semantics.ps1` ejecutaba `python.exe` sin argumentos y abrio el REPL `>>>`, bloqueando la preparacion.
+
+### Correccion
+
+- Autotests usan ejecutables no interactivos (`hostname.exe`, `cmd /c exit 0`, `/bin/true` en VM).
+- Guard en `Invoke-EiaaxNativeCommand` rechaza python/node sin argumentos.
+- Subprocesos de prueba con timeout (30s); `-NonInteractive` en todas las invocaciones PowerShell.
+- `Invoke-EiaaxPowerShellFile` centraliza invocaciones sin REPL ni ventanas interactivas.
+
+### Validacion agente (post-correccion)
+
+- Parser: **10/10 scripts, PARSE ERRORS = 0**
+- `test_ps_semantics.ps1`: **PASS** (`AUTOTESTS INTERACTIVE: 0`)
+- `test_python_discovery.ps1`: **PASS** (`AUTOTESTS INTERACTIVE: 0`)
+- Cadena backend (venv/pip/seed/Alembic) y frontend (npm/build): **PASS EN VM Linux**
+- Ejecucion Windows real completa: **pendiente confirmacion usuario** (Python 3.14.5 ya confirmado)
+
+---
+
 ## INCIDENTE COLECCION VACIA List (SHA 115265a)
 
 ### Fallo real

@@ -1,11 +1,14 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Functional self-tests for Python discovery helpers.
+    Functional self-tests for Python discovery helpers (non-interactive only).
 #>
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+$helpers = Join-Path $PSScriptRoot "EiaaxDemo.TestHelpers.ps1"
+. $helpers
 
 $common = Join-Path $PSScriptRoot "EiaaxDemo.Common.ps1"
 . $common
@@ -76,25 +79,6 @@ Assert-Test "CASE 3 EIAAX_PYTHON valid" {
     }
 }
 
-function Invoke-EiaaxTestCommand {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Script
-    )
-
-    Push-Location $PSScriptRoot
-    try {
-        $output = & pwsh -NoProfile -ExecutionPolicy Bypass -Command $Script 2>&1 | Out-String
-        return [ordered]@{
-            ExitCode = $LASTEXITCODE
-            Output   = $output
-        }
-    }
-    finally {
-        Pop-Location
-    }
-}
-
 Assert-Test "CASE 4 EIAAX_PYTHON missing path" {
     $commonPath = Join-Path $PSScriptRoot "EiaaxDemo.Common.ps1"
     $scriptText = @"
@@ -103,7 +87,13 @@ Assert-Test "CASE 4 EIAAX_PYTHON missing path" {
 `$env:EIAAX_PYTHON = 'Z:\EIAAX\no-such-python.exe'
 Find-EiaaxPython | Out-Null
 "@
-    $result = Invoke-EiaaxTestCommand -Script $scriptText
+    Push-Location $PSScriptRoot
+    try {
+        $result = Invoke-EiaaxTestShellCommand -Script $scriptText -TimeoutSec 30
+    }
+    finally {
+        Pop-Location
+    }
     if ($result.ExitCode -eq 0) {
         throw "Expected non-zero exit for missing EIAAX_PYTHON path"
     }
@@ -164,7 +154,13 @@ Assert-Test "CASE 7 no candidates handled cleanly" {
 if (`$candidates.Count -gt 0) { Write-Host 'SKIP_HAS_CANDIDATES'; exit 0 }
 Find-EiaaxPython | Out-Null
 "@
-    $result = Invoke-EiaaxTestCommand -Script $scriptText
+    Push-Location $PSScriptRoot
+    try {
+        $result = Invoke-EiaaxTestShellCommand -Script $scriptText -TimeoutSec 30
+    }
+    finally {
+        Pop-Location
+    }
     if ($result.Output -match "SKIP_HAS_CANDIDATES") {
         Write-Host "  SKIP: machine still exposes python candidates in restricted PATH"
         return
@@ -181,4 +177,5 @@ if ($failed -gt 0) {
 }
 
 Write-Host "PYTHON DISCOVERY TESTS: PASS"
+Write-Host "AUTOTESTS INTERACTIVE: 0"
 exit 0
