@@ -1,7 +1,7 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Prepara la demo EIAAX (venv Python, dependencias, SQLite, seed, frontend build).
+    Prepare the EIAAX demo: venv, dependencies, SQLite seed, frontend build.
 #>
 
 param(
@@ -14,94 +14,100 @@ $ErrorActionPreference = "Stop"
 $common = Join-Path $PSScriptRoot "EiaaxDemo.Common.ps1"
 . $common
 
-$worktree = Get-EiaaxWorktreeRoot
-Assert-EiaaxNotOriginalTree -WorktreeRoot $worktree
-Test-EiaaxWorktree -WorktreeRoot $worktree
-$paths = Get-EiaaxPaths -WorktreeRoot $worktree
-$databaseUrl = Get-EiaaxDatabaseUrl -WorktreeRoot $worktree
-
-Write-Host "=== EIAAX demo — preparación ==="
-Write-Host "Worktree: ${worktree}"
-Write-Host "DATABASE_URL: ${databaseUrl}"
-
-if (-not (Test-Path -LiteralPath $paths.Data)) {
-    New-Item -ItemType Directory -Path $paths.Data | Out-Null
-}
-
-$basePython = Find-EiaaxPython
-Write-Host "Python base: ${basePython}"
-& $basePython -c "import sys; print('Python', sys.version)"
-if ($LASTEXITCODE -ne 0) {
-    throw "Python base no ejecutable: ${basePython}"
-}
-
-if (-not (Test-Path -LiteralPath $paths.Venv)) {
-    Write-Host "Creando entorno virtual en $($paths.Venv)"
-    & $basePython -m venv $paths.Venv
-    if ($LASTEXITCODE -ne 0) {
-        throw "No se pudo crear el entorno virtual. Pruebe otra versión de Python (3.12/3.13) con EIAAX_PYTHON."
-    }
-}
-
-$venvPython = Get-EiaaxVenvPython -WorktreeRoot $worktree
-Write-Host "Actualizando pip en el entorno virtual..."
-& $venvPython -m pip install --upgrade pip wheel
-if ($LASTEXITCODE -ne 0) {
-    throw "pip upgrade falló en el entorno virtual."
-}
-
-Write-Host "Instalando dependencias backend..."
-& $venvPython -m pip install -r (Join-Path $paths.Backend "requirements.txt")
-if ($LASTEXITCODE -ne 0) {
-    throw "Instalación backend falló. Si usa Python 3.14, pruebe EIAAX_PYTHON apuntando a 3.12 o 3.13."
-}
-
-$npm = Get-Command npm -ErrorAction SilentlyContinue
-if ($null -eq $npm) {
-    throw "npm no encontrado en PATH."
-}
-
-Push-Location $paths.Frontend
 try {
-    if (Test-Path -LiteralPath "package-lock.json") {
-        Write-Host "Instalando dependencias frontend (npm ci)..."
-        npm ci
-    }
-    else {
-        Write-Host "Instalando dependencias frontend (npm install)..."
-        npm install
-    }
-    if ($LASTEXITCODE -ne 0) {
-        throw "Instalación frontend falló."
+    $worktree = Get-EiaaxWorktreeRoot
+    Assert-EiaaxNotOriginalTree -WorktreeRoot $worktree
+    Test-EiaaxWorktree -WorktreeRoot $worktree
+    $paths = Get-EiaaxPaths -WorktreeRoot $worktree
+    $databaseUrl = Get-EiaaxDatabaseUrl -WorktreeRoot $worktree
+
+    Write-Host "=== EIAAX demo preparation ==="
+    Write-Host "Worktree: $worktree"
+    Write-Host "DATABASE_URL: $databaseUrl"
+
+    if (-not (Test-Path -LiteralPath $paths.Data)) {
+        New-Item -ItemType Directory -Path $paths.Data | Out-Null
     }
 
-    if (-not $SkipFrontendBuild) {
-        Write-Host "Compilando frontend (npm run build)..."
-        npm run build
+    Assert-EiaaxDemoDatabasePath -DbFilePath $paths.DbFile
+
+    $basePython = Find-EiaaxPython
+    Write-Host "Base Python: $basePython"
+    $pythonVersion = Get-EiaaxPythonVersionLine -PythonExe $basePython
+    Write-Host "Detected: $pythonVersion"
+
+    if (-not (Test-Path -LiteralPath $paths.Venv)) {
+        Write-Host "Creating virtualenv at $($paths.Venv)"
+        Invoke-EiaaxNativeCommand -FilePath $basePython -ArgumentList @("-m", "venv", $paths.Venv) `
+            -FailureMessage "Could not create virtualenv. If Python 3.14 is incompatible, set EIAAX_PYTHON to 3.12 or 3.13."
+    }
+
+    $venvPython = Get-EiaaxVenvPython -WorktreeRoot $worktree
+
+    Write-Host "Upgrading pip in virtualenv..."
+    Invoke-EiaaxNativeCommand -FilePath $venvPython -ArgumentList @("-m", "pip", "install", "--upgrade", "pip", "wheel") `
+        -FailureMessage "pip upgrade failed in virtualenv."
+
+    Write-Host "Installing backend dependencies..."
+    $requirements = Join-Path $paths.Backend "requirements.txt"
+    Invoke-EiaaxNativeCommand -FilePath $venvPython -ArgumentList @("-m", "pip", "install", "-r", $requirements) `
+        -FailureMessage "Backend install failed. Python 3.14 may be incompatible; set EIAAX_PYTHON to a supported version."
+
+    $npm = Get-Command npm -ErrorAction SilentlyContinue
+    if ($null -eq $npm) {
+        Exit-EiaaxFailure -Message "npm not found in PATH."
+    }
+
+    Push-Location $paths.Frontend
+    try {
+        if (Test-Path -LiteralPath "package-lock.json") {
+            Write-Host "Installing frontend dependencies (npm ci)..."
+            & npm ci
+        }
+        else {
+            Write-Host "Installing frontend dependencies (npm install)..."
+            & npm install
+        }
         if ($LASTEXITCODE -ne 0) {
-            throw "Build frontend falló."
+            Exit-EiaaxFailure -Message "Frontend install failed."
+        }
+
+        if (-not $SkipFrontendBuild) {
+            Write-Host "Building frontend (npm run build)..."
+            & npm run build
+            if ($LASTEXITCODE -ne 0) {
+                Exit-EiaaxFailure -Message "Frontend build failed."
+            }
         }
     }
-}
-finally {
-    Pop-Location
-}
-
-Write-Host "Ejecutando seed demo (recrea la BD SQLite demo)..."
-$env:DATABASE_URL = $databaseUrl
-Push-Location $paths.Backend
-try {
-    & $venvPython "scripts\seed_lote3_demo.py"
-    if ($LASTEXITCODE -ne 0) {
-        throw "Seed demo falló."
+    finally {
+        Pop-Location
     }
-}
-finally {
-    Pop-Location
-}
 
-Write-Host ""
-Write-Host "Preparación completada."
-Write-Host "Siguiente paso: scripts\windows\iniciar_demo_eiaax.ps1"
-Write-Host "URL prevista: http://127.0.0.1:5180"
-Write-Host "Usuarios demo: org_a_admin / DemoA2026!  (ver backend\scripts\credentials.example)"
+    Write-Host "Running demo seed (recreates demo SQLite DB only)..."
+    $env:DATABASE_URL = $databaseUrl
+    Push-Location $paths.Backend
+    try {
+        $seedScript = Join-Path $paths.Backend "scripts\seed_lote3_demo.py"
+        Invoke-EiaaxNativeCommand -FilePath $venvPython -ArgumentList @($seedScript) `
+            -FailureMessage "Demo seed failed."
+    }
+    finally {
+        Pop-Location
+    }
+
+    if (-not (Test-Path -LiteralPath $paths.DbFile)) {
+        Exit-EiaaxFailure -Message "Demo database file was not created."
+    }
+
+    Write-Host ""
+    Write-Host "EIAAX demo preparation completed successfully."
+    Write-Host "Next step: scripts\windows\iniciar_demo_eiaax.ps1"
+    Write-Host "URL: http://127.0.0.1:5180"
+    Write-Host "Demo user: org_a_admin (password in backend\scripts\credentials.example)"
+    exit 0
+}
+catch {
+    Write-EiaaxError -Message $_.Exception.Message
+    exit 1
+}

@@ -93,11 +93,25 @@ DEMO_ORG_B = {
 }
 
 
+DEMO_DB_FILE_NAME = "eiaax_integrado_demo.db"
+
+
+def _assert_demo_database_path(db_path: Path) -> None:
+    resolved = db_path.resolve()
+    if resolved.name != DEMO_DB_FILE_NAME:
+        raise RuntimeError(f"Unsafe demo DB file name: {resolved.name}")
+    if resolved.parent.name != "data":
+        raise RuntimeError(f"Unsafe demo DB directory: {resolved.parent}")
+    if resolved.parent.parent.name.upper() == "EMPLEADOS_IA":
+        raise RuntimeError("Refusing demo DB under EMPLEADOS_IA. Use EMPLEADOS_IA_INTEGRADO.")
+
+
 def _prepare_demo_database(database_url: str) -> None:
     from alembic import command
     from alembic.config import Config
 
     db_path = database_url_to_path(database_url)
+    _assert_demo_database_path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     if db_path.exists():
         safe_unlink_sqlite(db_path, database_url)
