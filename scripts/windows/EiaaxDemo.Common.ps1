@@ -374,7 +374,7 @@ function Get-EiaaxPythonDiscoveryCandidates {
         }
     }
 
-    return @($result.ToArray())
+    return ,@($result.ToArray())
 }
 
 function Invoke-EiaaxPythonVersionProbe {
@@ -480,7 +480,11 @@ function Find-EiaaxPython {
 
     $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
     if (Get-EiaaxCollectionCount $candidates -eq 0) {
-        Exit-EiaaxFailure -Message "PYTHON NOT FOUND: no python.exe candidates detected on this machine."
+        $detail = ""
+        if (-not [string]::IsNullOrWhiteSpace($env:EIAAX_PYTHON)) {
+            $detail = " EIAAX_PYTHON=" + $env:EIAAX_PYTHON
+        }
+        Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: no python.exe candidates detected on this machine." + $detail)
     }
 
     $failures = @()

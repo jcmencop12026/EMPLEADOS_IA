@@ -14,6 +14,7 @@ $common = Join-Path $PSScriptRoot "EiaaxDemo.Common.ps1"
 . $common
 
 $failed = 0
+$commonPath = $common
 
 function Assert-Test {
     param(
@@ -30,9 +31,39 @@ function Assert-Test {
         $script:failed++
         Write-Host ("  FAIL: " + $_.Exception.Message)
     }
+    finally {
+        Restore-All-EiaaxTestEnvVars
+    }
+}
+
+function Get-EiaaxPathCommandApplication {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    $command = Get-Command $Name -ErrorAction SilentlyContinue
+    if ($null -eq $command) {
+        return $null
+    }
+    if ($command.CommandType -ne "Application") {
+        return $null
+    }
+    if ([string]::IsNullOrWhiteSpace($command.Source)) {
+        return $null
+    }
+    if (-not (Test-Path -LiteralPath $command.Source)) {
+        return $null
+    }
+    if (Test-EiaaxWindowsPythonStub -Path $command.Source) {
+        return $null
+    }
+
+    return (Resolve-Path -LiteralPath $command.Source).Path
 }
 
 Assert-Test "CASE 1 empty candidate list binding regression" {
+    Clear-EiaaxTestEnvVar -Name "EIAAX_PYTHON"
     $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
     if ($null -eq $candidates) {
         throw "Get-EiaaxPythonDiscoveryCandidates returned null"
@@ -44,87 +75,116 @@ Assert-Test "CASE 1 empty candidate list binding regression" {
 }
 
 Assert-Test "CASE 2 explicit C:\Python314\python.exe when present" {
-    $target = "C:\Python314\python.exe"
-    if (Test-Path -LiteralPath $target) {
-        $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
-        if ($candidates -notcontains (Resolve-Path -LiteralPath $target).Path) {
-            throw ("Expected candidate missing: " + $target)
+    $target = Get-EiaaxKnownWindowsPythonExe
+    if ($null -eq $target) {
+        Write-Host "  SKIP: no known Windows Python install path present"
+        return
+    }
+
+    Clear-EiaaxTestEnvVar -Name "EIAAX_PYTHON"
+    $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
+    $resolvedTarget = (Resolve-Path -LiteralPath $target).Path
+    $found = $false
+    foreach ($candidate in $candidates) {
+        if ($candidate.ToUpperInvariant() -eq $resolvedTarget.ToUpperInvariant()) {
+            $found = $true
+            break
         }
     }
-    else {
-        Write-Host "  SKIP: C:\Python314\python.exe not present on this machine"
+    if (-not $found) {
+        throw ("Expected candidate missing: " + $resolvedTarget)
     }
 }
 
 Assert-Test "CASE 3 EIAAX_PYTHON valid" {
-    $python = (Get-Command python -ErrorAction SilentlyContinue)
-    if ($null -eq $python) {
-        Write-Host "  SKIP: python not in PATH"
+    $target = Get-EiaaxKnownWindowsPythonExe
+    if ($null -eq $target) {
+        Write-Host "  SKIP: no known Windows Python install path present"
         return
     }
-    $previous = $env:EIAAX_PYTHON
-    try {
-        $env:EIAAX_PYTHON = $python.Source
-        $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
-        if ((Get-EiaaxCollectionCount $candidates) -lt 1) {
-            throw "Expected at least one candidate with EIAAX_PYTHON set"
-        }
-        $selected = Find-EiaaxPython
-        if ([string]::IsNullOrWhiteSpace($selected)) {
-            throw "Find-EiaaxPython returned empty value"
-        }
+
+    $escapedTarget = $target.Replace("'", "''")
+    $body = @"
+`$env:EIAAX_PYTHON = '$escapedTarget'
+`$candidates = @(Get-EiaaxPythonDiscoveryCandidates)
+if ((Get-EiaaxCollectionCount `$candidates) -lt 1) {
+    Write-Host 'ERROR: no discovery candidates with EIAAX_PYTHON set'
+    exit 11
+}
+`$selected = Find-EiaaxPython
+if ([string]::IsNullOrWhiteSpace(`$selected)) {
+    Write-Host 'ERROR: Find-EiaaxPython returned empty'
+    exit 12
+}
+`$selectedResolved = (Resolve-Path -LiteralPath `$selected).Path
+`$targetResolved = (Resolve-Path -LiteralPath `$env:EIAAX_PYTHON).Path
+if (`$selectedResolved.ToUpperInvariant() -ne `$targetResolved.ToUpperInvariant()) {
+    Write-Host ('ERROR: selected mismatch. expected=' + `$targetResolved + ' actual=' + `$selectedResolved)
+    exit 13
+}
+`$probe = Invoke-EiaaxPythonVersionProbe -PythonExe `$selectedResolved
+if (`$probe.ExitCode -ne 0 -or [string]::IsNullOrWhiteSpace(`$probe.Text)) {
+    Write-Host ('ERROR: python -V failed: ' + `$probe.Text)
+    exit 14
+}
+Write-Host ('OK: ' + `$probe.Text)
+exit 0
+"@
+
+    $result = Invoke-EiaaxProductionShellTest -CommonPath $commonPath -Body $body -TimeoutSec 30
+    if ($result.ExitCode -ne 0) {
+        throw ("Production discovery failed in isolated shell. ExitCode=" + $result.ExitCode + " Output=" + $result.Output.Trim())
     }
-    finally {
-        $env:EIAAX_PYTHON = $previous
+    if ($result.Output -notmatch "OK:\s*Python") {
+        throw ("Unexpected output: " + $result.Output.Trim())
     }
 }
 
 Assert-Test "CASE 4 EIAAX_PYTHON missing path" {
-    $commonPath = Join-Path $PSScriptRoot "EiaaxDemo.Common.ps1"
-    $scriptText = @"
-`$ErrorActionPreference = 'Stop'
-. '$commonPath'
+    $body = @"
 `$env:EIAAX_PYTHON = 'Z:\EIAAX\no-such-python.exe'
 Find-EiaaxPython | Out-Null
+exit 0
 "@
-    Push-Location $PSScriptRoot
-    try {
-        $result = Invoke-EiaaxTestShellCommand -Script $scriptText -TimeoutSec 30
-    }
-    finally {
-        Pop-Location
-    }
+
+    $result = Invoke-EiaaxProductionShellTest -CommonPath $commonPath -Body $body -TimeoutSec 30
     if ($result.ExitCode -eq 0) {
         throw "Expected non-zero exit for missing EIAAX_PYTHON path"
     }
     if ($result.Output -notmatch "PYTHON NOT FOUND") {
-        throw ("Unexpected output: " + $result.Output)
+        throw ("Unexpected output: " + $result.Output.Trim())
     }
 }
 
 Assert-Test "CASE 5 python in PATH" {
-    $python = Get-Command python -ErrorAction SilentlyContinue
-    if ($null -eq $python) {
-        Write-Host "  SKIP: python not in PATH"
+    $pathPython = Get-EiaaxPathCommandApplication -Name "python"
+    if ($null -eq $pathPython) {
+        Write-Host "  SKIP: no non-stub python application in PATH"
         return
     }
-    $previous = $env:EIAAX_PYTHON
-    try {
-        Remove-Item Env:EIAAX_PYTHON -ErrorAction SilentlyContinue
-        $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
-        $found = $false
-        foreach ($candidate in $candidates) {
-            if ($candidate.ToUpperInvariant() -eq $python.Source.ToUpperInvariant()) {
-                $found = $true
-                break
-            }
-        }
-        if (-not $found) {
-            throw ("PATH python not discovered: " + $python.Source)
-        }
+
+    $escapedPath = $pathPython.Replace("'", "''")
+    $body = @"
+Remove-Item Env:EIAAX_PYTHON -ErrorAction SilentlyContinue
+`$candidates = @(Get-EiaaxPythonDiscoveryCandidates)
+`$found = `$false
+foreach (`$candidate in `$candidates) {
+    if (`$candidate.ToUpperInvariant() -eq '$($pathPython.ToUpperInvariant())') {
+        `$found = `$true
+        break
     }
-    finally {
-        $env:EIAAX_PYTHON = $previous
+}
+if (-not `$found) {
+    Write-Host ('ERROR: PATH python not discovered: $escapedPath')
+    exit 21
+}
+Write-Host 'OK: PATH python discovered'
+exit 0
+"@
+
+    $result = Invoke-EiaaxProductionShellTest -CommonPath $commonPath -Body $body -TimeoutSec 30
+    if ($result.ExitCode -ne 0) {
+        throw ("PATH discovery failed. ExitCode=" + $result.ExitCode + " Output=" + $result.Output.Trim())
     }
 }
 
@@ -133,40 +193,60 @@ Assert-Test "CASE 6 WindowsApps alias ignored" {
         Write-Host "  SKIP: LOCALAPPDATA not set"
         return
     }
+
     $stub = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps\python.exe"
     if (-not (Test-Path -LiteralPath $stub)) {
         Write-Host "  SKIP: WindowsApps python stub not present"
         return
     }
+
     if (-not (Test-EiaaxWindowsPythonStub -Path $stub)) {
         throw "WindowsApps stub was not classified as stub"
+    }
+
+    $escapedStub = $stub.Replace("'", "''")
+    $body = @"
+`$env:EIAAX_PYTHON = '$escapedStub'
+`$candidates = @(Get-EiaaxPythonDiscoveryCandidates)
+foreach (`$candidate in `$candidates) {
+    if (`$candidate.ToUpperInvariant() -eq '$($stub.ToUpperInvariant())') {
+        Write-Host 'ERROR: WindowsApps stub was not excluded from candidates'
+        exit 31
+    }
+}
+Write-Host 'OK: WindowsApps stub excluded'
+exit 0
+"@
+
+    $result = Invoke-EiaaxProductionShellTest -CommonPath $commonPath -Body $body -TimeoutSec 30
+    if ($result.ExitCode -ne 0) {
+        throw ("WindowsApps exclusion failed. Output=" + $result.Output.Trim())
     }
 }
 
 Assert-Test "CASE 7 no candidates handled cleanly" {
-    $commonPath = Join-Path $PSScriptRoot "EiaaxDemo.Common.ps1"
-    $scriptText = @"
-`$ErrorActionPreference = 'Stop'
-. '$commonPath'
+    $body = @"
 `$env:EIAAX_PYTHON = 'Z:\EIAAX\no-such-python.exe'
 `$env:PATH = 'C:\Windows\System32'
 `$candidates = @(Get-EiaaxPythonDiscoveryCandidates)
-if (`$candidates.Count -gt 0) { Write-Host 'SKIP_HAS_CANDIDATES'; exit 0 }
+if ((Get-EiaaxCollectionCount `$candidates) -gt 0) {
+    Write-Host 'SKIP_HAS_CANDIDATES'
+    exit 0
+}
 Find-EiaaxPython | Out-Null
+exit 0
 "@
-    Push-Location $PSScriptRoot
-    try {
-        $result = Invoke-EiaaxTestShellCommand -Script $scriptText -TimeoutSec 30
-    }
-    finally {
-        Pop-Location
-    }
+
+    $result = Invoke-EiaaxProductionShellTest -CommonPath $commonPath -Body $body -TimeoutSec 30
     if ($result.Output -match "SKIP_HAS_CANDIDATES") {
         Write-Host "  SKIP: machine still exposes python candidates in restricted PATH"
         return
     }
     if ($result.ExitCode -eq 0) {
         throw "Expected failure when no candidates are available"
+    }
+    if ($result.Output -notmatch "PYTHON NOT FOUND") {
+        throw ("Unexpected output: " + $result.Output.Trim())
     }
 }
 
@@ -178,4 +258,16 @@ if ($failed -gt 0) {
 
 Write-Host "PYTHON DISCOVERY TESTS: PASS"
 Write-Host "AUTOTESTS INTERACTIVE: 0"
+Write-Host ""
+Write-Host "============================================================"
+Write-Host "EIAAX -- AUTOTEST WINDOWS PYTHON CORREGIDO Y REVISADO INTEGRALMENTE"
+Write-Host "============================================================"
+try {
+    Add-Type -AssemblyName System.Speech -ErrorAction Stop
+    $speaker = New-Object System.Speech.Synthesis.SpeechSynthesizer
+    $speaker.Speak("EIAAX autotest Windows Python corregido y revisado integralmente")
+}
+catch {
+    # Voice notification is optional.
+}
 exit 0

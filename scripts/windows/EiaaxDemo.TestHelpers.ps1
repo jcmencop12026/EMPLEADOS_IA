@@ -154,3 +154,100 @@ function Invoke-EiaaxTestShellCommand {
     Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
     return $result
 }
+
+$script:EiaaxTestEnvBackup = @{}
+
+function Save-EiaaxTestEnvVar {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    $script:EiaaxTestEnvBackup[$Name] = [Environment]::GetEnvironmentVariable($Name, "Process")
+}
+
+function Restore-EiaaxTestEnvVar {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    if (-not $script:EiaaxTestEnvBackup.ContainsKey($Name)) {
+        return
+    }
+
+    $previous = $script:EiaaxTestEnvBackup[$Name]
+    if ([string]::IsNullOrEmpty($previous)) {
+        Remove-Item -Path ("Env:" + $Name) -ErrorAction SilentlyContinue
+    }
+    else {
+        Set-Item -Path ("Env:" + $Name) -Value $previous
+    }
+}
+
+function Restore-All-EiaaxTestEnvVars {
+    foreach ($name in @($script:EiaaxTestEnvBackup.Keys)) {
+        Restore-EiaaxTestEnvVar -Name $name
+    }
+    $script:EiaaxTestEnvBackup = @{}
+}
+
+function Clear-EiaaxTestEnvVar {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    Save-EiaaxTestEnvVar -Name $Name
+    Remove-Item -Path ("Env:" + $Name) -ErrorAction SilentlyContinue
+}
+
+function Set-EiaaxTestEnvVar {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+        [AllowNull()]
+        [string]$Value
+    )
+
+    Save-EiaaxTestEnvVar -Name $Name
+    if ([string]::IsNullOrEmpty($Value)) {
+        Remove-Item -Path ("Env:" + $Name) -ErrorAction SilentlyContinue
+    }
+    else {
+        Set-Item -Path ("Env:" + $Name) -Value $Value
+    }
+}
+
+function Get-EiaaxKnownWindowsPythonExe {
+    foreach ($candidate in @(
+            "C:\Python314\python.exe",
+            "C:\Python313\python.exe",
+            "C:\Python312\python.exe"
+        )) {
+        if (Test-Path -LiteralPath $candidate) {
+            return (Resolve-Path -LiteralPath $candidate).Path
+        }
+    }
+
+    return $null
+}
+
+function Invoke-EiaaxProductionShellTest {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CommonPath,
+        [Parameter(Mandatory = $true)]
+        [string]$Body,
+        [int]$TimeoutSec = $script:DefaultTestTimeoutSec
+    )
+
+    $escapedCommon = $CommonPath.Replace("'", "''")
+    $scriptText = @"
+`$ErrorActionPreference = 'Stop'
+. '$escapedCommon'
+$Body
+"@
+
+    return Invoke-EiaaxTestShellCommand -Script $scriptText -TimeoutSec $TimeoutSec
+}
