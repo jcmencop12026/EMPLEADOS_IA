@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate EIAAX Windows PowerShell scripts with the real PowerShell parser."""
+"""Run real PowerShell parser validation for EIAAX Windows scripts."""
 
 from __future__ import annotations
 
@@ -12,10 +12,8 @@ PARSE_SCRIPT = WINDOWS_DIR / "validate_ps_parse.ps1"
 
 
 def ensure_utf8_bom(path: Path) -> None:
-    text = path.read_text(encoding="utf-8")
-    if text.startswith("\ufeff"):
-        return
-    path.write_text("\ufeff" + text.lstrip("\ufeff"), encoding="utf-8")
+    text = path.read_text(encoding="utf-8-sig")
+    path.write_text(text, encoding="utf-8-sig")
 
 
 def main() -> int:
@@ -26,10 +24,6 @@ def main() -> int:
 
     for path in ps_files:
         ensure_utf8_bom(path)
-
-    if not PARSE_SCRIPT.exists():
-        print(f"ERROR: missing {PARSE_SCRIPT}")
-        return 1
 
     result = subprocess.run(
         ["pwsh", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(PARSE_SCRIPT)],

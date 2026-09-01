@@ -11,8 +11,16 @@ $script:DefaultWorktree = "D:\EMPLEADOS_IA_INTEGRADO"
 $script:BackendPort = 8000
 $script:FrontendPort = 5180
 $script:VenvDirName = ".venv-eiaax-demo"
-$script:StateDirName = ".eiaax-demo"
+$script:StateDirName = ".runtime-eiaax-demo"
+$script:LogsDirName = "logs\demo"
 $script:DemoDbFileName = "eiaax_integrado_demo.db"
+$script:ExpectedAlembicHead = "1770a1b2c3d4e"
+
+$script:ForbiddenWorktreeNames = @(
+    "EMPLEADOS_IA",
+    "EMPLEADOS_IA_CERT",
+    "EMPLEADOS_IA_V1_HOTFIX"
+)
 
 function Write-EiaaxError {
     param(
@@ -53,6 +61,7 @@ function Get-EiaaxPaths {
     $data = Join-Path $WorktreeRoot "data"
     $venv = Join-Path $WorktreeRoot $script:VenvDirName
     $state = Join-Path $WorktreeRoot $script:StateDirName
+    $logs = Join-Path $WorktreeRoot $script:LogsDirName
     $dbFile = Join-Path $data $script:DemoDbFileName
 
     return [ordered]@{
@@ -62,8 +71,34 @@ function Get-EiaaxPaths {
         Data         = $data
         Venv         = $venv
         State        = $state
+        Logs         = $logs
         DbFile       = $dbFile
     }
+}
+
+function Ensure-EiaaxLogsDir {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot
+    )
+
+    $paths = Get-EiaaxPaths -WorktreeRoot $WorktreeRoot
+    if (-not (Test-Path -LiteralPath $paths.Logs)) {
+        New-Item -ItemType Directory -Path $paths.Logs | Out-Null
+    }
+    return $paths.Logs
+}
+
+function Write-EiaaxLogLine {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$LogFile,
+        [Parameter(Mandatory = $true)]
+        [string]$Message
+    )
+
+    $line = (Get-Date -Format "yyyy-MM-dd HH:mm:ss") + " " + $Message
+    Add-Content -LiteralPath $LogFile -Value $line -Encoding ascii
 }
 
 function ConvertTo-SqliteDatabaseUrl {
@@ -84,14 +119,16 @@ function Get-EiaaxDatabaseUrl {
     )
 
     $paths = Get-EiaaxPaths -WorktreeRoot $WorktreeRoot
-    Assert-EiaaxDemoDatabasePath -DbFilePath $paths.DbFile
+    Assert-EiaaxDemoDatabasePath -DbFilePath $paths.DbFile -WorktreeRoot $WorktreeRoot
     return ConvertTo-SqliteDatabaseUrl -DbFilePath $paths.DbFile
 }
 
 function Assert-EiaaxDemoDatabasePath {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$DbFilePath
+        [string]$DbFilePath,
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot
     )
 
     $fullDb = [System.IO.Path]::GetFullPath($DbFilePath)
@@ -101,15 +138,21 @@ function Assert-EiaaxDemoDatabasePath {
     }
 
     $dataDir = [System.IO.Path]::GetDirectoryName($fullDb)
-    $dataDirName = [System.IO.Path]::GetFileName($dataDir)
-    if ($dataDirName -ne "data") {
+    $expectedDataDir = [System.IO.Path]::GetFullPath((Join-Path $WorktreeRoot "data"))
+    if ($dataDir.ToUpperInvariant() -ne $expectedDataDir.ToUpperInvariant()) {
         Exit-EiaaxFailure -Message "Unsafe demo DB directory: $dataDir"
     }
+}
 
-    $worktree = [System.IO.Path]::GetDirectoryName($dataDir)
-    $worktreeName = [System.IO.Path]::GetFileName($worktree)
-    if ($worktreeName -eq "EMPLEADOS_IA") {
-        Exit-EiaaxFailure -Message "Refusing demo DB under D:\EMPLEADOS_IA. Use D:\EMPLEADOS_IA_INTEGRADO."
+function Assert-EiaaxNotOriginalTree {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot
+    )
+
+    $folderName = [System.IO.Path]::GetFileName($WorktreeRoot.TrimEnd('\'))
+    if ($script:ForbiddenWorktreeNames -contains $folderName) {
+        Exit-EiaaxFailure -Message "Refusing to operate on forbidden worktree: $WorktreeRoot"
     }
 }
 
@@ -130,18 +173,6 @@ function Test-EiaaxWorktree {
     }
     if (-not (Test-Path -LiteralPath (Join-Path $paths.Frontend "package.json"))) {
         Exit-EiaaxFailure -Message "Missing frontend\package.json"
-    }
-}
-
-function Assert-EiaaxNotOriginalTree {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$WorktreeRoot
-    )
-
-    $normalized = ($WorktreeRoot.TrimEnd('\') + '\').ToUpperInvariant()
-    if ($normalized -eq "D:\EMPLEADOS_IA\") {
-        Exit-EiaaxFailure -Message "Refusing to operate on D:\EMPLEADOS_IA. Use D:\EMPLEADOS_IA_INTEGRADO or EIAAX_WORKTREE."
     }
 }
 
@@ -166,7 +197,7 @@ function Get-EiaaxPythonVersionLine {
         [string]$PythonExe
     )
 
-    $output = & $PythonExe -c 'import sys; print(sys.version)' 2>&1
+    $output = & $PythonExe -V 2>&1
     if ($LASTEXITCODE -ne 0) {
         Exit-EiaaxFailure -Message "Python is not executable: $PythonExe"
     }
@@ -175,23 +206,22 @@ function Get-EiaaxPythonVersionLine {
 
 function Find-EiaaxPython {
     $candidates = New-Object System.Collections.Generic.List[string]
+
     if (-not [string]::IsNullOrWhiteSpace($env:EIAAX_PYTHON)) {
-        [void]$candidates.Add($env:EIAAX_PYTHON)
-    }
-    foreach ($path in @(
-            "C:\Python314\python.exe",
-            "C:\Python313\python.exe",
-            "C:\Python312\python.exe"
-        )) {
-        [void]$candidates.Add($path)
+        if (-not (Test-Path -LiteralPath $env:EIAAX_PYTHON)) {
+            Exit-EiaaxFailure -Message "EIAAX_PYTHON path does not exist: $env:EIAAX_PYTHON"
+        }
+        return (Resolve-Path -LiteralPath $env:EIAAX_PYTHON).Path
     }
 
-    foreach ($candidate in $candidates) {
-        if ([string]::IsNullOrWhiteSpace($candidate)) {
-            continue
-        }
-        if (Test-Path -LiteralPath $candidate) {
-            return (Resolve-Path -LiteralPath $candidate).Path
+    $knownPaths = @(
+        "C:\Python314\python.exe",
+        "C:\Python313\python.exe",
+        "C:\Python312\python.exe"
+    )
+    foreach ($path in $knownPaths) {
+        if (Test-Path -LiteralPath $path) {
+            [void]$candidates.Add((Resolve-Path -LiteralPath $path).Path)
         }
     }
 
@@ -200,17 +230,35 @@ function Find-EiaaxPython {
         foreach ($version in @("3.14", "3.13", "3.12")) {
             $versioned = & py "-$version" -c 'import sys; print(sys.executable)' 2>$null
             if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($versioned)) {
-                return $versioned.Trim()
+                $resolved = $versioned.Trim()
+                if (Test-Path -LiteralPath $resolved) {
+                    [void]$candidates.Add($resolved)
+                }
             }
         }
     }
 
     $python = Get-Command python -ErrorAction SilentlyContinue
-    if ($null -ne $python) {
-        return $python.Source
+    if ($null -ne $python -and (Test-Path -LiteralPath $python.Source)) {
+        [void]$candidates.Add($python.Source)
     }
 
-    Exit-EiaaxFailure -Message "No compatible Python found. Install Python 3.12+ or set EIAAX_PYTHON."
+    if ($candidates.Count -eq 0) {
+        Exit-EiaaxFailure -Message "No Python executable found. Set EIAAX_PYTHON to a valid python.exe path."
+    }
+
+    return $candidates[0]
+}
+
+function Test-EiaaxBackendImports {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$VenvPython
+    )
+
+    Invoke-EiaaxNativeCommand -FilePath $VenvPython -ArgumentList @(
+        '-c', 'import fastapi, sqlalchemy, alembic, uvicorn, bcrypt, jose'
+    ) -FailureMessage "PYTHON 3.14 INCOMPATIBLE or backend requirements incomplete. Set EIAAX_PYTHON to a supported version."
 }
 
 function Get-EiaaxVenvPython {
@@ -234,7 +282,7 @@ function Test-EiaaxDemoDatabaseReady {
     )
 
     $paths = Get-EiaaxPaths -WorktreeRoot $WorktreeRoot
-    Assert-EiaaxDemoDatabasePath -DbFilePath $paths.DbFile
+    Assert-EiaaxDemoDatabasePath -DbFilePath $paths.DbFile -WorktreeRoot $WorktreeRoot
     return (Test-Path -LiteralPath $paths.DbFile)
 }
 
@@ -251,17 +299,33 @@ function Ensure-EiaaxStateDir {
     return $paths.State
 }
 
-function Write-EiaaxLauncherFile {
+function Write-EiaaxStateValue {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$Path,
+        [string]$StateDir,
         [Parameter(Mandatory = $true)]
-        [string[]]$Lines
+        [string]$Name,
+        [Parameter(Mandatory = $true)]
+        [string]$Value
     )
 
-    $content = ($Lines -join [Environment]::NewLine) + [Environment]::NewLine
-    $utf8Bom = New-Object System.Text.UTF8Encoding $true
-    [System.IO.File]::WriteAllText($Path, $content, $utf8Bom)
+    $file = Join-Path $StateDir ($Name + ".txt")
+    Set-Content -LiteralPath $file -Value $Value -Encoding ascii
+}
+
+function Get-EiaaxStateValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$StateDir,
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    $file = Join-Path $StateDir ($Name + ".txt")
+    if (-not (Test-Path -LiteralPath $file)) {
+        return $null
+    }
+    return (Get-Content -LiteralPath $file -Raw).Trim()
 }
 
 function Write-EiaaxPidFile {
@@ -274,8 +338,7 @@ function Write-EiaaxPidFile {
         [int]$ProcessId
     )
 
-    $file = Join-Path $StateDir ($Name + ".pid")
-    Set-Content -LiteralPath $file -Value $ProcessId -Encoding ascii
+    Write-EiaaxStateValue -StateDir $StateDir -Name $Name -Value ([string]$ProcessId)
 }
 
 function Get-EiaaxPidFromFile {
@@ -286,15 +349,70 @@ function Get-EiaaxPidFromFile {
         [string]$Name
     )
 
-    $file = Join-Path $StateDir ($Name + ".pid")
-    if (-not (Test-Path -LiteralPath $file)) {
+    $raw = Get-EiaaxStateValue -StateDir $StateDir -Name $Name
+    if ([string]::IsNullOrWhiteSpace($raw)) {
         return $null
     }
-    $raw = (Get-Content -LiteralPath $file -Raw).Trim()
     if ($raw -match '^\d+$') {
         return [int]$raw
     }
     return $null
+}
+
+function Get-EiaaxListenerPid {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$Port
+    )
+
+    $connections = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+    if ($null -eq $connections) {
+        return $null
+    }
+    $first = $connections | Select-Object -First 1
+    if ($null -eq $first) {
+        return $null
+    }
+    return [int]$first.OwningProcess
+}
+
+function Test-EiaaxPortAvailable {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$Port
+    )
+
+    $listener = Get-EiaaxListenerPid -Port $Port
+    return ($null -eq $listener)
+}
+
+function Assert-EiaaxPortAvailable {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$Port,
+        [Parameter(Mandatory = $true)]
+        [string]$Label
+    )
+
+    $listener = Get-EiaaxListenerPid -Port $Port
+    if ($null -ne $listener) {
+        Exit-EiaaxFailure -Message ("Port " + $Port + " is already in use by PID " + $listener + " (" + $Label + "). Stop the conflicting process manually or choose another environment.")
+    }
+}
+
+function Get-EiaaxProcessCommandLine {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$ProcessId
+    )
+
+    try {
+        $process = Get-CimInstance Win32_Process -Filter ("ProcessId=" + $ProcessId) -ErrorAction Stop
+        return $process.CommandLine
+    }
+    catch {
+        return $null
+    }
 }
 
 function Test-EiaaxManagedProcess {
@@ -302,7 +420,9 @@ function Test-EiaaxManagedProcess {
         [Parameter(Mandatory = $true)]
         [int]$ProcessId,
         [Parameter(Mandatory = $true)]
-        [string]$WorktreeRoot
+        [string]$WorktreeRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$ServiceName
     )
 
     $proc = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
@@ -310,26 +430,83 @@ function Test-EiaaxManagedProcess {
         return $false
     }
 
-    try {
-        $commandLine = (Get-CimInstance Win32_Process -Filter ("ProcessId=" + $ProcessId)).CommandLine
-    }
-    catch {
-        return $true
-    }
-
+    $commandLine = Get-EiaaxProcessCommandLine -ProcessId $ProcessId
     if ([string]::IsNullOrWhiteSpace($commandLine)) {
-        return $true
+        return $false
     }
 
     $normalizedWorktree = $WorktreeRoot.ToUpperInvariant()
     $normalizedCommand = $commandLine.ToUpperInvariant()
-    return (
-        $normalizedCommand.Contains($normalizedWorktree) -or
-        $normalizedCommand.Contains("UVICORN APP.MAIN:APP") -or
-        $normalizedCommand.Contains("RUN_FRONTEND.PS1") -or
-        $normalizedCommand.Contains("RUN_BACKEND.PS1") -or
-        $normalizedCommand.Contains("VITE")
+
+    if (-not $normalizedCommand.Contains($normalizedWorktree)) {
+        return $false
+    }
+
+    if ($ServiceName -eq "backend") {
+        return $normalizedCommand.Contains("UVICORN") -and $normalizedCommand.Contains("APP.MAIN:APP")
+    }
+
+    if ($ServiceName -eq "frontend") {
+        return $normalizedCommand.Contains("VITE") -or $normalizedCommand.Contains("NPM.CMD") -or $normalizedCommand.Contains("NODE.EXE")
+    }
+
+    return $false
+}
+
+function Start-EiaaxManagedProcess {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+        [Parameter(Mandatory = $true)]
+        [string[]]$ArgumentList,
+        [Parameter(Mandatory = $true)]
+        [string]$WorkingDirectory,
+        [Parameter(Mandatory = $true)]
+        [string]$LogFile,
+        [Parameter(Mandatory = $true)]
+        [string]$StateDir,
+        [Parameter(Mandatory = $true)]
+        [string]$WrapperName,
+        [hashtable]$Environment = @{}
     )
+
+    $wrapperBat = Join-Path $StateDir ($WrapperName + ".bat")
+    $lines = New-Object System.Collections.Generic.List[string]
+    [void]$lines.Add("@echo off")
+    foreach ($key in $Environment.Keys) {
+        [void]$lines.Add("set " + $key + "=" + $Environment[$key])
+    }
+    [void]$lines.Add("cd /d """ + $WorkingDirectory + """")
+
+    $commandParts = New-Object System.Collections.Generic.List[string]
+    [void]$commandParts.Add('"' + $FilePath + '"')
+    foreach ($arg in $ArgumentList) {
+        [void]$commandParts.Add($arg)
+    }
+    $command = ($commandParts -join ' ')
+    [void]$lines.Add($command + ' >> "' + $LogFile + '" 2>>&1')
+
+    [System.IO.File]::WriteAllLines($wrapperBat, $lines.ToArray())
+
+    return Start-Process -FilePath $wrapperBat -WorkingDirectory $WorkingDirectory -PassThru -WindowStyle Hidden
+}
+
+function Wait-EiaaxListenerPid {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$Port,
+        [int]$TimeoutSec = 45
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSec)
+    while ((Get-Date) -lt $deadline) {
+        $listener = Get-EiaaxListenerPid -Port $Port
+        if ($null -ne $listener) {
+            return $listener
+        }
+        Start-Sleep -Seconds 1
+    }
+    return $null
 }
 
 function Stop-EiaaxManagedPid {
@@ -339,11 +516,13 @@ function Stop-EiaaxManagedPid {
         [Parameter(Mandatory = $true)]
         [string]$Label,
         [Parameter(Mandatory = $true)]
-        [string]$WorktreeRoot
+        [string]$WorktreeRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$ServiceName
     )
 
-    if (-not (Test-EiaaxManagedProcess -ProcessId $ProcessId -WorktreeRoot $WorktreeRoot)) {
-        Write-Host "Skipping PID ${ProcessId} for ${Label}; not managed by EIAAX demo."
+    if (-not (Test-EiaaxManagedProcess -ProcessId $ProcessId -WorktreeRoot $WorktreeRoot -ServiceName $ServiceName)) {
+        Write-Host ("Skipping PID " + $ProcessId + " for " + $Label + "; not managed by EIAAX demo.")
         return $false
     }
 
@@ -352,39 +531,9 @@ function Stop-EiaaxManagedPid {
         return $false
     }
 
-    Write-Host "Stopping ${Label} (PID ${ProcessId})"
+    Write-Host ("Stopping " + $Label + " (PID " + $ProcessId + ")")
     Stop-Process -Id $ProcessId -Force -ErrorAction SilentlyContinue
     return $true
-}
-
-function Stop-EiaaxListenerOnPort {
-    param(
-        [Parameter(Mandatory = $true)]
-        [int]$Port,
-        [Parameter(Mandatory = $true)]
-        [string]$WorktreeRoot,
-        [Parameter(Mandatory = $true)]
-        [string[]]$AllowedPidList
-    )
-
-    $stopped = @()
-    $connections = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
-    foreach ($conn in $connections) {
-        $procId = [int]$conn.OwningProcess
-        if ($procId -le 0) {
-            continue
-        }
-        if ($AllowedPidList -notcontains $procId) {
-            if (-not (Test-EiaaxManagedProcess -ProcessId $procId -WorktreeRoot $WorktreeRoot)) {
-                Write-Host "Port ${Port} is used by PID ${procId}; leaving it untouched."
-                continue
-            }
-        }
-        Write-Host "Stopping PID ${procId} listening on port ${Port}"
-        Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
-        $stopped += $procId
-    }
-    return $stopped
 }
 
 function Test-EiaaxHealth {
@@ -393,12 +542,12 @@ function Test-EiaaxHealth {
         [int]$TimeoutSec = 45
     )
 
-    $uri = "http://127.0.0.1:${Port}/health"
+    $uri = "http://127.0.0.1:" + $Port + "/health"
     $deadline = (Get-Date).AddSeconds($TimeoutSec)
     while ((Get-Date) -lt $deadline) {
         try {
             $response = Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 3
-            if ($response.StatusCode -eq 200) {
+            if ($response.StatusCode -eq 200 -and $response.Content -match '"status"\s*:\s*"up"') {
                 return $true
             }
         }
@@ -415,7 +564,7 @@ function Test-EiaaxFrontendReady {
         [int]$TimeoutSec = 45
     )
 
-    $uri = "http://127.0.0.1:${Port}/"
+    $uri = "http://127.0.0.1:" + $Port + "/"
     $deadline = (Get-Date).AddSeconds($TimeoutSec)
     while ((Get-Date) -lt $deadline) {
         try {
@@ -431,10 +580,78 @@ function Test-EiaaxFrontendReady {
     return $false
 }
 
-function Escape-EiaaxSingleQuoted {
+function Test-EiaaxFrontendProxyHealth {
+    param(
+        [int]$Port = $script:FrontendPort,
+        [int]$TimeoutSec = 45
+    )
+
+    $uri = "http://127.0.0.1:" + $Port + "/health"
+    $deadline = (Get-Date).AddSeconds($TimeoutSec)
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $response = Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 3
+            if ($response.StatusCode -eq 200 -and $response.Content -match '"status"\s*:\s*"up"') {
+                return $true
+            }
+        }
+        catch {
+            Start-Sleep -Seconds 1
+        }
+    }
+    return $false
+}
+
+function Confirm-EiaaxAlembicState {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$Value
+        [string]$VenvPython,
+        [Parameter(Mandatory = $true)]
+        [string]$BackendDir,
+        [Parameter(Mandatory = $true)]
+        [string]$DatabaseUrl
     )
-    return $Value.Replace("'", "''")
+
+    $env:DATABASE_URL = $DatabaseUrl
+    Push-Location $BackendDir
+    try {
+        $headsOutput = & $VenvPython -m alembic heads 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 0) {
+            Exit-EiaaxFailure -Message "alembic heads failed."
+        }
+        if ($headsOutput -notmatch $script:ExpectedAlembicHead) {
+            Exit-EiaaxFailure -Message ("Expected alembic head " + $script:ExpectedAlembicHead + " not found.")
+        }
+        if (($headsOutput -split "`n").Where({ $_ -match '\(head\)' }).Count -gt 1) {
+            Exit-EiaaxFailure -Message "Multiple alembic heads detected."
+        }
+
+        $currentOutput = & $VenvPython -m alembic current 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 0) {
+            Exit-EiaaxFailure -Message "alembic current failed."
+        }
+        if ($currentOutput -notmatch $script:ExpectedAlembicHead) {
+            Exit-EiaaxFailure -Message ("Database is not at alembic head " + $script:ExpectedAlembicHead + ".")
+        }
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+function Invoke-EiaaxPowerShellParserValidation {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    $validator = Join-Path $ScriptsDir "validate_ps_parse.ps1"
+    if (-not (Test-Path -LiteralPath $validator)) {
+        Exit-EiaaxFailure -Message "Missing validate_ps_parse.ps1"
+    }
+
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $validator
+    if ($LASTEXITCODE -ne 0) {
+        Exit-EiaaxFailure -Message "PowerShell parser validation failed."
+    }
 }

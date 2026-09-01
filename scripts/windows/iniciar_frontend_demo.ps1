@@ -20,13 +20,11 @@ try {
     }
 
     $paths = Get-EiaaxPaths -WorktreeRoot $worktree
+    $logsDir = Ensure-EiaaxLogsDir -WorktreeRoot $worktree
     $stateDir = Ensure-EiaaxStateDir -WorktreeRoot $worktree
 
     $port = $FrontendPort
-    $existing = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
-    if ($null -ne $existing) {
-        Exit-EiaaxFailure -Message "Port ${port} is already in use. Run scripts\windows\detener_demo_eiaax.ps1."
-    }
+    Assert-EiaaxPortAvailable -Port $port -Label "frontend"
 
     $nodeModules = Join-Path $paths.Frontend "node_modules"
     if (-not (Test-Path -LiteralPath $nodeModules)) {
@@ -38,28 +36,36 @@ try {
         Exit-EiaaxFailure -Message "npm not found in PATH."
     }
 
-    $launcherPath = Join-Path $stateDir "run_frontend.ps1"
-    $escapedFrontend = Escape-EiaaxSingleQuoted -Value $paths.Frontend
-
-    Write-EiaaxLauncherFile -Path $launcherPath -Lines @(
-        '$ErrorActionPreference = "Stop"'
-        ('Set-Location -LiteralPath ''' + $escapedFrontend + '''')
-        '& npm run dev'
-    )
+    $npmCmd = $npm.Source
+    $logFile = Join-Path $logsDir "frontend.log"
+    if (Test-Path -LiteralPath $logFile) {
+        Remove-Item -LiteralPath $logFile -Force
+    }
 
     Write-Host "Starting frontend at http://127.0.0.1:${port} ..."
-    $proc = Start-Process `
-        -FilePath "powershell.exe" `
-        -ArgumentList @("-NoExit", "-ExecutionPolicy", "Bypass", "-File", $launcherPath) `
-        -PassThru `
+    $proc = Start-EiaaxManagedProcess `
+        -FilePath $npmCmd `
+        -ArgumentList @("run", "dev") `
         -WorkingDirectory $paths.Frontend `
-        -WindowStyle Normal
+        -LogFile $logFile `
+        -StateDir $stateDir `
+        -WrapperName "run_frontend" `
+        -Environment @{}
 
-    Write-EiaaxPidFile -StateDir $stateDir -Name "frontend" -ProcessId $proc.Id
-    Write-Host "Frontend shell PID: $($proc.Id)"
+    $listenerPid = Wait-EiaaxListenerPid -Port $port -TimeoutSec 45
+    if ($null -eq $listenerPid) {
+        Exit-EiaaxFailure -Message "Frontend process did not open port 5180 in time. See logs\demo\frontend.log"
+    }
+
+    if (-not (Test-EiaaxManagedProcess -ProcessId $listenerPid -WorktreeRoot $worktree -ServiceName "frontend")) {
+        Exit-EiaaxFailure -Message ("Port 5180 is owned by unexpected PID " + $listenerPid + ". Aborting.")
+    }
+
+    Write-EiaaxPidFile -StateDir $stateDir -Name "frontend" -ProcessId $listenerPid
+    Write-EiaaxStateValue -StateDir $stateDir -Name "frontend-wrapper" -Value ([string]$proc.Id)
 
     if (-not (Test-EiaaxFrontendReady -Port $port -TimeoutSec 45)) {
-        Exit-EiaaxFailure -Message "Frontend started but did not respond in time."
+        Exit-EiaaxFailure -Message "Frontend did not respond in time. See logs\demo\frontend.log"
     }
 
     Write-Host "Frontend ready: http://127.0.0.1:${port}"

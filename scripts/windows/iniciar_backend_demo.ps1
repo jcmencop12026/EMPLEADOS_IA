@@ -20,41 +20,43 @@ try {
     }
 
     $paths = Get-EiaaxPaths -WorktreeRoot $worktree
+    $logsDir = Ensure-EiaaxLogsDir -WorktreeRoot $worktree
     $venvPython = Get-EiaaxVenvPython -WorktreeRoot $worktree
     $databaseUrl = Get-EiaaxDatabaseUrl -WorktreeRoot $worktree
     $stateDir = Ensure-EiaaxStateDir -WorktreeRoot $worktree
 
     $port = $BackendPort
-    $existing = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
-    if ($null -ne $existing) {
-        Exit-EiaaxFailure -Message "Port ${port} is already in use. Run scripts\windows\detener_demo_eiaax.ps1."
+    Assert-EiaaxPortAvailable -Port $port -Label "backend"
+
+    $logFile = Join-Path $logsDir "backend.log"
+    if (Test-Path -LiteralPath $logFile) {
+        Remove-Item -LiteralPath $logFile -Force
     }
 
-    $launcherPath = Join-Path $stateDir "run_backend.ps1"
-    $escapedDbUrl = Escape-EiaaxSingleQuoted -Value $databaseUrl
-    $escapedBackend = Escape-EiaaxSingleQuoted -Value $paths.Backend
-    $escapedPython = Escape-EiaaxSingleQuoted -Value $venvPython
-
-    Write-EiaaxLauncherFile -Path $launcherPath -Lines @(
-        '$ErrorActionPreference = "Stop"'
-        ('$env:DATABASE_URL = ''' + $escapedDbUrl + '''')
-        ('Set-Location -LiteralPath ''' + $escapedBackend + '''')
-        ('& ''' + $escapedPython + ''' -m uvicorn app.main:app --host 127.0.0.1 --port ' + $port)
-    )
-
     Write-Host "Starting backend at http://127.0.0.1:${port} ..."
-    $proc = Start-Process `
-        -FilePath "powershell.exe" `
-        -ArgumentList @("-NoExit", "-ExecutionPolicy", "Bypass", "-File", $launcherPath) `
-        -PassThru `
+    $proc = Start-EiaaxManagedProcess `
+        -FilePath $venvPython `
+        -ArgumentList @("-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", [string]$port) `
         -WorkingDirectory $paths.Backend `
-        -WindowStyle Normal
+        -LogFile $logFile `
+        -StateDir $stateDir `
+        -WrapperName "run_backend" `
+        -Environment @{ DATABASE_URL = $databaseUrl }
 
-    Write-EiaaxPidFile -StateDir $stateDir -Name "backend" -ProcessId $proc.Id
-    Write-Host "Backend shell PID: $($proc.Id)"
+    $listenerPid = Wait-EiaaxListenerPid -Port $port -TimeoutSec 45
+    if ($null -eq $listenerPid) {
+        Exit-EiaaxFailure -Message "Backend process did not open port 8000 in time. See logs\demo\backend.log"
+    }
+
+    if (-not (Test-EiaaxManagedProcess -ProcessId $listenerPid -WorktreeRoot $worktree -ServiceName "backend")) {
+        Exit-EiaaxFailure -Message ("Port 8000 is owned by unexpected PID " + $listenerPid + ". Aborting.")
+    }
+
+    Write-EiaaxPidFile -StateDir $stateDir -Name "backend" -ProcessId $listenerPid
+    Write-EiaaxStateValue -StateDir $stateDir -Name "backend-wrapper" -Value ([string]$proc.Id)
 
     if (-not (Test-EiaaxHealth -Port $port -TimeoutSec 45)) {
-        Exit-EiaaxFailure -Message "Backend started but /health did not respond in time."
+        Exit-EiaaxFailure -Message "Backend /health did not respond in time. See logs\demo\backend.log"
     }
 
     Write-Host "Backend health OK: http://127.0.0.1:${port}/health"

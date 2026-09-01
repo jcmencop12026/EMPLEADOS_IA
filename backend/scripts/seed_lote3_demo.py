@@ -102,8 +102,14 @@ def _assert_demo_database_path(db_path: Path) -> None:
         raise RuntimeError(f"Unsafe demo DB file name: {resolved.name}")
     if resolved.parent.name != "data":
         raise RuntimeError(f"Unsafe demo DB directory: {resolved.parent}")
-    if resolved.parent.parent.name.upper() == "EMPLEADOS_IA":
-        raise RuntimeError("Refusing demo DB under EMPLEADOS_IA. Use EMPLEADOS_IA_INTEGRADO.")
+    if resolved.parent.parent.name.upper() in {
+        "EMPLEADOS_IA",
+        "EMPLEADOS_IA_CERT",
+        "EMPLEADOS_IA_V1_HOTFIX",
+    }:
+        raise RuntimeError(
+            f"Refusing demo DB under forbidden worktree: {resolved.parent.parent.name}"
+        )
 
 
 def _prepare_demo_database(database_url: str) -> None:

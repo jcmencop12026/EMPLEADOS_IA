@@ -17,24 +17,42 @@ try {
 
     Write-Host "=== EIAAX demo stop ==="
 
-    $managedPids = New-Object System.Collections.Generic.List[int]
-
     if (Test-Path -LiteralPath $stateDir) {
         foreach ($name in @("backend", "frontend")) {
             $pidValue = Get-EiaaxPidFromFile -StateDir $stateDir -Name $name
             if ($null -ne $pidValue) {
-                [void]$managedPids.Add($pidValue)
-                Stop-EiaaxManagedPid -ProcessId $pidValue -Label $name -WorktreeRoot $worktree | Out-Null
-                $pidFile = Join-Path $stateDir ($name + ".pid")
-                Remove-Item -LiteralPath $pidFile -ErrorAction SilentlyContinue
+                Stop-EiaaxManagedPid -ProcessId $pidValue -Label $name -WorktreeRoot $worktree -ServiceName $name | Out-Null
             }
+
+            $wrapperName = $name + "-wrapper"
+            $wrapperPidText = Get-EiaaxStateValue -StateDir $stateDir -Name $wrapperName
+            if (-not [string]::IsNullOrWhiteSpace($wrapperPidText) -and $wrapperPidText -match '^\d+$') {
+                $wrapperPid = [int]$wrapperPidText
+                $wrapperProc = Get-Process -Id $wrapperPid -ErrorAction SilentlyContinue
+                if ($null -ne $wrapperProc) {
+                    Stop-Process -Id $wrapperPid -Force -ErrorAction SilentlyContinue
+                }
+            }
+
+            $pidFile = Join-Path $stateDir ($name + ".txt")
+            Remove-Item -LiteralPath $pidFile -ErrorAction SilentlyContinue
+            $wrapperFile = Join-Path $stateDir ($wrapperName + ".txt")
+            Remove-Item -LiteralPath $wrapperFile -ErrorAction SilentlyContinue
         }
     }
 
     foreach ($port in @($BackendPort, $FrontendPort)) {
-        $stopped = Stop-EiaaxListenerOnPort -Port $port -WorktreeRoot $worktree -AllowedPidList $managedPids.ToArray()
-        if ($stopped.Count -eq 0) {
-            Write-Host "Port ${port}: no managed listener found."
+        $listener = Get-EiaaxListenerPid -Port $port
+        if ($null -eq $listener) {
+            Write-Host ("Port " + $port + ": no listener.")
+            continue
+        }
+        $serviceName = if ($port -eq $BackendPort) { "backend" } else { "frontend" }
+        if (Test-EiaaxManagedProcess -ProcessId $listener -WorktreeRoot $worktree -ServiceName $serviceName) {
+            Stop-EiaaxManagedPid -ProcessId $listener -Label $serviceName -WorktreeRoot $worktree -ServiceName $serviceName | Out-Null
+        }
+        else {
+            Write-Host ("Port " + $port + " still used by external PID " + $listener + "; left untouched.")
         }
     }
 

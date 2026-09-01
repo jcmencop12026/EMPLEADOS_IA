@@ -5,7 +5,8 @@
 #>
 
 param(
-    [switch]$SkipFrontendBuild
+    [switch]$SkipFrontendBuild,
+    [switch]$SkipParserValidation
 )
 
 Set-StrictMode -Version Latest
@@ -14,13 +15,22 @@ $ErrorActionPreference = "Stop"
 $common = Join-Path $PSScriptRoot "EiaaxDemo.Common.ps1"
 . $common
 
+$logFile = $null
+
 try {
+    if (-not $SkipParserValidation) {
+        Invoke-EiaaxPowerShellParserValidation -ScriptsDir $PSScriptRoot
+    }
+
     $worktree = Get-EiaaxWorktreeRoot
     Assert-EiaaxNotOriginalTree -WorktreeRoot $worktree
     Test-EiaaxWorktree -WorktreeRoot $worktree
     $paths = Get-EiaaxPaths -WorktreeRoot $worktree
     $databaseUrl = Get-EiaaxDatabaseUrl -WorktreeRoot $worktree
+    $logsDir = Ensure-EiaaxLogsDir -WorktreeRoot $worktree
+    $logFile = Join-Path $logsDir "preparar.log"
 
+    Write-EiaaxLogLine -LogFile $logFile -Message "Starting EIAAX demo preparation"
     Write-Host "=== EIAAX demo preparation ==="
     Write-Host "Worktree: $worktree"
     Write-Host "DATABASE_URL: $databaseUrl"
@@ -29,17 +39,18 @@ try {
         New-Item -ItemType Directory -Path $paths.Data | Out-Null
     }
 
-    Assert-EiaaxDemoDatabasePath -DbFilePath $paths.DbFile
+    Assert-EiaaxDemoDatabasePath -DbFilePath $paths.DbFile -WorktreeRoot $worktree
 
     $basePython = Find-EiaaxPython
     Write-Host "Base Python: $basePython"
     $pythonVersion = Get-EiaaxPythonVersionLine -PythonExe $basePython
     Write-Host "Detected: $pythonVersion"
+    Write-EiaaxLogLine -LogFile $logFile -Message ("Python base: " + $pythonVersion)
 
     if (-not (Test-Path -LiteralPath $paths.Venv)) {
         Write-Host "Creating virtualenv at $($paths.Venv)"
         Invoke-EiaaxNativeCommand -FilePath $basePython -ArgumentList @("-m", "venv", $paths.Venv) `
-            -FailureMessage "Could not create virtualenv. If Python 3.14 is incompatible, set EIAAX_PYTHON to 3.12 or 3.13."
+            -FailureMessage "PYTHON 3.14 INCOMPATIBLE or venv creation failed. Set EIAAX_PYTHON to a supported python.exe."
     }
 
     $venvPython = Get-EiaaxVenvPython -WorktreeRoot $worktree
@@ -51,7 +62,10 @@ try {
     Write-Host "Installing backend dependencies..."
     $requirements = Join-Path $paths.Backend "requirements.txt"
     Invoke-EiaaxNativeCommand -FilePath $venvPython -ArgumentList @("-m", "pip", "install", "-r", $requirements) `
-        -FailureMessage "Backend install failed. Python 3.14 may be incompatible; set EIAAX_PYTHON to a supported version."
+        -FailureMessage "PYTHON 3.14 INCOMPATIBLE or backend install failed. Set EIAAX_PYTHON to a supported version."
+
+    Write-Host "Verifying backend imports..."
+    Test-EiaaxBackendImports -VenvPython $venvPython
 
     $npm = Get-Command npm -ErrorAction SilentlyContinue
     if ($null -eq $npm) {
@@ -100,6 +114,10 @@ try {
         Exit-EiaaxFailure -Message "Demo database file was not created."
     }
 
+    Write-Host "Verifying Alembic state..."
+    Confirm-EiaaxAlembicState -VenvPython $venvPython -BackendDir $paths.Backend -DatabaseUrl $databaseUrl
+
+    Write-EiaaxLogLine -LogFile $logFile -Message "Preparation completed successfully"
     Write-Host ""
     Write-Host "EIAAX demo preparation completed successfully."
     Write-Host "Next step: scripts\windows\iniciar_demo_eiaax.ps1"
@@ -108,6 +126,9 @@ try {
     exit 0
 }
 catch {
+    if ($null -ne $logFile) {
+        Write-EiaaxLogLine -LogFile $logFile -Message ("FAILED: " + $_.Exception.Message)
+    }
     Write-EiaaxError -Message $_.Exception.Message
     exit 1
 }
