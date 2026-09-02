@@ -13,6 +13,7 @@ $common = Join-Path $PSScriptRoot "EiaaxDemo.Common.ps1"
 
 $tests = @(
     "test_ps_semantics.ps1",
+    "test_git_sync.ps1",
     "test_python_discovery.ps1",
     "test_python_resolution_scenario.ps1",
     "test_convergence_atomic.ps1",

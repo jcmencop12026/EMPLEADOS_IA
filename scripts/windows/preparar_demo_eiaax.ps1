@@ -85,24 +85,22 @@ try {
 
     Push-Location $paths.Frontend
     try {
+        $npmCmd = Resolve-EiaaxNpmCmdExecutable
         if (Test-Path -LiteralPath "package-lock.json") {
             Write-Host "Installing frontend dependencies (npm ci)..."
-            & npm ci
+            Invoke-EiaaxNativeCommand -FilePath $npmCmd -ArgumentList @("ci") `
+                -FailureMessage "Frontend install failed (npm ci)."
         }
         else {
             Write-Host "Installing frontend dependencies (npm install)..."
-            & npm install
-        }
-        if ($LASTEXITCODE -ne 0) {
-            Exit-EiaaxFailure -Message "Frontend install failed."
+            Invoke-EiaaxNativeCommand -FilePath $npmCmd -ArgumentList @("install") `
+                -FailureMessage "Frontend install failed (npm install)."
         }
 
         if (-not $SkipFrontendBuild) {
             Write-Host "Building frontend (npm run build)..."
-            & npm run build
-            if ($LASTEXITCODE -ne 0) {
-                Exit-EiaaxFailure -Message "Frontend build failed."
-            }
+            Invoke-EiaaxNativeCommand -FilePath $npmCmd -ArgumentList @("run", "build") `
+                -FailureMessage "Frontend build failed."
         }
     }
     finally {

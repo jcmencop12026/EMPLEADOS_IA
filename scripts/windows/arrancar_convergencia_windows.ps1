@@ -5,7 +5,7 @@
 
 .DESCRIPTION
     One invocation prepares and certifies the convergence candidate with fail-closed validation:
-    - git fetch/checkout/pull for the convergence branch
+    - git fetch/checkout/pull --ff-only for the convergence branch
     - repository branch/manifest
     - Python discovery (reference pyvenv.cfg, py launcher, where.exe, registry, PATH)
     - port/process isolation (stops INTEGRADO demo via official script when needed)
@@ -39,10 +39,12 @@ function Write-EiaaxCertificationFailure {
 
     Write-Host ""
     Write-Host "EIAAX — WINDOWS NO CERTIFICADO"
+    Write-Host ("ETAPA: " + (Get-EiaaxStage))
     Write-Host ("CAUSA: " + $Cause)
 }
 
 try {
+    Set-EiaaxStage -Name "inicio"
     if ([string]::IsNullOrWhiteSpace($env:EIAAX_WORKTREE)) {
         $env:EIAAX_WORKTREE = $script:ConvergenceWorktreeDefault
     }
@@ -52,18 +54,20 @@ try {
     Assert-EiaaxNotOriginalTree -WorktreeRoot $worktree
     Test-EiaaxWorktree -WorktreeRoot $worktree
 
-    $manifest = Get-EiaaxConvergenceManifest -ScriptsDir $PSScriptRoot
-    Sync-EiaaxConvergenceRepository -WorktreeRoot $worktree -ExpectedBranch $manifest.branch
-
     $logsDir = Ensure-EiaaxLogsDir -WorktreeRoot $worktree
     $logFile = Join-Path $logsDir "arrancar_convergencia.log"
     Write-EiaaxLogLine -LogFile $logFile -Message "=== Convergence startup begin ==="
+
+    $manifest = Get-EiaaxConvergenceManifest -ScriptsDir $PSScriptRoot
+    Set-EiaaxStage -Name "sincronizacion_git"
+    Sync-EiaaxConvergenceRepository -WorktreeRoot $worktree -ExpectedBranch $manifest.branch -LogFile $logFile
 
     Write-Host ""
     Write-Host "============================================================"
     Write-Host "EIAAX CONVERGENCIA - CERTIFICACION ARRANQUE WINDOWS"
     Write-Host "============================================================"
 
+    Set-EiaaxStage -Name "validacion_repositorio"
     $repo = Confirm-EiaaxConvergenceRepository -WorktreeRoot $worktree -ScriptsDir $PSScriptRoot
     $manifest = $repo.Manifest
     $gitSha = $repo.Sha
@@ -91,16 +95,19 @@ try {
         Write-Host ("Reference pyvenv.cfg not found at " + $referenceCfg + " (discovery will use other mechanisms).")
     }
 
+    Set-EiaaxStage -Name "parser_powershell"
     Write-Host ""
     Write-Host "[1/7] Parser PowerShell..."
     Invoke-EiaaxPowerShellParserValidation -ScriptsDir $PSScriptRoot
     Write-Host "Parser PASS"
 
+    Set-EiaaxStage -Name "puertos_procesos"
     Write-Host ""
     Write-Host "[2/7] Puertos y procesos previos..."
     Clear-EiaaxPortsForConvergence -WorktreeRoot $worktree -ScriptsDir $PSScriptRoot
     Write-Host "Ports PASS"
 
+    Set-EiaaxStage -Name "preparacion_python_venv"
     Write-Host ""
     Write-Host "[3/7] Preparacion (Python base, venv convergencia, seed, Alembic)..."
     Invoke-EiaaxPowerShellFile -FilePath $prepareScript
@@ -118,6 +125,7 @@ try {
         -RuntimeMarker $manifest.runtime_marker
     Write-EiaaxStateValue -StateDir $stateDir -Name "certification_started_at" -Value ((Get-Date).ToString("o"))
 
+    Set-EiaaxStage -Name "arranque_backend_frontend"
     Write-Host ""
     Write-Host "[4/7] Arranque backend + frontend..."
     Invoke-EiaaxPowerShellFile -FilePath $startScript
@@ -126,11 +134,13 @@ try {
     }
     Write-Host "Start PASS"
 
+    Set-EiaaxStage -Name "verificacion_pid_worktree"
     Write-Host ""
     Write-Host "[5/7] Verificacion PID/comando worktree convergencia..."
     Confirm-EiaaxStartedProcessWorktree -WorktreeRoot $worktree
     Write-Host "Process ownership PASS"
 
+    Set-EiaaxStage -Name "verificacion_alembic"
     Write-Host ""
     Write-Host "[6/7] Verificacion Alembic en BD..."
     $venvPython = Get-EiaaxVenvPython -WorktreeRoot $worktree
@@ -138,6 +148,7 @@ try {
     Confirm-EiaaxAlembicState -VenvPython $venvPython -BackendDir $paths.Backend -DatabaseUrl $databaseUrl
     Write-Host "Alembic PASS"
 
+    Set-EiaaxStage -Name "verificacion_runtime_identity"
     Write-Host ""
     Write-Host "[7/7] Verificacion identidad runtime..."
     Confirm-EiaaxRuntimeIdentity `
@@ -179,7 +190,7 @@ try {
 catch {
     $failureCause = $_.Exception.Message
     if ($null -ne $logFile) {
-        Write-EiaaxLogLine -LogFile $logFile -Message ("FAILED: " + $failureCause)
+        Write-EiaaxLogLine -LogFile $logFile -Message ("FAILED [" + (Get-EiaaxStage) + "]: " + $failureCause)
     }
     Write-EiaaxError -Message $failureCause
     if (-not $certificationPassed) {

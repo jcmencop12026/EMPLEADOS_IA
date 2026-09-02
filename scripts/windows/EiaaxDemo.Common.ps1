@@ -18,12 +18,26 @@ $script:ExpectedAlembicHead = "1820a1b2c3d4e"
 $script:ConvergenceWorktreeDefault = "D:\EMPLEADOS_IA_CONVERGENCIA"
 $script:ReferenceDiscoveryWorktree = "D:\EMPLEADOS_IA_INTEGRADO"
 $script:ConvergenceManifestFile = "eiaax_convergence_manifest.json"
+$script:EiaaxCurrentStage = "inicio"
 
 $script:ForbiddenWorktreeNames = @(
     "EMPLEADOS_IA",
     "EMPLEADOS_IA_CERT",
     "EMPLEADOS_IA_V1_HOTFIX"
 )
+
+function Set-EiaaxStage {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    $script:EiaaxCurrentStage = $Name
+}
+
+function Get-EiaaxStage {
+    return $script:EiaaxCurrentStage
+}
 
 function Write-EiaaxError {
     param(
@@ -280,8 +294,11 @@ function Invoke-EiaaxNativeCommand {
         Exit-EiaaxFailure -Message ("Refusing interactive invocation without arguments: " + $FilePath)
     }
 
-    & $FilePath @ArgumentList
-    if ($LASTEXITCODE -ne 0) {
+    $result = Invoke-EiaaxExternalCommand -FilePath $FilePath -ArgumentList $ArgumentList
+    if ($result.ExitCode -ne 0) {
+        if (-not [string]::IsNullOrWhiteSpace($result.Output)) {
+            $FailureMessage = $FailureMessage + "`n" + $result.Output
+        }
         Exit-EiaaxFailure -Message $FailureMessage
     }
 }
@@ -345,6 +362,54 @@ function Invoke-EiaaxExternalCommand {
         }
         $ErrorActionPreference = $previousPreference
     }
+}
+
+function Get-EiaaxGitExecutable {
+    $git = Get-Command git -ErrorAction SilentlyContinue
+    if ($null -eq $git) {
+        Exit-EiaaxFailure -Message "git not found in PATH."
+    }
+    return $git.Source
+}
+
+function Invoke-EiaaxGitCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [string[]]$ArgumentList,
+        [string]$WorkingDirectory = $null,
+        [string]$LogFile = $null,
+        [string]$FailureMessage = $null,
+        [switch]$AllowNonZeroExit
+    )
+
+    $gitExe = Get-EiaaxGitExecutable
+    $commandLabel = "git " + ($ArgumentList -join " ")
+    $result = Invoke-EiaaxExternalCommand -FilePath $gitExe -ArgumentList $ArgumentList -WorkingDirectory $WorkingDirectory
+
+    if (-not [string]::IsNullOrWhiteSpace($result.Output)) {
+        Write-Host $result.Output
+    }
+    if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
+        $logLine = $commandLabel + " | exit=" + $result.ExitCode
+        if (-not [string]::IsNullOrWhiteSpace($result.Output)) {
+            $logLine += " | " + ($result.Output -replace "`r?`n", " / ")
+        }
+        Write-EiaaxLogLine -LogFile $LogFile -Message $logLine
+    }
+
+    if ($result.ExitCode -ne 0 -and -not $AllowNonZeroExit) {
+        $message = $FailureMessage
+        if ([string]::IsNullOrWhiteSpace($message)) {
+            $message = $commandLabel + " failed with exit code " + $result.ExitCode
+        }
+        if (-not [string]::IsNullOrWhiteSpace($result.Output)) {
+            $message = $message + "`n" + $result.Output
+        }
+        Exit-EiaaxFailure -Message $message
+    }
+
+    return $result
 }
 
 function Test-EiaaxWindowsPythonStub {
@@ -1119,17 +1184,14 @@ function Get-EiaaxGitBranchName {
         [string]$WorktreeRoot
     )
 
-    Push-Location $WorktreeRoot
-    try {
-        $branch = (& git rev-parse --abbrev-ref HEAD 2>$null)
-        if ($LASTEXITCODE -ne 0) {
-            return $null
-        }
-        return $branch.Trim()
+    $result = Invoke-EiaaxGitCommand `
+        -ArgumentList @("rev-parse", "--abbrev-ref", "HEAD") `
+        -WorkingDirectory $WorktreeRoot `
+        -AllowNonZeroExit
+    if ($result.ExitCode -ne 0) {
+        return $null
     }
-    finally {
-        Pop-Location
-    }
+    return $result.Output.Trim()
 }
 
 function Get-EiaaxGitShortSha {
@@ -1138,17 +1200,14 @@ function Get-EiaaxGitShortSha {
         [string]$WorktreeRoot
     )
 
-    Push-Location $WorktreeRoot
-    try {
-        $sha = (& git rev-parse --short HEAD 2>$null)
-        if ($LASTEXITCODE -ne 0) {
-            return $null
-        }
-        return $sha.Trim()
+    $result = Invoke-EiaaxGitCommand `
+        -ArgumentList @("rev-parse", "--short", "HEAD") `
+        -WorkingDirectory $WorktreeRoot `
+        -AllowNonZeroExit
+    if ($result.ExitCode -ne 0) {
+        return $null
     }
-    finally {
-        Pop-Location
-    }
+    return $result.Output.Trim()
 }
 
 function Confirm-EiaaxConvergenceRepository {
@@ -1278,30 +1337,29 @@ function Sync-EiaaxConvergenceRepository {
         [Parameter(Mandatory = $true)]
         [string]$WorktreeRoot,
         [Parameter(Mandatory = $true)]
-        [string]$ExpectedBranch
+        [string]$ExpectedBranch,
+        [string]$LogFile = $null
     )
 
-    Push-Location $WorktreeRoot
-    try {
-        Write-Host ("Syncing repository: fetch/checkout/pull " + $ExpectedBranch)
-        & git fetch origin $ExpectedBranch 2>&1 | Out-Host
-        if ($LASTEXITCODE -ne 0) {
-            Exit-EiaaxFailure -Message ("git fetch failed for branch " + $ExpectedBranch)
-        }
+    Write-Host ("Syncing repository: fetch/checkout/pull --ff-only " + $ExpectedBranch)
 
-        & git checkout $ExpectedBranch 2>&1 | Out-Host
-        if ($LASTEXITCODE -ne 0) {
-            Exit-EiaaxFailure -Message ("git checkout failed for branch " + $ExpectedBranch)
-        }
+    Invoke-EiaaxGitCommand `
+        -ArgumentList @("fetch", "origin", $ExpectedBranch) `
+        -WorkingDirectory $WorktreeRoot `
+        -LogFile $LogFile `
+        -FailureMessage ("git fetch failed for branch " + $ExpectedBranch)
 
-        & git pull origin $ExpectedBranch 2>&1 | Out-Host
-        if ($LASTEXITCODE -ne 0) {
-            Exit-EiaaxFailure -Message ("git pull failed for branch " + $ExpectedBranch)
-        }
-    }
-    finally {
-        Pop-Location
-    }
+    Invoke-EiaaxGitCommand `
+        -ArgumentList @("checkout", $ExpectedBranch) `
+        -WorkingDirectory $WorktreeRoot `
+        -LogFile $LogFile `
+        -FailureMessage ("git checkout failed for branch " + $ExpectedBranch)
+
+    Invoke-EiaaxGitCommand `
+        -ArgumentList @("pull", "--ff-only", "origin", $ExpectedBranch) `
+        -WorkingDirectory $WorktreeRoot `
+        -LogFile $LogFile `
+        -FailureMessage ("git pull --ff-only failed for branch " + $ExpectedBranch)
 }
 
 function Get-EiaaxPortOccupantInfo {
@@ -1644,23 +1702,20 @@ function Test-EiaaxPythonVenvCapability {
     }
 
     $probeVenv = Join-Path $ProbeDirectory ("probe-venv-" + [Guid]::NewGuid().ToString("N"))
-    $previousPreference = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
     try {
-        & $PythonExe -m venv $probeVenv 2>&1 | Out-Null
-        if ($LASTEXITCODE -ne 0) {
+        $result = Invoke-EiaaxExternalCommand -FilePath $PythonExe -ArgumentList @("-m", "venv", $probeVenv)
+        if ($result.ExitCode -ne 0) {
             return "venv probe failed for " + $PythonExe
         }
 
-        $probePython = Join-Path $probeVenv "Scripts\python.exe"
-        if (-not (Test-Path -LiteralPath $probePython)) {
-            return "venv probe created no Scripts\python.exe"
+        $probePython = Get-EiaaxVenvPythonPathForDirectory -VenvPath $probeVenv
+        if ([string]::IsNullOrWhiteSpace($probePython)) {
+            return "venv probe created no python interpreter"
         }
 
         return $null
     }
     finally {
-        $ErrorActionPreference = $previousPreference
         if (Test-Path -LiteralPath $probeVenv) {
             Remove-Item -LiteralPath $probeVenv -Recurse -Force -ErrorAction SilentlyContinue
         }
