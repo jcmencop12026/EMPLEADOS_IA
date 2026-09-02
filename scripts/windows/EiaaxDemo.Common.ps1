@@ -2216,10 +2216,9 @@ function Build-EiaaxManagedProcessWrapperContent {
         [void]$commandParts.Add((Get-EiaaxBatchQuotedArgument -Value ([string]$arg)))
     }
     $command = ($commandParts -join " ")
-    $redirect = " 1>>" + (Get-EiaaxBatchQuotedArgument -Value $LogFile) + " 2>>&1"
-    $startLine = 'start "EIAAX_' + $WrapperName + '" /B cmd /c ' + $command + $redirect
-    [void]$lines.Add($startLine)
-    [void]$lines.Add("exit /b 0")
+    $redirect = " >> " + (Get-EiaaxBatchQuotedArgument -Value $LogFile) + " 2>>&1"
+    [void]$lines.Add($command + $redirect)
+    [void]$lines.Add("echo [EIAAX] EXIT_CODE=%ERRORLEVEL%>> " + (Get-EiaaxBatchQuotedArgument -Value $LogFile))
     return ,$lines.ToArray()
 }
 
