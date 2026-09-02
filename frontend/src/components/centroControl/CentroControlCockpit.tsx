@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { CentroControlResumen } from "../../api";
+import { ValorComparacionChart } from "../charts/ValorComparacionChart";
 import { EiaaxContextualAssistant } from "../EiaaxContextualAssistant";
 
 type Props = {
@@ -36,6 +37,18 @@ export function CentroControlCockpit({ data, periodo }: Props) {
   const empleados = data.empleados_ia?.items?.slice(0, 5) ?? [];
   const finops = data.finops;
   const comercial = data.comercial;
+  const oportunidades = data.oportunidades;
+
+  const valorChartPuntos = [
+    { label: "Verificado", valor: typeof data.valor_consolidado?.verificado === "number" ? data.valor_consolidado.verificado : null },
+    { label: "Realizado", valor: typeof data.valor_consolidado?.realizado === "number" ? data.valor_consolidado.realizado : null },
+    { label: "Potencial", valor: typeof data.valor_consolidado?.potencial === "number" ? data.valor_consolidado.potencial : null, proyectado: true },
+  ];
+  const consumoChartPuntos = [
+    { label: "Tokens periodo", valor: typeof finops?.tokens_periodo === "number" ? finops.tokens_periodo : null },
+    { label: "Costo", valor: typeof finops?.dashboard?.total_cost === "number" ? finops.dashboard.total_cost : null },
+    { label: "Valor generado", valor: typeof finops?.dashboard?.total_value === "number" ? finops.dashboard.total_value : null, proyectado: true },
+  ];
 
   return (
     <div className="cc-cockpit">
@@ -53,6 +66,15 @@ export function CentroControlCockpit({ data, periodo }: Props) {
           ))}
         </div>
       </section>
+
+      <div className="cc-cockpit-grid">
+        <section className="cc-zone cc-zone-charts panel compact-panel">
+          <ValorComparacionChart title="Valor consolidado" puntos={valorChartPuntos} unidad="COP" />
+        </section>
+        <section className="cc-zone cc-zone-charts panel compact-panel">
+          <ValorComparacionChart title="Consumo y costos IA" puntos={consumoChartPuntos} />
+        </section>
+      </div>
 
       <div className="cc-cockpit-grid">
         <section className="cc-zone cc-zone-attention panel compact-panel">
@@ -106,6 +128,38 @@ export function CentroControlCockpit({ data, periodo }: Props) {
       </div>
 
       <div className="cc-cockpit-grid">
+        <section className="cc-zone cc-zone-opportunities panel compact-panel">
+          <h2 className="section-title">Oportunidades</h2>
+          {!oportunidades?.disponible ? (
+            <p className="muted">{oportunidades?.estado ?? "Sin información disponible"}</p>
+          ) : (
+            <dl className="detail-grid compact">
+              <dt>Detectadas</dt><dd>{oportunidades.resumen?.oportunidades_detectadas ?? "—"}</dd>
+              <dt>En seguimiento</dt><dd>{oportunidades.estados_operativos?.seguimiento ?? "—"}</dd>
+              <dt>Materializadas</dt><dd>{oportunidades.resumen?.materializadas ?? "—"}</dd>
+              <dt>Pend. aprobación</dt><dd>{oportunidades.resumen?.pendientes_aprobacion ?? "—"}</dd>
+            </dl>
+          )}
+          <p><Link to="/oportunidades">Ver oportunidades</Link></p>
+        </section>
+
+        <section className="cc-zone cc-zone-approvals panel compact-panel">
+          <h2 className="section-title">Aprobaciones y automatizaciones</h2>
+          <dl className="detail-grid compact">
+            <dt>Aprobaciones pendientes</dt><dd>{data.mi_trabajo?.requieren_aprobacion ?? "—"}</dd>
+            <dt>Tareas pendientes</dt><dd>{data.mi_trabajo?.pendientes ?? "—"}</dd>
+          </dl>
+          <p>
+            <Link to="/aprobaciones">Bandeja de aprobaciones</Link>
+            {" · "}
+            <Link to="/automatizaciones">Automatizaciones</Link>
+            {" · "}
+            <Link to="/ejecuciones">Ejecuciones</Link>
+          </p>
+        </section>
+      </div>
+
+      <div className="cc-cockpit-grid">
         <section className="cc-zone cc-zone-value panel compact-panel">
           <h2 className="section-title">Valor y resultados</h2>
           <dl className="detail-grid compact">
@@ -132,8 +186,8 @@ export function CentroControlCockpit({ data, periodo }: Props) {
           <div className="cc-publish-actions">
             <Link className="btn secondary" to="/demo">Demo comercial</Link>
             <Link className="btn secondary" to="/mi-espacio">Vista empresa</Link>
-            <Link className="btn secondary" to="/evaluaciones">Evaluaciones</Link>
-            <Link className="btn secondary" to="/presentacion">Presentación ejecutiva</Link>
+            <Link className="btn secondary" to="/evaluaciones">Evaluaciones / Cabina</Link>
+            <Link className="btn secondary" to="/demo/presentacion/demo">Presentación ejecutiva</Link>
           </div>
         </section>
       </div>

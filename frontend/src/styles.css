@@ -2017,3 +2017,33 @@ tr.row-selected {
     grid-template-columns: 1fr;
   }
 }
+
+.cabina-empresa-v1 .cabina-empresa-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.cabina-empresa-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cabina-empresa-v1 .tab-nav.compact-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.valor-chart--empty {
+  padding: 0.5rem 0;
+}
+
+.solucion-ia-panel .ops-actions {
+  margin-bottom: 1rem;
+}

@@ -6,6 +6,24 @@ import {
   fetchGobiernoEventos,
 } from "../api";
 
+function formatEventDetail(value: unknown): string {
+  if (value == null) return "—";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (typeof value === "object") {
+    const o = value as Record<string, unknown>;
+    if (typeof o.mensaje === "string") return o.mensaje;
+    if (typeof o.descripcion === "string") return o.descripcion;
+    if (typeof o.resumen === "string") return o.resumen;
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "—";
+    }
+  }
+  return String(value);
+}
+
 export function CentroConfianzaPage() {
   const [centro, setCentro] = useState<ConfianzaCentro | null>(null);
   const [solicitudes, setSolicitudes] = useState<GobiernoSolicitud[]>([]);
@@ -113,7 +131,7 @@ export function CentroConfianzaPage() {
                   {eventos.slice(0, 8).map((ev, idx) => (
                     <tr key={String(ev.id ?? idx)}>
                       <td>{String(ev.tipo ?? ev.action ?? "—")}</td>
-                      <td>{String(ev.detalle ?? ev.detail ?? "—")}</td>
+                      <td>{formatEventDetail(ev.detalle ?? ev.detail)}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -176,6 +176,7 @@ export default function App() {
           <Route element={<RequirePermission anyOf={["evaluacion.view"]} />}>
             <Route path="evaluaciones" element={<EvaluacionesPage />} />
             <Route path="evaluaciones/:evaluacionId" element={<EvaluacionConsolePage />} />
+            <Route path="empresa/:evaluacionId" element={<EvaluacionConsolePage />} />
           </Route>
           <Route element={<RequirePermission anyOf={["gobierno.confianza.view"]} />}>
             <Route path="centro-confianza" element={<CentroConfianzaPage />} />
