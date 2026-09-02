@@ -82,6 +82,7 @@ class RolePermissionsUpdate(BaseModel):
 class OrganizationAdminOut(BaseModel):
     id: str
     name: str
+    slug: str
     status: str
     timezone: str
     created_at: datetime
@@ -115,3 +116,91 @@ class SecuritySummaryOut(BaseModel):
     users_blocked: int
     roles_total: int
     recent_events: list[dict]
+    mfa_enabled_count: int = 0
+    scim_metrics: dict | None = None
+    scim_rate_limit_note: str | None = None
+
+
+class UserMfaOverviewOut(BaseModel):
+    enabled: bool
+    enrollment_pending: bool = False
+    confirmed_at: datetime | None = None
+    updated_at: datetime | None = None
+    mfa_required_by_policy: bool = False
+    policy_mfa_mode: str | None = None
+    allowed_method: str = "TOTP"
+
+
+class UserIdentityOriginOut(BaseModel):
+    source: str
+    provider_code: str | None = None
+    provider_name: str | None = None
+    external_subject_ref: str | None = None
+
+
+class UserProvisionOverviewOut(BaseModel):
+    status: str
+    external_id: str | None = None
+    scim_resource_id: str | None = None
+    updated_at: datetime | None = None
+
+
+class UserOverviewOut(BaseModel):
+    id: str
+    username: str
+    email: str | None
+    full_name: str | None
+    role: str
+    role_name: str | None = None
+    status: str
+    is_active: bool
+    organization_id: str
+    organization_name: str | None = None
+    last_login_at: datetime | None
+    created_at: datetime
+    updated_at: datetime | None
+    mfa: UserMfaOverviewOut
+    identity_origin: UserIdentityOriginOut
+    provisioning: UserProvisionOverviewOut
+
+
+class UserPermissionEffectiveOut(BaseModel):
+    code: str
+    source: str
+    role_code: str | None = None
+    organization_id: str
+
+
+class UserSessionBriefOut(BaseModel):
+    id: str
+    ip_address: str | None = None
+    user_agent: str | None = None
+    created_at: datetime
+    last_activity_at: datetime
+    expires_at: datetime
+    mfa_verified: bool
+    auth_method: str | None = None
+
+
+class UserAuditEntryOut(BaseModel):
+    stream: str
+    action: str
+    result: str | None = None
+    actor_id: str | None = None
+    organization_id: str | None = None
+    detail: str | None = None
+    correlation_id: str | None = None
+    created_at: datetime
+
+
+class UserIdentityDetailOut(BaseModel):
+    user: UserOut
+    organization_name: str | None = None
+    role_name: str | None = None
+    mfa: UserMfaOverviewOut
+    identity_origin: UserIdentityOriginOut
+    provisioning: UserProvisionOverviewOut
+    permissions_effective: list[UserPermissionEffectiveOut]
+    sessions: list[UserSessionBriefOut]
+    audit_entries: list[UserAuditEntryOut]
+    scim_user_events: list[dict] = Field(default_factory=list)
