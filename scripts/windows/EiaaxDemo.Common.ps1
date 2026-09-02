@@ -2184,6 +2184,45 @@ function Test-EiaaxManagedProcess {
     return $false
 }
 
+function Build-EiaaxManagedProcessWrapperContent {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+        [Parameter(Mandatory = $true)]
+        [string[]]$ArgumentList,
+        [Parameter(Mandatory = $true)]
+        [string]$WorkingDirectory,
+        [Parameter(Mandatory = $true)]
+        [string]$LogFile,
+        [Parameter(Mandatory = $true)]
+        [string]$WrapperName,
+        [hashtable]$Environment = @{}
+    )
+
+    $lines = New-Object System.Collections.Generic.List[string]
+    [void]$lines.Add("@echo off")
+    foreach ($key in $Environment.Keys) {
+        [void]$lines.Add("set " + $key + "=" + $Environment[$key])
+    }
+    [void]$lines.Add("cd /d " + (Get-EiaaxBatchQuotedArgument -Value $WorkingDirectory))
+
+    $commandParts = New-Object System.Collections.Generic.List[string]
+    $executableLower = $FilePath.ToLowerInvariant()
+    if ($executableLower.EndsWith(".cmd") -or $executableLower.EndsWith(".bat")) {
+        [void]$commandParts.Add("call")
+    }
+    [void]$commandParts.Add((Get-EiaaxBatchQuotedArgument -Value $FilePath))
+    foreach ($arg in $ArgumentList) {
+        [void]$commandParts.Add((Get-EiaaxBatchQuotedArgument -Value ([string]$arg)))
+    }
+    $command = ($commandParts -join " ")
+    $redirect = " 1>>" + (Get-EiaaxBatchQuotedArgument -Value $LogFile) + " 2>>&1"
+    $startLine = 'start "EIAAX_' + $WrapperName + '" /B cmd /c ' + $command + $redirect
+    [void]$lines.Add($startLine)
+    [void]$lines.Add("exit /b 0")
+    return ,$lines.ToArray()
+}
+
 function Start-EiaaxManagedProcess {
     param(
         [Parameter(Mandatory = $true)]
@@ -2202,29 +2241,15 @@ function Start-EiaaxManagedProcess {
     )
 
     $wrapperBat = Join-Path $StateDir ($WrapperName + ".bat")
-    $lines = New-Object System.Collections.Generic.List[string]
-    [void]$lines.Add("@echo off")
-    foreach ($key in $Environment.Keys) {
-        [void]$lines.Add("set " + $key + "=" + $Environment[$key])
-    }
-    [void]$lines.Add("cd /d " + (Get-EiaaxBatchQuotedArgument -Value $WorkingDirectory))
+    $lines = Build-EiaaxManagedProcessWrapperContent `
+        -FilePath $FilePath `
+        -ArgumentList $ArgumentList `
+        -WorkingDirectory $WorkingDirectory `
+        -LogFile $LogFile `
+        -WrapperName $WrapperName `
+        -Environment $Environment
 
-    $commandParts = New-Object System.Collections.Generic.List[string]
-    $executableLower = $FilePath.ToLowerInvariant()
-    if ($executableLower.EndsWith(".cmd") -or $executableLower.EndsWith(".bat")) {
-        [void]$commandParts.Add("call")
-    }
-    [void]$commandParts.Add((Get-EiaaxBatchQuotedArgument -Value $FilePath))
-    foreach ($arg in $ArgumentList) {
-        [void]$commandParts.Add((Get-EiaaxBatchQuotedArgument -Value ([string]$arg)))
-    }
-    $command = ($commandParts -join " ")
-    $serviceCommand = $command + " >> " + (Get-EiaaxBatchQuotedArgument -Value $LogFile) + " 2>>&1"
-    $startLine = 'start "EIAAX_' + $WrapperName + '" /B cmd /c ' + (Get-EiaaxBatchQuotedArgument -Value $serviceCommand)
-    [void]$lines.Add($startLine)
-    [void]$lines.Add("exit /b 0")
-
-    [System.IO.File]::WriteAllLines($wrapperBat, $lines.ToArray())
+    [System.IO.File]::WriteAllLines($wrapperBat, $lines)
 
     $launcher = Start-Process -FilePath $wrapperBat -WorkingDirectory $WorkingDirectory -PassThru -WindowStyle Hidden
     if ($null -eq $launcher) {
