@@ -16,7 +16,9 @@
     NO modifica producto, BD original, scripts/windows ni tag existente.
 #>
 [CmdletBinding()]
-param()
+param(
+    [string]$ToolsDirectory = $PSScriptRoot
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -105,6 +107,11 @@ try {
 
     if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
         Stop-Respaldo 'git no disponible.'
+    }
+
+    $headBefore = (Invoke-Git -Args @('rev-parse', 'HEAD')) -join '' | ForEach-Object { $_.Trim() }
+    if ($headBefore -ne $Script:ProtectedFullSha) {
+        Stop-Respaldo "HEAD local debe ser $($Script:ProtectedFullSha) (actual: $headBefore)"
     }
 
     Write-Step 'Verificando rama autoritativa y tag...'
@@ -200,7 +207,7 @@ try {
         Stop-Respaldo "BD origen no encontrada: $($Script:DbSource)"
     }
 
-    $helperScript = Join-Path $PSScriptRoot 'Backup-SqliteConsistente-104f785.py'
+    $helperScript = Join-Path $ToolsDirectory 'Backup-SqliteConsistente-104f785.py'
     if (-not (Test-Path -LiteralPath $helperScript)) {
         Stop-Respaldo "Helper SQLite no encontrado: $helperScript"
     }
@@ -343,6 +350,11 @@ git checkout $($Script:ProtectedTag)
     Write-Host 'N. Residuos temporales: eliminados'
     Write-Host 'O. Producto original: no modificado'
     Write-Host 'P. scripts/windows: intactos vs 0014a4b'
+
+    $headAfter = (Invoke-Git -Args @('rev-parse', 'HEAD')) -join '' | ForEach-Object { $_.Trim() }
+    if ($headAfter -ne $Script:ProtectedFullSha) {
+        Stop-Respaldo "HEAD cambió durante respaldo ($headBefore -> $headAfter)"
+    }
     exit 0
 }
 catch {
