@@ -1,17 +1,16 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-    Bootstrap autocontenido: materializa herramientas de respaldo desde Git sin checkout.
+    Bootstrap byte-safe: materializa herramientas via git archive (sin checkout).
 
-.NOTES
-    Diseñado para ejecutarse via:
-    iex ((git show eiaax-tools-respaldo-104f785:INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/Bootstrap-Ejecutar-Respaldo-104f785.ps1) -join [char]10)
-
-    NO modifica working tree del candidato protegido 104f785.
+.DESCRIPTION
+    Invocado desde launcher archive. NO usa git show -> texto -> WriteAllText.
+    Verifica blob Git + SHA-256 del contenido exacto tras materialización.
 #>
 [CmdletBinding()]
 param(
-    [string]$RepoRoot = 'D:\EMPLEADOS_IA_CONVERGENCIA'
+    [string]$RepoRoot = 'D:\EMPLEADOS_IA_CONVERGENCIA',
+    [string]$ToolsDirectory = ''
 )
 
 Set-StrictMode -Version Latest
@@ -22,9 +21,16 @@ $ToolsRef = 'eiaax-tools-respaldo-104f785'
 $ToolsPrefix = 'INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785'
 $ToolsStagingRoot = 'D:\RESPALDOS_EIAAX\_bootstrap_tools_104f785'
 
-$ExpectedHashes = @{
-    'Cerrar-Respaldo-Integral-104f785.ps1' = '77fdbc52a42454b1f8cf43e48ae0ef407f0b78525e98bf2d4550f35c7e3b4fe1'
-    'Backup-SqliteConsistente-104f785.py' = '80ea222948a823b583a8f86687fa33d1a8b22a9aeeaccc69a4303c4e0a2c4b9f'
+# Catálogo de confianza: blob Git (autoridad) + SHA-256 del contenido exacto
+$Script:ToolCatalog = @{
+    'Cerrar-Respaldo-Integral-104f785.ps1' = @{
+        BlobId = '8665a7097f7747392265a1e43a601d04e591d94d'
+        Sha256 = '77fdbc52a42454b1f8cf43e48ae0ef407f0b78525e98bf2d4550f35c7e3b4fe1'
+    }
+    'Backup-SqliteConsistente-104f785.py' = @{
+        BlobId = '66e12ead386815beb6ed9b9e47084aa70c74f924'
+        Sha256 = '80ea222948a823b583a8f86687fa33d1a8b22a9aeeaccc69a4303c4e0a2c4b9f'
+    }
 }
 
 function Write-Step([string]$Message) {
@@ -54,7 +60,7 @@ function Ensure-GitObject([string]$Ref) {
     if ($LASTEXITCODE -eq 0) { return $Ref }
 
     Write-Step "Objeto Git $Ref no local; fetch desde origin..."
-    git -C $RepoRoot fetch origin tag $ToolsRef --no-tags 2>&1 | Out-Null
+    git -C $RepoRoot fetch origin tag $ToolsRef 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) {
         git -C $RepoRoot fetch origin $ToolsRef --depth=1 2>&1 | Out-Null
     }
@@ -65,29 +71,78 @@ function Ensure-GitObject([string]$Ref) {
     return $Ref
 }
 
-function Write-GitBlobToFile([string]$Ref, [string]$GitPath, [string]$DestFile) {
-    $parent = Split-Path -Parent $DestFile
-    if (-not (Test-Path -LiteralPath $parent)) {
-        New-Item -ItemType Directory -Path $parent -Force | Out-Null
+function Get-GitBlobId([string]$Ref, [string]$GitPath) {
+    return (git -C $RepoRoot rev-parse "${Ref}:${GitPath}").Trim()
+}
+
+function Install-ToolsFromArchive([string]$Ref, [string]$DestinationRoot) {
+    if (Test-Path -LiteralPath $DestinationRoot) {
+        Remove-Item -LiteralPath $DestinationRoot -Recurse -Force
     }
-    $content = git -C $RepoRoot show "${Ref}:${GitPath}" 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Stop-Bootstrap "git show falló para ${Ref}:${GitPath}: $content"
+    New-Item -ItemType Directory -Path $DestinationRoot -Force | Out-Null
+
+    $zipPath = Join-Path $env:TEMP ("eiaax_tools_{0}.zip" -f [guid]::NewGuid().ToString())
+    $extractRoot = Join-Path $env:TEMP ("eiaax_tools_extract_{0}" -f [guid]::NewGuid().ToString())
+
+    try {
+        Write-Step 'Materializando herramientas via git archive (byte-safe)...'
+        git -C $RepoRoot archive --format=zip -o $zipPath $Ref $ToolsPrefix 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $zipPath)) {
+            Stop-Bootstrap 'git archive falló al materializar herramientas.'
+        }
+
+        Expand-Archive -LiteralPath $zipPath -DestinationPath $extractRoot -Force
+        $archivedDir = Join-Path $extractRoot ($ToolsPrefix -replace '/', '\')
+        if (-not (Test-Path -LiteralPath $archivedDir)) {
+            Stop-Bootstrap "Ruta archive inesperada: $archivedDir"
+        }
+
+        foreach ($name in $Script:ToolCatalog.Keys) {
+            $src = Join-Path $archivedDir $name
+            $dst = Join-Path $DestinationRoot $name
+            if (-not (Test-Path -LiteralPath $src)) {
+                Stop-Bootstrap "Herramienta ausente en archive: $name"
+            }
+            Copy-Item -LiteralPath $src -Destination $dst -Force
+        }
     }
-    $text = if ($content -is [array]) { $content -join "`n" } else { [string]$content }
-    if ($GitPath.EndsWith('.py')) {
-        [System.IO.File]::WriteAllText($DestFile, $text + "`n", [System.Text.UTF8Encoding]::new($false))
+    finally {
+        if (Test-Path -LiteralPath $zipPath) { Remove-Item -LiteralPath $zipPath -Force -ErrorAction SilentlyContinue }
+        if (Test-Path -LiteralPath $extractRoot) { Remove-Item -LiteralPath $extractRoot -Recurse -Force -ErrorAction SilentlyContinue }
     }
-    else {
-        [System.IO.File]::WriteAllText($DestFile, $text, [System.Text.UTF8Encoding]::new($true))
-    }
-    if (-not (Test-Path -LiteralPath $DestFile)) {
-        Stop-Bootstrap "No se escribió archivo materializado: $DestFile"
+}
+
+function Test-ToolIntegrity([string]$Ref, [string]$ToolsRoot) {
+    foreach ($name in $Script:ToolCatalog.Keys) {
+        $meta = $Script:ToolCatalog[$name]
+        $gitPath = "$ToolsPrefix/$name"
+        $filePath = Join-Path $ToolsRoot $name
+
+        if (-not (Test-Path -LiteralPath $filePath)) {
+            Stop-Bootstrap "Archivo materializado ausente: $name"
+        }
+
+        $blobId = Get-GitBlobId -Ref $Ref -GitPath $gitPath
+        if ($blobId -ne $meta.BlobId) {
+            Stop-Bootstrap "Blob Git inesperado para ${name}: esperado $($meta.BlobId), remoto $blobId"
+        }
+
+        $hashObject = (git -C $RepoRoot hash-object $filePath).Trim()
+        if ($hashObject -ne $meta.BlobId) {
+            Stop-Bootstrap "git hash-object no coincide para ${name}: esperado $($meta.BlobId), obtenido $hashObject (bytes alterados)"
+        }
+
+        $sha256 = Get-FileSha256 $filePath
+        if ($sha256 -ne $meta.Sha256) {
+            Stop-Bootstrap "SHA-256 inesperado en ${name}: esperado $($meta.Sha256), obtenido $sha256"
+        }
+
+        Write-Step "Integridad PASS: $name (blob=$blobId)"
     }
 }
 
 try {
-    Write-Step 'EIAAX bootstrap respaldo integral 104f785'
+    Write-Step 'EIAAX bootstrap byte-safe respaldo integral 104f785'
 
     if (-not (Test-Path -LiteralPath $RepoRoot)) {
         Stop-Bootstrap "Repositorio no encontrado: $RepoRoot"
@@ -98,45 +153,46 @@ try {
 
     $headBefore = Get-HeadSha
     if ($headBefore -ne $ProtectedFullSha) {
-        Stop-Bootstrap "HEAD debe ser $ProtectedFullSha (actual: $headBefore). No ejecutar fuera del candidato protegido."
+        Stop-Bootstrap "HEAD debe ser $ProtectedFullSha (actual: $headBefore)."
     }
     Write-Step "HEAD protegido verificado: $headBefore"
 
     $toolsRefResolved = Ensure-GitObject -Ref $ToolsRef
-    Write-Step "Ref herramientas resuelto: $toolsRefResolved -> $((git -C $RepoRoot rev-parse "$toolsRefResolved^{commit}").Trim())"
+    $toolsCommit = (git -C $RepoRoot rev-parse "$toolsRefResolved^{commit}").Trim()
+    Write-Step "Ref herramientas: $toolsRefResolved -> $toolsCommit"
 
-    if (Test-Path -LiteralPath $ToolsStagingRoot) {
-        Remove-Item -LiteralPath $ToolsStagingRoot -Recurse -Force
+    $activeToolsRoot = $ToolsDirectory
+    if ([string]::IsNullOrWhiteSpace($activeToolsRoot)) {
+        Install-ToolsFromArchive -Ref $toolsRefResolved -DestinationRoot $ToolsStagingRoot
+        $activeToolsRoot = $ToolsStagingRoot
     }
-    New-Item -ItemType Directory -Path $ToolsStagingRoot -Force | Out-Null
-
-    foreach ($name in $ExpectedHashes.Keys) {
-        $gitPath = "$ToolsPrefix/$name"
-        $dest = Join-Path $ToolsStagingRoot $name
-        Write-Step "Materializando $name desde Git (sin checkout)..."
-        Write-GitBlobToFile -Ref $toolsRefResolved -GitPath $gitPath -DestFile $dest
-        $hash = Get-FileSha256 $dest
-        if ($hash -ne $ExpectedHashes[$name]) {
-            Stop-Bootstrap "Hash inesperado en $name`: esperado $($ExpectedHashes[$name]), obtenido $hash"
-        }
+    else {
+        Write-Step "Usando ToolsDirectory provisto: $activeToolsRoot"
     }
-    Write-Step 'Herramientas materializadas y verificadas (SHA-256 PASS)'
 
-    $mainScript = Join-Path $ToolsStagingRoot 'Cerrar-Respaldo-Integral-104f785.ps1'
-    & $mainScript -ToolsDirectory $ToolsStagingRoot
+    Test-ToolIntegrity -Ref $toolsRefResolved -ToolsRoot $activeToolsRoot
+
+    $mainScript = Join-Path $activeToolsRoot 'Cerrar-Respaldo-Integral-104f785.ps1'
+    if (-not (Test-Path -LiteralPath $mainScript)) {
+        Stop-Bootstrap "Script principal no encontrado: $mainScript"
+    }
+
+    & $mainScript -ToolsDirectory $activeToolsRoot
     $exitCode = $LASTEXITCODE
 
     $headAfter = Get-HeadSha
     if ($headAfter -ne $ProtectedFullSha) {
-        Stop-Bootstrap "HEAD cambió durante el respaldo ($headBefore -> $headAfter). Abortado."
+        Stop-Bootstrap "HEAD cambió durante respaldo ($headBefore -> $headAfter)."
     }
-    Write-Step "HEAD sin cambios tras respaldo: $headAfter"
+    Write-Step "HEAD sin cambios: $headAfter"
 
-    Remove-Item -LiteralPath $ToolsStagingRoot -Recurse -Force -ErrorAction SilentlyContinue
-    Write-Step 'Herramientas temporales eliminadas'
+    if ($activeToolsRoot -eq $ToolsStagingRoot -and (Test-Path -LiteralPath $ToolsStagingRoot)) {
+        Remove-Item -LiteralPath $ToolsStagingRoot -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Step 'Herramientas temporales eliminadas'
+    }
 
     if ($exitCode -ne 0) {
-        Stop-Bootstrap "El script de respaldo retornó código $exitCode"
+        Stop-Bootstrap "Respaldo retornó código $exitCode"
     }
     exit 0
 }
