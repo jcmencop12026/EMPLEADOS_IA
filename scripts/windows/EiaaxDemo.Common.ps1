@@ -1424,8 +1424,8 @@ function Invoke-EiaaxDemoStopForWorktree {
     try {
         $env:EIAAX_WORKTREE = $WorktreeRoot
         Write-Host ("Stopping EIAAX demo for worktree: " + $WorktreeRoot)
-        Invoke-EiaaxPowerShellFile -FilePath $stopScript | Out-Null
-        if ($LASTEXITCODE -ne 0) {
+        $stopExitCode = Invoke-EiaaxScriptInProcess -FilePath $stopScript
+        if ($stopExitCode -ne 0) {
             Exit-EiaaxFailure -Message ("Failed to stop EIAAX demo for worktree: " + $WorktreeRoot)
         }
     }
@@ -2219,12 +2219,18 @@ function Start-EiaaxManagedProcess {
         [void]$commandParts.Add((Get-EiaaxBatchQuotedArgument -Value ([string]$arg)))
     }
     $command = ($commandParts -join " ")
-    [void]$lines.Add($command + " >> " + (Get-EiaaxBatchQuotedArgument -Value $LogFile) + " 2>>&1")
-    [void]$lines.Add("echo [EIAAX] EXIT_CODE=%ERRORLEVEL%>> " + (Get-EiaaxBatchQuotedArgument -Value $LogFile))
+    $serviceCommand = $command + " >> " + (Get-EiaaxBatchQuotedArgument -Value $LogFile) + " 2>>&1"
+    $startLine = 'start "EIAAX_' + $WrapperName + '" /B cmd /c ' + (Get-EiaaxBatchQuotedArgument -Value $serviceCommand)
+    [void]$lines.Add($startLine)
+    [void]$lines.Add("exit /b 0")
 
     [System.IO.File]::WriteAllLines($wrapperBat, $lines.ToArray())
 
-    return Start-Process -FilePath $wrapperBat -WorkingDirectory $WorkingDirectory -PassThru -WindowStyle Hidden
+    $launcher = Start-Process -FilePath $wrapperBat -WorkingDirectory $WorkingDirectory -PassThru -WindowStyle Hidden
+    if ($null -eq $launcher) {
+        Exit-EiaaxFailure -Message ("Failed to launch managed process wrapper: " + $WrapperName)
+    }
+    return $launcher
 }
 
 function Wait-EiaaxListenerPid {
@@ -2458,16 +2464,63 @@ function Invoke-EiaaxPowerShellFile {
     param(
         [Parameter(Mandatory = $true)]
         [string]$FilePath,
-        [string[]]$ArgumentList = @()
+        [string[]]$ArgumentList = @(),
+        [int]$TimeoutSec = 0
     )
 
     $shell = Get-EiaaxWindowsPowerShellExecutable
-    $args = @("-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", $FilePath) + $ArgumentList
-    $process = Start-Process -FilePath $shell -ArgumentList $args -Wait -PassThru -NoNewWindow
-    if ($null -eq $process) {
-        Exit-EiaaxFailure -Message ("Failed to start PowerShell process for: " + $FilePath)
+    $argumentList = @("-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", $FilePath) + $ArgumentList
+    $stdoutFile = [System.IO.Path]::GetTempFileName()
+    $stderrFile = [System.IO.Path]::GetTempFileName()
+    try {
+        $process = Start-Process `
+            -FilePath $shell `
+            -ArgumentList $argumentList `
+            -PassThru `
+            -NoNewWindow `
+            -RedirectStandardOutput $stdoutFile `
+            -RedirectStandardError $stderrFile
+        if ($null -eq $process) {
+            Exit-EiaaxFailure -Message ("Failed to start PowerShell process for: " + $FilePath)
+        }
+
+        $waitMs = if ($TimeoutSec -gt 0) { $TimeoutSec * 1000 } else { [int]::MaxValue }
+        $completed = $process.WaitForExit($waitMs)
+        if (-not $completed) {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            return 124
+        }
+
+        if (Test-Path -LiteralPath $stdoutFile) {
+            $stdout = Get-Content -LiteralPath $stdoutFile -Raw -ErrorAction SilentlyContinue
+            if (-not [string]::IsNullOrWhiteSpace($stdout)) {
+                Write-Host $stdout.TrimEnd()
+            }
+        }
+        if (Test-Path -LiteralPath $stderrFile) {
+            $stderr = Get-Content -LiteralPath $stderrFile -Raw -ErrorAction SilentlyContinue
+            if (-not [string]::IsNullOrWhiteSpace($stderr)) {
+                Write-Host $stderr.TrimEnd()
+            }
+        }
+
+        return [int]$process.ExitCode
     }
-  return [int]$process.ExitCode
+    finally {
+        Remove-Item -LiteralPath $stdoutFile -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $stderrFile -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Invoke-EiaaxScriptInProcess {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+        [string[]]$ArgumentList = @()
+    )
+
+    & $FilePath @ArgumentList
+    return [int]$LASTEXITCODE
 }
 
 function Invoke-EiaaxPowerShellParserValidation {

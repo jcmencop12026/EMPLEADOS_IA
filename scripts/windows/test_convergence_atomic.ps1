@@ -112,9 +112,8 @@ Assert-Test "arrancar_convergencia_windows.ps1 contains atomic git sync and fail
     }
     $content = Get-Content -LiteralPath $arrancarScript -Raw
     foreach ($needle in @(
+            "Invoke-EiaaxScriptInProcess",
             "Invoke-EiaaxBootstrapRepositorySync",
-            "EIAAX_BOOTSTRAP_REEXEC",
-            "Initialize-EiaaxConvergenceWorktreeFromScriptRoot",
             "Assert-EiaaxConvergencePathAuthority",
             "Write-EiaaxConvergenceExecutionContext",
             "Sync-EiaaxConvergenceRepository",

@@ -51,7 +51,9 @@ try {
         -StateDir $stateDir `
         -WrapperName "run_backend" `
         -Environment $runtimeEnv
+    Write-Host ("[backend] Servicio lanzado (wrapper PID " + $proc.Id + ")")
 
+    Write-Host "[backend] Esperando puerto $port ..."
     $listenerPid = Wait-EiaaxListenerPid -Port $port -TimeoutSec 45
     if ($null -eq $listenerPid) {
         $failure = New-EiaaxStartupFailureMessage `
@@ -72,7 +74,7 @@ try {
         Exit-EiaaxFailure -Message "Backend /health did not respond in time. See logs\demo\backend.log"
     }
 
-    Write-Host "Backend health OK: http://127.0.0.1:${port}/health"
+    Write-Host ("Backend health OK: http://127.0.0.1:${port}/health (listener PID " + $listenerPid + ")")
     exit 0
 }
 catch {

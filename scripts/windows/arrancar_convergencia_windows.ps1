@@ -238,7 +238,10 @@ try {
     Set-EiaaxStage -Name "preparacion_python_venv"
     Write-Host ""
     Write-Host "[3/7] Preparacion (Python base, venv convergencia, seed, Alembic)..."
-    $prepareExitCode = Invoke-EiaaxPowerShellFile -FilePath $prepareScript
+    $prepareExitCode = Invoke-EiaaxPowerShellFile -FilePath $prepareScript -TimeoutSec 7200
+    if ($prepareExitCode -eq 124) {
+        Exit-EiaaxFailure -Message "Preparation timed out after 7200 seconds."
+    }
     if ($prepareExitCode -ne 0) {
         Exit-EiaaxFailure -Message "Preparation failed. Aborting before start to avoid false positives."
     }
@@ -256,7 +259,7 @@ try {
     Set-EiaaxStage -Name "arranque_backend_frontend"
     Write-Host ""
     Write-Host "[4/7] Arranque backend + frontend..."
-    $startExitCode = Invoke-EiaaxPowerShellFile -FilePath $startScript
+    $startExitCode = Invoke-EiaaxScriptInProcess -FilePath $startScript
     if ($startExitCode -ne 0) {
         Exit-EiaaxFailure -Message "Start failed. See logs\demo\"
     }

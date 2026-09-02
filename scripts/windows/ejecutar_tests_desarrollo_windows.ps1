@@ -17,6 +17,7 @@ Invoke-EiaaxPowerShellParserValidation -ScriptsDir $PSScriptRoot
 
 $tests = @(
     "test_parser_aggregate.ps1",
+    "test_service_startup.ps1",
     "test_ps_semantics.ps1",
     "test_git_sync.ps1",
     "test_python_discovery.ps1",

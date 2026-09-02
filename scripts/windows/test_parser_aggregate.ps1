@@ -56,11 +56,11 @@ Assert-Test "all tracked scripts have UTF-8 BOM for Windows PowerShell 5.1" {
 
 Assert-Test "Invoke-EiaaxPowerShellFile returns explicit exit code" {
     $content = Get-Content -LiteralPath $common -Raw
-    if ($content -notmatch 'Start-Process -FilePath \$shell') {
-        throw "Invoke-EiaaxPowerShellFile must use Start-Process exit code"
+    if ($content -notmatch "RedirectStandardOutput") {
+        throw "Invoke-EiaaxPowerShellFile must redirect stdout to avoid deadlock"
     }
-    if ($content -match 'Invoke-EiaaxPowerShellFile -FilePath \$validator[\s\S]*if \(\$LASTEXITCODE') {
-        throw "Parser validation must not rely on stale LASTEXITCODE"
+    if ($content -notmatch 'return \[int\]\$process\.ExitCode') {
+        throw "Invoke-EiaaxPowerShellFile must return explicit exit code"
     }
 }
 

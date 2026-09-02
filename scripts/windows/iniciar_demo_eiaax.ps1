@@ -20,23 +20,29 @@ try {
         Exit-EiaaxFailure -Message "Demo not prepared. Run scripts\windows\preparar_demo_eiaax.ps1 first."
     }
 
-    $backendExitCode = Invoke-EiaaxPowerShellFile -FilePath $backendScript
+    Write-Host "[4/7.1] Iniciando backend..."
+    $backendExitCode = Invoke-EiaaxScriptInProcess -FilePath $backendScript
     if ($backendExitCode -ne 0) {
         exit $backendExitCode
     }
+    Write-Host "[4/7.2] Backend health PASS"
 
     Start-Sleep -Seconds 2
 
-    $frontendExitCode = Invoke-EiaaxPowerShellFile -FilePath $frontendScript
+    Write-Host "[4/7.3] Iniciando frontend..."
+    $frontendExitCode = Invoke-EiaaxScriptInProcess -FilePath $frontendScript
     if ($frontendExitCode -ne 0) {
-        Invoke-EiaaxPowerShellFile -FilePath $stopScript | Out-Null
+        Invoke-EiaaxScriptInProcess -FilePath $stopScript | Out-Null
         exit $frontendExitCode
     }
+    Write-Host "[4/7.4] Frontend HTTP PASS"
 
-    if (-not (Test-EiaaxFrontendProxyHealth -Port $FrontendPort -TimeoutSec 30)) {
-        Invoke-EiaaxPowerShellFile -FilePath $stopScript | Out-Null
-        Exit-EiaaxFailure -Message "Frontend proxy to backend failed on /health."
+    Write-Host "[4/7.5] Verificando proxy frontend -> backend..."
+    if (-not (Test-EiaaxFrontendProxyHealth -Port $FrontendPort -TimeoutSec 45)) {
+        Invoke-EiaaxScriptInProcess -FilePath $stopScript | Out-Null
+        Exit-EiaaxFailure -Message "Frontend proxy to backend failed on /health within timeout."
     }
+    Write-Host "[4/7.6] Frontend proxy health PASS"
 
     Write-Host ""
     Write-Host "EIAAX demo is running."
