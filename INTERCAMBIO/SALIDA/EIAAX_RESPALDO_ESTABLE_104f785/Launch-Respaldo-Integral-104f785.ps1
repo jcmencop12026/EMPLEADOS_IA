@@ -37,6 +37,7 @@ if ($LASTEXITCODE -ne 0) { Stop-Launcher "fetch tag $ToolsRef falló" }
 
 $zipPath = Join-Path $env:TEMP ("eiaax_launch_{0}.zip" -f [guid]::NewGuid().ToString())
 $extractRoot = Join-Path $env:TEMP ("eiaax_launch_{0}" -f [guid]::NewGuid().ToString())
+$code = 1
 
 try {
     git archive --format=zip -o $zipPath $ToolsRef $ToolsPrefix 2>&1 | Out-Null
