@@ -2,7 +2,7 @@
 
 ## A. SHA autoritativo final
 
-_Pendiente de push — se completará tras merge a `cursor/convergencia-comercial-v1-85e4`._
+**`4909bff`** en `origin/cursor/convergencia-comercial-v1-85e4`
 
 ## B. Rama autoritativa
 
