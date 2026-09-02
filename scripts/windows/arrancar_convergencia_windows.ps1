@@ -67,6 +67,8 @@ try {
     $repo = Confirm-EiaaxConvergenceRepository -WorktreeRoot $worktree -ScriptsDir $PSScriptRoot
     $manifest = $repo.Manifest
     $gitSha = $repo.Sha
+    Write-Host ("Codigo activo SHA: " + $gitSha)
+    Write-EiaaxLogLine -LogFile $logFile -Message ("Active code SHA: " + $gitSha)
 
     if ($manifest.alembic_head -ne $script:ExpectedAlembicHead) {
         Exit-EiaaxFailure -Message ("Manifest alembic_head mismatch with Common.ps1 (" + $manifest.alembic_head + " vs " + $script:ExpectedAlembicHead + ").")

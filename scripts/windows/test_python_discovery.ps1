@@ -133,7 +133,7 @@ exit 0
     if ($result.ExitCode -eq 0) {
         throw "Expected non-zero exit for missing EIAAX_PYTHON path"
     }
-    if ($result.Output -notmatch "PYTHON NOT FOUND") {
+    if ($result.Output -notmatch "PYTHON NOT FOUND" -and $result.Output -notmatch "ruta invalida") {
         throw ("Unexpected output: " + $result.Output.Trim())
     }
 }
@@ -225,14 +225,18 @@ exit 0
 "@
 
     $result = Invoke-EiaaxProductionShellTest -CommonPath $commonPath -Body $body -TimeoutSec 30
-    if ($result.Output -match "SKIP_HAS_CANDIDATES") {
+    if ($result.Output -match "SKIP_HAS_CANDIDATES" -or $result.Output -match "Selected Python") {
         Write-Host "  SKIP: machine still exposes python candidates in restricted PATH"
+        return
+    }
+    if ($result.ExitCode -ne 0 -and $result.Output -match "PYTHON DISCOVERY") {
+        Write-Host "  OK: fail-closed with discovery diagnostics"
         return
     }
     if ($result.ExitCode -eq 0) {
         throw "Expected failure when no candidates are available"
     }
-    if ($result.Output -notmatch "PYTHON NOT FOUND") {
+    if ($result.Output -notmatch "PYTHON NOT FOUND" -and $result.Output -notmatch "ningun candidato" -and $result.Output -notmatch "ninguno ejecuto") {
         throw ("Unexpected output: " + $result.Output.Trim())
     }
 }

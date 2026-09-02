@@ -34,8 +34,6 @@ try {
     Write-Host "Worktree: $worktree"
     Write-Host "DATABASE_URL: $databaseUrl"
 
-    Confirm-EiaaxProductionPrerequisites -WorktreeRoot $worktree -LogFile $logFile
-
     if (-not (Test-Path -LiteralPath $paths.Data)) {
         New-Item -ItemType Directory -Path $paths.Data | Out-Null
     }
@@ -49,7 +47,8 @@ try {
         }
     }
 
-    $basePython = Find-EiaaxPython -LogFile $logFile -WorktreeRoot $worktree
+    $basePython = Resolve-EiaaxPython -LogFile $logFile -WorktreeRoot $worktree
+    Confirm-EiaaxProductionPrerequisites -WorktreeRoot $worktree -LogFile $logFile -ResolvedPython $basePython -SkipPythonCheck
     Write-Host "Base Python: $basePython"
     $pythonVersion = Get-EiaaxPythonVersionLine -PythonExe $basePython
     Write-Host "Detected: $pythonVersion"

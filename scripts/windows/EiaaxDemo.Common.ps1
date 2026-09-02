@@ -449,9 +449,56 @@ function Read-EiaaxPyvenvCfg {
     return $result
 }
 
+function Get-EiaaxReferenceWorktreeRoot {
+    if (-not [string]::IsNullOrWhiteSpace($env:EIAAX_REFERENCE_WORKTREE)) {
+        return $env:EIAAX_REFERENCE_WORKTREE
+    }
+    return $script:ReferenceDiscoveryWorktree
+}
+
+function Get-EiaaxReferenceVenvPythonPath {
+    $referenceWorktree = Get-EiaaxReferenceWorktreeRoot
+    $venvDir = Join-EiaaxWindowsPath -Base $referenceWorktree -Child $script:VenvDirName
+    foreach ($relative in @("Scripts\python.exe", "bin\python", "bin\python3")) {
+        $candidate = if ($relative -match '^[A-Za-z]:') {
+            $relative
+        }
+        elseif ($relative -match '\\') {
+            Join-EiaaxWindowsPath -Base $venvDir -Child $relative
+        }
+        else {
+            Join-Path $venvDir $relative
+        }
+        if (Test-Path -LiteralPath $candidate) {
+            return (Resolve-Path -LiteralPath $candidate).Path
+        }
+    }
+    return Join-EiaaxWindowsPath -Base $venvDir -Child "Scripts\python.exe"
+}
+
+function Get-EiaaxVenvPythonPathForDirectory {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$VenvPath
+    )
+
+    foreach ($relative in @("Scripts\python.exe", "bin\python", "bin\python3")) {
+        $candidate = if ($relative -match '\\') {
+            Join-EiaaxWindowsPath -Base $VenvPath -Child $relative
+        }
+        else {
+            Join-Path $VenvPath $relative
+        }
+        if (Test-Path -LiteralPath $candidate) {
+            return (Resolve-Path -LiteralPath $candidate).Path
+        }
+    }
+    return $null
+}
+
 function Get-EiaaxReferencePyvenvCfgPath {
     param(
-        [string]$ReferenceWorktree = $script:ReferenceDiscoveryWorktree
+        [string]$ReferenceWorktree = $(Get-EiaaxReferenceWorktreeRoot)
     )
 
     return Join-EiaaxWindowsPath -Base (Join-EiaaxWindowsPath -Base $ReferenceWorktree -Child $script:VenvDirName) -Child "pyvenv.cfg"
@@ -515,12 +562,69 @@ function Get-EiaaxPythonCandidatesFromPyvenvCfg {
     return [string[]]$ordered.ToArray()
 }
 
-function Get-EiaaxPythonDiscoveryCandidates {
+function Invoke-EiaaxPythonSysProbe {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PythonExe
+    )
+
+    $result = [ordered]@{
+        ExitCode        = 1
+        Executable      = $null
+        Prefix          = $null
+        BasePrefix      = $null
+        BaseExecutable  = $null
+        Version         = $null
+        Error           = $null
+    }
+
+    if (-not (Test-Path -LiteralPath $PythonExe)) {
+        $result.Error = "python executable missing"
+        return $result
+    }
+
+    $probeScript = "import sys; print(sys.executable); print(sys.prefix); print(sys.base_prefix); print(getattr(sys, '_base_executable', sys.executable)); print(sys.version.split()[0])"
+    $probe = Invoke-EiaaxExternalCommand -FilePath $PythonExe -ArgumentList @("-c", $probeScript)
+    $result.ExitCode = $probe.ExitCode
+    if ($probe.ExitCode -ne 0) {
+        $result.Error = ($probe.Output | Out-String).Trim()
+        if ([string]::IsNullOrWhiteSpace($result.Error)) {
+            $result.Error = "sys probe failed"
+        }
+        return $result
+    }
+
+    $lines = @($probe.Output -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_.Trim()) })
+    if ($lines.Count -lt 5) {
+        $result.Error = "sys probe returned incomplete output"
+        return $result
+    }
+
+    $result.Executable = $lines[0].Trim()
+    $result.Prefix = $lines[1].Trim()
+    $result.BasePrefix = $lines[2].Trim()
+    $result.BaseExecutable = $lines[3].Trim()
+    $result.Version = $lines[4].Trim()
+    return $result
+}
+
+function Get-EiaaxPythonBaseCandidatesFromSysProbe {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$SysProbe
+    )
+
     $ordered = New-Object System.Collections.Generic.List[string]
     $seen = @{}
 
     $addCandidate = {
         param([string]$CandidatePath)
+        if ([string]::IsNullOrWhiteSpace($CandidatePath)) {
+            return
+        }
+        if (Test-EiaaxPythonPathLooksLikeVenvInterpreter -Path $CandidatePath) {
+            return
+        }
         $resolved = Get-EiaaxResolvedPythonPath -Path $CandidatePath
         if ($null -eq $resolved) {
             return
@@ -533,27 +637,197 @@ function Get-EiaaxPythonDiscoveryCandidates {
         [void]$ordered.Add($resolved)
     }
 
-    # A. Explicit override.
-    if (-not [string]::IsNullOrWhiteSpace($env:EIAAX_PYTHON)) {
-        & $addCandidate $env:EIAAX_PYTHON
-    }
-
-    # B. Python base derived from the functional reference venv (discovery only).
-    $referenceCfg = Get-EiaaxReferencePyvenvCfgPath
-    if (Test-Path -LiteralPath $referenceCfg) {
-        foreach ($referencePath in (Get-EiaaxPythonCandidatesFromPyvenvCfg -PyvenvCfgPath $referenceCfg)) {
-            & $addCandidate $referencePath
+    & $addCandidate $SysProbe.BaseExecutable
+    if (-not [string]::IsNullOrWhiteSpace($SysProbe.BasePrefix)) {
+        if ($SysProbe.BasePrefix -match '^[A-Za-z]:') {
+            & $addCandidate (Join-EiaaxWindowsPath -Base $SysProbe.BasePrefix -Child "python.exe")
+        }
+        else {
+            foreach ($name in @("python", "python3")) {
+                & $addCandidate (Join-Path $SysProbe.BasePrefix (Join-Path "bin" $name))
+            }
         }
     }
 
-    # C. py launcher.
-    foreach ($launcherPath in (Get-EiaaxPythonLauncherCandidates)) {
-        & $addCandidate $launcherPath
+    return [string[]]$ordered.ToArray()
+}
+
+function Get-EiaaxPythonCandidatesFromPyvenvCfgPaths {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Cfg
+    )
+
+    $ordered = New-Object System.Collections.Generic.List[string]
+    $seen = @{}
+
+    $addPath = {
+        param([string]$CandidatePath)
+        if ([string]::IsNullOrWhiteSpace($CandidatePath)) {
+            return
+        }
+        if (Test-EiaaxPythonPathLooksLikeVenvInterpreter -Path $CandidatePath) {
+            return
+        }
+        $key = $CandidatePath.ToUpperInvariant()
+        if ($seen.ContainsKey($key)) {
+            return
+        }
+        $seen[$key] = $true
+        [void]$ordered.Add($CandidatePath)
     }
 
-    # D. where.exe and PATH.
-    foreach ($wherePath in (Get-EiaaxPythonWhereCandidates)) {
-        & $addCandidate $wherePath
+    if (-not [string]::IsNullOrWhiteSpace($Cfg.executable)) {
+        & $addPath $Cfg.executable
+    }
+    if (-not [string]::IsNullOrWhiteSpace($Cfg.home)) {
+        & $addPath (Join-EiaaxWindowsPath -Base $Cfg.home -Child "python.exe")
+    }
+    if (-not [string]::IsNullOrWhiteSpace($Cfg.command)) {
+        if ($Cfg.command -match '([A-Za-z]:\\[^"\s]+python\.exe)') {
+            & $addPath $Matches[1]
+        }
+    }
+
+    return [string[]]$ordered.ToArray()
+}
+
+function Write-EiaaxPythonDiscoveryDiagnostics {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Diagnostics
+    )
+
+    Write-Host ""
+    Write-Host "PYTHON DISCOVERY"
+    foreach ($line in $Diagnostics.Lines) {
+        Write-Host $line
+    }
+    Write-Host ""
+}
+
+function Add-EiaaxPythonPlanCandidate {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [System.Collections.Generic.List[hashtable]]$CandidateList,
+        [Parameter(Mandatory = $true)]
+        [hashtable]$SeenKeys,
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [Parameter(Mandatory = $true)]
+        [string]$Source,
+        [string]$Role = "base"
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        return
+    }
+    $resolved = Get-EiaaxResolvedPythonPath -Path $Path
+    if ($null -eq $resolved) {
+        return
+    }
+    $key = $resolved.ToUpperInvariant()
+    if ($SeenKeys.ContainsKey($key)) {
+        return
+    }
+    $SeenKeys[$key] = $true
+    [void]$CandidateList.Add([ordered]@{
+        Path   = $resolved
+        Source = $Source
+        Role   = $Role
+    })
+}
+
+function Build-EiaaxPythonResolutionPlan {
+    param(
+        [string]$WorktreeRoot = $null
+    )
+
+    $lines = New-Object System.Collections.Generic.List[string]
+    $candidateList = New-Object System.Collections.Generic.List[hashtable]
+    $seenKeys = @{}
+    $referenceVenvPython = Get-EiaaxReferenceVenvPythonPath
+    $referenceCfgPath = Get-EiaaxReferencePyvenvCfgPath
+    $referenceCfg = Read-EiaaxPyvenvCfg -PyvenvCfgPath $referenceCfgPath
+    $referenceSysProbe = $null
+
+    if (-not [string]::IsNullOrWhiteSpace($env:EIAAX_PYTHON)) {
+        if (Test-Path -LiteralPath $env:EIAAX_PYTHON) {
+            [void]$lines.Add(("Fuente 1: EIAAX_PYTHON .......... definido (" + $env:EIAAX_PYTHON + ")"))
+            Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $env:EIAAX_PYTHON -Source "EIAAX_PYTHON" -Role "base"
+        }
+        else {
+            [void]$lines.Add("Fuente 1: EIAAX_PYTHON .......... ruta invalida")
+        }
+    }
+    else {
+        [void]$lines.Add("Fuente 1: EIAAX_PYTHON .......... no definido")
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($WorktreeRoot)) {
+        $convergenceVenvPython = Get-EiaaxVenvPythonPathForDirectory -VenvPath (Join-EiaaxWindowsPath -Base $WorktreeRoot -Child $script:VenvDirName)
+        if (-not [string]::IsNullOrWhiteSpace($convergenceVenvPython)) {
+            [void]$lines.Add(("Fuente 2: venv convergencia ..... encontrado (" + $convergenceVenvPython + ")"))
+            Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $convergenceVenvPython -Source "venv convergencia" -Role "runtime"
+        }
+        else {
+            [void]$lines.Add("Fuente 2: venv convergencia ..... no existe")
+        }
+    }
+    else {
+        [void]$lines.Add("Fuente 2: venv convergencia ..... no evaluado")
+    }
+
+    if (Test-Path -LiteralPath $referenceVenvPython) {
+        [void]$lines.Add(("Fuente 3: venv integrado ........ encontrado (" + $referenceVenvPython + ")"))
+        $referenceSysProbe = Invoke-EiaaxPythonSysProbe -PythonExe $referenceVenvPython
+        if ($referenceSysProbe.ExitCode -eq 0) {
+            [void]$lines.Add(("sys.executable ................ " + $referenceSysProbe.Executable))
+            [void]$lines.Add(("sys.base_prefix ............... " + $referenceSysProbe.BasePrefix))
+            [void]$lines.Add(("sys._base_executable .......... " + $referenceSysProbe.BaseExecutable))
+            [void]$lines.Add(("sys.version ................... " + $referenceSysProbe.Version))
+            foreach ($probePath in @(Get-EiaaxPythonBaseCandidatesFromSysProbe -SysProbe $referenceSysProbe)) {
+                Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $probePath -Source "sys.base_prefix (venv integrado)" -Role "base"
+            }
+        }
+        else {
+            [void]$lines.Add(("sys probe venv integrado ...... FAIL (" + $referenceSysProbe.Error + ")"))
+        }
+    }
+    else {
+        [void]$lines.Add("Fuente 3: venv integrado ........ no encontrado")
+    }
+
+    if (Test-Path -LiteralPath $referenceCfgPath) {
+        [void]$lines.Add("pyvenv.cfg .................... leido")
+        if (-not [string]::IsNullOrWhiteSpace($referenceCfg.version)) {
+            [void]$lines.Add(("pyvenv.cfg version ............ " + $referenceCfg.version))
+        }
+        if (-not [string]::IsNullOrWhiteSpace($referenceCfg.home)) {
+            $homeExists = Test-Path -LiteralPath $referenceCfg.home
+            [void]$lines.Add(("pyvenv.cfg home ............... " + $referenceCfg.home + $(if (-not $homeExists) { " [no existe]" } else { "" })))
+        }
+        if (-not [string]::IsNullOrWhiteSpace($referenceCfg.executable)) {
+            $exeExists = Test-Path -LiteralPath $referenceCfg.executable
+            [void]$lines.Add(("pyvenv.cfg executable ......... " + $referenceCfg.executable + $(if (-not $exeExists) { " [no existe]" } else { "" })))
+        }
+        foreach ($cfgPath in @(Get-EiaaxPythonCandidatesFromPyvenvCfgPaths -Cfg $referenceCfg)) {
+            if (Test-Path -LiteralPath $cfgPath) {
+                Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $cfgPath -Source "pyvenv.cfg" -Role "base"
+            }
+        }
+    }
+    else {
+        [void]$lines.Add(("pyvenv.cfg .................... no encontrado (" + $referenceCfgPath + ")"))
+    }
+
+    foreach ($launcherPath in @(Get-EiaaxPythonLauncherCandidates)) {
+        Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $launcherPath -Source "py launcher" -Role "base"
+    }
+
+    foreach ($wherePath in @(Get-EiaaxPythonWhereCandidates)) {
+        Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $wherePath -Source "where.exe" -Role "base"
     }
 
     foreach ($pathDir in (($env:PATH) -split ';')) {
@@ -561,38 +835,34 @@ function Get-EiaaxPythonDiscoveryCandidates {
             continue
         }
         $trimmed = $pathDir.Trim()
-        $pathCandidate = Join-EiaaxPathMaybe -Base $trimmed -Child "python.exe"
-        & $addCandidate $pathCandidate
-        $pathCandidate3 = Join-EiaaxPathMaybe -Base $trimmed -Child "python3.exe"
-        & $addCandidate $pathCandidate3
+        Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path (Join-EiaaxPathMaybe -Base $trimmed -Child "python.exe") -Source "PATH" -Role "base"
+        Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path (Join-EiaaxPathMaybe -Base $trimmed -Child "python3.exe") -Source "PATH" -Role "base"
     }
 
     foreach ($commandName in @("python", "python3")) {
         $command = Get-Command $commandName -ErrorAction SilentlyContinue
         if ($null -ne $command -and $command.CommandType -eq "Application") {
-            & $addCandidate $command.Source
+            Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $command.Source -Source ("Get-Command " + $commandName) -Role "base"
         }
     }
 
-    # E. Registry.
-    foreach ($registryPath in (Get-EiaaxPythonRegistryCandidates)) {
-        & $addCandidate $registryPath
+    foreach ($registryPath in @(Get-EiaaxPythonRegistryCandidates)) {
+        Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $registryPath -Source "registry" -Role "base"
     }
 
-    # F. Standard known installations.
     foreach ($staticPath in @(
             "C:\Python314\python.exe",
             "C:\Python313\python.exe",
             "C:\Python312\python.exe",
             "C:\Python311\python.exe"
         )) {
-        & $addCandidate $staticPath
+        Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $staticPath -Source "standard install" -Role "base"
     }
 
     if (-not [string]::IsNullOrWhiteSpace($env:ProgramFiles)) {
         foreach ($version in @("314", "313", "312", "311")) {
             $programFilesPath = Join-Path $env:ProgramFiles ("Python" + $version + "\python.exe")
-            & $addCandidate $programFilesPath
+            Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $programFilesPath -Source "Program Files" -Role "base"
         }
     }
 
@@ -602,8 +872,7 @@ function Get-EiaaxPythonDiscoveryCandidates {
             $versionDirs = Get-ChildItem -LiteralPath $userPythonRoot -ErrorAction SilentlyContinue |
                 Where-Object { $_.PSIsContainer }
             foreach ($versionDir in $versionDirs) {
-                $userPython = Join-Path $versionDir.FullName "python.exe"
-                & $addCandidate $userPython
+                Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path (Join-Path $versionDir.FullName "python.exe") -Source "LocalAppData" -Role "base"
             }
         }
     }
@@ -612,12 +881,145 @@ function Get-EiaaxPythonDiscoveryCandidates {
         $pythonRoots = Get-ChildItem -Path "C:\" -ErrorAction SilentlyContinue |
             Where-Object { $_.PSIsContainer -and $_.Name -like "Python*" }
         foreach ($root in $pythonRoots) {
-            $rootPython = Join-Path $root.FullName "python.exe"
-            & $addCandidate $rootPython
+            Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path (Join-Path $root.FullName "python.exe") -Source "C:\Python*" -Role "base"
         }
     }
 
-    return [string[]]$ordered.ToArray()
+    $venvCreatorFallback = $null
+    if ($candidateList.Count -eq 0 -and (Test-Path -LiteralPath $referenceVenvPython)) {
+        $referenceProbe = Test-EiaaxPythonRuntimeCandidate -PythonExe $referenceVenvPython
+        if ($referenceProbe.Executable) {
+            [void]$lines.Add("Python base original ............ NO DISPONIBLE")
+            [void]$lines.Add("Venv integrado ................ FUNCIONAL")
+            $venvCreatorFallback = $referenceVenvPython
+            [void]$candidateList.Add([ordered]@{
+                Path   = $referenceVenvPython
+                Source = "venv integrado (creador venv)"
+                Role   = "venv-creator"
+            })
+        }
+    }
+
+    return [ordered]@{
+        Lines               = [string[]]$lines.ToArray()
+        Candidates          = @($candidateList.ToArray())
+        CandidateCount      = $candidateList.Count
+        ReferenceVenvPython = $referenceVenvPython
+        ReferenceSysProbe   = $referenceSysProbe
+        VenvCreatorFallback = $venvCreatorFallback
+    }
+}
+
+function Get-EiaaxPythonDiscoveryCandidates {
+    param(
+        [string]$WorktreeRoot = $null
+    )
+
+    $plan = Build-EiaaxPythonResolutionPlan -WorktreeRoot $WorktreeRoot
+    return @($plan.Candidates | ForEach-Object { $_.Path })
+}
+
+function Resolve-EiaaxPython {
+    param(
+        [string]$LogFile = $null,
+        [string]$WorktreeRoot = $null
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($env:EIAAX_PYTHON)) {
+        $explicitPath = Get-EiaaxResolvedPythonPath -Path $env:EIAAX_PYTHON
+        Write-EiaaxPythonDiscoveryDiagnostics -Diagnostics @{
+            Lines = @(
+                $(if ($null -eq $explicitPath) {
+                    "Fuente 1: EIAAX_PYTHON .......... ruta invalida"
+                }
+                else {
+                    "Fuente 1: EIAAX_PYTHON .......... definido (" + $env:EIAAX_PYTHON + ")"
+                })
+            )
+        }
+        if ($null -eq $explicitPath) {
+            Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: EIAAX_PYTHON is not a valid python executable: " + $env:EIAAX_PYTHON)
+        }
+        $explicitProbe = Test-EiaaxPythonRuntimeCandidate -PythonExe $explicitPath
+        if (-not $explicitProbe.Executable) {
+            Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: EIAAX_PYTHON failed python -V: " + $env:EIAAX_PYTHON + " -> " + $explicitProbe.Error)
+        }
+        Write-Host ("Validacion python -V .......... PASS (" + $explicitProbe.Version + ")")
+        return $explicitPath
+    }
+
+    $plan = Build-EiaaxPythonResolutionPlan -WorktreeRoot $WorktreeRoot
+    Write-EiaaxPythonDiscoveryDiagnostics -Diagnostics @{ Lines = $plan.Lines }
+
+    if ($plan.CandidateCount -eq 0) {
+        $detail = "PYTHON NOT FOUND: ningun candidato ejecutable."
+        if ($null -ne $plan.ReferenceSysProbe -and $plan.ReferenceSysProbe.ExitCode -eq 0) {
+            $detail += " sys.base_prefix=" + $plan.ReferenceSysProbe.BasePrefix + " sys._base_executable=" + $plan.ReferenceSysProbe.BaseExecutable + "."
+        }
+        elseif (Test-Path -LiteralPath $plan.ReferenceVenvPython) {
+            $detail += " Venv integrado existe pero no se pudo resolver Python base ni usar como creador."
+        }
+        Exit-EiaaxFailure -Message ($detail + " Revise el bloque PYTHON DISCOVERY arriba.")
+    }
+
+    $probeDirectory = $null
+    if (-not [string]::IsNullOrWhiteSpace($WorktreeRoot)) {
+        $probeDirectory = Ensure-EiaaxLogsDir -WorktreeRoot $WorktreeRoot
+    }
+
+    $failures = New-Object System.Collections.Generic.List[string]
+    foreach ($entry in @($plan.Candidates)) {
+        $candidate = $entry.Path
+        $source = $entry.Source
+        $message = "Checking Python candidate (" + $source + "): " + $candidate
+        Write-Host $message
+        if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
+            Write-EiaaxLogLine -LogFile $LogFile -Message $message
+        }
+
+        $probe = Test-EiaaxPythonRuntimeCandidate -PythonExe $candidate
+        if (-not $probe.Executable) {
+            [void]$failures.Add($candidate + " -> " + $probe.Error)
+            continue
+        }
+
+        if ($entry.Role -eq "venv-creator") {
+            if ($null -eq $probeDirectory) {
+                $probeDirectory = [System.IO.Path]::GetTempPath()
+            }
+            $venvProbeError = Test-EiaaxPythonVenvCapability -PythonExe $candidate -ProbeDirectory $probeDirectory
+            if ($null -ne $venvProbeError) {
+                [void]$failures.Add($candidate + " -> venv creator probe failed: " + $venvProbeError)
+                [void]$plan.Lines.Add("Prueba python -m venv ............ FAIL (" + $venvProbeError + ")")
+                continue
+            }
+            [void]$plan.Lines.Add("Prueba python -m venv ............ PASS (venv integrado como creador)")
+        }
+
+        Write-Host ("Validacion python -V .......... PASS (" + $probe.Version + ")")
+        $selectedMessage = "Selected Python (" + $source + "): " + $candidate + " (" + $probe.Version + ")"
+        Write-Host ("Python base ................... " + $candidate)
+        Write-Host $selectedMessage
+        if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
+            Write-EiaaxLogLine -LogFile $LogFile -Message $selectedMessage
+        }
+        return $candidate
+    }
+
+    $detail = ($failures.ToArray() -join "; ")
+    if ($null -ne $plan.VenvCreatorFallback) {
+        Exit-EiaaxFailure -Message ("PYTHON BASE ORIGINAL NO DISPONIBLE. VENV ANTERIOR FUNCIONAL pero no pudo crear venv convergencia. " + $detail)
+    }
+    Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: candidatos detectados pero ninguno ejecuto correctamente. " + $detail)
+}
+
+function Find-EiaaxPython {
+    param(
+        [string]$LogFile = $null,
+        [string]$WorktreeRoot = $null
+    )
+
+    return Resolve-EiaaxPython -LogFile $LogFile -WorktreeRoot $WorktreeRoot
 }
 
 function Get-EiaaxPythonWhereCandidates {
@@ -796,9 +1198,9 @@ function Test-EiaaxVenvIntegrity {
         return $result
     }
 
-    $venvPython = Join-Path $VenvPath "Scripts\python.exe"
-    if (-not (Test-Path -LiteralPath $venvPython)) {
-        $result.Reason = "Scripts\python.exe missing"
+    $venvPython = Get-EiaaxVenvPythonPathForDirectory -VenvPath $VenvPath
+    if ([string]::IsNullOrWhiteSpace($venvPython)) {
+        $result.Reason = "venv python missing (Scripts\python.exe or bin/python)"
         return $result
     }
 
@@ -1265,103 +1667,32 @@ function Test-EiaaxPythonVenvCapability {
     }
 }
 
-function Find-EiaaxPython {
-    param(
-        [string]$LogFile = $null,
-        [string]$WorktreeRoot = $null
-    )
-
-    if (-not [string]::IsNullOrWhiteSpace($env:EIAAX_PYTHON)) {
-        $explicitPath = Get-EiaaxResolvedPythonPath -Path $env:EIAAX_PYTHON
-        if ($null -eq $explicitPath) {
-            Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: EIAAX_PYTHON is not a valid python executable: " + $env:EIAAX_PYTHON)
-        }
-
-        $explicitProbe = Test-EiaaxPythonRuntimeCandidate -PythonExe $explicitPath
-        if ($explicitProbe.Executable) {
-            $selectedMessage = "Selected Python (EIAAX_PYTHON): " + $explicitPath + " (" + $explicitProbe.Version + ")"
-            Write-Host $selectedMessage
-            if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
-                Write-EiaaxLogLine -LogFile $LogFile -Message $selectedMessage
-            }
-            return $explicitPath
-        }
-
-        Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: EIAAX_PYTHON failed python -V: " + $env:EIAAX_PYTHON + " -> " + $explicitProbe.Error)
-    }
-
-    if (-not [string]::IsNullOrWhiteSpace($WorktreeRoot)) {
-        $venvPython = Join-Path (Join-Path $WorktreeRoot $script:VenvDirName) "Scripts\python.exe"
-        $venvResolved = Get-EiaaxResolvedPythonPath -Path $venvPython
-        if ($null -ne $venvResolved) {
-            $venvProbe = Test-EiaaxPythonRuntimeCandidate -PythonExe $venvResolved
-            if ($venvProbe.Executable) {
-                $selectedMessage = "Selected Python (existing venv): " + $venvResolved + " (" + $venvProbe.Version + ")"
-                Write-Host $selectedMessage
-                if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
-                    Write-EiaaxLogLine -LogFile $LogFile -Message $selectedMessage
-                }
-                return $venvResolved
-            }
-        }
-    }
-
-    $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
-    if (Get-EiaaxCollectionCount $candidates -eq 0) {
-        $referenceCfg = Get-EiaaxReferencePyvenvCfgPath
-        $cfgHint = ""
-        if (Test-Path -LiteralPath $referenceCfg) {
-            $cfg = Read-EiaaxPyvenvCfg -PyvenvCfgPath $referenceCfg
-            if (-not [string]::IsNullOrWhiteSpace($cfg.version)) {
-                $cfgHint = " Reference pyvenv.cfg version=" + $cfg.version + "."
-            }
-        }
-        Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: no python.exe candidates detected. Tried EIAAX_PYTHON, reference pyvenv.cfg (" + $referenceCfg + "), py launcher, where.exe, PATH, registry and standard install paths." + $cfgHint + " Set EIAAX_PYTHON to a full python.exe path if needed.")
-    }
-
-    $failures = @()
-    foreach ($candidate in $candidates) {
-        $message = "Checking Python candidate: " + $candidate
-        Write-Host $message
-        if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
-            Write-EiaaxLogLine -LogFile $LogFile -Message $message
-        }
-
-        $probe = Test-EiaaxPythonRuntimeCandidate -PythonExe $candidate
-        if (-not $probe.Executable) {
-            $failures += ($candidate + " -> " + $probe.Error)
-            continue
-        }
-
-        $selectedMessage = "Selected Python: " + $candidate + " (" + $probe.Version + ")"
-        Write-Host $selectedMessage
-        if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
-            Write-EiaaxLogLine -LogFile $LogFile -Message $selectedMessage
-        }
-        return $candidate
-    }
-
-    $detail = ($failures -join "; ")
-    Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: candidates were detected but none executed successfully. " + $detail)
-}
-
 function Confirm-EiaaxProductionPrerequisites {
     param(
         [Parameter(Mandatory = $true)]
         [string]$WorktreeRoot,
-        [string]$LogFile = $null
+        [string]$LogFile = $null,
+        [string]$ResolvedPython = $null,
+        [switch]$SkipPythonCheck
     )
 
     Write-Host "Checking production prerequisites..."
     Test-EiaaxWorktree -WorktreeRoot $WorktreeRoot
 
-    $python = Find-EiaaxPython -LogFile $LogFile -WorktreeRoot $WorktreeRoot
-    if ([string]::IsNullOrWhiteSpace($python)) {
-        Exit-EiaaxFailure -Message "PYTHON NOT FOUND during production prerequisite check."
-    }
+    if (-not $SkipPythonCheck) {
+        $python = if (-not [string]::IsNullOrWhiteSpace($ResolvedPython)) {
+            $ResolvedPython
+        }
+        else {
+            Resolve-EiaaxPython -LogFile $LogFile -WorktreeRoot $WorktreeRoot
+        }
+        if ([string]::IsNullOrWhiteSpace($python)) {
+            Exit-EiaaxFailure -Message "PYTHON NOT FOUND during production prerequisite check."
+        }
 
-    $versionLine = Get-EiaaxPythonVersionLine -PythonExe $python
-    Write-Host ("Production Python OK: " + $python + " (" + $versionLine + ")")
+        $versionLine = Get-EiaaxPythonVersionLine -PythonExe $python
+        Write-Host ("Production Python OK: " + $python + " (" + $versionLine + ")")
+    }
 
     $npm = Get-Command npm -ErrorAction SilentlyContinue
     if ($null -eq $npm) {
@@ -1370,7 +1701,8 @@ function Confirm-EiaaxProductionPrerequisites {
     Write-Host ("Production npm OK: " + $npm.Source)
 
     if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
-        Write-EiaaxLogLine -LogFile $LogFile -Message ("Production prerequisites OK. Python=" + $python)
+        $pythonNote = if ($SkipPythonCheck) { "skipped" } else { $python }
+        Write-EiaaxLogLine -LogFile $LogFile -Message ("Production prerequisites OK. Python=" + $pythonNote)
     }
 }
 
@@ -1405,8 +1737,8 @@ function Get-EiaaxVenvPython {
     )
 
     $paths = Get-EiaaxPaths -WorktreeRoot $WorktreeRoot
-    $venvPython = Join-Path $paths.Venv "Scripts\python.exe"
-    if (-not (Test-Path -LiteralPath $venvPython)) {
+    $venvPython = Get-EiaaxVenvPythonPathForDirectory -VenvPath $paths.Venv
+    if ([string]::IsNullOrWhiteSpace($venvPython)) {
         Exit-EiaaxFailure -Message "Virtualenv missing. Run scripts\windows\preparar_demo_eiaax.ps1 first."
     }
     return $venvPython
