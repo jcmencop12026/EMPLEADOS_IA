@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     End-to-end scenario test: stale pyvenv.cfg + functional reference venv + empty PATH.

@@ -289,7 +289,11 @@ function Get-EiaaxCollectionCount {
         return 0
     }
 
-    return @( $Value ).Count
+    if ($Value -is [System.Collections.ICollection]) {
+        return $Value.Count
+    }
+
+    return @($Value).Count
 }
 
 function Get-EiaaxAlembicHeadRevisions {
@@ -2390,6 +2394,45 @@ function Confirm-EiaaxAlembicState {
     Write-Host ("Alembic current OK: " + $currentRevision)
 }
 
+function Test-EiaaxScriptUtf8Bom {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    return ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)
+}
+
+function Get-EiaaxParserValidationFiles {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    return @(Get-ChildItem -LiteralPath $ScriptsDir -Filter "*.ps1" |
+        Where-Object { $_.Name -ne "validate_ps_parse.ps1" } |
+        Sort-Object Name)
+}
+
+function Ensure-EiaaxWindowsScriptsUtf8Bom {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    $updated = New-Object System.Collections.Generic.List[string]
+    foreach ($file in (Get-EiaaxParserValidationFiles -ScriptsDir $ScriptsDir)) {
+        if (Test-EiaaxScriptUtf8Bom -Path $file.FullName) {
+            continue
+        }
+        $text = [System.IO.File]::ReadAllText($file.FullName, [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText($file.FullName, $text, [System.Text.UTF8Encoding]::new($true))
+        [void]$updated.Add($file.Name)
+    }
+    return @($updated)
+}
+
 function Get-EiaaxWindowsPowerShellExecutable {
     if (-not [string]::IsNullOrWhiteSpace($env:WINDIR)) {
         $windowsPowerShell = Join-Path $env:WINDIR "System32\WindowsPowerShell\v1.0\powershell.exe"
@@ -2419,7 +2462,12 @@ function Invoke-EiaaxPowerShellFile {
     )
 
     $shell = Get-EiaaxWindowsPowerShellExecutable
-    & $shell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $FilePath @ArgumentList
+    $args = @("-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", $FilePath) + $ArgumentList
+    $process = Start-Process -FilePath $shell -ArgumentList $args -Wait -PassThru -NoNewWindow
+    if ($null -eq $process) {
+        Exit-EiaaxFailure -Message ("Failed to start PowerShell process for: " + $FilePath)
+    }
+  return [int]$process.ExitCode
 }
 
 function Invoke-EiaaxPowerShellParserValidation {
@@ -2433,8 +2481,10 @@ function Invoke-EiaaxPowerShellParserValidation {
         Exit-EiaaxFailure -Message "Missing validate_ps_parse.ps1"
     }
 
-    Invoke-EiaaxPowerShellFile -FilePath $validator
-    if ($LASTEXITCODE -ne 0) {
-        Exit-EiaaxFailure -Message "PowerShell parser validation failed."
+    $shell = Get-EiaaxWindowsPowerShellExecutable
+    Write-Host ("Parser shell: " + $shell)
+    $parseExitCode = Invoke-EiaaxPowerShellFile -FilePath $validator
+    if ($parseExitCode -ne 0) {
+        Exit-EiaaxFailure -Message ("PowerShell parser validation failed (exit " + $parseExitCode + "). See FAILED FILES above.")
     }
 }

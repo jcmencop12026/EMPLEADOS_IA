@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Static and functional tests for convergence atomic startup helpers.
@@ -116,7 +116,6 @@ Assert-Test "arrancar_convergencia_windows.ps1 contains atomic git sync and fail
             "EIAAX_BOOTSTRAP_REEXEC",
             "Initialize-EiaaxConvergenceWorktreeFromScriptRoot",
             "Assert-EiaaxConvergencePathAuthority",
-            "Write-EiaaxConvergenceExecutionContext",
             "Write-EiaaxConvergenceExecutionContext",
             "Sync-EiaaxConvergenceRepository",
             "Clear-EiaaxPortsForConvergence",

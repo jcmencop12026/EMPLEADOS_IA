@@ -221,6 +221,11 @@ try {
     Set-EiaaxStage -Name "parser_powershell"
     Write-Host ""
     Write-Host "[1/7] Parser PowerShell..."
+    $bomUpdates = @(Ensure-EiaaxWindowsScriptsUtf8Bom -ScriptsDir $PSScriptRoot)
+    if ($bomUpdates.Count -gt 0) {
+        Write-Host ("Normalized UTF-8 BOM for: " + ($bomUpdates -join ", "))
+        Write-EiaaxLogLine -LogFile $logFile -Message ("UTF-8 BOM normalized: " + ($bomUpdates -join ", "))
+    }
     Invoke-EiaaxPowerShellParserValidation -ScriptsDir $PSScriptRoot
     Write-Host "Parser PASS"
 
@@ -233,8 +238,8 @@ try {
     Set-EiaaxStage -Name "preparacion_python_venv"
     Write-Host ""
     Write-Host "[3/7] Preparacion (Python base, venv convergencia, seed, Alembic)..."
-    Invoke-EiaaxPowerShellFile -FilePath $prepareScript
-    if ($LASTEXITCODE -ne 0) {
+    $prepareExitCode = Invoke-EiaaxPowerShellFile -FilePath $prepareScript
+    if ($prepareExitCode -ne 0) {
         Exit-EiaaxFailure -Message "Preparation failed. Aborting before start to avoid false positives."
     }
     Write-Host "Preparation PASS"
@@ -251,8 +256,8 @@ try {
     Set-EiaaxStage -Name "arranque_backend_frontend"
     Write-Host ""
     Write-Host "[4/7] Arranque backend + frontend..."
-    Invoke-EiaaxPowerShellFile -FilePath $startScript
-    if ($LASTEXITCODE -ne 0) {
+    $startExitCode = Invoke-EiaaxPowerShellFile -FilePath $startScript
+    if ($startExitCode -ne 0) {
         Exit-EiaaxFailure -Message "Start failed. See logs\demo\"
     }
     Write-Host "Start PASS"

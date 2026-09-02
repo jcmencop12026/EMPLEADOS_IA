@@ -20,17 +20,17 @@ try {
         Exit-EiaaxFailure -Message "Demo not prepared. Run scripts\windows\preparar_demo_eiaax.ps1 first."
     }
 
-    Invoke-EiaaxPowerShellFile -FilePath $backendScript
-    if ($LASTEXITCODE -ne 0) {
-        exit $LASTEXITCODE
+    $backendExitCode = Invoke-EiaaxPowerShellFile -FilePath $backendScript
+    if ($backendExitCode -ne 0) {
+        exit $backendExitCode
     }
 
     Start-Sleep -Seconds 2
 
-    Invoke-EiaaxPowerShellFile -FilePath $frontendScript
-    if ($LASTEXITCODE -ne 0) {
+    $frontendExitCode = Invoke-EiaaxPowerShellFile -FilePath $frontendScript
+    if ($frontendExitCode -ne 0) {
         Invoke-EiaaxPowerShellFile -FilePath $stopScript | Out-Null
-        exit $LASTEXITCODE
+        exit $frontendExitCode
     }
 
     if (-not (Test-EiaaxFrontendProxyHealth -Port $FrontendPort -TimeoutSec 30)) {

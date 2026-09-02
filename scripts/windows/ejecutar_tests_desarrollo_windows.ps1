@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Optional development test suite for EIAAX Windows scripts.
@@ -11,7 +11,12 @@ $ErrorActionPreference = "Stop"
 $common = Join-Path $PSScriptRoot "EiaaxDemo.Common.ps1"
 . $common
 
+Write-Host ""
+Write-Host "=== validate_ps_parse.ps1 (production shell) ==="
+Invoke-EiaaxPowerShellParserValidation -ScriptsDir $PSScriptRoot
+
 $tests = @(
+    "test_parser_aggregate.ps1",
     "test_ps_semantics.ps1",
     "test_git_sync.ps1",
     "test_python_discovery.ps1",
@@ -29,9 +34,9 @@ foreach ($testName in $tests) {
 
     Write-Host ""
     Write-Host ("=== " + $testName + " ===")
-    Invoke-EiaaxPowerShellFile -FilePath $testPath
-    if ($LASTEXITCODE -ne 0) {
-        Exit-EiaaxFailure -Message ("Development test failed: " + $testName)
+    $testExitCode = Invoke-EiaaxPowerShellFile -FilePath $testPath
+    if ($testExitCode -ne 0) {
+        Exit-EiaaxFailure -Message ("Development test failed: " + $testName + " (exit " + $testExitCode + ")")
     }
 }
 
