@@ -5,6 +5,7 @@
 
 .DESCRIPTION
     One invocation prepares and certifies the convergence candidate with fail-closed validation:
+    - bootstrap git self-update before loading Common.ps1 (safe on stderr, exit-code authority)
     - git fetch/checkout/pull --ff-only for the convergence branch
     - repository branch/manifest
     - Python discovery (reference pyvenv.cfg, py launcher, where.exe, registry, PATH)
@@ -16,8 +17,123 @@
     Default worktree: D:\EMPLEADOS_IA_CONVERGENCIA
 
 .EXAMPLE
-    powershell -NoProfile -ExecutionPolicy Bypass -File D:\EMPLEADOS_IA_CONVERGENCIA\scripts\windows\arrancar_convergencia_windows.ps1
+    Set-Location "D:\EMPLEADOS_IA_CONVERGENCIA"
+    powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\windows\arrancar_convergencia_windows.ps1"
 #>
+
+function Invoke-EiaaxBootstrapGitCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [string[]]$ArgumentList,
+        [Parameter(Mandatory = $true)]
+        [string]$WorkingDirectory
+    )
+
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $locationPushed = $false
+    try {
+        Push-Location $WorkingDirectory
+        $locationPushed = $true
+        $rawOutput = & git @ArgumentList 2>&1
+        $exitCode = $LASTEXITCODE
+        $output = ""
+        if ($null -ne $rawOutput) {
+            $output = (($rawOutput | ForEach-Object {
+                if ($_ -is [System.Management.Automation.ErrorRecord]) {
+                    $_.ToString()
+                }
+                else {
+                    [string]$_
+                }
+            }) -join "`n").Trim()
+        }
+        return [ordered]@{
+            ExitCode = $exitCode
+            Output   = $output
+        }
+    }
+    finally {
+        if ($locationPushed) {
+            Pop-Location
+        }
+        $ErrorActionPreference = $previousPreference
+    }
+}
+
+function Invoke-EiaaxBootstrapRepositorySync {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    $manifestPath = Join-Path $ScriptsDir "eiaax_convergence_manifest.json"
+    if (-not (Test-Path -LiteralPath $manifestPath)) {
+        Write-Host ("ERROR: Missing convergence manifest: " + $manifestPath)
+        exit 1
+    }
+
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    $expectedBranch = [string]$manifest.branch
+    $worktree = (Resolve-Path -LiteralPath (Join-Path $ScriptsDir "..\..")).Path
+    $folderName = [System.IO.Path]::GetFileName($worktree.TrimEnd('\'))
+
+    if ($folderName -ne "EMPLEADOS_IA_CONVERGENCIA") {
+        Write-Host ("ERROR: Bootstrap requires EMPLEADOS_IA_CONVERGENCIA worktree. Resolved: " + $worktree)
+        exit 1
+    }
+
+    $git = Get-Command git -ErrorAction SilentlyContinue
+    if ($null -eq $git) {
+        Write-Host "ERROR: git not found in PATH."
+        exit 1
+    }
+
+    $shaBeforeResult = Invoke-EiaaxBootstrapGitCommand `
+        -ArgumentList @("rev-parse", "--short", "HEAD") `
+        -WorkingDirectory $worktree
+    $shaBefore = $shaBeforeResult.Output
+
+    $steps = @(
+        @{ Label = "git fetch"; Args = @("fetch", "origin", $expectedBranch) },
+        @{ Label = "git checkout"; Args = @("checkout", $expectedBranch) },
+        @{ Label = "git pull --ff-only"; Args = @("pull", "--ff-only", "origin", $expectedBranch) }
+    )
+
+    foreach ($step in $steps) {
+        $result = Invoke-EiaaxBootstrapGitCommand -ArgumentList $step.Args -WorkingDirectory $worktree
+        if ($result.ExitCode -ne 0) {
+            Write-Host ("ERROR: Bootstrap " + $step.Label + " failed with exit code " + $result.ExitCode)
+            if (-not [string]::IsNullOrWhiteSpace($result.Output)) {
+                Write-Host $result.Output
+            }
+            exit 1
+        }
+    }
+
+    $shaAfterResult = Invoke-EiaaxBootstrapGitCommand `
+        -ArgumentList @("rev-parse", "--short", "HEAD") `
+        -WorkingDirectory $worktree
+    $shaAfter = $shaAfterResult.Output
+
+    return [ordered]@{
+        Worktree  = $worktree
+        ShaBefore = $shaBefore
+        ShaAfter  = $shaAfter
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($env:EIAAX_BOOTSTRAP_REEXEC)) {
+    $bootstrap = Invoke-EiaaxBootstrapRepositorySync -ScriptsDir $PSScriptRoot
+    if ($bootstrap.ShaBefore -ne $bootstrap.ShaAfter) {
+        Write-Host ("Bootstrap updated repository: " + $bootstrap.ShaBefore + " -> " + $bootstrap.ShaAfter)
+        $env:EIAAX_BOOTSTRAP_REEXEC = "1"
+        & powershell -NoProfile -ExecutionPolicy Bypass -File $PSCommandPath
+        exit $LASTEXITCODE
+    }
+    Remove-Item Env:EIAAX_BOOTSTRAP_REEXEC -ErrorAction SilentlyContinue
+}
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"

@@ -242,6 +242,25 @@ exit 51
     }
 }
 
+Assert-Test "arrancar bootstrap runs before Common.ps1 and tolerates git stderr" {
+    $arrancarPath = Join-Path $PSScriptRoot "arrancar_convergencia_windows.ps1"
+    $content = Get-Content -LiteralPath $arrancarPath -Raw
+    $bootstrapIndex = $content.IndexOf("Invoke-EiaaxBootstrapRepositorySync")
+    $commonIndex = $content.IndexOf(". `$common")
+    if ($bootstrapIndex -lt 0) {
+        throw "Missing Invoke-EiaaxBootstrapRepositorySync in arrancar script"
+    }
+    if ($commonIndex -lt 0) {
+        throw "Missing Common.ps1 load in arrancar script"
+    }
+    if ($bootstrapIndex -gt $commonIndex) {
+        throw "Bootstrap must execute before loading Common.ps1"
+    }
+    if ($content -notmatch "EIAAX_BOOTSTRAP_REEXEC") {
+        throw "Bootstrap must re-exec after repository update"
+    }
+}
+
 Assert-Test "arrancar script documents ETAPA and LOG on failure" {
     $content = Get-Content -LiteralPath (Join-Path $PSScriptRoot "arrancar_convergencia_windows.ps1") -Raw
     if ($content -notmatch "ETAPA:") {

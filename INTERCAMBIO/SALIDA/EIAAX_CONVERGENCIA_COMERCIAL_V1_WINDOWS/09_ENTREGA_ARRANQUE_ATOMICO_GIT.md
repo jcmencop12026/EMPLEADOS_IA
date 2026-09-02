@@ -29,7 +29,9 @@ En `18b9be3`, `Sync-EiaaxConvergenceRepository` ejecutaba `git fetch` con redire
 
 ## D. SHA final
 
-**`b01f890`**
+**Un solo SHA activo: el HEAD de `cursor/convergencia-comercial-v1-85e4`.**
+
+Ver política completa en `10_AUTORIDAD_SHA_CANDIDATO_WINDOWS.md`. No existen SHA funcionales y de documentación distintos.
 
 ## E. Archivos modificados
 
