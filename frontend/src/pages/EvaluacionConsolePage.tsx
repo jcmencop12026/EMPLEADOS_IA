@@ -16,6 +16,7 @@ import {
 } from "../api";
 import { EiaaxTable } from "../components/EiaaxTable";
 import { EspacioExternoAdminPanel } from "../components/espacioExterno/EspacioExternoAdminPanel";
+import { AccionesExternasPanel } from "../components/evaluacion/AccionesExternasPanel";
 import { CabinaContratoPanel } from "../components/evaluacion/CabinaContratoPanel";
 import { CabinaInformesPanel } from "../components/evaluacion/CabinaInformesPanel";
 import { CabinaValorPanel } from "../components/evaluacion/CabinaValorPanel";

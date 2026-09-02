@@ -58,6 +58,12 @@ def test_login_forgot_bajo_entrar():
     assert "resolverá internamente" in page
 
 
+def test_cabina_acciones_externas_import():
+    page = (FRONT / "pages" / "EvaluacionConsolePage.tsx").read_text(encoding="utf-8")
+    assert "AccionesExternasPanel" in page
+    assert 'from "../components/evaluacion/AccionesExternasPanel"' in page
+
+
 def test_operaciones_consola_complementaria():
     page = (FRONT / "pages" / "OperationsHubPage.tsx").read_text(encoding="utf-8")
     assert "Centro de Operaciones" in page
