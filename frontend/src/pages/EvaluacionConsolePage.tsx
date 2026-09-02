@@ -1,13 +1,11 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
-  crearIndicador,
   crearOportunidadDesdeHallazgo,
   evaluarExpediente,
   fetchEvaluacion,
   fetchEvaluacionImpacto,
   fetchEvaluacionTrazabilidad,
-  fetchInformesImpacto,
   fetchPiiaxStatus,
   fetchVistaEntidad,
   setHallazgoVisibilidad,
@@ -18,7 +16,9 @@ import {
 } from "../api";
 import { EiaaxTable } from "../components/EiaaxTable";
 import { EspacioExternoAdminPanel } from "../components/espacioExterno/EspacioExternoAdminPanel";
-import { AccionesExternasPanel } from "../components/evaluacion/AccionesExternasPanel";
+import { CabinaContratoPanel } from "../components/evaluacion/CabinaContratoPanel";
+import { CabinaInformesPanel } from "../components/evaluacion/CabinaInformesPanel";
+import { CabinaValorPanel } from "../components/evaluacion/CabinaValorPanel";
 import { EiaaxAskPanel } from "../components/evaluacion/EiaaxAskPanel";
 import { EmpresaOperacionPanel } from "../components/evaluacion/EmpresaOperacionPanel";
 import { ImpactoGrafico } from "../components/evaluacion/ImpactoGrafico";
@@ -63,9 +63,11 @@ const ESTADO_INFO_LABELS: Record<string, string> = {
 
 export function EvaluacionConsolePage() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
+  const [searchParams] = useSearchParams();
   const { has } = usePermissions();
-  const [tab, setTab] = useState<Tab>("empresa");
-  const [informes, setInformes] = useState<Array<Record<string, unknown>>>([]);
+  const tabParam = searchParams.get("tab");
+  const initialTab = (TABS.some((t) => t.id === tabParam) ? tabParam : "empresa") as Tab;
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [exp, setExp] = useState<EvaluacionExpedienteDetail | null>(null);
   const [impacto, setImpacto] = useState<Record<string, unknown> | null>(null);
   const [trazabilidad, setTrazabilidad] = useState<Record<string, unknown> | null>(null);
@@ -75,6 +77,10 @@ export function EvaluacionConsolePage() {
   const [askOpen, setAskOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [piiax, setPiiax] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    if (tabParam && TABS.some((t) => t.id === tabParam)) setTab(tabParam as Tab);
+  }, [tabParam]);
 
   usePageAssistantContext(
     {
@@ -106,11 +112,6 @@ export function EvaluacionConsolePage() {
     if (!evaluacionId) return;
     if (tab === "valor" || tab === "resultados") {
       fetchEvaluacionImpacto(evaluacionId).then(setImpacto).catch(() => undefined);
-    }
-    if (tab === "informes") {
-      fetchInformesImpacto(evaluacionId)
-        .then((r) => setInformes(r.items as unknown as Array<Record<string, unknown>>))
-        .catch(() => undefined);
     }
     if (tab === "vista-empresa" && has("evaluacion.vista_entidad")) {
       fetchVistaEntidad(evaluacionId).then(setVistaEntidad).catch(() => undefined);
@@ -302,38 +303,13 @@ export function EvaluacionConsolePage() {
           </section>
         )}
 
-        {tab === "valor" && (
-          <section className="panel compact-panel">
-            <h2>Valor e impacto</h2>
-            {!impacto ? (
-              <p className="muted">Cargando indicadores de valor…</p>
-            ) : (
-              <>
-                <p className="muted small">{String(impacto.nota)}</p>
-                {has("evaluacion.indicadores.manage") && evaluacionId && (
-                  <ImpactoIndicadorForm expedienteId={evaluacionId} onCreated={() => fetchEvaluacionImpacto(evaluacionId).then(setImpacto)} />
-                )}
-                <table className="data-table compact-table">
-                  <thead>
-                    <tr><th>Indicador</th><th>Antes</th><th>Proyectado</th><th>Real</th><th>Visualización</th></tr>
-                  </thead>
-                  <tbody>
-                    {((impacto.indicadores as Record<string, unknown>[]) ?? []).map((ind) => (
-                      <ImpactoGrafico
-                        key={String(ind.id ?? ind.nombre)}
-                        nombre={String(ind.nombre ?? ind.hallazgo ?? "—")}
-                        unidad={ind.unidad as string | null}
-                        grafico={ind.grafico as { puntos: { serie: string; valor: string; numerico: number | null; es_proyeccion: boolean }[] } | null}
-                        antes={ind.antes as string | null}
-                        proyectado={ind.proyectado as string | null}
-                        real={ind.real as string | null}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </>
-            )}
-          </section>
+        {tab === "valor" && evaluacionId && (
+          <CabinaValorPanel
+            expedienteId={evaluacionId}
+            impacto={impacto}
+            canManageIndicadores={has("evaluacion.indicadores.manage")}
+            onImpactoRefresh={() => fetchEvaluacionImpacto(evaluacionId).then(setImpacto)}
+          />
         )}
 
         {tab === "resultados" && (
@@ -360,40 +336,10 @@ export function EvaluacionConsolePage() {
           </section>
         )}
 
-        {tab === "informes" && (
-          <section className="panel compact-panel">
-            <h2>Informes</h2>
-            <div className="ops-actions">
-              <Link className="btn secondary" to={`/presentacion/${evaluacionId}`}>Presentación ejecutiva</Link>
-              <Link className="btn secondary" to="/demo/informes-periodicos">Informes periódicos</Link>
-            </div>
-            {informes.length > 0 ? (
-              <EiaaxTable
-                columns={[
-                  { key: "titulo", label: "Título", getValue: (r) => String(r.titulo ?? ""), render: (r) => String(r.titulo ?? "—") },
-                  { key: "tipo", label: "Tipo", getValue: (r) => String(r.tipo ?? ""), render: (r) => String(r.tipo ?? "—") },
-                  { key: "version", label: "Versión", getValue: (r) => String(r.version ?? ""), render: (r) => String(r.version ?? "—") },
-                ]}
-                data={informes}
-                rowKey={(r) => String(r.id)}
-                prefsKey="cabina-informes"
-                searchPlaceholder="Buscar informe…"
-                emptyMessage="Sin informes generados"
-              />
-            ) : (
-              <p className="muted">Genere informes desde Presentación o el módulo de resultados.</p>
-            )}
-          </section>
-        )}
+        {tab === "informes" && evaluacionId && <CabinaInformesPanel expedienteId={evaluacionId} />}
 
-        {tab === "contrato" && (
-          <section className="panel compact-panel">
-            <h2>Contrato</h2>
-            <p className="muted small">
-              Gestión contractual y promoción de prospecto a cliente contratado.
-            </p>
-            <EspacioExternoAdminPanel expedienteId={evaluacionId} />
-          </section>
+        {tab === "contrato" && evaluacionId && (
+          <CabinaContratoPanel expedienteId={evaluacionId} entidadNombre={exp.entidad_nombre} />
         )}
 
         {tab === "vista-empresa" && (
@@ -520,40 +466,5 @@ function HallazgoCard({
         )}
       </div>
     </article>
-  );
-}
-
-function ImpactoIndicadorForm({ expedienteId, onCreated }: { expedienteId: string; onCreated: () => void }) {
-  const [nombre, setNombre] = useState("");
-  const [antes, setAntes] = useState("");
-  const [proyectado, setProyectado] = useState("");
-  const [real, setReal] = useState("");
-
-  async function onAdd() {
-    if (!nombre.trim()) return;
-    await crearIndicador(expedienteId, {
-      nombre,
-      valor_antes: antes || undefined,
-      valor_proyectado: proyectado || undefined,
-      valor_real: real || undefined,
-    });
-    setNombre("");
-    setAntes("");
-    setProyectado("");
-    setReal("");
-    onCreated();
-  }
-
-  return (
-    <div className="impacto-form panel compact-panel">
-      <h3>Agregar indicador</h3>
-      <div className="form-grid">
-        <label>Nombre<input value={nombre} onChange={(e) => setNombre(e.target.value)} /></label>
-        <label>Antes<input value={antes} onChange={(e) => setAntes(e.target.value)} /></label>
-        <label>Proyectado<input value={proyectado} onChange={(e) => setProyectado(e.target.value)} /></label>
-        <label>Real<input value={real} onChange={(e) => setReal(e.target.value)} /></label>
-      </div>
-      <button type="button" className="btn small primary" onClick={onAdd}>Guardar indicador</button>
-    </div>
   );
 }

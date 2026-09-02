@@ -36,7 +36,8 @@ import {
 import { ErrorState, LoadingState } from "../components/AsyncState";
 import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 import { usePermissions } from "../hooks/usePermissions";
-import { label, LIFECYCLE_STATUS, LIFECYCLE_PHASE, MATURITY, RISK_LEVEL } from "../lib/labels";
+import { label, LIFECYCLE_STATUS, LIFECYCLE_PHASE, RISK_LEVEL } from "../lib/labels";
+import { resolveEmployeeLifecycleStage } from "../lib/employeeLifecycle";
 
 const TABS = [
   "Resumen",
@@ -265,11 +266,34 @@ export function EmployeeDetailPage() {
 
   const lifecycle = String(detail?.lifecycle_status || "");
   const phase = String(inventory?.lifecycle_phase || detail?.lifecycle_phase || "");
+  const operationalStatus = String(detail?.status || "");
   const caps = (detail?.capabilities as Array<{ code: string; name: string }>) || [];
   const model = inventory?.model as Record<string, unknown> | undefined;
   const limits = inventory?.limits as Record<string, unknown> | undefined;
   const finops = inventory?.finops as Record<string, unknown> | undefined;
   const automations = (inventory?.automations as Array<Record<string, unknown>>) || [];
+  const processes = ((inventory?.processes as Array<Record<string, unknown>>) ?? []);
+  const integrations = ((inventory?.integrations as Array<Record<string, unknown>>) ?? []);
+
+  const stage = resolveEmployeeLifecycleStage({
+    lifecycle,
+    lastTest: health?.last_test_result ? String(health.last_test_result) : null,
+    lastPublication: health?.last_publication ? String(health.last_publication).slice(0, 10) : null,
+    lastCertification: (detail?.certifications as Array<Record<string, unknown>>)?.[0]?.result
+      ? String((detail?.certifications as Array<Record<string, unknown>>)[0].result)
+      : null,
+  });
+
+  const ACTION_ORDER = [
+    { key: "validate", label: "Validar", run: () => runAction("validate"), primary: stage.nextActionKey === "validate" },
+    { key: "test", label: "Probar", run: () => runAction("test"), primary: stage.nextActionKey === "test" },
+    { key: "certify", label: "Certificar", run: () => runAction("certify"), primary: stage.nextActionKey === "certify" },
+    { key: "approve", label: "Solicitar aprobación", run: handleRequestApproval, primary: stage.nextActionKey === "approve" },
+    { key: "publish", label: "Publicar", run: () => runAction("publish"), primary: stage.nextActionKey === "publish" },
+    { key: "activate", label: "Activar", run: () => runAction("activate"), primary: stage.nextActionKey === "activate" },
+    { key: "train", label: "Capacitar", run: handleTrain, primary: stage.nextActionKey === "train" },
+    { key: "retire", label: "Retirar", run: handleRetire, danger: true, primary: false },
+  ] as const;
 
   return (
     <div className="ops-page">
@@ -277,10 +301,17 @@ export function EmployeeDetailPage() {
         <Link to="/directorio" className="muted">← Directorio</Link>
         {findingId && <Link to="/trabajo" className="muted"> · Mi Trabajo</Link>}
         <h1>{String(detail?.name || "Empleado")}</h1>
-        <span className={`badge status-${lifecycle}`} title={lifecycle}>
-          {label(LIFECYCLE_STATUS, lifecycle)}
-        </span>
-        {phase && <span className="badge muted">{label(LIFECYCLE_PHASE, phase) || phase}</span>}
+        <div className="employee-header-badges">
+          <span className={`badge status-${lifecycle}`} title="Ciclo de vida">
+            {label(LIFECYCLE_STATUS, lifecycle)}
+          </span>
+          {operationalStatus && operationalStatus !== lifecycle && (
+            <span className="badge muted" title="Estado operativo">
+              {operationalStatus}
+            </span>
+          )}
+          {phase && <span className="badge muted">{label(LIFECYCLE_PHASE, phase) || phase}</span>}
+        </div>
       </header>
 
       {findingId && (
@@ -379,34 +410,52 @@ export function EmployeeDetailPage() {
 
       <section className="panel">
         {tab === "Resumen" && (
-          <>
-            <p className="mono muted">{String(detail?.code)} · v{String(detail?.version)}</p>
-            <p><strong>Fase:</strong> {label(LIFECYCLE_PHASE, phase) || phase || "—"}</p>
-            <p><strong>Especialidad:</strong> {String(detail?.specialty)}</p>
-            <p><strong>Objetivo:</strong> {String(inventory?.objective || detail?.objective || "—")}</p>
-            <p><strong>Riesgo:</strong> {label(RISK_LEVEL, String(detail?.risk_level))} · <strong>Madurez:</strong> {label(MATURITY, String(detail?.maturity))}</p>
-            {health && (
-              <ul className="compact-list muted">
-                <li>Última prueba: {String(health.last_test_result || "—")} {health.last_test_at ? `(${String(health.last_test_at).slice(0, 19)})` : ""}</li>
-                <li>Última publicación: {health.last_publication ? String(health.last_publication).slice(0, 19) : "—"}</li>
-                <li>Última capacitación: {health.last_training_at ? String(health.last_training_at).slice(0, 19) : "—"}</li>
-              </ul>
-            )}
-            <div className="ops-actions">
-              <Link className="btn" to={`/empleados/${employeeId}/editar`}>Editar configuración</Link>
-              <button type="button" className="btn" disabled={loading} onClick={() => runAction("validate")}>Validar</button>
-              <button type="button" className="btn" disabled={loading} onClick={() => runAction("test")}>Ejecutar pruebas</button>
-              <button type="button" className="btn" disabled={loading} onClick={() => runAction("certify")}>Certificar</button>
-              {canEdit && (
-                <button type="button" className="btn" disabled={loading} onClick={handleRequestApproval}>Solicitar aprobación</button>
-              )}
-              <button type="button" className="btn primary" disabled={loading || lifecycle !== "CERTIFIED"} onClick={() => runAction("publish")}>Publicar</button>
-              <button type="button" className="btn primary" disabled={loading || !["PUBLISHED", "PAUSED"].includes(lifecycle)} onClick={() => runAction("activate")}>Activar</button>
-              <button type="button" className="btn" disabled={loading} onClick={handleTrain}>Capacitar</button>
-              <button type="button" className="btn danger" disabled={loading} onClick={handleRetire}>Retirar</button>
+          <div className="employee-dossier">
+            <section className="employee-dossier-stage panel-inner">
+              <p className="eyebrow">Etapa actual</p>
+              <h2>{stage.label}</h2>
+              <p className="muted">{stage.description}</p>
+              <p><strong>Siguiente acción recomendada:</strong> {stage.nextAction}</p>
+            </section>
+
+            <div className="employee-dossier-grid">
+              <dl className="detail-grid compact">
+                <dt>Función / especialidad</dt><dd>{String(detail?.specialty || "—")}</dd>
+                <dt>Empresa / contexto</dt><dd>{String(inventory?.organization_name ?? detail?.organization_id ?? "—")}</dd>
+                <dt>Objetivo</dt><dd>{String(inventory?.objective || detail?.objective || "—")}</dd>
+                <dt>Estado ciclo</dt><dd>{stage.label}</dd>
+                <dt>Procesos</dt><dd>{processes.length ? processes.map((p) => String(p.name ?? p.code)).join(", ") : "—"}</dd>
+                <dt>Conocimiento</dt><dd>{knowledgeAssignments.assigned.length} fuente(s)</dd>
+                <dt>Herramientas</dt><dd>{toolAssignments.assigned.length} asignada(s)</dd>
+                <dt>Automatizaciones</dt><dd>{automations.length}</dd>
+                <dt>Integraciones</dt><dd>{integrations.length || "—"}</dd>
+                <dt>Consumo / costo</dt><dd>{finops?.daily_cost_limit != null ? `Límite ${String(finops.daily_cost_limit)}` : "—"}</dd>
+                <dt>Resultados / KPIs</dt><dd>{health?.kpi_summary ? String(health.kpi_summary) : "—"}</dd>
+                <dt>Riesgo</dt><dd>{label(RISK_LEVEL, String(detail?.risk_level))}</dd>
+                <dt>Incidentes</dt><dd>{health?.open_incidents != null ? String(health.open_incidents) : "0"}</dd>
+                <dt>Versión</dt><dd>v{String(detail?.version)}</dd>
+                <dt>Última prueba</dt><dd>{health?.last_test_at ? String(health.last_test_at).slice(0, 19) : "Sin registro"} ({String(health?.last_test_result || "—")})</dd>
+                <dt>Certificación</dt><dd>{(detail?.certifications as Array<Record<string, unknown>>)?.[0]?.result ? String((detail?.certifications as Array<Record<string, unknown>>)[0].result) : "Pendiente"}</dd>
+                <dt>Publicación</dt><dd>{health?.last_publication ? String(health.last_publication).slice(0, 19) : "Sin publicar"}</dd>
+              </dl>
+            </div>
+
+            <div className="employee-actions-hierarchy">
+              {ACTION_ORDER.map((action) => (
+                <button
+                  key={action.key}
+                  type="button"
+                  className={`btn ${action.primary ? "primary" : ""} ${"danger" in action && action.danger ? "danger" : ""}`}
+                  disabled={loading || (action.key === "publish" && lifecycle !== "CERTIFIED") || (action.key === "activate" && !["PUBLISHED", "PAUSED"].includes(lifecycle)) || (action.key === "approve" && !canEdit)}
+                  onClick={() => void action.run()}
+                >
+                  {action.label}
+                </button>
+              ))}
+              <Link className="btn secondary" to={`/empleados/${employeeId}/editar`}>Editar configuración</Link>
             </div>
             {validation && <pre className="mono result-pre">{JSON.stringify(validation, null, 2)}</pre>}
-          </>
+          </div>
         )}
 
         {tab === "Configuración" && (

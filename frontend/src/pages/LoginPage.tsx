@@ -239,6 +239,10 @@ export function LoginPage() {
                 </button>
               </span>
             </label>
+            {error && <p className="error" role="alert">{error}</p>}
+            <button type="submit" className="btn primary login-submit" disabled={loading}>
+              {loading ? "Entrando…" : "Entrar"}
+            </button>
             <button
               type="button"
               className="link-button login-forgot"
@@ -255,20 +259,16 @@ export function LoginPage() {
                 </p>
               </div>
             )}
-            {error && <p className="error" role="alert">{error}</p>}
-            <button type="submit" className="btn primary login-submit" disabled={loading}>
-              {loading ? "Entrando…" : "Entrar"}
-            </button>
 
             <div className="login-enterprise-block">
               <div className="login-enterprise-head">
                 <strong>Acceso empresarial</strong>
-                <span className="muted small" title="Código proporcionado por su organización">
+                <span className="muted small" title="Código que identifica el acceso de su organización">
                   ¿Qué es el código?
                 </span>
               </div>
               <p className="muted small">
-                Ingrese el código de su organización para continuar con su proveedor de identidad (SSO).
+                Ingrese el código de su organización. EIAAX resolverá internamente el proveedor de identidad correspondiente.
               </p>
               <div className="login-enterprise-row">
                 <input

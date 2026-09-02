@@ -169,7 +169,7 @@ export function CentroControlPage() {
           </nav>
 
           {seccion === "resumen" && (
-            <CentroControlCockpit data={data} periodo={periodo} />
+            <CentroControlCockpit data={data} periodo={periodo} expedienteId={expedienteContext || undefined} />
           )}
 
           {seccion === "valor" && (
@@ -567,88 +567,92 @@ export function CentroControlPage() {
 
           {seccion === "salud" && (
             <>
-              <div className="cc-grid-2">
-                <section className="panel compact-panel">
-                  <h2 className="section-title">Salud de la plataforma</h2>
-                  {data.salud_plataforma ? (
-                    <dl className="detail-grid">
-                      <dt>Estado API</dt><dd>{formatHealthStatus(data.salud_plataforma.status as string)}</dd>
-                      <dt>Base de datos</dt><dd>{formatHealthStatus(healthComponentStatus(data.salud_plataforma as Record<string, unknown>, "database"))}</dd>
-                      <dt>Schedulers</dt><dd>{formatHealthStatus(healthComponentStatus(data.salud_plataforma as Record<string, unknown>, "schedulers"))}</dd>
-                    </dl>
-                  ) : (
-                    <p className="muted">Sin información disponible</p>
-                  )}
-                </section>
-
-                <section className="panel compact-panel">
-                  <h2 className="section-title">Aprendizaje</h2>
-                  {!data.aprendizaje?.disponible ? (
-                    <p className="muted">{data.aprendizaje?.estado ?? "Sin información disponible"}</p>
-                  ) : (
-                    <dl className="detail-grid">
-                      <dt>Ciclos</dt><dd>{data.aprendizaje.ciclos_total ?? "—"}</dd>
-                      <dt>Patrones</dt><dd>{data.aprendizaje.patrones_detectados ?? "—"}</dd>
-                      <dt>Recalibraciones pendientes</dt><dd>{data.aprendizaje.recalibraciones_pendientes ?? "—"}</dd>
-                    </dl>
-                  )}
-                  <p><Link to="/aprendizaje">Ver aprendizaje</Link></p>
-                </section>
-              </div>
-
-              <div className="cc-grid-2">
-                <section className="panel compact-panel">
-                  <h2 className="section-title">Continuidad y riesgos</h2>
-                  {!data.continuidad?.disponible ? (
-                    <p className="muted">{data.continuidad?.estado ?? "Sin incidentes registrados"}</p>
-                  ) : (
-                    <dl className="detail-grid">
-                      <dt>Degradados</dt><dd>{data.continuidad.servicios_degradados ?? "—"}</dd>
-                      <dt>Incidentes abiertos</dt><dd>{data.continuidad.incidentes_abiertos ?? "—"}</dd>
-                      <dt>Backups fallidos</dt><dd>{data.continuidad.backups_fallidos ?? "—"}</dd>
-                    </dl>
-                  )}
-                  <p><Link to="/continuidad">Ver continuidad</Link></p>
-                </section>
-
-                <section className="panel compact-panel">
-                  <h2 className="section-title">Optimización</h2>
-                  {!data.optimizacion?.disponible ? (
-                    <p className="muted">{data.optimizacion?.estado ?? "Sin información disponible"}</p>
-                  ) : (
-                    <>
-                      <dl className="detail-grid">
+              <section className="panel compact-panel cc-salud-inline">
+                <h2 className="section-title">Salud de servicios</h2>
+                <p className="muted small">Estado operativo sin salir del Centro de Control. Los módulos profundos quedan bajo demanda.</p>
+                <div className="cc-salud-grid">
+                  <div className="cc-salud-card">
+                    <h3 className="cc-subtitle">Plataforma</h3>
+                    {data.salud_plataforma ? (
+                      <dl className="detail-grid compact">
+                        <dt>API</dt><dd>{formatHealthStatus(data.salud_plataforma.status as string)}</dd>
+                        <dt>Base de datos</dt><dd>{formatHealthStatus(healthComponentStatus(data.salud_plataforma as Record<string, unknown>, "database"))}</dd>
+                        <dt>Schedulers</dt><dd>{formatHealthStatus(healthComponentStatus(data.salud_plataforma as Record<string, unknown>, "schedulers"))}</dd>
+                      </dl>
+                    ) : (
+                      <p className="muted">Sin telemetría</p>
+                    )}
+                  </div>
+                  <div className="cc-salud-card">
+                    <h3 className="cc-subtitle">Continuidad</h3>
+                    {!data.continuidad?.disponible ? (
+                      <p className="muted">{data.continuidad?.estado ?? "Sin incidentes"}</p>
+                    ) : (
+                      <dl className="detail-grid compact">
+                        <dt>Degradados</dt><dd>{data.continuidad.servicios_degradados ?? "—"}</dd>
+                        <dt>Incidentes</dt><dd>{data.continuidad.incidentes_abiertos ?? "—"}</dd>
+                        <dt>Backups fallidos</dt><dd>{data.continuidad.backups_fallidos ?? "—"}</dd>
+                      </dl>
+                    )}
+                  </div>
+                  <div className="cc-salud-card">
+                    <h3 className="cc-subtitle">Optimización</h3>
+                    {!data.optimizacion?.disponible ? (
+                      <p className="muted">{data.optimizacion?.estado ?? "Sin datos"}</p>
+                    ) : (
+                      <dl className="detail-grid compact">
                         <dt>Recomendaciones</dt><dd>{data.optimizacion.recomendaciones_total ?? "—"}</dd>
                         <dt>Pendientes</dt><dd>{data.optimizacion.pendientes_aprobacion ?? "—"}</dd>
                         <dt>Aprobadas</dt><dd>{data.optimizacion.aprobadas ?? "—"}</dd>
                       </dl>
-                      <p className="muted"><SemanticBadge tipo="recomendacion" /> Las recomendaciones no son hechos.</p>
-                    </>
-                  )}
-                  <p><Link to="/optimizacion">Ver optimización</Link></p>
-                </section>
+                    )}
+                  </div>
+                  <div className="cc-salud-card">
+                    <h3 className="cc-subtitle">Aprendizaje</h3>
+                    {!data.aprendizaje?.disponible ? (
+                      <p className="muted">{data.aprendizaje?.estado ?? "Sin datos"}</p>
+                    ) : (
+                      <dl className="detail-grid compact">
+                        <dt>Ciclos</dt><dd>{data.aprendizaje.ciclos_total ?? "—"}</dd>
+                        <dt>Patrones</dt><dd>{data.aprendizaje.patrones_detectados ?? "—"}</dd>
+                        <dt>Recalibraciones</dt><dd>{data.aprendizaje.recalibraciones_pendientes ?? "—"}</dd>
+                      </dl>
+                    )}
+                  </div>
+                </div>
+                <details className="cc-salud-deep">
+                  <summary className="muted small">Módulos profundos (bajo demanda)</summary>
+                  <p className="cc-salud-deep-links">
+                    <Link to="/continuidad">Continuidad</Link>
+                    {" · "}
+                    <Link to="/optimizacion">Optimización</Link>
+                    {" · "}
+                    <Link to="/aprendizaje">Aprendizaje</Link>
+                    {" · "}
+                    <Link to="/auditoria">Auditoría</Link>
+                  </p>
+                </details>
+              </section>
 
-                <section className="panel compact-panel">
-                  <h2 className="section-title">Auditoría reciente</h2>
-                  {!data.auditoria_reciente?.length ? (
-                    <p className="muted">Sin registros recientes</p>
-                  ) : (
-                    <table className="data-table compact-table">
-                      <thead><tr><th>Acción</th><th>Actor</th><th>Fecha</th></tr></thead>
-                      <tbody>
-                        {data.auditoria_reciente.slice(0, 6).map((row) => (
-                          <tr key={row.id}>
-                            <td>{formatAuditAction(row.accion)}</td>
-                            <td>{row.actor ?? "—"}</td>
-                            <td>{row.fecha ? new Date(row.fecha).toLocaleString("es-CO") : "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                  <p><Link to="/auditoria">Ver auditoría</Link></p>
-                </section>
-              </div>
+              <section className="panel compact-panel">
+                <h2 className="section-title">Auditoría reciente</h2>
+                {!data.auditoria_reciente?.length ? (
+                  <p className="muted">Sin registros recientes</p>
+                ) : (
+                  <table className="data-table compact-table">
+                    <thead><tr><th>Acción</th><th>Actor</th><th>Fecha</th></tr></thead>
+                    <tbody>
+                      {data.auditoria_reciente.slice(0, 8).map((row) => (
+                        <tr key={row.id}>
+                          <td>{formatAuditAction(row.accion)}</td>
+                          <td>{row.actor ?? "—"}</td>
+                          <td>{row.fecha ? new Date(row.fecha).toLocaleString("es-CO") : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </section>
             </>
           )}
         </>

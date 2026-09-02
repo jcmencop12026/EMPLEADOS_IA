@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   fetchEvaluacion,
@@ -42,6 +42,37 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
   const oportunidades = exp.hallazgos.filter((h) => h.opportunity_id).length;
   const indicadores = (impacto?.indicadores as Array<Record<string, unknown>> | undefined) ?? [];
 
+  const entidadesRelacionadas = useMemo(() => {
+    const items: Array<{ nombre: string; tipo: string; enlace: string }> = [];
+    const sector = String((exp as Record<string, unknown>).sector ?? "").toLowerCase();
+    if (sector.includes("salud")) {
+      items.push({
+        nombre: exp.entidad_nombre,
+        tipo: "IPS / entidad salud",
+        enlace: `/evaluaciones/${evaluacionId}?tab=diagnostico`,
+      });
+    }
+    for (const info of exp.informacion ?? []) {
+      const pregunta = String(info.etiqueta ?? info.campo ?? "").toLowerCase();
+      const respuesta = String(info.respuesta ?? "").trim();
+      if (!respuesta) continue;
+      if (pregunta.includes("ips") || pregunta.includes("unidad") || pregunta.includes("sede") || pregunta.includes("entidad")) {
+        items.push({
+          nombre: respuesta,
+          tipo: pregunta.includes("ips") ? "IPS" : "Unidad / proceso",
+          enlace: `/evaluaciones/${evaluacionId}?tab=diagnostico`,
+        });
+      }
+    }
+    const seen = new Set<string>();
+    return items.filter((e) => {
+      const key = `${e.nombre}-${e.tipo}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [exp, evaluacionId]);
+
   return (
     <div className="cc-empresa-panel">
       <section className="panel compact-panel cc-empresa-header-panel">
@@ -66,6 +97,31 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
           <div className="executive-kpi"><span>Nivel</span><strong>{exp.nivel}</strong></div>
         </div>
       </section>
+
+      {entidadesRelacionadas.length > 0 && (
+        <section className="panel compact-panel cc-entidades-relacionadas">
+          <h2 className="section-title">Entidades relacionadas</h2>
+          <p className="muted small">
+            Seleccione una unidad, IPS o proceso para operar en contexto sin abandonar el Centro de Control.
+          </p>
+          <ul className="cc-entidades-list">
+            {entidadesRelacionadas.map((ent) => (
+              <li key={`${ent.tipo}-${ent.nombre}`}>
+                <Link to={ent.enlace} className="cc-entidad-link">
+                  <strong>{ent.nombre}</strong>
+                  <span className="muted small">{ent.tipo}</span>
+                </Link>
+                <span className="cc-entidad-actions">
+                  <Link to={ent.enlace} className="btn small secondary">Información</Link>
+                  <Link to={`/evaluaciones/${evaluacionId}?tab=diagnostico`} className="btn small secondary">Diagnóstico</Link>
+                  <Link to="/directorio" className="btn small secondary">Empleados</Link>
+                  <Link to="/operaciones" className="btn small secondary">Operaciones</Link>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="cc-grid-2">
         <section className="panel compact-panel">

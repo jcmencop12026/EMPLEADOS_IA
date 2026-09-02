@@ -2265,3 +2265,231 @@ tr.row-selected {
   gap: 0.35rem;
   margin-bottom: 0.5rem;
 }
+
+/* Centro Control — consola maestra */
+.cc-master-access {
+  margin-bottom: 12px;
+}
+
+.cc-master-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.cc-master-group {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.cc-master-links {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.cc-master-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 4px;
+  border-radius: 4px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.cc-master-link:hover:not(.disabled) {
+  background: #e2e8f0;
+}
+
+.cc-master-link.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Salud inline CC */
+.cc-salud-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.cc-salud-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+}
+
+.cc-salud-deep {
+  margin-top: 12px;
+}
+
+.cc-salud-deep-links {
+  margin-top: 6px;
+}
+
+/* Entidades relacionadas */
+.cc-entidades-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cc-entidades-list li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.cc-entidad-link {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+}
+
+.cc-entidad-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Configuración tabs */
+.config-page .config-tabs {
+  margin-bottom: 12px;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.config-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.config-input-sm { max-width: 140px; }
+.config-input-md { max-width: 320px; }
+.config-input-lg { max-width: 480px; }
+
+.config-identidad .config-brand-mother {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.logo-field {
+  margin: 10px 0;
+}
+
+.logo-field-modes {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.logo-preview-row {
+  margin-top: 6px;
+}
+
+.logo-preview {
+  max-height: 48px;
+  max-width: 160px;
+  object-fit: contain;
+}
+
+.logo-preview--compact {
+  max-height: 32px;
+  max-width: 80px;
+}
+
+.config-links-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Ficha empleado */
+.employee-header-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.employee-dossier-stage {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.employee-dossier-grid {
+  margin-bottom: 14px;
+}
+
+.employee-actions-hierarchy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.employee-actions-hierarchy .btn.primary {
+  box-shadow: 0 0 0 2px #93c5fd;
+}
+
+/* Nueva solicitud */
+.solicitud-propuesta {
+  margin: 12px 0;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.solicitud-steps {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.solicitud-steps li {
+  padding: 6px 0;
+}
+
+.solicitud-steps li.inactive {
+  opacity: 0.5;
+}
+
+.solicitud-steps label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.solicitud-actions {
+  margin-top: 12px;
+}
+
+.ops-console-strip {
+  margin-bottom: 12px;
+}
+
+.ops-console-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

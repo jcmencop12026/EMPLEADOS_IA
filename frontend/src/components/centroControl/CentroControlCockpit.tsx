@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import type { CentroControlResumen } from "../../api";
 import { ValorComparacionChart } from "../charts/ValorComparacionChart";
+import { CentroControlMasterAccess } from "./CentroControlMasterAccess";
 
 type Props = {
   data: CentroControlResumen;
   periodo: string;
+  expedienteId?: string;
 };
 
 function fmtNum(v: unknown): string {
@@ -28,7 +30,7 @@ const KPI_PRIORITY = new Set([
   "salud",
 ]);
 
-export function CentroControlCockpit({ data, periodo }: Props) {
+export function CentroControlCockpit({ data, periodo, expedienteId }: Props) {
   const indicadores = data.resumen_ejecutivo.indicadores;
   const kpis = indicadores.filter((i) => KPI_PRIORITY.has(i.id)).slice(0, 6);
   const fallbackKpis = kpis.length > 0 ? kpis : indicadores.slice(0, 6);
@@ -51,6 +53,8 @@ export function CentroControlCockpit({ data, periodo }: Props) {
 
   return (
     <div className="cc-cockpit">
+      <CentroControlMasterAccess expedienteId={expedienteId} />
+
       <section className="cc-zone cc-zone-status panel compact-panel">
         <div className="cc-zone-head">
           <h2 className="section-title">Estado general</h2>
