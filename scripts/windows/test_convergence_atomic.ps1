@@ -112,11 +112,18 @@ Assert-Test "arrancar_convergencia_windows.ps1 contains atomic git sync and fail
     }
     $content = Get-Content -LiteralPath $arrancarScript -Raw
     foreach ($needle in @(
+            "Initialize-EiaaxConvergenceWorktreeFromScriptRoot",
+            "Assert-EiaaxConvergencePathAuthority",
+            "Write-EiaaxConvergenceExecutionContext",
+            "Write-EiaaxConvergenceExecutionContext",
             "Sync-EiaaxConvergenceRepository",
             "Clear-EiaaxPortsForConvergence",
             "Confirm-EiaaxStartedProcessWorktree",
             "EIAAX — WINDOWS NO CERTIFICADO",
+            "ETAPA:",
             "CAUSA:",
+            "LOG:",
+            "Codigo activo SHA (pre-sync)",
             "WINDOWS REAL OPERATIVO"
         )) {
         if ($content -notmatch [regex]::Escape($needle)) {
@@ -125,6 +132,73 @@ Assert-Test "arrancar_convergencia_windows.ps1 contains atomic git sync and fail
     }
     if ($content -match "PRUEBA WINDOWS DISPONIBLE") {
         throw "arrancar script must not emit PRUEBA WINDOWS DISPONIBLE"
+    }
+    if ($content -match '\$env:EIAAX_WORKTREE\s*=\s*\$script:ConvergenceWorktreeDefault') {
+        throw "arrancar must not depend on manual EIAAX_WORKTREE default assignment"
+    }
+}
+
+Assert-Test "Initialize-EiaaxConvergenceWorktreeFromScriptRoot resolves from script location not PWD" {
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("eiaax-conv-" + [Guid]::NewGuid().ToString("N"))
+    $convergenceRoot = Join-Path $tempRoot "EMPLEADOS_IA_CONVERGENCIA"
+    $scriptsDir = Join-Path $convergenceRoot "scripts\windows"
+    $backendDir = Join-Path $convergenceRoot "backend"
+    $frontendDir = Join-Path $convergenceRoot "frontend"
+    New-Item -ItemType Directory -Path $scriptsDir -Force | Out-Null
+    New-Item -ItemType Directory -Path $backendDir -Force | Out-Null
+    New-Item -ItemType Directory -Path $frontendDir -Force | Out-Null
+    Set-Content -LiteralPath (Join-Path $backendDir "requirements.txt") -Value "# test" -Encoding ascii
+    Set-Content -LiteralPath (Join-Path $frontendDir "package.json") -Value "{}" -Encoding ascii
+
+    $otherPwd = Join-Path $tempRoot "OTHER_PWD"
+    New-Item -ItemType Directory -Path $otherPwd -Force | Out-Null
+
+    try {
+        Push-Location $otherPwd
+        Remove-Item Env:EIAAX_WORKTREE -ErrorAction SilentlyContinue
+        $resolved = Initialize-EiaaxConvergenceWorktreeFromScriptRoot -ScriptsDir $scriptsDir
+        $resolvedFull = [System.IO.Path]::GetFullPath($resolved)
+        $expectedFull = [System.IO.Path]::GetFullPath($convergenceRoot)
+        if ($resolvedFull.ToUpperInvariant() -ne $expectedFull.ToUpperInvariant()) {
+            throw ("Expected " + $expectedFull + " but got " + $resolvedFull)
+        }
+        if ($env:EIAAX_WORKTREE.ToUpperInvariant() -ne $expectedFull.ToUpperInvariant()) {
+            throw "EIAAX_WORKTREE not set from script root"
+        }
+    }
+    finally {
+        Pop-Location
+        Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Assert-Test "Assert-EiaaxConvergencePathAuthority rejects DB path outside worktree" {
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("eiaax-path-" + [Guid]::NewGuid().ToString("N"))
+    $convergenceRoot = Join-Path $tempRoot "EMPLEADOS_IA_CONVERGENCIA"
+    $dataDir = Join-Path $convergenceRoot "data"
+    New-Item -ItemType Directory -Path $dataDir -Force | Out-Null
+    $outsideDb = Join-Path $tempRoot "outside.db"
+    Set-Content -LiteralPath $outsideDb -Value "" -Encoding ascii
+
+    $body = @"
+`$outsideDb = '$($outsideDb.Replace("'", "''"))'
+`$worktree = '$($convergenceRoot.Replace("'", "''"))'
+Assert-EiaaxDemoDatabasePath -DbFilePath `$outsideDb -WorktreeRoot `$worktree
+Write-Host 'UNEXPECTED_PASS'
+exit 0
+"@
+
+    try {
+        $result = Invoke-EiaaxProductionShellTest -CommonPath $commonPath -Body $body -TimeoutSec 30
+        if ($result.ExitCode -eq 0) {
+            throw "Expected Assert-EiaaxDemoDatabasePath to reject outside DB"
+        }
+        if ($result.Output -notmatch "Unsafe demo DB") {
+            throw ("Unexpected result: exit=" + $result.ExitCode + " output=" + $result.Output.Trim())
+        }
+    }
+    finally {
+        Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 

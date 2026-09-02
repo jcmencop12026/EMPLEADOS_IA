@@ -68,6 +68,83 @@ function Get-EiaaxWorktreeRoot {
     return (Resolve-Path -LiteralPath $root).Path
 }
 
+function Initialize-EiaaxConvergenceWorktreeFromScriptRoot {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    if (-not (Test-Path -LiteralPath $ScriptsDir)) {
+        Exit-EiaaxFailure -Message ("Scripts directory not found: " + $ScriptsDir)
+    }
+
+    $resolvedScripts = (Resolve-Path -LiteralPath $ScriptsDir).Path
+    $worktree = (Resolve-Path -LiteralPath (Join-Path $resolvedScripts "..\..")).Path
+    $folderName = [System.IO.Path]::GetFileName($worktree.TrimEnd('\'))
+
+    if ($folderName -ne "EMPLEADOS_IA_CONVERGENCIA") {
+        Exit-EiaaxFailure -Message (
+            "EIAAX convergence scripts must live under EMPLEADOS_IA_CONVERGENCIA. Resolved: " + $worktree
+        )
+    }
+
+    $env:EIAAX_WORKTREE = $worktree
+    return $worktree
+}
+
+function Assert-EiaaxConvergencePathAuthority {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot,
+        [string]$LogFile = $null
+    )
+
+    Assert-EiaaxNotOriginalTree -WorktreeRoot $WorktreeRoot
+    $paths = Get-EiaaxPaths -WorktreeRoot $WorktreeRoot
+    $worktreeFull = [System.IO.Path]::GetFullPath($WorktreeRoot).TrimEnd('\')
+
+    foreach ($entry in @{
+            Backend  = $paths.Backend
+            Frontend = $paths.Frontend
+            Venv     = $paths.Venv
+            DbFile   = $paths.DbFile
+            Logs     = $paths.Logs
+        }.GetEnumerator()) {
+        $full = [System.IO.Path]::GetFullPath($entry.Value)
+        if (-not $full.StartsWith($worktreeFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $message = "Critical path outside CONVERGENCIA worktree (" + $entry.Key + "): " + $full
+            if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
+                Write-EiaaxLogLine -LogFile $LogFile -Message ("ABORT: " + $message)
+            }
+            Exit-EiaaxFailure -Message $message
+        }
+    }
+}
+
+function Write-EiaaxConvergenceExecutionContext {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot,
+        [string]$LogFile = $null
+    )
+
+    $paths = Get-EiaaxPaths -WorktreeRoot $WorktreeRoot
+    $lines = @(
+        ("RUTA DE EJECUCION EIAAX: " + $WorktreeRoot),
+        ("REPOSITORIO: " + $WorktreeRoot),
+        ("VENV: " + $paths.Venv),
+        ("BASE DEMO: " + $paths.DbFile),
+        ("LOG: " + $LogFile)
+    )
+
+    foreach ($line in $lines) {
+        Write-Host $line
+        if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
+            Write-EiaaxLogLine -LogFile $LogFile -Message $line
+        }
+    }
+}
+
 function Get-EiaaxPaths {
     param(
         [Parameter(Mandatory = $true)]
@@ -331,16 +408,30 @@ function Invoke-EiaaxExternalCommand {
         [string]$FilePath,
         [AllowEmptyCollection()]
         [string[]]$ArgumentList = @(),
-        [string]$WorkingDirectory = $null
+        [string]$WorkingDirectory = $null,
+        [string]$LogFile = $null,
+        [string]$Stage = $null,
+        [string]$CommandLabel = $null
     )
 
     if (Test-EiaaxInteractiveInvocationRisk -FilePath $FilePath -ArgumentList $ArgumentList) {
         Exit-EiaaxFailure -Message ("Refusing interactive invocation without arguments: " + $FilePath)
     }
 
+    $label = $CommandLabel
+    if ([string]::IsNullOrWhiteSpace($label)) {
+        $label = $FilePath
+        if ((Get-EiaaxCollectionCount $ArgumentList) -gt 0) {
+            $label += " " + ($ArgumentList -join " ")
+        }
+    }
+
     $previousPreference = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     $locationPushed = $false
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $exitCode = 1
+    $output = ""
     try {
         if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
             Push-Location $WorkingDirectory
@@ -357,10 +448,23 @@ function Invoke-EiaaxExternalCommand {
         }
     }
     finally {
+        $stopwatch.Stop()
         if ($locationPushed) {
             Pop-Location
         }
         $ErrorActionPreference = $previousPreference
+
+        if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
+            $stagePrefix = ""
+            if (-not [string]::IsNullOrWhiteSpace($Stage)) {
+                $stagePrefix = "stage=" + $Stage + " | "
+            }
+            $logLine = $stagePrefix + $label + " | exit=" + $exitCode + " | duration_ms=" + $stopwatch.ElapsedMilliseconds
+            if (-not [string]::IsNullOrWhiteSpace($output)) {
+                $logLine += " | " + ($output -replace "`r?`n", " / ")
+            }
+            Write-EiaaxLogLine -LogFile $LogFile -Message $logLine
+        }
     }
 }
 
@@ -385,17 +489,16 @@ function Invoke-EiaaxGitCommand {
 
     $gitExe = Get-EiaaxGitExecutable
     $commandLabel = "git " + ($ArgumentList -join " ")
-    $result = Invoke-EiaaxExternalCommand -FilePath $gitExe -ArgumentList $ArgumentList -WorkingDirectory $WorkingDirectory
+    $result = Invoke-EiaaxExternalCommand `
+        -FilePath $gitExe `
+        -ArgumentList $ArgumentList `
+        -WorkingDirectory $WorkingDirectory `
+        -LogFile $LogFile `
+        -Stage (Get-EiaaxStage) `
+        -CommandLabel $commandLabel
 
     if (-not [string]::IsNullOrWhiteSpace($result.Output)) {
         Write-Host $result.Output
-    }
-    if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
-        $logLine = $commandLabel + " | exit=" + $result.ExitCode
-        if (-not [string]::IsNullOrWhiteSpace($result.Output)) {
-            $logLine += " | " + ($result.Output -replace "`r?`n", " / ")
-        }
-        Write-EiaaxLogLine -LogFile $LogFile -Message $logLine
     }
 
     if ($result.ExitCode -ne 0 -and -not $AllowNonZeroExit) {
@@ -1641,19 +1744,10 @@ function Invoke-EiaaxPythonVersionProbe {
         [string]$PythonExe
     )
 
-    $previousPreference = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    try {
-        $output = & $PythonExe -V 2>&1
-        $exitCode = $LASTEXITCODE
-        $text = ($output | Out-String).Trim()
-        return [ordered]@{
-            ExitCode = $exitCode
-            Text     = $text
-        }
-    }
-    finally {
-        $ErrorActionPreference = $previousPreference
+    $result = Invoke-EiaaxExternalCommand -FilePath $PythonExe -ArgumentList @("-V")
+    return [ordered]@{
+        ExitCode = $result.ExitCode
+        Text     = $result.Output.Trim()
     }
 }
 

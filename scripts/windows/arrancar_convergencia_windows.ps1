@@ -34,31 +34,38 @@ $failureCause = $null
 function Write-EiaaxCertificationFailure {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$Cause
+        [string]$Cause,
+        [string]$LogPath = $null
     )
 
     Write-Host ""
     Write-Host "EIAAX — WINDOWS NO CERTIFICADO"
     Write-Host ("ETAPA: " + (Get-EiaaxStage))
     Write-Host ("CAUSA: " + $Cause)
+    if (-not [string]::IsNullOrWhiteSpace($LogPath)) {
+        Write-Host ("LOG: " + $LogPath)
+    }
 }
 
 try {
     Set-EiaaxStage -Name "inicio"
-    if ([string]::IsNullOrWhiteSpace($env:EIAAX_WORKTREE)) {
-        $env:EIAAX_WORKTREE = $script:ConvergenceWorktreeDefault
-    }
-    Write-Host ("EIAAX_WORKTREE: " + $env:EIAAX_WORKTREE)
-
-    $worktree = Get-EiaaxWorktreeRoot
-    Assert-EiaaxNotOriginalTree -WorktreeRoot $worktree
+    $worktree = Initialize-EiaaxConvergenceWorktreeFromScriptRoot -ScriptsDir $PSScriptRoot
     Test-EiaaxWorktree -WorktreeRoot $worktree
 
     $logsDir = Ensure-EiaaxLogsDir -WorktreeRoot $worktree
     $logFile = Join-Path $logsDir "arrancar_convergencia.log"
     Write-EiaaxLogLine -LogFile $logFile -Message "=== Convergence startup begin ==="
 
+    Assert-EiaaxConvergencePathAuthority -WorktreeRoot $worktree -LogFile $logFile
+    Write-EiaaxConvergenceExecutionContext -WorktreeRoot $worktree -LogFile $logFile
+
     $manifest = Get-EiaaxConvergenceManifest -ScriptsDir $PSScriptRoot
+    $initialBranch = Get-EiaaxGitBranchName -WorktreeRoot $worktree
+    $initialSha = Get-EiaaxGitShortSha -WorktreeRoot $worktree
+    Write-Host ("Rama inicial: " + $initialBranch)
+    Write-Host ("Codigo activo SHA (pre-sync): " + $initialSha)
+    Write-EiaaxLogLine -LogFile $logFile -Message ("Pre-sync branch=" + $initialBranch + " sha=" + $initialSha)
+
     Set-EiaaxStage -Name "sincronizacion_git"
     Sync-EiaaxConvergenceRepository -WorktreeRoot $worktree -ExpectedBranch $manifest.branch -LogFile $logFile
 
@@ -194,8 +201,13 @@ catch {
     }
     Write-EiaaxError -Message $failureCause
     if (-not $certificationPassed) {
-        Write-EiaaxCertificationFailure -Cause $failureCause
-        Write-Host "Revise logs\demo\arrancar_convergencia.log y preparar.log"
+        Write-EiaaxCertificationFailure -Cause $failureCause -LogPath $logFile
+        if ($null -ne $logFile) {
+            Write-Host ("Revise " + $logFile + " y preparar.log")
+        }
+        else {
+            Write-Host "Revise logs\demo\arrancar_convergencia.log y preparar.log"
+        }
     }
     exit 1
 }

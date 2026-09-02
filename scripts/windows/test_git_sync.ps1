@@ -242,10 +242,13 @@ exit 51
     }
 }
 
-Assert-Test "arrancar script documents ETAPA on failure" {
+Assert-Test "arrancar script documents ETAPA and LOG on failure" {
     $content = Get-Content -LiteralPath (Join-Path $PSScriptRoot "arrancar_convergencia_windows.ps1") -Raw
     if ($content -notmatch "ETAPA:") {
         throw "arrancar_convergencia_windows.ps1 must print ETAPA on failure"
+    }
+    if ($content -notmatch "LOG:") {
+        throw "arrancar_convergencia_windows.ps1 must print LOG on failure"
     }
     if ($content -notmatch "pull --ff-only") {
         throw "arrancar must use git pull --ff-only via Sync-EiaaxConvergenceRepository"
