@@ -45,7 +45,11 @@ export function ApprovalsPage() {
       </header>
       {error && <p className="error" role="alert">{error}</p>}
       {items.length === 0 ? (
-        <EmptyState title="Sin pendientes" message="No hay aprobaciones esperando decisión." />
+        <EmptyState
+          title="Sin pendientes"
+          message="Las aprobaciones llegan aquí cuando una acción sensible requiere revisión humana antes de ejecutarse."
+          action={<Link to="/trabajo" className="btn secondary">Ver Mi trabajo</Link>}
+        />
       ) : (
         <div className="panel table-wrap">
           <table className="data-table">

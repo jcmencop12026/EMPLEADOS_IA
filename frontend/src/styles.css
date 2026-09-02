@@ -134,7 +134,13 @@ body {
 .notification-actions button, .notification-actions a { border: 0; background: transparent; color: #2563eb; cursor: pointer; padding: 2px 5px; text-decoration: none; font-weight: 600; }
 
 .content {
-  padding: 16px;
+  padding: 16px 24px 16px 16px;
+}
+
+@media (min-width: 1200px) {
+  .content {
+    padding-right: 28px;
+  }
 }
 
 .login-wrap {
@@ -357,7 +363,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-width: 1100px;
+  max-width: min(1600px, 100%);
+  width: 100%;
 }
 
 .panel {
@@ -1370,7 +1377,7 @@ body {
 .impl-cycle-step.current .impl-cycle-dot { background: #2563eb; }
 
 .trabajo-page {
-  max-width: 1280px;
+  max-width: min(1600px, 100%);
 }
 
 .trabajo-counters {
@@ -2049,12 +2056,207 @@ tr.row-selected {
 }
 
 .contextual-assistant-rail {
-  position: sticky;
-  bottom: 0;
-  z-index: 20;
-  margin-top: 1rem;
-  padding: 0.5rem 0 0;
-  background: linear-gradient(transparent, var(--bg, #f8fafc) 12%);
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 120;
+  width: min(380px, calc(100vw - 24px));
+  pointer-events: none;
+}
+
+.contextual-assistant-rail .eiaax-assistant {
+  pointer-events: auto;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12);
+}
+
+.eiaax-assistant--compact {
+  padding: 8px 10px;
+}
+
+.eiaax-assistant--compact .eiaax-assistant-header {
+  margin-bottom: 0;
+}
+
+.eiaax-assistant--compact:not(.eiaax-assistant--open) .eiaax-assistant-header p {
+  display: none;
+}
+
+.eiaax-assistant--compact.eiaax-assistant--open {
+  max-height: min(72vh, 640px);
+  overflow-y: auto;
+}
+
+.executive-kpi-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.executive-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 110px;
+  flex: 1 1 110px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.executive-kpi span {
+  font-size: 10px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.executive-kpi strong {
+  font-size: 0.95rem;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.cabina-empresa-v1 .piiax-status-bar.inline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.cc-context-toolbar {
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.cc-context-select {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 220px;
+}
+
+.cc-context-banner {
+  margin: 0;
+}
+
+.cc-global-heading {
+  margin: 0.5rem 0 0;
+}
+
+.cc-empresa-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.cc-empresa-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.compact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.page-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.guia-pasos-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.guia-paso {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.guia-paso-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #1d4ed8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.login-enterprise-block {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.login-enterprise-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.login-enterprise-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.login-enterprise-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.login-forgot {
+  align-self: flex-start;
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+}
+
+.salud-lab-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font-weight: 600;
+  cursor: pointer;
+  color: #334155;
+}
+
+.salud-lab-panel .salud-toolbar {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.block {
+  display: block;
 }
 
 .eiaax-assistant-intents {

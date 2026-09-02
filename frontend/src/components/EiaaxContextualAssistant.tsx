@@ -58,7 +58,7 @@ type Props = {
 
 export function EiaaxContextualAssistant({ compact = false, title = "Preguntar a EIAAX", context }: Props) {
   const location = useLocation();
-  const [open, setOpen] = useState(!compact);
+  const [open, setOpen] = useState(false);
   const [intent, setIntent] = useState<AssistantIntent>("preguntar");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -93,7 +93,10 @@ export function EiaaxContextualAssistant({ compact = false, title = "Preguntar a
   }
 
   return (
-    <section className={`eiaax-assistant ${compact ? "eiaax-assistant--compact" : ""}`} aria-label={title}>
+    <section
+      className={`eiaax-assistant ${compact ? "eiaax-assistant--compact" : ""} ${open ? "eiaax-assistant--open" : ""}`}
+      aria-label={title}
+    >
       <header className="eiaax-assistant-header">
         <div>
           <strong>{title}</strong>

@@ -108,6 +108,7 @@ export function EvaluacionesPage() {
                 <th>Info %</th>
                 <th>Confianza</th>
                 <th>Nivel</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -120,10 +121,14 @@ export function EvaluacionesPage() {
                   <td>{item.porcentaje_informacion}%</td>
                   <td>{item.confianza_global}</td>
                   <td>{item.nivel}</td>
+                  <td className="actions-cell compact-actions">
+                    <Link to={`/evaluaciones/${item.id}`} className="btn small primary">Cabina</Link>
+                    <Link to={`/centro-control?expediente=${item.id}`} className="btn small secondary">Centro</Link>
+                  </td>
                 </tr>
               ))}
               {!items.length && (
-                <tr><td colSpan={7} className="muted">Sin expedientes. Cree una evaluación para comenzar.</td></tr>
+                <tr><td colSpan={8} className="muted">Sin expedientes. Cree una evaluación para comenzar.</td></tr>
               )}
             </tbody>
           </table>

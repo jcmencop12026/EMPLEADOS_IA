@@ -41,6 +41,8 @@ import { SenalDetailPage } from "./pages/SenalDetailPage";
 import { DiagnosticosPage } from "./pages/DiagnosticosPage";
 import { DiagnosticoDetailPage } from "./pages/DiagnosticoDetailPage";
 import { EvaluacionesPage } from "./pages/EvaluacionesPage";
+import { EmpresasProspectosPage } from "./pages/EmpresasProspectosPage";
+import { GuiaRapidaPage } from "./pages/GuiaRapidaPage";
 import { EvaluacionConsolePage } from "./pages/EvaluacionConsolePage";
 import { CentroConfianzaPage } from "./pages/CentroConfianzaPage";
 import { CentroEstrategicoPage } from "./pages/CentroEstrategicoPage";
@@ -176,6 +178,8 @@ export default function App() {
           <Route element={<RequirePermission anyOf={["evaluacion.view"]} />}>
             <Route path="evaluaciones" element={<EvaluacionesPage />} />
             <Route path="evaluaciones/:evaluacionId" element={<EvaluacionConsolePage />} />
+            <Route path="empresas" element={<EmpresasProspectosPage />} />
+            <Route path="ayuda/guia" element={<GuiaRapidaPage />} />
             <Route path="empresa/:evaluacionId" element={<EvaluacionConsolePage />} />
           </Route>
           <Route element={<RequirePermission anyOf={["gobierno.confianza.view"]} />}>

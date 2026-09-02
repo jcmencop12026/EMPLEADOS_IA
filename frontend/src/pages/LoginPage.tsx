@@ -259,28 +259,40 @@ export function LoginPage() {
             <button type="submit" className="btn primary login-submit" disabled={loading}>
               {loading ? "Entrando…" : "Entrar"}
             </button>
-          </form>
 
-          <section className="login-card login-card-elevated login-sso-card">
-            <h2>Acceso empresarial</h2>
-            <p className="muted small">Continúe con el proveedor de identidad de su organización</p>
-            <label>
-              Código de organización
-              <input value={orgCode} onChange={(e) => setOrgCode(e.target.value)} placeholder="Código" disabled={loading} />
-            </label>
-            <button type="button" className="btn secondary" onClick={() => void onDiscoverSso()} disabled={loading}>
-              Buscar proveedores SSO
-            </button>
-            {showSso && (
-              <div className="form-stack login-sso-providers">
-                {ssoProviders.map((p) => (
-                  <button key={p.id} type="button" className="btn secondary" onClick={() => void onSsoLogin(p.id)} disabled={loading}>
-                    Continuar con {p.name}
-                  </button>
-                ))}
+            <div className="login-enterprise-block">
+              <div className="login-enterprise-head">
+                <strong>Acceso empresarial</strong>
+                <span className="muted small" title="Código proporcionado por su organización">
+                  ¿Qué es el código?
+                </span>
               </div>
-            )}
-          </section>
+              <p className="muted small">
+                Ingrese el código de su organización para continuar con su proveedor de identidad (SSO).
+              </p>
+              <div className="login-enterprise-row">
+                <input
+                  value={orgCode}
+                  onChange={(e) => setOrgCode(e.target.value)}
+                  placeholder="Código organización"
+                  disabled={loading}
+                  aria-label="Código de organización"
+                />
+                <button type="button" className="btn secondary small" onClick={() => void onDiscoverSso()} disabled={loading}>
+                  Continuar
+                </button>
+              </div>
+              {showSso && (
+                <div className="form-stack login-sso-providers">
+                  {ssoProviders.map((p) => (
+                    <button key={p.id} type="button" className="btn secondary" onClick={() => void onSsoLogin(p.id)} disabled={loading}>
+                      Continuar con {p.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </form>
         </div>
       </div>
     </div>

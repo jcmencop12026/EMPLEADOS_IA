@@ -174,18 +174,18 @@ export function EvaluacionConsolePage() {
           </div>
         </header>
 
-        <div className="piiax-status-bar compact">
-          <span className={`piiax-dot ${piiax?.disponible ? "on" : "off"}`} />
-          <span>{piiax?.disponible ? "PIIAX disponible" : "PIIAX no conectado"}</span>
+        <div className="piiax-status-bar compact inline-badge">
+          <span className={`piiax-dot ${piiax?.disponible ? "on" : "off"}`} title={piiax?.disponible ? "PIIAX disponible" : "Integración PIIAX no conectada"} />
+          <span className="small">{piiax?.disponible ? "PIIAX" : "PIIAX no conectado"}</span>
         </div>
 
-        <div className="eval-metrics metrics-grid">
-          <div className="metric-card"><span className="metric-label">Entidad</span><strong>{exp.entidad_nombre}</strong></div>
-          <div className="metric-card"><span className="metric-label">Estado</span><strong>{label(ESTADO_EXPEDIENTE, exp.estado)}</strong></div>
-          <div className="metric-card"><span className="metric-label">Información</span><strong>{exp.porcentaje_informacion}%</strong></div>
-          <div className="metric-card"><span className="metric-label">Confianza</span><strong>{label(CONFIANZA, exp.confianza_global)}</strong></div>
-          <div className="metric-card"><span className="metric-label">Oportunidades</span><strong>{oportunidadesCount}</strong></div>
-          <div className="metric-card"><span className="metric-label">Valor potencial</span><strong>{exp.valor_potencial ?? "—"}</strong></div>
+        <div className="executive-kpi-strip eval-metrics">
+          <div className="executive-kpi"><span>Entidad</span><strong>{exp.entidad_nombre}</strong></div>
+          <div className="executive-kpi"><span>Estado</span><strong>{label(ESTADO_EXPEDIENTE, exp.estado)}</strong></div>
+          <div className="executive-kpi"><span>Información</span><strong>{exp.porcentaje_informacion}%</strong></div>
+          <div className="executive-kpi"><span>Confianza</span><strong>{label(CONFIANZA, exp.confianza_global)}</strong></div>
+          <div className="executive-kpi"><span>Oportunidades</span><strong>{oportunidadesCount}</strong></div>
+          <div className="executive-kpi"><span>Valor potencial</span><strong>{exp.valor_potencial ?? "—"}</strong></div>
         </div>
 
         {error && <p className="error">{error}</p>}

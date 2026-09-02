@@ -45,6 +45,9 @@ export const MATURITY: Record<string, string> = {
   EXPERIMENTAL: "Experimental",
   STABLE: "Estable",
   PRODUCTION: "Producción",
+  AUTONOMOUS_CONTROLLED: "Autónomo controlado",
+  SHADOW: "Modo sombra",
+  SUPERVISED: "Supervisado",
 };
 
 export const RISK_LEVEL: Record<string, string> = {

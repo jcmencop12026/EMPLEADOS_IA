@@ -2,7 +2,7 @@ import { canAccessRoute } from "../auth/permissions";
 import { MENU } from "./menu";
 
 /** Rutas excluidas como destino home (ajustes personales, no modulos operativos). */
-export const HOME_ROUTE_EXCLUDE = new Set<string>(["/mi-seguridad"]);
+export const HOME_ROUTE_EXCLUDE = new Set<string>(["/mi-seguridad", "/ayuda/guia"]);
 
 /** Orden estable de rutas navegables derivado del menu lateral. */
 export function getNavRoutesInOrder(): string[] {

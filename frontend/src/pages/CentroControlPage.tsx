@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import type { CentroControlResumen } from "../api";
-import { fetchCentroControlResumen } from "../api";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import type { CentroControlResumen, EvaluacionExpedienteSummary } from "../api";
+import { fetchCentroControlResumen, fetchEvaluaciones } from "../api";
 import { CentroControlCockpit } from "../components/centroControl/CentroControlCockpit";
+import { CentroControlEmpresaPanel } from "../components/centroControl/CentroControlEmpresaPanel";
 import { useOrganizationContext } from "../hooks/useOrganizationContext";
 import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 import { usePermissions } from "../hooks/usePermissions";
@@ -41,13 +42,36 @@ function SemanticBadge({ tipo }: { tipo: string }) {
 export function CentroControlPage() {
   const { has } = usePermissions();
   const { organizationQueryParam, effectiveOrganizationName, isViewingOtherOrganization } = useOrganizationContext();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<CentroControlResumen | null>(null);
+  const [evaluaciones, setEvaluaciones] = useState<EvaluacionExpedienteSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [periodo, setPeriodo] = useState("mtd");
   const [seccion, setSeccion] = useState<SeccionId>("resumen");
+  const expedienteContext = searchParams.get("expediente") ?? "";
 
-  usePageAssistantContext({ periodo, seccion });
+  usePageAssistantContext({ periodo, seccion, expediente_id: expedienteContext || undefined });
+
+  useEffect(() => {
+    if (!has("evaluacion.view")) return;
+    fetchEvaluaciones()
+      .then((r) => setEvaluaciones(r.items))
+      .catch(() => undefined);
+  }, [has]);
+
+  const contextoLabel = useMemo(() => {
+    if (!expedienteContext) return "Todas las empresas";
+    const match = evaluaciones.find((e) => e.id === expedienteContext);
+    return match ? `${match.entidad_nombre} · ${match.codigo}` : "Empresa seleccionada";
+  }, [expedienteContext, evaluaciones]);
+
+  function setExpedienteContext(id: string) {
+    const next = new URLSearchParams(searchParams);
+    if (id) next.set("expediente", id);
+    else next.delete("expediente");
+    setSearchParams(next, { replace: true });
+  }
 
   const load = useCallback(() => {
     setLoading(true);
@@ -83,21 +107,54 @@ export function CentroControlPage() {
             <> · <strong>Organización: {effectiveOrganizationName}</strong></>
           )}
         </p>
-        <div className="toolbar compact-toolbar">
+        <div className="toolbar compact-toolbar cc-context-toolbar">
+          <label className="cc-context-select">
+            <span className="muted small">Contexto</span>
+            <select
+              value={expedienteContext}
+              onChange={(e) => setExpedienteContext(e.target.value)}
+              title="Contexto operativo"
+            >
+              <option value="">Todas las empresas / prospectos</option>
+              {evaluaciones.map((ev) => (
+                <option key={ev.id} value={ev.id}>
+                  {ev.entidad_nombre} — {ev.codigo}
+                </option>
+              ))}
+            </select>
+          </label>
           <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} title="Periodo">
             <option value="mtd">Mes actual</option>
             <option value="7d">Últimos 7 días</option>
             <option value="30d">Últimos 30 días</option>
           </select>
+          {expedienteContext && (
+            <>
+              <Link to={`/presentacion/${expedienteContext}`} className="btn secondary small">Presentación</Link>
+              <Link to={`/evaluaciones/${expedienteContext}?tab=vista-empresa`} className="btn secondary small">Ver como empresa</Link>
+            </>
+          )}
           <button type="button" onClick={load} disabled={loading}>Actualizar</button>
         </div>
+        {expedienteContext && (
+          <p className="muted small cc-context-banner">
+            Vista de empresa: <strong>{contextoLabel}</strong> — la consola global permanece disponible al volver a «Todas».
+          </p>
+        )}
       </header>
 
       {loading && <p className="muted">Cargando centro de control…</p>}
       {error && <p className="error">{error}</p>}
 
+      {expedienteContext && has("evaluacion.view") && (
+        <CentroControlEmpresaPanel evaluacionId={expedienteContext} />
+      )}
+
       {data && (
         <>
+          {expedienteContext && (
+            <h2 className="section-title cc-global-heading">Vista global del periodo</h2>
+          )}
           <nav className="tab-bar compact-tabs" aria-label="Secciones ejecutivas">
             {secciones.map((s) => (
               <button
