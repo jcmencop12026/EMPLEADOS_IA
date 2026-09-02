@@ -4,9 +4,8 @@
 
 | Campo | Valor |
 |-------|-------|
+| SHA final | `a36dfe9` |
 | Rama | `cursor/convergencia-maestro-v1-85e4` |
-| Base inicial | `3fc5d1302300a516cb4c01a11bf6cbfa08acaed6` |
-| Rama autoritativa origen | `cursor/convergencia-comercial-v1-85e4` |
 | Base Windows certificada | `0014a4b01a3ccf3e849a6609c8c784873f20f497` |
 | WINDOWS STARTUP BASE 0014a4b PRESERVADA | **SÍ** (`git diff 0014a4b -- scripts/windows/` vacío) |
 
