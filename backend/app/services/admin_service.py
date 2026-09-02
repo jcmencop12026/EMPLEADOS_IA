@@ -376,12 +376,25 @@ def default_org_config() -> dict:
         "timezone": "America/Bogota",
         "date_format": "DD/MM/YYYY",
         "time_format": "24h",
+        "enterprise_display_name": None,
+        "enterprise_logo_url": None,
+        "enterprise_logo_compact_url": None,
+        "enterprise_accent_color": None,
     }
 
 
 def update_org_config(db: Session, *, org: Organization, actor_id: str, config: dict) -> dict:
     current = get_org_config(org)
-    allowed = {"language", "timezone", "date_format", "time_format"}
+    allowed = {
+        "language",
+        "timezone",
+        "date_format",
+        "time_format",
+        "enterprise_display_name",
+        "enterprise_logo_url",
+        "enterprise_logo_compact_url",
+        "enterprise_accent_color",
+    }
     for key, value in config.items():
         if key in allowed:
             current[key] = value

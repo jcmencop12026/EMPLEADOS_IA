@@ -3,11 +3,28 @@
 export const EIAAX_BRAND = {
   name: "EIAAX",
   descriptor: "Ecosistema Inteligente de Procesos Empresariales",
-  productLine: "EMPLEADOS IA",
+  /** Línea de producto visible en shell interno (no en login). */
+  productLine: "Plataforma EIAAX",
+  loginTagline: "Acceso seguro a su ecosistema de procesos inteligentes",
   title: "EIAAX — Ecosistema Inteligente de Procesos Empresariales",
   acronym: "EIAAX",
   compactMark: "EX",
+  platformAttribution: "Impulsado por EIAAX",
 } as const;
+
+export type EnterpriseVisualIdentity = {
+  displayName: string;
+  logoUrl?: string | null;
+  logoCompactUrl?: string | null;
+  accentColor?: string | null;
+};
+
+export const DEFAULT_ENTERPRISE_IDENTITY: EnterpriseVisualIdentity = {
+  displayName: "",
+  logoUrl: null,
+  logoCompactUrl: null,
+  accentColor: "#1d4ed8",
+};
 
 /** Niveles de marca soportados (sin fabricar activos gráficos). */
 export type BrandLevel = "hero" | "corporativo" | "ex08" | "micro";

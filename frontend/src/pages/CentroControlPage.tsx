@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { CentroControlResumen } from "../api";
 import { fetchCentroControlResumen } from "../api";
+import { CentroControlCockpit } from "../components/centroControl/CentroControlCockpit";
 import { useOrganizationContext } from "../hooks/useOrganizationContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { formatAuditAction, formatHealthStatus } from "../lib/labels";
@@ -16,12 +17,6 @@ const SECCIONES_DEFAULT = [
 ] as const;
 
 type SeccionId = (typeof SECCIONES_DEFAULT)[number]["id"];
-
-function ValorIndicador({ valor, disponible, estado }: { valor: unknown; disponible: boolean; estado?: string | null }) {
-  if (!disponible) return <span className="muted">{estado ?? "Sin información disponible"}</span>;
-  if (valor === null || valor === undefined) return <span className="muted">Sin información disponible</span>;
-  return <strong>{String(valor)}</strong>;
-}
 
 function fmtNum(v: unknown): string {
   if (v === null || v === undefined) return "—";
@@ -78,9 +73,9 @@ export function CentroControlPage() {
   return (
     <div className="ops-page centro-control-page">
       <header className="page-header compact">
-        <h1>Centro de Control ejecutivo</h1>
+        <h1>Centro de Control</h1>
         <p className="muted">
-          Consolidación operativa — qué pasa, qué requiere atención y qué valor se genera
+          Una sola pantalla para operar, priorizar atención y conectar valor con la vista empresa
           {isViewingOtherOrganization && (
             <> · <strong>Organización: {effectiveOrganizationName}</strong></>
           )}
@@ -114,94 +109,7 @@ export function CentroControlPage() {
           </nav>
 
           {seccion === "resumen" && (
-            <>
-              <section className="panel compact-panel">
-                <h2 className="section-title">Resumen ejecutivo</h2>
-                <div className="metrics-grid">
-                  {data.resumen_ejecutivo.indicadores.map((ind) => (
-                    <Link key={ind.id} to={ind.enlace} className="metric-card cc-metric-card" title={ind.label}>
-                      <span className="metric-label">{ind.label}</span>
-                      <ValorIndicador valor={ind.valor} disponible={ind.disponible} estado={ind.estado} />
-                    </Link>
-                  ))}
-                </div>
-              </section>
-
-              <section className="panel compact-panel">
-                <h2 className="section-title">Atención requerida</h2>
-                {data.atencion_requerida.length === 0 ? (
-                  <p className="muted">No hay asuntos prioritarios pendientes.</p>
-                ) : (
-                  <table className="data-table compact-table">
-                    <thead><tr><th>#</th><th>Tipo</th><th>Asunto</th><th>Origen</th><th></th></tr></thead>
-                    <tbody>
-                      {data.atencion_requerida.map((item) => (
-                        <tr key={`${item.tipo}-${item.prioridad}-${item.titulo}`}>
-                          <td>{item.prioridad}</td>
-                          <td>{item.tipo}</td>
-                          <td>{item.titulo}</td>
-                          <td>{item.origen}</td>
-                          <td><Link to={item.enlace}>Ver</Link></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </section>
-
-              <section className="panel compact-panel">
-                <h2 className="section-title">¿Por qué está pasando?</h2>
-                <p className="muted cc-explicacion-nota">
-                  {data.explicacion?.nota_causalidad ?? "Las correlaciones no implican causalidad demostrada."}
-                </p>
-                {!data.explicacion?.disponible ? (
-                  <p className="muted">{data.explicacion?.estado ?? "Diagnóstico no disponible"}</p>
-                ) : (
-                  <table className="data-table compact-table">
-                    <thead>
-                      <tr><th>Situación</th><th>Causa / acción</th><th>Certeza</th><th>Evidencia</th><th></th></tr>
-                    </thead>
-                    <tbody>
-                      {(data.explicacion.elementos ?? []).slice(0, 8).map((el) => (
-                        <tr key={el.id}>
-                          <td>
-                            <span className={`cc-tag cc-tag-${el.tipo_contenido.toLowerCase()}`}>{el.tipo_contenido}</span>
-                            <div>{el.situacion ?? "—"}</div>
-                          </td>
-                          <td>{el.causa ?? "—"}</td>
-                          <td>{el.certeza ?? "—"}</td>
-                          <td>{el.evidencia?.resumen ?? el.evidencia?.identificador ?? "—"}</td>
-                          <td>{el.enlace?.startsWith("/") ? <Link to={el.enlace}>Detalle</Link> : "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </section>
-
-              {data.cadena_ejecutiva && data.cadena_ejecutiva.length > 0 && (
-                <section className="panel compact-panel">
-                  <h2 className="section-title">Cadena ejecutiva</h2>
-                  <table className="data-table compact-table">
-                    <thead><tr><th>Oportunidad</th><th>Etapas</th></tr></thead>
-                    <tbody>
-                      {data.cadena_ejecutiva.map((cadena) => (
-                        <tr key={cadena.oportunidad_id as string}>
-                          <td><Link to={`/oportunidades/${cadena.oportunidad_id}`}>{String(cadena.titulo)}</Link></td>
-                          <td>
-                            {(cadena.etapas as Array<{ etapa: string; enlace: string }>).map((e) => (
-                              <Link key={`${cadena.oportunidad_id}-${e.etapa}`} to={e.enlace} className="cc-chain-link">
-                                {e.etapa}
-                              </Link>
-                            ))}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </section>
-              )}
-            </>
+            <CentroControlCockpit data={data} periodo={periodo} />
           )}
 
           {seccion === "valor" && (

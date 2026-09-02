@@ -87,6 +87,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
       if (!isLoginAttempt) {
         clearToken();
         sessionStorage.removeItem("eaios_user");
+        sessionStorage.setItem("eaios_session_expired", "1");
         if (!window.location.pathname.startsWith("/login")) {
           window.location.href = "/login?expired=1";
         }
@@ -171,6 +172,10 @@ export type OrgConfig = {
   timezone: string;
   date_format: string;
   time_format: string;
+  enterprise_display_name?: string | null;
+  enterprise_logo_url?: string | null;
+  enterprise_logo_compact_url?: string | null;
+  enterprise_accent_color?: string | null;
 };
 
 export type SecuritySummary = {

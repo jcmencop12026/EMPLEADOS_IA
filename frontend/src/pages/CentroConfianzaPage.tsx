@@ -25,122 +25,103 @@ export function CentroConfianzaPage() {
     load();
   }, [load]);
 
-  const estadoColor = (estado: string) => {
-    if (estado === "ACTIVO" || estado === "CONFIGURADO") return "#0a7";
-    return "#666";
+  const estadoClass = (estado: string) => {
+    if (estado === "ACTIVO" || estado === "CONFIGURADO") return "trust-status-ok";
+    return "trust-status-neutral";
   };
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <div>
-          <h1>Centro de Confianza</h1>
-          <p className="muted">
-            Controles operacionales con evidencia real — sin certificaciones ficticias.
-          </p>
-        </div>
+    <div className="ops-page trust-center-page">
+      <header className="page-header compact">
+        <h1>Centro de Confianza</h1>
+        <p className="muted">Seguridad, gobierno, auditoría y evidencia operacional</p>
       </header>
 
       {error && <div className="alert alert-error">{error}</div>}
 
       {centro && (
-        <>
-          <section className="card" style={{ marginBottom: "1rem" }}>
-            <h2>Resumen</h2>
-            <p>
-              <strong>{centro.resumen.controles_activos}</strong> control(es) con evidencia ·{" "}
-              <strong>{centro.resumen.eventos_gobierno}</strong> evento(s) de gobierno
-            </p>
-            <p className="muted" style={{ fontSize: "0.85rem" }}>
-              Generado: {new Date(centro.generado_en).toLocaleString()}
-            </p>
+        <div className="trust-layout">
+          <section className="panel compact-panel trust-summary">
+            <h2 className="section-title">Resumen</h2>
+            <div className="cc-kpi-strip">
+              <div className="cc-kpi-item">
+                <span className="cc-kpi-label">Controles activos</span>
+                <strong className="cc-kpi-value">{centro.resumen.controles_activos}</strong>
+              </div>
+              <div className="cc-kpi-item">
+                <span className="cc-kpi-label">Eventos de gobierno</span>
+                <strong className="cc-kpi-value">{centro.resumen.eventos_gobierno}</strong>
+              </div>
+            </div>
+            <p className="muted small">Generado: {new Date(centro.generado_en).toLocaleString("es-CO")}</p>
           </section>
 
-          <section className="card" style={{ marginBottom: "1rem" }}>
-            <h2>Controles implementados</h2>
+          <section className="panel compact-panel">
+            <h2 className="section-title">Controles implementados</h2>
             {centro.controles.length === 0 ? (
               <p className="muted">Sin controles con evidencia registrada aún.</p>
             ) : (
-              <div style={{ display: "grid", gap: "0.75rem" }}>
-                {centro.controles.map((c) => (
-                  <div
-                    key={c.id}
-                    style={{
-                      border: "1px solid #e0e0e0",
-                      borderRadius: 8,
-                      padding: "0.75rem 1rem",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <strong>{c.nombre}</strong>
-                      <span style={{ color: estadoColor(c.estado), fontWeight: 600, fontSize: "0.85rem" }}>
-                        {c.estado}
-                      </span>
-                    </div>
-                    {c.evidencia && <p style={{ margin: "0.35rem 0 0", fontSize: "0.9rem" }}>{c.evidencia}</p>}
-                  </div>
-                ))}
-              </div>
+              <table className="data-table compact-table cc-table-fill">
+                <thead>
+                  <tr><th>Control</th><th>Estado</th><th>Evidencia</th></tr>
+                </thead>
+                <tbody>
+                  {centro.controles.map((c) => (
+                    <tr key={c.id}>
+                      <td>{c.nombre}</td>
+                      <td><span className={`trust-status ${estadoClass(c.estado)}`}>{c.estado}</span></td>
+                      <td>{c.evidencia ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </section>
-        </>
+
+          <section className="panel compact-panel">
+            <h2 className="section-title">Solicitudes de gobierno</h2>
+            {solicitudes.length === 0 ? (
+              <p className="muted">Sin solicitudes pendientes.</p>
+            ) : (
+              <table className="data-table compact-table cc-table-fill">
+                <thead>
+                  <tr><th>Tipo</th><th>Estado</th><th>Detalle</th></tr>
+                </thead>
+                <tbody>
+                  {solicitudes.slice(0, 8).map((s) => (
+                    <tr key={s.id}>
+                      <td>{s.tipo_accion}</td>
+                      <td>{s.estado}</td>
+                      <td>{s.descripcion ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
+
+          <section className="panel compact-panel">
+            <h2 className="section-title">Eventos recientes</h2>
+            {eventos.length === 0 ? (
+              <p className="muted">Sin eventos recientes.</p>
+            ) : (
+              <table className="data-table compact-table cc-table-fill">
+                <thead>
+                  <tr><th>Evento</th><th>Detalle</th></tr>
+                </thead>
+                <tbody>
+                  {eventos.slice(0, 8).map((ev, idx) => (
+                    <tr key={String(ev.id ?? idx)}>
+                      <td>{String(ev.tipo ?? ev.action ?? "—")}</td>
+                      <td>{String(ev.detalle ?? ev.detail ?? "—")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
+        </div>
       )}
-
-      <section className="card" style={{ marginBottom: "1rem" }}>
-        <h2>Solicitudes recientes</h2>
-        {solicitudes.length === 0 ? (
-          <p className="muted">Sin solicitudes de acción registradas.</p>
-        ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Tipo</th>
-                <th>Recurso</th>
-                <th>Estado</th>
-                <th>Descripción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {solicitudes.slice(0, 10).map((s) => (
-                <tr key={s.id}>
-                  <td>{s.tipo_accion}</td>
-                  <td>{s.recurso_tipo}</td>
-                  <td>{s.estado}</td>
-                  <td>{s.descripcion}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
-
-      <section className="card">
-        <h2>Eventos de trazabilidad</h2>
-        {eventos.length === 0 ? (
-          <p className="muted">Sin eventos de gobierno operacional.</p>
-        ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Acción</th>
-                <th>Actor</th>
-                <th>Recurso</th>
-                <th>Resultado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {eventos.slice(0, 10).map((e) => (
-                <tr key={String(e.id)}>
-                  <td>{String(e.accion)}</td>
-                  <td>{String(e.actor_tipo)}</td>
-                  <td>{String(e.recurso_tipo || "—")}</td>
-                  <td>{String(e.resultado || e.decision || "—")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
     </div>
   );
 }

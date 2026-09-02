@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 56" role="img" aria-label="EIAAX">
+  <defs>
+    <linearGradient id="eiaax-g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="8" width="40" height="40" rx="10" fill="url(#eiaax-g)"/>
+  <text x="20" y="34" text-anchor="middle" fill="#fff" font-family="Segoe UI, system-ui, sans-serif" font-size="14" font-weight="700">EX</text>
+  <text x="52" y="28" fill="#0f172a" font-family="Segoe UI, system-ui, sans-serif" font-size="22" font-weight="700">EIAAX</text>
+  <text x="52" y="44" fill="#64748b" font-family="Segoe UI, system-ui, sans-serif" font-size="9.5">Ecosistema Inteligente de Procesos Empresariales</text>
+</svg>

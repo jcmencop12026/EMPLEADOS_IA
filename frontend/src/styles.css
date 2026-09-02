@@ -1793,3 +1793,227 @@ tr.row-selected {
     --eiaax-text: #f1f5f9;
   }
 }
+
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 45%, #ecfeff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-layout {
+  width: min(1080px, 100%);
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.login-brand-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+}
+
+.login-brand-copy {
+  font-size: 1.05rem;
+  color: #334155;
+  max-width: 36ch;
+}
+
+.login-brand-sub {
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.login-forms {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-card-elevated {
+  width: 100%;
+  max-width: none;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.login-card-header h1 {
+  margin: 0 0 4px;
+  font-size: 1.35rem;
+}
+
+.login-notice {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+}
+
+.login-submit {
+  width: 100%;
+}
+
+.login-sso-card h2 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+}
+
+.login-sso-providers {
+  margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+  .login-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cc-cockpit {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cc-cockpit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.cc-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.cc-kpi-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  text-decoration: none;
+  color: inherit;
+}
+
+.cc-kpi-item:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.cc-kpi-label {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.cc-kpi-value {
+  font-size: 1.15rem;
+}
+
+.cc-kpi-empty {
+  font-size: 0.85rem;
+}
+
+.cc-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cc-subtitle {
+  margin: 0 0 6px;
+  font-size: 0.92rem;
+}
+
+.cc-list-compact {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.cc-publish-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cc-table-fill {
+  width: 100%;
+}
+
+.topbar-attribution {
+  color: #64748b;
+  font-weight: 400;
+}
+
+.eiaax-assistant {
+  border: 1px solid #dbeafe;
+  background: #f8fbff;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.eiaax-assistant-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.eiaax-assistant-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.eiaax-assistant-form textarea {
+  width: 100%;
+}
+
+.eiaax-assistant-result {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.92rem;
+}
+
+.trust-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.trust-summary {
+  grid-column: 1 / -1;
+}
+
+.trust-status {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.trust-status-ok {
+  color: #0f766e;
+}
+
+.trust-status-neutral {
+  color: #64748b;
+}
+
+@media (max-width: 960px) {
+  .cc-cockpit-grid,
+  .trust-layout,
+  .cc-mini-grid {
+    grid-template-columns: 1fr;
+  }
+}

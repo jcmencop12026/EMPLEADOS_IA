@@ -36,8 +36,8 @@ export function DirectoryPage() {
   return (
     <div className="ops-page">
       <header className="page-header">
-        <h1>Directorio operacional</h1>
-        <p className="muted">Empleados IA · Fábrica de Empleados IA</p>
+        <h1>Directorio de Empleados IA</h1>
+        <p className="muted">Empleados especializados activos, en diseño y bajo gobierno de la plataforma EIAAX</p>
       </header>
       <div className="ops-actions">
         <Link className="btn primary" to="/empleados/nuevo" title="Crear empleado">
@@ -52,7 +52,23 @@ export function DirectoryPage() {
         <input placeholder="Filtrar especialidad" value={specialtyFilter} onChange={(e) => setSpecialtyFilter(e.target.value)} aria-label="Filtrar especialidad" />
       </div>
       {filtered.length === 0 ? (
-        <EmptyState title="Sin empleados" message="No hay empleados que coincidan con los filtros." />
+        <EmptyState
+          title={employees.length === 0 ? "Aún no hay Empleados IA configurados" : "Sin coincidencias"}
+          message={
+            employees.length === 0
+              ? "EIAAX puede proponer una arquitectura inicial tras un diagnóstico. También puede crear un empleado manualmente o explorar la demo comercial."
+              : "Ajuste los filtros o limpie la búsqueda para ver más resultados."
+          }
+          action={
+            employees.length === 0 ? (
+              <div className="ops-actions">
+                <Link className="btn primary" to="/diagnosticos">Iniciar diagnóstico</Link>
+                <Link className="btn secondary" to="/demo">Ver demo comercial</Link>
+                <Link className="btn secondary" to="/empleados/nuevo">Crear empleado IA</Link>
+              </div>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="panel table-wrap">
           <table className="data-table">

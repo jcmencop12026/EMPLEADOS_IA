@@ -205,6 +205,23 @@ def test_config_get_update(client: TestClient, auth_headers):
     assert upd.json()["date_format"] == "YYYY-MM-DD"
 
 
+def test_config_enterprise_branding_fields(client: TestClient, auth_headers):
+    upd = client.put(
+        "/api/admin/config",
+        headers=auth_headers,
+        json={
+            "enterprise_display_name": "Acme Salud",
+            "enterprise_logo_url": "https://example.test/logo.svg",
+            "enterprise_accent_color": "#1d4ed8",
+        },
+    )
+    assert upd.status_code == 200
+    body = upd.json()
+    assert body["enterprise_display_name"] == "Acme Salud"
+    assert body["enterprise_logo_url"] == "https://example.test/logo.svg"
+    assert body["enterprise_accent_color"] == "#1d4ed8"
+
+
 def test_invalid_timezone_rejected(client: TestClient, auth_headers):
     res = client.put(
         "/api/admin/organization",

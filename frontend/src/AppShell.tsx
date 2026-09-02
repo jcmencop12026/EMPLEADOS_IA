@@ -5,6 +5,7 @@ import { fetchTrabajoResumen, fetchUnreadCount } from "./api";
 import { filterMenuByPermissions, canAccessRoute } from "./auth/permissions";
 import { getCachedUser, logout } from "./auth/session";
 import { OrganizationProvider, ORGANIZATION_CONTEXT_EVENT, useOrganizationContext } from "./hooks/useOrganizationContext";
+import { useEnterpriseIdentity } from "./hooks/useEnterpriseIdentity";
 import { MENU } from "./navigation/menu";
 import { BrandMark } from "./components/identity/BrandMark";
 import { ThemeToggle } from "./components/ThemeToggle";
@@ -37,6 +38,7 @@ function AppShellInner() {
   const [trabajoPendientes, setTrabajoPendientes] = useState(0);
   const user = getCachedUser();
   const { organizationQueryParam } = useOrganizationContext();
+  const { identity } = useEnterpriseIdentity();
   const permissionSet = useMemo(
     () => new Set(user?.permissions ?? []),
     [user?.permissions],
@@ -168,7 +170,16 @@ function AppShellInner() {
       <div className="main">
         <header className="topbar">
           <span className="topbar-title">
-            {EIAAX_BRAND.productLine} · {EIAAX_BRAND.descriptor}
+            {identity.displayName ? (
+              <>
+                <strong>{identity.displayName}</strong>
+                <span className="topbar-attribution"> · {EIAAX_BRAND.platformAttribution}</span>
+              </>
+            ) : (
+              <>
+                {EIAAX_BRAND.name} · {EIAAX_BRAND.descriptor}
+              </>
+            )}
           </span>
           <div className="topbar-actions">
             <ThemeToggle />
