@@ -1,15 +1,54 @@
 import { FormEvent, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ApiError, submitWorkRequest, type PlanResult } from "../api";
+import type { AssistantIntent } from "../context/ContextualAssistantContext";
 
-const SUGGESTIONS = [
-  "¿Qué está ocurriendo en esta vista?",
-  "¿Qué requiere atención prioritaria?",
-  "¿Qué oportunidades podemos presentar?",
-  "¿Qué empleados IA recomienda activar?",
-  "¿Cuál sería el costo estimado?",
-  "¿Qué puedo mostrar al cliente?",
-] as const;
+const SUGGESTIONS: Record<string, string[]> = {
+  preguntar: [
+    "¿Qué está ocurriendo en esta vista?",
+    "¿Qué requiere atención prioritaria?",
+    "¿Qué puedo mostrar al cliente?",
+  ],
+  analizar: [
+    "Analice el estado actual y sus causas probables.",
+    "¿Qué patrones detecta en los datos visibles?",
+  ],
+  proponer: [
+    "¿Qué empleados IA recomienda activar?",
+    "Proponga la siguiente mejor acción gobernada.",
+  ],
+  explicar: [
+    "Explique este resultado en lenguaje ejecutivo.",
+    "¿Por qué EIAAX sugiere esta priorización?",
+  ],
+  riesgos: [
+    "¿Qué riesgos operativos o de cumplimiento detecta?",
+    "¿Qué controles deberían reforzarse?",
+  ],
+  oportunidades: [
+    "¿Qué oportunidades podemos presentar?",
+    "¿Cuál es el valor potencial no capturado?",
+  ],
+  comparar: [
+    "Compare antes, proyectado y real.",
+    "¿Cómo se compara el consumo vs el presupuesto?",
+  ],
+  siguiente_accion: [
+    "¿Cuál es el siguiente paso recomendado?",
+    "¿Qué debería preparar para la empresa?",
+  ],
+};
+
+const INTENT_LABELS: Record<AssistantIntent, string> = {
+  preguntar: "Preguntar",
+  analizar: "Analizar",
+  proponer: "Proponer",
+  explicar: "Explicar",
+  riesgos: "Riesgos",
+  oportunidades: "Oportunidades",
+  comparar: "Comparar",
+  siguiente_accion: "Siguiente acción",
+};
 
 type Props = {
   compact?: boolean;
@@ -20,10 +59,13 @@ type Props = {
 export function EiaaxContextualAssistant({ compact = false, title = "Preguntar a EIAAX", context }: Props) {
   const location = useLocation();
   const [open, setOpen] = useState(!compact);
+  const [intent, setIntent] = useState<AssistantIntent>("preguntar");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PlanResult | null>(null);
+
+  const suggestions = SUGGESTIONS[intent] ?? SUGGESTIONS.preguntar;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -33,6 +75,7 @@ export function EiaaxContextualAssistant({ compact = false, title = "Preguntar a
     try {
       const res = await submitWorkRequest(query.trim(), {
         source: "contextual_assistant",
+        intent,
         path: location.pathname,
         ...context,
       });
@@ -54,7 +97,7 @@ export function EiaaxContextualAssistant({ compact = false, title = "Preguntar a
       <header className="eiaax-assistant-header">
         <div>
           <strong>{title}</strong>
-          <p className="muted small">Copiloto contextual — propone, no ejecuta sin autorización.</p>
+          <p className="muted small">Copiloto contextual — {INTENT_LABELS[intent].toLowerCase()}; propone, no ejecuta sin autorización.</p>
         </div>
         {compact && (
           <button type="button" className="btn small secondary" onClick={() => setOpen((v) => !v)}>
@@ -65,8 +108,22 @@ export function EiaaxContextualAssistant({ compact = false, title = "Preguntar a
 
       {open && (
         <>
+          <div className="eiaax-assistant-intents" role="tablist" aria-label="Tipo de consulta">
+            {(Object.keys(INTENT_LABELS) as AssistantIntent[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={intent === key}
+                className={`btn small ${intent === key ? "primary" : ""}`}
+                onClick={() => setIntent(key)}
+              >
+                {INTENT_LABELS[key]}
+              </button>
+            ))}
+          </div>
           <div className="eiaax-assistant-suggestions">
-            {SUGGESTIONS.map((s) => (
+            {suggestions.map((s) => (
               <button key={s} type="button" className="btn small" onClick={() => askSuggestion(s)} disabled={loading}>
                 {s}
               </button>

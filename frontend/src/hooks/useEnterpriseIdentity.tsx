@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchOrgConfig, type OrgConfig } from "../api";
 import { getCachedUser } from "../auth/session";
-import { DEFAULT_ENTERPRISE_IDENTITY, EIAAX_BRAND, type EnterpriseVisualIdentity } from "../lib/brand";
+import { DEFAULT_ENTERPRISE_IDENTITY, EIAAX_BRAND, ENTERPRISE_IDENTITY_EVENT, type EnterpriseVisualIdentity } from "../lib/brand";
 
 function mapConfigToIdentity(config: OrgConfig, orgName: string): EnterpriseVisualIdentity {
   return {
@@ -32,6 +32,9 @@ export function useEnterpriseIdentity() {
 
   useEffect(() => {
     reload();
+    const onIdentityChange = () => reload();
+    window.addEventListener(ENTERPRISE_IDENTITY_EVENT, onIdentityChange);
+    return () => window.removeEventListener(ENTERPRISE_IDENTITY_EVENT, onIdentityChange);
   }, [reload]);
 
   return {

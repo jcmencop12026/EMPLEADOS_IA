@@ -2047,3 +2047,19 @@ tr.row-selected {
 .solucion-ia-panel .ops-actions {
   margin-bottom: 1rem;
 }
+
+.contextual-assistant-rail {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  margin-top: 1rem;
+  padding: 0.5rem 0 0;
+  background: linear-gradient(transparent, var(--bg, #f8fafc) 12%);
+}
+
+.eiaax-assistant-intents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}

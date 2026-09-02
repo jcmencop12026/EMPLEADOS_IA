@@ -26,6 +26,8 @@ export const DEFAULT_ENTERPRISE_IDENTITY: EnterpriseVisualIdentity = {
   accentColor: "#1d4ed8",
 };
 
+export const ENTERPRISE_IDENTITY_EVENT = "eiaax-enterprise-identity-changed";
+
 /** Niveles de marca soportados (sin fabricar activos gráficos). */
 export type BrandLevel = "hero" | "corporativo" | "ex08" | "micro";
 

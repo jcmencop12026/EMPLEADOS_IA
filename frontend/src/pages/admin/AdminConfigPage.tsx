@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, fetchOrgConfig, updateOrgConfig, type OrgConfig } from "../../api";
+import { ENTERPRISE_IDENTITY_EVENT } from "../../lib/brand";
 import { ErrorState, LoadingState } from "../../components/AsyncState";
 
 export function AdminConfigPage() {
@@ -27,6 +28,7 @@ export function AdminConfigPage() {
     try {
       const updated = await updateOrgConfig(config);
       setConfig(updated);
+      window.dispatchEvent(new Event(ENTERPRISE_IDENTITY_EVENT));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No se pudo guardar");
     } finally {

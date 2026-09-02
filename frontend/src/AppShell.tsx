@@ -5,6 +5,7 @@ import { fetchTrabajoResumen, fetchUnreadCount } from "./api";
 import { filterMenuByPermissions, canAccessRoute } from "./auth/permissions";
 import { getCachedUser, logout } from "./auth/session";
 import { OrganizationProvider, ORGANIZATION_CONTEXT_EVENT, useOrganizationContext } from "./hooks/useOrganizationContext";
+import { ContextualAssistantProvider } from "./context/ContextualAssistantContext";
 import { useEnterpriseIdentity } from "./hooks/useEnterpriseIdentity";
 import { MENU } from "./navigation/menu";
 import { BrandMark } from "./components/identity/BrandMark";
@@ -26,7 +27,9 @@ function loadSections(): Record<string, boolean> {
 export function AppShell() {
   return (
     <OrganizationProvider>
-      <AppShellInner />
+      <ContextualAssistantProvider>
+        <AppShellInner />
+      </ContextualAssistantProvider>
     </OrganizationProvider>
   );
 }

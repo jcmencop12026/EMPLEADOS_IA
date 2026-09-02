@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import type { CentroControlResumen } from "../../api";
 import { ValorComparacionChart } from "../charts/ValorComparacionChart";
-import { EiaaxContextualAssistant } from "../EiaaxContextualAssistant";
 
 type Props = {
   data: CentroControlResumen;
@@ -191,12 +190,6 @@ export function CentroControlCockpit({ data, periodo }: Props) {
           </div>
         </section>
       </div>
-
-      <EiaaxContextualAssistant
-        compact
-        title="Preguntar a EIAAX"
-        context={{ module: "centro_control", periodo }}
-      />
     </div>
   );
 }

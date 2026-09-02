@@ -34,6 +34,7 @@ import {
   type EmployeeApprovalRecord,
 } from "../api";
 import { ErrorState, LoadingState } from "../components/AsyncState";
+import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { label, LIFECYCLE_STATUS, LIFECYCLE_PHASE, MATURITY, RISK_LEVEL } from "../lib/labels";
 
@@ -80,6 +81,17 @@ export function EmployeeDetailPage() {
   const [certResult, setCertResult] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  usePageAssistantContext(
+    {
+      empleado_id: employeeId,
+      tab,
+      nombre: detail?.name,
+      estado: detail?.lifecycle_status,
+      especialidad: detail?.specialty,
+    },
+    Boolean(employeeId),
+  );
 
   async function load() {
     if (!employeeId) return;

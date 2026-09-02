@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ConfianzaCentro, GobiernoSolicitud } from "../api";
 import {
   fetchCentroConfianza,
   fetchGobiernoSolicitudes,
   fetchGobiernoEventos,
 } from "../api";
+import { EiaaxTable, type EiaaxColumn } from "../components/EiaaxTable";
 
 function formatEventDetail(value: unknown): string {
   if (value == null) return "—";
@@ -23,6 +24,8 @@ function formatEventDetail(value: unknown): string {
   }
   return String(value);
 }
+
+type ControlRow = ConfianzaCentro["controles"][number];
 
 export function CentroConfianzaPage() {
   const [centro, setCentro] = useState<ConfianzaCentro | null>(null);
@@ -47,6 +50,29 @@ export function CentroConfianzaPage() {
     if (estado === "ACTIVO" || estado === "CONFIGURADO") return "trust-status-ok";
     return "trust-status-neutral";
   };
+
+  const controlesColumns = useMemo<EiaaxColumn<ControlRow>[]>(() => [
+    { key: "nombre", label: "Control", sortable: true, getValue: (c) => c.nombre },
+    {
+      key: "estado",
+      label: "Estado",
+      sortable: true,
+      getValue: (c) => c.estado,
+      render: (c) => <span className={`trust-status ${estadoClass(c.estado)}`}>{c.estado}</span>,
+    },
+    { key: "evidencia", label: "Evidencia", getValue: (c) => c.evidencia ?? "" },
+  ], []);
+
+  const solicitudesColumns = useMemo<EiaaxColumn<GobiernoSolicitud>[]>(() => [
+    { key: "tipo_accion", label: "Tipo", sortable: true, getValue: (s) => s.tipo_accion },
+    { key: "estado", label: "Estado", sortable: true, getValue: (s) => s.estado },
+    { key: "descripcion", label: "Detalle", getValue: (s) => s.descripcion ?? "" },
+  ], []);
+
+  const eventosColumns = useMemo<EiaaxColumn<Record<string, unknown>>[]>(() => [
+    { key: "tipo", label: "Evento", sortable: true, getValue: (ev) => String(ev.tipo ?? ev.action ?? "") },
+    { key: "detalle", label: "Detalle", getValue: (ev) => formatEventDetail(ev.detalle ?? ev.detail) },
+  ], []);
 
   return (
     <div className="ops-page trust-center-page">
@@ -76,67 +102,38 @@ export function CentroConfianzaPage() {
 
           <section className="panel compact-panel">
             <h2 className="section-title">Controles implementados</h2>
-            {centro.controles.length === 0 ? (
-              <p className="muted">Sin controles con evidencia registrada aún.</p>
-            ) : (
-              <table className="data-table compact-table cc-table-fill">
-                <thead>
-                  <tr><th>Control</th><th>Estado</th><th>Evidencia</th></tr>
-                </thead>
-                <tbody>
-                  {centro.controles.map((c) => (
-                    <tr key={c.id}>
-                      <td>{c.nombre}</td>
-                      <td><span className={`trust-status ${estadoClass(c.estado)}`}>{c.estado}</span></td>
-                      <td>{c.evidencia ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+            <EiaaxTable
+              columns={controlesColumns}
+              data={centro.controles}
+              rowKey={(c) => c.id}
+              prefsKey="confianza-controles"
+              searchPlaceholder="Buscar control…"
+              emptyMessage="Sin controles con evidencia registrada aún."
+            />
           </section>
 
           <section className="panel compact-panel">
             <h2 className="section-title">Solicitudes de gobierno</h2>
-            {solicitudes.length === 0 ? (
-              <p className="muted">Sin solicitudes pendientes.</p>
-            ) : (
-              <table className="data-table compact-table cc-table-fill">
-                <thead>
-                  <tr><th>Tipo</th><th>Estado</th><th>Detalle</th></tr>
-                </thead>
-                <tbody>
-                  {solicitudes.slice(0, 8).map((s) => (
-                    <tr key={s.id}>
-                      <td>{s.tipo_accion}</td>
-                      <td>{s.estado}</td>
-                      <td>{s.descripcion ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+            <EiaaxTable
+              columns={solicitudesColumns}
+              data={solicitudes}
+              rowKey={(s) => s.id}
+              prefsKey="confianza-solicitudes"
+              searchPlaceholder="Buscar solicitud…"
+              emptyMessage="Sin solicitudes pendientes."
+            />
           </section>
 
           <section className="panel compact-panel">
             <h2 className="section-title">Eventos recientes</h2>
-            {eventos.length === 0 ? (
-              <p className="muted">Sin eventos recientes.</p>
-            ) : (
-              <table className="data-table compact-table cc-table-fill">
-                <thead>
-                  <tr><th>Evento</th><th>Detalle</th></tr>
-                </thead>
-                <tbody>
-                  {eventos.slice(0, 8).map((ev, idx) => (
-                    <tr key={String(ev.id ?? idx)}>
-                      <td>{String(ev.tipo ?? ev.action ?? "—")}</td>
-                      <td>{formatEventDetail(ev.detalle ?? ev.detail)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+            <EiaaxTable
+              columns={eventosColumns}
+              data={eventos}
+              rowKey={(ev) => String(ev.id ?? `${String(ev.tipo ?? ev.action)}-${String(ev.fecha ?? "")}`)}
+              prefsKey="confianza-eventos"
+              searchPlaceholder="Buscar evento…"
+              emptyMessage="Sin eventos recientes."
+            />
           </section>
         </div>
       )}

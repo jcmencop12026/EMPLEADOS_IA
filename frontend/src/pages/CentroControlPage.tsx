@@ -4,6 +4,7 @@ import type { CentroControlResumen } from "../api";
 import { fetchCentroControlResumen } from "../api";
 import { CentroControlCockpit } from "../components/centroControl/CentroControlCockpit";
 import { useOrganizationContext } from "../hooks/useOrganizationContext";
+import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { formatAuditAction, formatHealthStatus } from "../lib/labels";
 
@@ -45,6 +46,8 @@ export function CentroControlPage() {
   const [error, setError] = useState<string | null>(null);
   const [periodo, setPeriodo] = useState("mtd");
   const [seccion, setSeccion] = useState<SeccionId>("resumen");
+
+  usePageAssistantContext({ periodo, seccion });
 
   const load = useCallback(() => {
     setLoading(true);

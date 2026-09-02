@@ -7,6 +7,7 @@ import {
 } from "../api";
 import { ContextualHelp } from "../components/ContextualHelp";
 import { PresentacionView } from "../components/PresentacionView";
+import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 import { AUDIENCIAS, HELP_DEMO_COMERCIAL, type AudienciaId } from "../lib/demoComercialHelp";
 
 export function PresentacionRealPage() {
@@ -16,6 +17,11 @@ export function PresentacionRealPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
+
+  usePageAssistantContext(
+    { expediente_id: expedienteId, audiencia, titulo: data?.titulo },
+    Boolean(expedienteId),
+  );
 
   useEffect(() => {
     if (!expedienteId) return;

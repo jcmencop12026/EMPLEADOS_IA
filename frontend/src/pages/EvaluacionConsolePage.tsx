@@ -16,7 +16,6 @@ import {
   type EvaluacionHallazgo,
   type EvaluacionInfoItem,
 } from "../api";
-import { EiaaxContextualAssistant } from "../components/EiaaxContextualAssistant";
 import { EiaaxTable } from "../components/EiaaxTable";
 import { EspacioExternoAdminPanel } from "../components/espacioExterno/EspacioExternoAdminPanel";
 import { AccionesExternasPanel } from "../components/evaluacion/AccionesExternasPanel";
@@ -26,6 +25,7 @@ import { ImpactoGrafico } from "../components/evaluacion/ImpactoGrafico";
 import { SiguienteAccionPanel } from "../components/evaluacion/SiguienteAccionPanel";
 import { SolucionIaProyectadaPanel } from "../components/evaluacion/SolucionIaProyectadaPanel";
 import { VistaEntidadView } from "../components/evaluacion/VistaEntidadView";
+import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { CONFIANZA, ESTADO_EXPEDIENTE, label, TIPO_CONTENIDO } from "../lib/evaluacionLabels";
 
@@ -75,6 +75,17 @@ export function EvaluacionConsolePage() {
   const [askOpen, setAskOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [piiax, setPiiax] = useState<Record<string, unknown> | null>(null);
+
+  usePageAssistantContext(
+    {
+      tab,
+      expediente_id: evaluacionId,
+      empresa: exp?.entidad_nombre,
+      estado: exp?.estado,
+      confianza: exp?.confianza_global,
+    },
+    Boolean(evaluacionId),
+  );
 
   const load = useCallback(() => {
     if (!evaluacionId) return;
@@ -421,18 +432,6 @@ export function EvaluacionConsolePage() {
       </div>
 
       <EiaaxAskPanel expedienteId={evaluacionId} open={askOpen} onClose={() => setAskOpen(false)} />
-
-      <EiaaxContextualAssistant
-        compact
-        title="Asistente contextual"
-        context={{
-          module: "evaluacion_cabina",
-          expediente_id: evaluacionId,
-          tab,
-          entidad: exp.entidad_nombre,
-          estado: exp.estado,
-        }}
-      />
     </div>
   );
 }
