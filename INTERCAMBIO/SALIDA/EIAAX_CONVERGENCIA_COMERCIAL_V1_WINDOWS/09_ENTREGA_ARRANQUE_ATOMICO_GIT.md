@@ -29,7 +29,7 @@ En `18b9be3`, `Sync-EiaaxConvergenceRepository` ejecutaba `git fetch` con redire
 
 ## D. SHA final
 
-Ver `git rev-parse --short HEAD` en rama `cursor/convergencia-comercial-v1-85e4`.
+**`b01f890`**
 
 ## E. Archivos modificados
 
