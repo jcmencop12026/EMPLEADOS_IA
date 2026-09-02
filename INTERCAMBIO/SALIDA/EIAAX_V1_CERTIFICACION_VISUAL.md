@@ -9,10 +9,8 @@
 
 ```
 git rev-parse origin/cursor/convergencia-comercial-v1-85e4
-→ b1b18b8747c0ccb144a92d605194077deba4e0e7
+→ ac166dc (post-certificación visual; incluye b1b18b8 → 4909bff)
 ```
-
-Tras corrección certificación (import cabina): pendiente push del commit de certificación.
 
 ## B. Confirmación feature incluida
 
