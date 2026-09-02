@@ -7,25 +7,35 @@
 
 ## Regla única (sin ambigüedad)
 
-| **HEAD remoto final** | **`23aaafa`** |
-| **Código funcional** | **`23aaafa`** |
-| **Documentación** | **`23aaafa`** |
-| **Codigo activo SHA** (consola) | **`23aaafa`** (post-sync) |
-| **Runtime / certificación** | **`23aaafa`** |
+Un solo SHA activo en todo momento:
 
-No existen dos SHA activos. Los commits intermedios `1417424` y `ac336b5` fueron consolidados; solo importa el HEAD final de la rama.
+```
+git rev-parse --short HEAD
+```
+
+ejecutado en `D:\EMPLEADOS_IA_CONVERGENCIA` tras `git pull --ff-only origin cursor/convergencia-comercial-v1-85e4`.
+
+Ese valor es simultáneamente:
+
+- HEAD remoto final
+- código funcional
+- documentación incluida en el commit
+- `Codigo activo SHA` mostrado por el arranque (post-sync)
+- SHA de certificación (`EIAAX <sha> — WINDOWS REAL OPERATIVO`)
+
+**No existen dos SHA activos.** Commits intermedios (`1417424`, `ac336b5`, etc.) son solo historia; la autoridad es siempre el HEAD actual de la rama.
 
 ---
 
-## Historial consolidado (referencia)
+## Relación histórica (referencia, no activa)
 
-| SHA | Contenido |
-|-----|-----------|
+| SHA | Rol histórico |
+|-----|----------------|
 | `18b9be3` | Fix Python (`Resolve-EiaaxPython`, `PYTHON DISCOVERY`) |
 | `f19c924` | Fix Git stderr → exit code como autoridad |
 | `1417424` | Ruta autoritativa desde `$PSScriptRoot` |
-| `ac336b5` | Solo doc (alineación SHA) — absorbido en HEAD final |
-| **HEAD final** | **`36b5e94`** — bootstrap pre-Common + política SHA única |
+| `ac336b5` | Alineación doc (absorbido en HEAD posterior) |
+| HEAD actual | Todo lo anterior + bootstrap pre-Common |
 
 ---
 
@@ -34,12 +44,10 @@ No existen dos SHA activos. Los commits intermedios `1417424` y `ac336b5` fueron
 `arrancar_convergencia_windows.ps1` ejecuta **antes** de cargar `EiaaxDemo.Common.ps1`:
 
 1. `git fetch / checkout / pull --ff-only` con exit code como autoridad (stderr tolerado)
-2. Si el SHA cambió, re-ejecuta el script ya actualizado
-3. Continúa con `Sync-EiaaxConvergenceRepository` (Common.ps1)
+2. Si el SHA cambió, re-ejecuta el script ya actualizado (`EIAAX_BOOTSTRAP_REEXEC`)
+3. Continúa con `Sync-EiaaxConvergenceRepository` (Common.ps1 corregido)
 
-Esto evita que una copia local con `Common.ps1` antiguo impida auto-actualizarse.
-
-**Nota transición desde `18b9be3`:** la primera vez requiere obtener el script con bootstrap (p. ej. `git pull` manual que el usuario ya demostró). A partir de ahí, el arranque atómico se auto-actualiza.
+**Transición desde `18b9be3`:** requiere una vez obtener el script con bootstrap (el usuario ya demostró `git pull` manual). A partir de ahí, el arranque atómico se auto-actualiza sin wrapper exterior.
 
 ---
 
