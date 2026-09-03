@@ -37,6 +37,7 @@ from app import consumption_planner_models  # noqa: F401 — planificador MB-07 
 from app import economic_motor_models  # noqa: F401 — motor económico EIAAX 1600
 from app import continuidad_comercial_models  # noqa: F401 — continuidad 1720
 from app import flujo_comercial_models  # noqa: F401 — flujo comercial V1 1730
+from app import inteligencia_economica_models  # noqa: F401 — inteligencia económica 1740
 from app import communications_models  # noqa: F401 — comunicaciones MB-11
 from app.health import build_health_report, health_http_status
 from app.routers import (
@@ -86,6 +87,7 @@ from app.routers import (
     centro_negocios,
     continuidad_comercial,
     flujo_comercial,
+    inteligencia_economica,
 )
 from app.seed import bootstrap
 from app.security_config import validate_security_settings
@@ -184,6 +186,7 @@ app.include_router(motor_economico.router)
 app.include_router(centro_negocios.router)
 app.include_router(continuidad_comercial.router)
 app.include_router(flujo_comercial.router)
+app.include_router(inteligencia_economica.router)
 app.include_router(salud.router)
 app.include_router(experience.router)
 app.include_router(oportunidades.router)

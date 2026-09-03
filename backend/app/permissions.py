@@ -261,6 +261,12 @@ FLUJO_COMERCIAL_PERMISSIONS = {
     "flujo_comercial.manage",
 }
 
+INTELIGENCIA_ECONOMICA_PERMISSIONS = {
+    "inteligencia_economica.view",
+    "inteligencia_economica.simulate",
+    "inteligencia_economica.private",
+}
+
 NEGOCIO_PERMISSIONS = {
     "negocio.view",
     "negocio.manage",
@@ -503,6 +509,9 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "continuidad_comercial.close": ("Continuidad comercial", "Cerrar contratos y offboarding"),
     "flujo_comercial.view": ("Flujo comercial", "Ver flujo prospecto→contratación"),
     "flujo_comercial.manage": ("Flujo comercial", "Gestionar presentación, instrumentos y garantías"),
+    "inteligencia_economica.view": ("Inteligencia económica", "Ver valor empresarial y resultado económico"),
+    "inteligencia_economica.simulate": ("Inteligencia económica", "Simular escenarios y dimensionamiento"),
+    "inteligencia_economica.private": ("Inteligencia económica", "Ver inteligencia comercial interna y pricing valor"),
     "tco.view": ("TCO", "Consultar costo total y tablero"),
     "tco.manage": ("TCO", "Gestionar costos y distribuciones"),
     "tco.simulate": ("TCO", "Simular escenarios de costo"),
@@ -587,6 +596,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | NEGOCIO_PERMISSIONS
         | CONTINUIDAD_COMERCIAL_PERMISSIONS
         | FLUJO_COMERCIAL_PERMISSIONS
+        | INTELIGENCIA_ECONOMICA_PERMISSIONS
         | TCO_PERMISSIONS
         | IMPLEMENTACION_PERMISSIONS
         | SEGMENTATION_PERMISSIONS
@@ -627,6 +637,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | NEGOCIO_PERMISSIONS
         | CONTINUIDAD_COMERCIAL_PERMISSIONS
         | FLUJO_COMERCIAL_PERMISSIONS
+        | INTELIGENCIA_ECONOMICA_PERMISSIONS
         | TCO_PERMISSIONS
         | IMPLEMENTACION_PERMISSIONS
         | SEGMENTATION_PERMISSIONS
@@ -738,6 +749,8 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "comercial.view",
         "comercial.simulate",
         "comercial.create",
+        "inteligencia_economica.view",
+        "inteligencia_economica.simulate",
         "negocio.view",
         "negocio.manage",
         "negocio.proposal.approve",

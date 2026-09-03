@@ -4,18 +4,23 @@ import type {
   FinOpsConsumption,
   FinOpsDashboard,
   FinOpsRate,
+  InteligenciaEconomicaResultado,
+  InteligenciaEscenarioComparacion,
   PlannerPresupuesto,
   PlannerResumen,
   PlannerSimulation,
 } from "../api";
 import {
   comparePlannerProviders,
+  compararEscenariosInteligencia,
   createFinOpsBudget,
   createFinOpsRate,
+  dimensionarInteligencia,
   fetchFinOpsBudgets,
   fetchFinOpsConsumptions,
   fetchFinOpsDashboard,
   fetchFinOpsRates,
+  fetchInteligenciaResultadoEconomico,
   fetchPlannerCapacidad,
   fetchPlannerMargen,
   fetchPlannerPresupuesto,
@@ -24,13 +29,15 @@ import {
 } from "../api";
 import { getCachedUser } from "../auth/session";
 
-type Tab = "resumen" | "consumos" | "capacidad" | "simulador" | "presupuesto" | "comparacion" | "presupuestos" | "tarifas";
+type Tab = "resumen" | "consumos" | "capacidad" | "simulador" | "presupuesto" | "comparacion" | "presupuestos" | "tarifas" | "inteligencia";
 
 export function CostosValorPage() {
   const user = getCachedUser();
   const canBudget = user?.permissions?.includes("finops.budget");
   const canRates = user?.permissions?.includes("finops.rates");
   const canSimulate = user?.permissions?.includes("finops.planner.simulate");
+  const canInteligencia = user?.permissions?.includes("inteligencia_economica.view");
+  const canInteligenciaSim = user?.permissions?.includes("inteligencia_economica.simulate");
   const canMargin = user?.permissions?.includes("finops.margin.view");
   const [tab, setTab] = useState<Tab>("resumen");
   const [summary, setSummary] = useState<FinOpsDashboard | null>(null);
@@ -45,6 +52,10 @@ export function CostosValorPage() {
   const [rates, setRates] = useState<FinOpsRate[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [simParams, setSimParams] = useState({ employees: 25, execDay: 20, days: 30 });
+  const [ieResultado, setIeResultado] = useState<InteligenciaEconomicaResultado | null>(null);
+  const [ieEscenarios, setIeEscenarios] = useState<InteligenciaEscenarioComparacion[]>([]);
+  const [ieDimension, setIeDimension] = useState<Record<string, unknown> | null>(null);
+  const [ieParams, setIeParams] = useState({ personas: 10, personasEscenario: 7, empleadosIa: 1 });
   const [filters, setFilters] = useState({
     provider: "",
     model_name: "",
@@ -97,6 +108,10 @@ export function CostosValorPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (tab === "inteligencia") loadInteligencia();
+  }, [tab, canInteligencia]);
+
   async function runSimulation() {
     if (!canSimulate) return;
     setError(null);
@@ -127,6 +142,49 @@ export function CostosValorPage() {
       setCompareRows(rows);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error en comparación");
+    }
+  }
+
+  async function loadInteligencia() {
+    if (!canInteligencia) return;
+    setError(null);
+    try {
+      const resultado = await fetchInteligenciaResultadoEconomico();
+      setIeResultado(resultado);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al cargar inteligencia económica");
+    }
+  }
+
+  async function runEscenariosInteligencia() {
+    if (!canInteligenciaSim) return;
+    setError(null);
+    try {
+      const res = await compararEscenariosInteligencia({
+        personas: ieParams.personas,
+        personas_escenario: ieParams.personasEscenario,
+        empleados_ia: ieParams.empleadosIa,
+        persistir: false,
+      });
+      setIeEscenarios(res.escenarios ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error en escenarios");
+    }
+  }
+
+  async function runDimensionar() {
+    if (!canInteligenciaSim) return;
+    setError(null);
+    try {
+      const res = await dimensionarInteligencia({
+        personas_actual: ieParams.personas,
+        personas_escenario: ieParams.personasEscenario,
+        empleados_ia: ieParams.empleadosIa,
+        modo: "CAPACIDAD_LIBERADA",
+      });
+      setIeDimension(res);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error en dimensionamiento");
     }
   }
 
@@ -173,6 +231,7 @@ export function CostosValorPage() {
     { id: "comparacion", label: "Comparación" },
     { id: "presupuestos", label: "Presupuestos" },
     { id: "tarifas", label: "Tarifas" },
+    ...(canInteligencia ? [{ id: "inteligencia" as Tab, label: "Inteligencia económica" }] : []),
   ];
 
   return (
@@ -542,6 +601,97 @@ export function CostosValorPage() {
             </table>
           </div>
         </>
+      )}
+
+      {tab === "inteligencia" && canInteligencia && (
+        <div className="panel form-grid">
+          <h2>Resultado económico</h2>
+          {ieResultado && (
+            <div className="metrics-grid">
+              <div className="metric-card">
+                <span className="metric-label">Beneficio neto</span>
+                <strong>{ieResultado.beneficio_neto}</strong>
+              </div>
+              <div className="metric-card">
+                <span className="metric-label">ROI %</span>
+                <strong>{ieResultado.roi_pct ?? "—"}</strong>
+              </div>
+              <div className="metric-card">
+                <span className="metric-label">Payback (meses)</span>
+                <strong>{ieResultado.payback_meses ?? "—"}</strong>
+              </div>
+            </div>
+          )}
+          {canInteligenciaSim && (
+            <>
+              <h2>Escenarios empresariales</h2>
+              <label>
+                Personas actuales
+                <input
+                  type="number"
+                  value={ieParams.personas}
+                  onChange={(e) => setIeParams({ ...ieParams, personas: Number(e.target.value) })}
+                />
+              </label>
+              <label>
+                Personas escenario
+                <input
+                  type="number"
+                  value={ieParams.personasEscenario}
+                  onChange={(e) => setIeParams({ ...ieParams, personasEscenario: Number(e.target.value) })}
+                />
+              </label>
+              <label>
+                Empleados IA
+                <input
+                  type="number"
+                  value={ieParams.empleadosIa}
+                  onChange={(e) => setIeParams({ ...ieParams, empleadosIa: Number(e.target.value) })}
+                />
+              </label>
+              <div className="filters-row">
+                <button type="button" className="btn-primary" onClick={runEscenariosInteligencia}>
+                  Comparar escenarios
+                </button>
+                <button type="button" className="btn-secondary" onClick={runDimensionar}>
+                  Dimensionar capacidad
+                </button>
+              </div>
+            </>
+          )}
+          {ieEscenarios.length > 0 && (
+            <table className="data-table compact">
+              <thead>
+                <tr>
+                  <th>Escenario</th>
+                  <th>Personas</th>
+                  <th>Costo</th>
+                  <th>Ahorro</th>
+                  <th>ROI %</th>
+                  <th>Cap. liberada (h)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ieEscenarios.map((row) => (
+                  <tr key={row.tipo}>
+                    <td>{row.tipo}</td>
+                    <td>{row.personas}</td>
+                    <td>{row.costo_total}</td>
+                    <td>{row.ahorro_neto}</td>
+                    <td>{row.roi_pct ?? "—"}</td>
+                    <td>{row.capacidad_liberada_horas}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {ieDimension && (
+            <p className="muted">
+              {String((ieDimension.impacto as Record<string, unknown>)?.interpretacion ?? "")}
+            </p>
+          )}
+          <p className="muted">Valor POTENCIAL no se incorpora automáticamente al precio sugerido.</p>
+        </div>
       )}
     </div>
   );
