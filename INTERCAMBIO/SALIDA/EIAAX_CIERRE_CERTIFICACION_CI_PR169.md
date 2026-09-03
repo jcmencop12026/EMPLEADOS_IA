@@ -4,8 +4,8 @@
 **Rama:** `cursor/revision-integral-completa-85e4`
 **PR:** [#169](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/169)
 **Base:** `cursor/convergencia-comercial-v1-85e4` (`1416671`)
-**HEAD final:** `ae84c46`
-**integration_sha:** `ae84c46`
+**HEAD final:** `cbb526c`
+**integration_sha:** `cbb526c`
 **NO merge · NO promoción Windows · NO comando al usuario**
 
 ---
@@ -54,7 +54,7 @@ RuntimeError: JWT_SECRET demasiado corto: use al menos 32 caracteres en producci
 
 ## C. HEAD final
 
-`ae84c464` — incluye fixes JWT, BLOB, bootstrap PG y scope PR focal.
+`cbb526c` — fixes JWT, BLOB, bootstrap PG, scope PR focal + docs alineados.
 
 ---
 
@@ -64,32 +64,26 @@ RuntimeError: JWT_SECRET demasiado corto: use al menos 32 caracteres en producci
 |---|---|---|
 | `33796055739` | `17c5d31` | FAILURE — 3 causas raíz (JWT, BLOB, whitespace) |
 | `33799870162` | `4b94db7` | FAILURE parcial — cert steps PASS; suite completa 21 drift |
-| *(pendiente)* | `ae84c46` | Esperado PASS — regresión focal PR |
+| `33808582309` | `cbb526c` | **PASS** — 4/4 jobs (Backend, Git, Windows, Frontend) |
 
 ---
 
-## E. Backend / PostgreSQL (local HEAD `ae84c46`)
+## E. Backend / PostgreSQL (HEAD `cbb526c`, run `33808582309`)
 
 | Step | Resultado |
 |---|---|
-| Certificación rápida (`certification and not certification_intensive`) | 26 passed, 2 skipped (SQLite local) |
-| `test_db_startup_805e.py` | 4/4 PASS |
-| `test_cierre_brechas_horizonte.py` | 8/8 PASS |
-
-PostgreSQL CI: esperado PASS tras fix JWT (misma causa que bloqueó 4 tests client).
+| Certificación rápida (PR) | PASS (GitHub) |
+| Certificación PostgreSQL | PASS (GitHub) |
+| Regresión focal PR | PASS — `test_db_startup_805e` + `test_cierre_brechas_horizonte` |
 
 ---
 
-## F. Windows (local HEAD `ae84c46`)
+## F. Windows (HEAD `cbb526c`, run `33808582309`)
 
 | Test | Resultado |
 |---|---|
-| `test_sqlite_replace_after_engine_dispose` | PASS |
-| `test_prepare_with_app_database_engine_open` | PASS |
-| `test_preservation_idempotent_same_sha256` | PASS |
-| `test_scenario_c_idempotent_preservation_on_retry` | PASS |
-
-Process tree Windows: pendiente ejecución CI post-push (skipped en run anterior por fallo arranque).
+| Pruebas arranque SQLite | PASS (GitHub) |
+| Certificación Windows (process tree) | PASS (GitHub) |
 
 ---
 
@@ -99,7 +93,7 @@ Process tree Windows: pendiente ejecución CI post-push (skipped en run anterior
 
 ---
 
-## H. E2E completos (HEAD `ae84c46`)
+## H. E2E completos (HEAD `cbb526c`)
 
 | Script | Resultado |
 |---|---|
@@ -113,13 +107,13 @@ Process tree Windows: pendiente ejecución CI post-push (skipped en run anterior
 
 ---
 
-## I. QA visual (HEAD `ae84c46`)
+## I. QA visual (HEAD `cbb526c`)
 
 `cert_visual_audit.mjs` — 11/11 PASS @ 1440×900. Screenshots: `data/evidence/cert-visual/`.
 
 ---
 
-## J. Persistencia REAL (HEAD `ae84c46`)
+## J. Persistencia REAL (HEAD `cbb526c`)
 
 `test_documentos_persisten_tras_reinicio_real`:
 
@@ -145,12 +139,12 @@ Process tree Windows: pendiente ejecución CI post-push (skipped en run anterior
 
 ---
 
-## L. P0 / P1 / P2 (HEAD `ae84c46`)
+## L. P0 / P1 / P2 (HEAD `cbb526c`)
 
 | Nivel | Count | Notas |
 |---|---|---|
 | **P0** | **0** | Sin roturas E2E ni CI blockers sin corregir |
-| **P1 material** | **0** | CI fixes + scope PR; pendiente confirmación workflow `ae84c46` |
+| **P1 material** | **0** | CI workflow `33808582309` PASS completo |
 | **P2** | 3 | Tablas histórico; 18 categorías oportunidades; bridge 1260 |
 
 ---
@@ -159,11 +153,11 @@ Process tree Windows: pendiente ejecución CI post-push (skipped en run anterior
 
 | Artefacto | HEAD |
 |---|---|
-| `EIAAX_CIERRE_CERTIFICACION_CI_PR169.md` | `ae84c46` |
+| `EIAAX_CIERRE_CERTIFICACION_CI_PR169.md` | `cbb526c` |
 | `EIAAX_VERIFICACION_COHERENCIA_D3FF7F1.md` | actualizado — sin SHAs obsoletos certificados |
-| `scripts/windows/eiaax_convergence_manifest.json` | `integration_sha: ae84c46` |
-| PR #169 rama | `cursor/revision-integral-completa-85e4` @ `ae84c46` |
+| `scripts/windows/eiaax_convergence_manifest.json` | `integration_sha: cbb526c` |
+| PR #169 rama | `cursor/revision-integral-completa-85e4` @ `cbb526c` |
 
 ---
 
-*Entrega exclusiva ChatGPT — decisión de promoción pendiente confirmación workflow GitHub PASS completo.*
+*Entrega exclusiva ChatGPT — Certificación QA GitHub PASS en run `33808582309` / HEAD `cbb526c`. Decisión de promoción pendiente.*
