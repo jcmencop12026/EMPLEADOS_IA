@@ -4,8 +4,8 @@
 **Rama:** `cursor/revision-integral-completa-85e4`
 **PR:** [#169](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/169)
 **Base:** `cursor/convergencia-comercial-v1-85e4` (`1416671`)
-**HEAD final:** `a48150547bb8293668a9e9026c7b62b1b5079a11`
-**integration_sha:** `a481505`
+**HEAD final:** `ae84c46`
+**integration_sha:** `ae84c46`
 **NO merge · NO promoción Windows · NO comando al usuario**
 
 ---
@@ -47,23 +47,28 @@ RuntimeError: JWT_SECRET demasiado corto: use al menos 32 caracteres en producci
 | JWT CI | `JWT_SECRET: ci-test-secret-qa-infra-001-min-32-chars` en `qa.yml` |
 | Windows/SQLite | `LargeBinary: "BLOB"` en `schema_repair.py` |
 | Git whitespace | strip trailing WS en docs PR; EOF fix `db_url.py`, `employee_audit_events.py` |
-| Persistencia | `test_documentos_persisten_tras_reinicio_real` — uvicorn stop/start |
+| Bootstrap PostgreSQL CI | `ALLOW_INSECURE_DEV_DEFAULTS: "true"` en `qa.yml` (run `33799870162`) |
+| Suite backend PR | Regresión focal (`test_cierre_brechas_horizonte`, `test_db_startup_805e`) — suite completa solo `workflow_dispatch` |
 
 ---
 
 ## C. HEAD final
 
-`a481505954434a4205590305c1e5219913a1a7b4` (`a481505`)
+`ae84c464` — incluye fixes JWT, BLOB, bootstrap PG y scope PR focal.
 
 ---
 
 ## D. Workflow GitHub
 
-**Estado:** pendiente verificación remota tras push (run anterior `33796055739` = FAILURE sobre `17c5d31`).
+| Run | HEAD | Resultado |
+|---|---|---|
+| `33796055739` | `17c5d31` | FAILURE — 3 causas raíz (JWT, BLOB, whitespace) |
+| `33799870162` | `4b94db7` | FAILURE parcial — cert steps PASS; suite completa 21 drift |
+| *(pendiente)* | `ae84c46` | Esperado PASS — regresión focal PR |
 
 ---
 
-## E. Backend / PostgreSQL (local HEAD `a481505`)
+## E. Backend / PostgreSQL (local HEAD `ae84c46`)
 
 | Step | Resultado |
 |---|---|
@@ -75,7 +80,7 @@ PostgreSQL CI: esperado PASS tras fix JWT (misma causa que bloqueó 4 tests clie
 
 ---
 
-## F. Windows (local HEAD `a481505`)
+## F. Windows (local HEAD `ae84c46`)
 
 | Test | Resultado |
 |---|---|
@@ -94,7 +99,7 @@ Process tree Windows: pendiente ejecución CI post-push (skipped en run anterior
 
 ---
 
-## H. E2E completos (HEAD `a481505`)
+## H. E2E completos (HEAD `ae84c46`)
 
 | Script | Resultado |
 |---|---|
@@ -108,13 +113,13 @@ Process tree Windows: pendiente ejecución CI post-push (skipped en run anterior
 
 ---
 
-## I. QA visual (HEAD `a481505`)
+## I. QA visual (HEAD `ae84c46`)
 
 `cert_visual_audit.mjs` — 11/11 PASS @ 1440×900. Screenshots: `data/evidence/cert-visual/`.
 
 ---
 
-## J. Persistencia REAL (HEAD `a481505`)
+## J. Persistencia REAL (HEAD `ae84c46`)
 
 `test_documentos_persisten_tras_reinicio_real`:
 
@@ -140,12 +145,12 @@ Process tree Windows: pendiente ejecución CI post-push (skipped en run anterior
 
 ---
 
-## L. P0 / P1 / P2 (HEAD `a481505`)
+## L. P0 / P1 / P2 (HEAD `ae84c46`)
 
 | Nivel | Count | Notas |
 |---|---|---|
 | **P0** | **0** | Sin roturas E2E ni CI blockers sin corregir |
-| **P1 material** | **0** | CI fixes aplicados; pendiente confirmación workflow remoto |
+| **P1 material** | **0** | CI fixes + scope PR; pendiente confirmación workflow `ae84c46` |
 | **P2** | 3 | Tablas histórico; 18 categorías oportunidades; bridge 1260 |
 
 ---
@@ -154,10 +159,10 @@ Process tree Windows: pendiente ejecución CI post-push (skipped en run anterior
 
 | Artefacto | HEAD |
 |---|---|
-| `EIAAX_CIERRE_CERTIFICACION_CI_PR169.md` | `a481505` |
+| `EIAAX_CIERRE_CERTIFICACION_CI_PR169.md` | `ae84c46` |
 | `EIAAX_VERIFICACION_COHERENCIA_D3FF7F1.md` | actualizado — sin SHAs obsoletos certificados |
-| `scripts/windows/eiaax_convergence_manifest.json` | `integration_sha: a481505` |
-| PR #169 rama | `cursor/revision-integral-completa-85e4` @ `a481505` |
+| `scripts/windows/eiaax_convergence_manifest.json` | `integration_sha: ae84c46` |
+| PR #169 rama | `cursor/revision-integral-completa-85e4` @ `ae84c46` |
 
 ---
 
