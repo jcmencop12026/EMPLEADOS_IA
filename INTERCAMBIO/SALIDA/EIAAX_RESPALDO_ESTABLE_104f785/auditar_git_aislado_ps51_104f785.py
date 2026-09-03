@@ -92,13 +92,20 @@ def test_command_entry_pattern() -> None:
             fail(f"COMANDO contiene patrón prohibido: {token}")
     if "git fetch origin" in comando and "cmd /d /c" not in comando:
         fail("git fetch directo en PowerShell sin cmd /d /c")
-    if "cmd /d /c" not in comando:
-        fail("COMANDO no aísla git via cmd /d /c")
+    if not comando.startswith("cmd /d /c"):
+        fail("COMANDO padre debe ser únicamente cmd /d /c")
     if "&&" not in comando:
         fail("COMANDO no usa errorlevel cmd (&&)")
-    if "$LASTEXITCODE" not in comando:
-        fail("COMANDO no valida $LASTEXITCODE tras cmd")
-    ok(f"COMANDO entrada ({len(comando)} chars) usa cmd /d /c + $LASTEXITCODE")
+    if comando.count("&&") < 3:
+        fail("COMANDO no encadena fetch->archive->expand->launcher con &&")
+    for token in (" exit ", " exit 1", "if (", "try {", "catch {"):
+        if token in comando:
+            fail(f"COMANDO contiene patrón prohibido: {token.strip()}")
+    if "Expand-Archive" not in comando:
+        fail("COMANDO no incluye Expand-Archive en cadena cmd")
+    if "Launch-Respaldo-Integral-104f785.ps1" not in comando:
+        fail("COMANDO no llega al launcher en cadena cmd")
+    ok(f"COMANDO entrada ({len(comando)} chars) — cmd /d /c único, sin exit/if/try en PS padre")
 
 
 def test_launcher_uses_cmd_isolation() -> None:

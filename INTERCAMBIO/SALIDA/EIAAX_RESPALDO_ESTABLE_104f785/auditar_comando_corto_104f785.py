@@ -20,17 +20,8 @@ EXPECTED_SHA256 = "a1caf4dc9b8e525cf3c4e6436a628a0204a5f2cd0c2073b25c8815cb8a1ab
 PROTECTED = "104f7850d7196d08d80fff9b4e7a8a83a5a1fa9a"
 
 COMMAND = (
-    'Set-Location D:\\EMPLEADOS_IA_CONVERGENCIA; '
-    'cmd /d /c "git fetch origin tag eiaax-tools-respaldo-104f785 2>nul && '
-    'git archive --format=zip -o \\"%TEMP%\\eiaax_r104f785.zip\\" '
-    'eiaax-tools-respaldo-104f785 '
-    'INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/Launch-Respaldo-Integral-104f785.ps1 2>nul"; '
-    'if ($LASTEXITCODE -ne 0) { exit 1 }; '
-    'Expand-Archive -Force $env:TEMP\\eiaax_r104f785.zip $env:TEMP\\eiaax_r104f785; '
-    'powershell -NoProfile -ExecutionPolicy Bypass -File '
-    '"$env:TEMP\\eiaax_r104f785\\INTERCAMBIO\\SALIDA\\EIAAX_RESPALDO_ESTABLE_104f785\\'
-    'Launch-Respaldo-Integral-104f785.ps1"'
-)
+    REPO / "INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/COMANDO_WINDOWS_UNA_LINEA.txt"
+).read_text(encoding="utf-8").strip()
 
 
 def fail(msg: str) -> None:
@@ -90,7 +81,15 @@ def main() -> int:
             fail(f"hash-object: {hash_object}")
 
     ok("Materialización byte-safe solo Launch (git archive archivo único)")
-    ok(f"Comando corto ({len(COMMAND)} chars) — git aislado via cmd /d /c, sin tubería PS")
+    forbidden = (" exit ", " exit 1", "if (", "try {", "catch {")
+    for token in forbidden:
+        if token in COMMAND:
+            fail(f"COMANDO contiene patrón prohibido: {token.strip()}")
+    if not COMMAND.startswith("cmd /d /c"):
+        fail("COMANDO padre debe ser únicamente cmd /d /c")
+    if COMMAND.count("&&") < 3:
+        fail("COMANDO sin cadena && completa fetch->archive->expand->launcher")
+    ok(f"Comando corto ({len(COMMAND)} chars) — todo encapsulado en cmd /d /c, sin exit/if/try")
 
     subprocess.check_call(
         [
