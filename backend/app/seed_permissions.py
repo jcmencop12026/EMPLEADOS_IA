@@ -10,6 +10,7 @@ ROLE_LABELS = {
     "operator": "Operador",
     "viewer": "Consulta",
     "superadmin": "Superadministrador de plataforma",
+    "external_prospect": "Prospecto externo",
 }
 
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { BRAND_LEVELS, EIAAX_BRAND, type BrandLevel } from "../../lib/brand";
-import { resolveIdentityAsset } from "../../lib/identityAssets";
+import { getBundledIdentityAsset, resolveIdentityAsset } from "../../lib/identityAssets";
 
 type Props = {
   level: BrandLevel;
@@ -11,7 +11,7 @@ type Props = {
 /** Marca EIAAX por nivel — imagen oficial si existe; tipografía si no. */
 export function BrandMark({ level, className = "", title }: Props) {
   const config = BRAND_LEVELS[level];
-  const [assetUrl, setAssetUrl] = useState<string | null>(null);
+  const [assetUrl, setAssetUrl] = useState<string | null>(() => getBundledIdentityAsset(config.assetId));
 
   useEffect(() => {
     let active = true;

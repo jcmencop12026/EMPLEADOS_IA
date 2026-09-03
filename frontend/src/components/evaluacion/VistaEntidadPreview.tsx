@@ -42,7 +42,7 @@ type VistaEntidadData = {
   oportunidades?: Array<{ titulo?: string; codigo?: string }>;
 };
 
-/** Vista Entidad legible — sin JSON crudo como experiencia final. */
+/** Vista Entidad legible — representa exactamente lo que verá la empresa. */
 export function VistaEntidadPreview({ data }: { data: Record<string, unknown> }) {
   const v = data as VistaEntidadData;
 
@@ -78,7 +78,7 @@ export function VistaEntidadPreview({ data }: { data: Record<string, unknown> })
       <section className="vista-entidad-section">
         <h4>Hallazgos visibles para la entidad</h4>
         {(v.hallazgos ?? []).length === 0 ? (
-          <p className="muted">No hay hallazgos marcados como visibles para la entidad.</p>
+          <p className="muted">No hay hallazgos publicados para la entidad.</p>
         ) : (
           <ul className="vista-entidad-list">
             {(v.hallazgos ?? []).map((h, i) => (

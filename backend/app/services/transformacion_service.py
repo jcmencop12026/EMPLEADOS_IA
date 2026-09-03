@@ -488,18 +488,21 @@ def _generar_escenarios(
     exp: EvaluacionExpediente,
     iniciativas: list[TransformacionIniciativa],
 ) -> list[TransformacionEscenario]:
+    escenarios_def = [
+        ("ACTUAL", "Situación actual (proceso vigente)", False, "Estado base sin cambios estructurales."),
+        ("OPTIMIZADO", "Escenario optimizado (proyectado)", True, "Mejoras de proceso sin automatización completa."),
+        ("AUTOMATIZADO", "Escenario automatizado (proyectado)", True, "Automatización de tareas repetitivas."),
+        ("ASISTIDO_IA", "Escenario asistido por IA (proyectado)", True, "IA asiste al humano — no sustituye todo el proceso."),
+        ("ALTAMENTE_AUTOMATIZADO", "Altamente automatizado (proyectado)", True, "Máxima automatización viable con controles."),
+    ]
     escenarios: list[TransformacionEscenario] = []
-    for tipo, titulo, proyectado in [
-        ("ACTUAL", "Situación actual", False),
-        ("MEJORADO", "Escenario mejorado (proyectado)", True),
-        ("TRANSFORMADO", "Escenario transformado (proyectado)", True),
-    ]:
+    for tipo, titulo, proyectado, nota in escenarios_def:
         if tipo not in ESCENARIO_TIPOS:
             continue
         desc = (
             exp.necesidad or "Estado base registrado en el dossier."
             if tipo == "ACTUAL"
-            else f"Proyección basada en {len(iniciativas)} iniciativa(s) priorizada(s)."
+            else f"{nota} Basado en {len(iniciativas)} iniciativa(s)."
         )
         esc = TransformacionEscenario(
             organization_id=dossier.organization_id,
@@ -700,8 +703,13 @@ def _siguiente_accion(
     return {"accion": "revisar_diagnostico", "mensaje": "Revise hallazgos y alternativas generadas."}
 
 
-def get_dossier_completo(db: Session, organization_id: str) -> dict[str, Any]:
-    dossier = get_or_create_dossier(db, organization_id)
+def get_dossier_completo(db: Session, organization_id: str, *, create: bool = True) -> dict[str, Any] | None:
+    if create:
+        dossier = get_or_create_dossier(db, organization_id)
+    else:
+        dossier = db.query(DossierEmpresarial).filter(DossierEmpresarial.organization_id == organization_id).first()
+        if dossier is None:
+            return None
     conocimiento = (
         db.query(DossierConocimientoItem)
         .filter(DossierConocimientoItem.dossier_id == dossier.id, DossierConocimientoItem.vigente.is_(True))
@@ -744,9 +752,16 @@ def get_dossier_completo(db: Session, organization_id: str) -> dict[str, Any]:
     }
 
 
-def get_recorrido_estado(db: Session, organization_id: str, expediente_id: str | None = None) -> dict[str, Any]:
+def get_recorrido_estado(
+    db: Session, organization_id: str, expediente_id: str | None = None, *, create: bool = True,
+) -> dict[str, Any]:
     """Estado del recorrido progresivo para UX."""
-    dossier = get_or_create_dossier(db, organization_id)
+    if create:
+        dossier = get_or_create_dossier(db, organization_id)
+    else:
+        dossier = db.query(DossierEmpresarial).filter(DossierEmpresarial.organization_id == organization_id).first()
+        if dossier is None:
+            return {"pasos": [], "dossier": None, "suficiencia": None}
     eid = expediente_id or dossier.expediente_activo_id
     pasos = [
         {"id": "necesidad", "label": "Necesidad", "completo": bool(dossier.resumen)},

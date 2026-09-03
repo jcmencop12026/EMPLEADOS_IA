@@ -2,12 +2,18 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { DiagnosticDetail } from "../api";
 import { fetchDiagnostic, fetchDiagnosticTrace } from "../api";
+import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 
 export function DiagnosticoDetailPage() {
   const { diagnosticId } = useParams<{ diagnosticId: string }>();
   const [detail, setDetail] = useState<DiagnosticDetail | null>(null);
   const [trace, setTrace] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  usePageAssistantContext(
+    { diagnostico_id: diagnosticId, codigo: detail?.codigo, resumen: detail?.resumen },
+    Boolean(diagnosticId),
+  );
 
   useEffect(() => {
     if (!diagnosticId) return;

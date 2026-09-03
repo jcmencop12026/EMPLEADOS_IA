@@ -152,6 +152,20 @@ def _confianza_from_pct(pct: int) -> str:
     return "BAJA"
 
 
+def _confianza_from_float(value: float) -> str:
+    return _confianza_from_pct(int(round(max(0.0, min(1.0, value)) * 100)))
+
+
+def _tipo_contenido_desde_diagnostico(tipo: str | None) -> str:
+    if tipo == "HECHO":
+        return "HECHO"
+    if tipo in {"INTERPRETACION", "INFERENCIA"}:
+        return "INFERENCIA"
+    if tipo in {"HECHO", "INFERENCIA", "PROYECCION", "RECOMENDACION"}:
+        return tipo
+    return "INFERENCIA"
+
+
 def _item_estado(item: EvaluacionInformacionItem) -> str:
     if item.respuesta and item.respuesta.strip():
         return "RECIBIDO"
@@ -310,6 +324,7 @@ def create_expediente(
     necesidad: str | None = None,
     objetivo: str | None = None,
     area_proceso: str | None = None,
+    sector: str | None = None,
     nivel: str = "PRELIMINAR",
 ) -> EvaluacionExpediente:
     if nivel not in EVALUACION_NIVELES:
@@ -323,6 +338,7 @@ def create_expediente(
         necesidad=necesidad,
         objetivo=objetivo,
         area_proceso=area_proceso,
+        sector=sector,
         nivel=nivel,
         estado="BORRADOR",
         correlation_id=_new_correlation(),
@@ -604,6 +620,7 @@ def create_hallazgo(
     impacto_resumen: str | None = None,
     visible_entidad: bool = False,
     es_problema_original: bool = False,
+    diagnostic_finding_id: str | None = None,
 ) -> EvaluacionHallazgo:
     exp = _get_expediente(db, expediente_id, organization_id)
     if tipo_contenido not in {"HECHO", "INFERENCIA", "PROYECCION", "RECOMENDACION"}:
@@ -623,6 +640,7 @@ def create_hallazgo(
         impacto_resumen=impacto_resumen,
         visible_entidad=visible_entidad,
         es_problema_original=es_problema_original,
+        diagnostic_finding_id=diagnostic_finding_id,
         correlation_id=exp.correlation_id,
         created_by=user_id,
     )

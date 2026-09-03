@@ -1,12 +1,24 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { api, ApiError, setToken, verifyMfaLogin, discoverLogin, beginPublicOidc, completeOidcCallback, type UserMe } from "../api";
+import {
+  api,
+  ApiError,
+  setToken,
+  verifyMfaLogin,
+  discoverLogin,
+  beginPublicOidc,
+  completeOidcCallback,
+  type UserMe,
+} from "../api";
 import { saveUser } from "../auth/session";
+import { BrandMark } from "../components/identity/BrandMark";
 import { EIAAX_BRAND } from "../lib/brand";
+
+const SESSION_EXPIRED_KEY = "eaios_session_expired";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -14,10 +26,27 @@ export function LoginPage() {
   const [mfaToken, setMfaToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [sessionNotice, setSessionNotice] = useState<string | null>(null);
   const [orgCode, setOrgCode] = useState("");
   const [ssoProviders, setSsoProviders] = useState<{ id: string; name: string; provider_type: string }[]>([]);
   const [showSso, setShowSso] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const expiredParam = searchParams.get("expired") === "1";
+    const hadRealExpiry = sessionStorage.getItem(SESSION_EXPIRED_KEY) === "1";
+    if (expiredParam && hadRealExpiry) {
+      setSessionNotice("Su sesión ha vencido. Inicie sesión nuevamente.");
+      sessionStorage.removeItem(SESSION_EXPIRED_KEY);
+      const next = new URLSearchParams(searchParams);
+      next.delete("expired");
+      setSearchParams(next, { replace: true });
+    } else if (expiredParam) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("expired");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   async function onDiscoverSso() {
     setError(null);
@@ -54,13 +83,8 @@ export function LoginPage() {
     }
   }
 
-  useEffect(() => {
-    if (searchParams.get("expired") === "1") {
-      setError("Su sesión ha vencido. Inicie sesión nuevamente.");
-    }
-  }, [searchParams]);
-
   async function completeLogin(accessToken: string) {
+    sessionStorage.removeItem(SESSION_EXPIRED_KEY);
     setToken(accessToken);
     const user = await api<UserMe>("/api/auth/me");
     saveUser(user);
@@ -70,6 +94,7 @@ export function LoginPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setSessionNotice(null);
     if (!username.trim()) {
       setError("Ingrese su usuario.");
       return;
@@ -129,117 +154,146 @@ export function LoginPage() {
 
   if (mfaToken) {
     return (
-      <div className="login-wrap">
-        <form className="login-card" onSubmit={onMfaSubmit}>
-          <h1>Autenticación multifactor (MFA)</h1>
-          <p className="muted">Ingrese el código de su aplicación de autenticación o un código de recuperación.</p>
-          <label>
-            Código
-            <input
-              value={mfaCode}
-              onChange={(e) => setMfaCode(e.target.value)}
-              autoComplete="one-time-code"
-              placeholder="000000"
-              disabled={loading}
-            />
-          </label>
-          {error && <p className="error" role="alert">{error}</p>}
-          <button type="submit" disabled={loading}>
-            {loading ? "Verificando…" : "Verificar"}
-          </button>
-          <button type="button" className="link-button" onClick={() => { setMfaToken(null); setMfaCode(""); }}>
-            Volver
-          </button>
-        </form>
+      <div className="login-page">
+        <div className="login-layout">
+          <aside className="login-brand-panel">
+            <BrandMark level="hero" />
+            <p className="login-brand-copy">{EIAAX_BRAND.loginTagline}</p>
+          </aside>
+          <form className="login-card login-card-elevated" onSubmit={onMfaSubmit}>
+            <h1>Verificación en dos pasos</h1>
+            <p className="muted">Ingrese el código de su aplicación de autenticación o un código de recuperación.</p>
+            <label>
+              Código de verificación
+              <input
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value)}
+                autoComplete="one-time-code"
+                placeholder="000000"
+                disabled={loading}
+              />
+            </label>
+            {error && <p className="error" role="alert">{error}</p>}
+            <button type="submit" className="btn primary login-submit" disabled={loading}>
+              {loading ? "Verificando…" : "Verificar"}
+            </button>
+            <button type="button" className="link-button" onClick={() => { setMfaToken(null); setMfaCode(""); }}>
+              Volver al inicio de sesión
+            </button>
+          </form>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="login-wrap">
-      <form className="login-card" onSubmit={onSubmit}>
-        <h1>{EIAAX_BRAND.name}</h1>
-        <p className="muted">{EIAAX_BRAND.descriptor}</p>
-        <p className="muted small">Inicio de sesión · {EIAAX_BRAND.productLine}</p>
-        <label>
-          Usuario
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            autoComplete="username"
-            placeholder="Usuario"
-            disabled={loading}
-          />
-        </label>
-        <label>
-          Contraseña
-          <span className="password-field">
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              placeholder="Contraseña"
-              disabled={loading}
-            />
+    <div className="login-page">
+      <div className="login-layout">
+        <aside className="login-brand-panel">
+          <BrandMark level="hero" />
+          <p className="login-brand-copy">{EIAAX_BRAND.loginTagline}</p>
+        </aside>
+
+        <div className="login-forms">
+          <form className="login-card login-card-elevated" onSubmit={onSubmit}>
+            <header className="login-card-header">
+              <h1>Iniciar sesión</h1>
+              <p className="muted small">Acceso a la plataforma {EIAAX_BRAND.name}</p>
+            </header>
+
+            {sessionNotice && (
+              <p className="login-notice" role="status">{sessionNotice}</p>
+            )}
+
+            <label>
+              Usuario
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+                placeholder="Su usuario corporativo"
+                disabled={loading}
+              />
+            </label>
+            <label>
+              Contraseña
+              <span className="password-field">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  placeholder="Contraseña"
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  disabled={loading}
+                >
+                  {showPassword ? "Ocultar" : "Ver"}
+                </button>
+              </span>
+            </label>
+            {error && <p className="error" role="alert">{error}</p>}
+            <button type="submit" className="btn primary login-submit" disabled={loading}>
+              {loading ? "Entrando…" : "Entrar"}
+            </button>
             <button
               type="button"
-              className="password-toggle"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-              title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              className="link-button login-forgot"
+              onClick={() => setShowForgot((v) => !v)}
               disabled={loading}
             >
-              {showPassword ? "🙈" : "👁"}
+              ¿Olvidó su contraseña?
             </button>
-          </span>
-        </label>
-        <button
-          type="button"
-          className="link-button login-forgot"
-          onClick={() => setShowForgot((v) => !v)}
-          disabled={loading}
-        >
-          ¿Olvidó su contraseña?
-        </button>
-        {showForgot && (
-          <div className="login-forgot-panel" role="region" aria-label="Recuperación de contraseña">
-            <p className="muted">
-              La recuperación automática por correo no está habilitada en esta instalación.
-              Solicite al administrador del sistema que restablezca su acceso de forma segura.
-            </p>
-            <p className="muted">
-              El administrador puede usar el script oficial <code>reset_admin_password</code> en el contenedor backend
-              sin exponer la contraseña en archivos ni registros.
-            </p>
-          </div>
-        )}
-        {error && <p className="error" role="alert">{error}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? "Entrando…" : "Entrar"}
-        </button>
-      </form>
+            {showForgot && (
+              <div className="login-forgot-panel" role="region" aria-label="Recuperación de contraseña">
+                <p className="muted">
+                  La recuperación automática por correo no está habilitada en esta instalación.
+                  Solicite al administrador del sistema que restablezca su acceso de forma segura.
+                </p>
+              </div>
+            )}
 
-      <section className="login-card" style={{ marginTop: "1rem" }}>
-        <h2>Inicio de sesión empresarial</h2>
-        <p className="muted">Continuar con proveedor SSO de su organización</p>
-        <label>
-          Código de organización
-          <input value={orgCode} onChange={(e) => setOrgCode(e.target.value)} placeholder="Código" disabled={loading} />
-        </label>
-        <button type="button" onClick={() => void onDiscoverSso()} disabled={loading}>
-          Buscar proveedores
-        </button>
-        {showSso && (
-          <div className="form-stack" style={{ marginTop: "0.75rem" }}>
-            {ssoProviders.map((p) => (
-              <button key={p.id} type="button" onClick={() => void onSsoLogin(p.id)} disabled={loading}>
-                Continuar con {p.name}
-              </button>
-            ))}
-          </div>
-        )}
-      </section>
+            <div className="login-enterprise-block">
+              <div className="login-enterprise-head">
+                <strong>Acceso empresarial</strong>
+                <span className="muted small" title="Código que identifica el acceso de su organización">
+                  ¿Qué es el código?
+                </span>
+              </div>
+              <p className="muted small">
+                Ingrese el código de su organización. EIAAX resolverá internamente el proveedor de identidad correspondiente.
+              </p>
+              <div className="login-enterprise-row">
+                <input
+                  value={orgCode}
+                  onChange={(e) => setOrgCode(e.target.value)}
+                  placeholder="Código organización"
+                  disabled={loading}
+                  aria-label="Código de organización"
+                />
+                <button type="button" className="btn secondary small" onClick={() => void onDiscoverSso()} disabled={loading}>
+                  Continuar
+                </button>
+              </div>
+              {showSso && (
+                <div className="form-stack login-sso-providers">
+                  {ssoProviders.map((p) => (
+                    <button key={p.id} type="button" className="btn secondary" onClick={() => void onSsoLogin(p.id)} disabled={loading}>
+                      Continuar con {p.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

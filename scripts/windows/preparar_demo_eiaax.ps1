@@ -34,15 +34,21 @@ try {
     Write-Host "Worktree: $worktree"
     Write-Host "DATABASE_URL: $databaseUrl"
 
-    Confirm-EiaaxProductionPrerequisites -WorktreeRoot $worktree -LogFile $logFile
-
     if (-not (Test-Path -LiteralPath $paths.Data)) {
         New-Item -ItemType Directory -Path $paths.Data | Out-Null
     }
 
     Assert-EiaaxDemoDatabasePath -DbFilePath $paths.DbFile -WorktreeRoot $worktree
 
-    $basePython = Find-EiaaxPython -LogFile $logFile -WorktreeRoot $worktree
+    if (Test-Path -LiteralPath $paths.Venv) {
+        $venvIntegrity = Test-EiaaxVenvIntegrity -VenvPath $paths.Venv
+        if (-not $venvIntegrity.Valid) {
+            Remove-EiaaxDamagedVenv -VenvPath $paths.Venv -Reason $venvIntegrity.Reason -LogFile $logFile
+        }
+    }
+
+    $basePython = Resolve-EiaaxPython -LogFile $logFile -WorktreeRoot $worktree
+    Confirm-EiaaxProductionPrerequisites -WorktreeRoot $worktree -LogFile $logFile -ResolvedPython $basePython -SkipPythonCheck
     Write-Host "Base Python: $basePython"
     $pythonVersion = Get-EiaaxPythonVersionLine -PythonExe $basePython
     Write-Host "Detected: $pythonVersion"
@@ -79,24 +85,22 @@ try {
 
     Push-Location $paths.Frontend
     try {
+        $npmCmd = Resolve-EiaaxNpmCmdExecutable
         if (Test-Path -LiteralPath "package-lock.json") {
             Write-Host "Installing frontend dependencies (npm ci)..."
-            & npm ci
+            Invoke-EiaaxNativeCommand -FilePath $npmCmd -ArgumentList @("ci") `
+                -FailureMessage "Frontend install failed (npm ci)."
         }
         else {
             Write-Host "Installing frontend dependencies (npm install)..."
-            & npm install
-        }
-        if ($LASTEXITCODE -ne 0) {
-            Exit-EiaaxFailure -Message "Frontend install failed."
+            Invoke-EiaaxNativeCommand -FilePath $npmCmd -ArgumentList @("install") `
+                -FailureMessage "Frontend install failed (npm install)."
         }
 
         if (-not $SkipFrontendBuild) {
             Write-Host "Building frontend (npm run build)..."
-            & npm run build
-            if ($LASTEXITCODE -ne 0) {
-                Exit-EiaaxFailure -Message "Frontend build failed."
-            }
+            Invoke-EiaaxNativeCommand -FilePath $npmCmd -ArgumentList @("run", "build") `
+                -FailureMessage "Frontend build failed."
         }
     }
     finally {

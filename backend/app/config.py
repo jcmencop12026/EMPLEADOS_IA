@@ -43,6 +43,9 @@ class Settings(BaseSettings):
 
     piiax_bridge_enabled: bool = False
     piiax_bridge_url: str | None = None
+    eiaax_git_sha: str | None = None
+    eiaax_demo_profile: str | None = None
+    eiaax_runtime_marker: str | None = None
 
     @model_validator(mode="after")
     def assemble_database_url_from_postgres_components(self) -> Self:

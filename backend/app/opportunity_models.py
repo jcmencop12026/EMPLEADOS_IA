@@ -109,6 +109,8 @@ class Opportunity(Base):
     prioridad_score: Mapped[float | None] = mapped_column(Numeric(8, 4), nullable=True)
     prioridad_componentes_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     estado: Mapped[str] = mapped_column(String(40), nullable=False, default="DETECTADA", index=True)
+    origen_comercial: Mapped[str] = mapped_column(String(20), nullable=False, default="SOLICITADA", index=True)
+    presentar_cliente: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     responsable_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
     equipo_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     siguiente_accion_json: Mapped[str | None] = mapped_column(Text, nullable=True)

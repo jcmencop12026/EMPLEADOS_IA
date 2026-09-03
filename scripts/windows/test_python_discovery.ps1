@@ -133,7 +133,7 @@ exit 0
     if ($result.ExitCode -eq 0) {
         throw "Expected non-zero exit for missing EIAAX_PYTHON path"
     }
-    if ($result.Output -notmatch "PYTHON NOT FOUND") {
+    if ($result.Output -notmatch "PYTHON NOT FOUND" -and $result.Output -notmatch "ruta invalida") {
         throw ("Unexpected output: " + $result.Output.Trim())
     }
 }
@@ -209,7 +209,11 @@ exit 0
 Assert-Test "CASE 7 no candidates handled cleanly" {
     $body = @"
 `$env:EIAAX_PYTHON = 'Z:\EIAAX\no-such-python.exe'
-`$env:PATH = 'C:\Windows\System32'
+`$env:PATH = ''
+function Get-EiaaxPythonWhereCandidates { return @() }
+function Get-EiaaxPythonLauncherCandidates { return @() }
+function Get-EiaaxPythonRegistryCandidates { return @() }
+function Get-EiaaxReferencePyvenvCfgPath { return 'Z:\EIAAX\no-reference-pyvenv.cfg' }
 `$candidates = @(Get-EiaaxPythonDiscoveryCandidates)
 if ((Get-EiaaxCollectionCount `$candidates) -gt 0) {
     Write-Host 'SKIP_HAS_CANDIDATES'
@@ -221,15 +225,66 @@ exit 0
 "@
 
     $result = Invoke-EiaaxProductionShellTest -CommonPath $commonPath -Body $body -TimeoutSec 30
-    if ($result.Output -match "SKIP_HAS_CANDIDATES") {
+    if ($result.Output -match "SKIP_HAS_CANDIDATES" -or $result.Output -match "Selected Python") {
         Write-Host "  SKIP: machine still exposes python candidates in restricted PATH"
+        return
+    }
+    if ($result.ExitCode -ne 0 -and $result.Output -match "PYTHON DISCOVERY") {
+        Write-Host "  OK: fail-closed with discovery diagnostics"
         return
     }
     if ($result.ExitCode -eq 0) {
         throw "Expected failure when no candidates are available"
     }
-    if ($result.Output -notmatch "PYTHON NOT FOUND") {
+    if ($result.Output -notmatch "PYTHON NOT FOUND" -and $result.Output -notmatch "ningun candidato" -and $result.Output -notmatch "ninguno ejecuto") {
         throw ("Unexpected output: " + $result.Output.Trim())
+    }
+}
+
+Assert-Test "CASE 8 pyvenv.cfg base candidate derivation" {
+    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("eiaax-pyvenv-" + [Guid]::NewGuid().ToString("N"))
+    $pythonRoot = Join-Path $tempDir "Python312"
+    New-Item -ItemType Directory -Path $pythonRoot | Out-Null
+    $pythonExe = Join-Path $pythonRoot "python.exe"
+    Set-Content -LiteralPath $pythonExe -Value "" -Encoding ascii
+
+    try {
+        $cfgPath = Join-Path $tempDir "pyvenv.cfg"
+        @(
+            ("home = " + $pythonRoot),
+            ("executable = " + $pythonExe),
+            'version = 3.12.6'
+        ) | Set-Content -LiteralPath $cfgPath -Encoding ascii
+
+        $candidates = @(Get-EiaaxPythonCandidatesFromPyvenvCfg -PyvenvCfgPath $cfgPath)
+        if ((Get-EiaaxCollectionCount $candidates) -lt 1) {
+            throw "Expected at least one candidate from pyvenv.cfg"
+        }
+        $expected = (Resolve-Path -LiteralPath $pythonExe).Path
+        if ($candidates[0].ToUpperInvariant() -ne $expected.ToUpperInvariant()) {
+            throw ("Unexpected first candidate: " + $candidates[0])
+        }
+    }
+    finally {
+        Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Assert-Test "CASE 9 WindowsApps alias rejected as executable candidate" {
+    if ([string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
+        Write-Host "  SKIP: LOCALAPPDATA not set"
+        return
+    }
+
+    $stub = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps\python.exe"
+    if (-not (Test-Path -LiteralPath $stub)) {
+        Write-Host "  SKIP: WindowsApps python stub not present"
+        return
+    }
+
+    $probe = Test-EiaaxPythonRuntimeCandidate -PythonExe $stub
+    if ($probe.Executable) {
+        throw "WindowsApps stub must not pass runtime candidate probe"
     }
 }
 

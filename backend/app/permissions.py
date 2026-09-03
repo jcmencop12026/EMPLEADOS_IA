@@ -203,6 +203,17 @@ EVALUACION_PERMISSIONS = {
     "evaluacion.indicadores.manage",
 }
 
+INTELIGENCIA_ECONOMICA_PERMISSIONS = {
+    "inteligencia_economica.view",
+    "inteligencia_economica.simulate",
+    "inteligencia_economica.private",
+}
+
+INTELIGENCIA_EMPRESARIAL_PERMISSIONS = {
+    "inteligencia_empresarial.view",
+    "inteligencia_empresarial.manage",
+}
+
 INTELIGENCIA_EXTERNA_PERMISSIONS = {
     "inteligencia_externa.view",
     "inteligencia_externa.manage",
@@ -333,6 +344,24 @@ TRANSFORMACION_PERMISSIONS = {
     "transformacion.view",
     "transformacion.manage",
     "transformacion.execute",
+}
+
+STRATEGIC_CONTROL_PERMISSIONS = {
+    "strategic_control.view",
+    "strategic_control.economia_privada",
+}
+
+FLUJO_COMERCIAL_PERMISSIONS = {
+    "flujo_comercial.view",
+    "flujo_comercial.manage",
+}
+
+ESPACIO_EXTERNO_PERMISSIONS = {
+    "espacio_externo.manage",
+    "espacio_externo.publish",
+    "espacio_externo.acceso",
+    "espacio_externo.portal",
+    "espacio_externo.entregar",
 }
 
 RESULTADOS_PERMISSIONS = {
@@ -525,6 +554,15 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "transformacion.view": ("Transformación", "Consultar dossier y diagnóstico adaptativo"),
     "transformacion.manage": ("Transformación", "Registrar necesidades y gestionar dossier"),
     "transformacion.execute": ("Transformación", "Ejecutar diagnóstico y motor de transformación"),
+    "strategic_control.view": ("Centro Estratégico", "Ver cockpit estratégico de empresa/dossier"),
+    "strategic_control.economia_privada": ("Centro Estratégico", "Ver economía privada interna (no publicable a entidad)"),
+    "flujo_comercial.view": ("Flujo comercial", "Ver flujo prospecto→contratación"),
+    "flujo_comercial.manage": ("Flujo comercial", "Gestionar presentación, instrumentos y garantías"),
+    "espacio_externo.manage": ("Espacio externo", "Gestionar entidades empresa/prospecto/cliente"),
+    "espacio_externo.publish": ("Espacio externo", "Publicar contenido a empresa"),
+    "espacio_externo.acceso": ("Espacio externo", "Invitar y revocar accesos externos"),
+    "espacio_externo.portal": ("Espacio externo", "Acceder al portal mi-espacio"),
+    "espacio_externo.entregar": ("Espacio externo", "Entregar información solicitada"),
     "resultados.view": ("Inteligencia de resultados", "Consultar indicadores e informes de impacto"),
     "resultados.manage": ("Inteligencia de resultados", "Gestionar indicadores y plan de mejoramiento"),
     "resultados.validate": ("Inteligencia de resultados", "Registrar mediciones REAL con evidencia"),
@@ -534,6 +572,11 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "partners.org.grant": ("Partners", "Asociar organizaciones a partners"),
     "partners.user.assign": ("Partners", "Asignar usuarios a partners"),
     "partners.audit": ("Partners", "Consultar auditoría de partners"),
+    "inteligencia_economica.view": ("Inteligencia económica", "Ver valor empresarial y resultado económico"),
+    "inteligencia_economica.simulate": ("Inteligencia económica", "Simular escenarios y dimensionamiento"),
+    "inteligencia_economica.private": ("Inteligencia económica", "Ver inteligencia comercial interna y pricing valor"),
+    "inteligencia_empresarial.view": ("Inteligencia Empresarial", "Ver panorama adaptativo, suficiencia y cadena analítica"),
+    "inteligencia_empresarial.manage": ("Inteligencia Empresarial", "Ejecutar evaluación adaptativa y registrar evidencia proactiva"),
     "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
     "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
     "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
@@ -608,7 +651,7 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "support.admin": ("Soporte", "Administrar mesa de ayuda y SLA"),
 }
 
-SYSTEM_ROLE_CODES = {"admin", "operator", "viewer", "superadmin"}
+SYSTEM_ROLE_CODES = {"admin", "operator", "viewer", "superadmin", "external_prospect"}
 
 PROTECTED_ASSIGNMENT_ROLE_CODES = {"superadmin", "platform_admin", "SUPERADMIN"}
 
@@ -640,7 +683,12 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | NEGOCIO_PERMISSIONS
         | CONTINUIDAD_COMERCIAL_PERMISSIONS
         | TRANSFORMACION_PERMISSIONS
+        | STRATEGIC_CONTROL_PERMISSIONS
+        | FLUJO_COMERCIAL_PERMISSIONS
+        | ESPACIO_EXTERNO_PERMISSIONS
         | RESULTADOS_PERMISSIONS
+        | INTELIGENCIA_ECONOMICA_PERMISSIONS
+        | INTELIGENCIA_EMPRESARIAL_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
@@ -685,7 +733,12 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | NEGOCIO_PERMISSIONS
         | CONTINUIDAD_COMERCIAL_PERMISSIONS
         | TRANSFORMACION_PERMISSIONS
+        | STRATEGIC_CONTROL_PERMISSIONS
+        | FLUJO_COMERCIAL_PERMISSIONS
+        | ESPACIO_EXTERNO_PERMISSIONS
         | RESULTADOS_PERMISSIONS
+        | INTELIGENCIA_ECONOMICA_PERMISSIONS
+        | INTELIGENCIA_EMPRESARIAL_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
@@ -846,6 +899,13 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "transformacion.view",
         "transformacion.manage",
         "transformacion.execute",
+        "strategic_control.view",
+        "strategic_control.economia_privada",
+        "flujo_comercial.view",
+        "flujo_comercial.manage",
+        "espacio_externo.manage",
+        "espacio_externo.publish",
+        "espacio_externo.acceso",
         "resultados.view",
         "partners.view",
     },
@@ -895,8 +955,13 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "gobierno.clasificacion.view",
         "gobierno.trazabilidad.view",
         "transformacion.view",
+        "strategic_control.view",
         "resultados.view",
         "partners.view",
+    },
+    "external_prospect": {
+        "espacio_externo.portal",
+        "espacio_externo.entregar",
     },
 }
 

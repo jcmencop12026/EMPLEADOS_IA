@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
+from pathlib import Path
+
 from sqlalchemy import text
 
 from app.config import settings
@@ -71,6 +73,31 @@ def aggregate_status(components: dict[str, dict[str, Any]]) -> HealthStatus:
     return "degraded"
 
 
+def build_runtime_identity() -> dict[str, Any]:
+    """Identidad tecnica de instancia demo — sin secretos."""
+    identity: dict[str, Any] = {
+        "demo_profile": settings.eiaax_demo_profile,
+        "git_sha": settings.eiaax_git_sha,
+        "runtime_marker": settings.eiaax_runtime_marker,
+    }
+    db = check_database()
+    identity["database_dialect"] = db.get("dialect")
+    if db.get("dialect") == "sqlite":
+        try:
+            db_path = settings.database_url.split("///", 1)[-1]
+            identity["demo_db_name"] = Path(db_path).name
+        except Exception:
+            pass
+    try:
+        with engine.connect() as conn:
+            row = conn.execute(text("SELECT version_num FROM alembic_version LIMIT 1")).first()
+        if row and row[0]:
+            identity["alembic_current"] = row[0]
+    except Exception:
+        identity["alembic_current"] = None
+    return identity
+
+
 def build_health_report(*, include_schedulers: bool = True) -> dict[str, Any]:
     components: dict[str, dict[str, Any]] = {
         "api": {"status": "up", "message": "Proceso API en ejecución"},
@@ -80,13 +107,17 @@ def build_health_report(*, include_schedulers: bool = True) -> dict[str, Any]:
         components["schedulers"] = check_schedulers()
 
     status = aggregate_status(components)
-    return {
+    report: dict[str, Any] = {
         "status": status,
         "app": settings.app_name,
         "version": settings.app_version,
         "environment": settings.app_env,
         "components": components,
     }
+    runtime = build_runtime_identity()
+    if any(runtime.get(k) for k in ("demo_profile", "git_sha", "runtime_marker", "alembic_current")):
+        report["runtime"] = runtime
+    return report
 
 
 def health_http_status(report: dict[str, Any]) -> int:

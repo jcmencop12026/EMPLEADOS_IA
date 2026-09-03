@@ -2,79 +2,92 @@
 export type NavItem = { to: string; label: string; end?: boolean };
 export type NavSection = { id: string; label: string; items: NavItem[]; future?: boolean };
 
-export const MENU: NavSection[] = [
+/** Uso cotidiano — visible por defecto. */
+export const MENU_PRIMARY: NavSection[] = [
   {
     id: "inicio",
     label: "Inicio",
-    items: [{ to: "/", label: "Centro de Control", end: true }],
-  },
-  {
-    id: "operaciones",
-    label: "Operaciones",
     items: [
-      { to: "/trabajo", label: "Mi trabajo" },
-      { to: "/operaciones", label: "Centro de operaciones" },
-      { to: "/operaciones/solicitud", label: "Nueva solicitud" },
-      { to: "/ejecuciones", label: "Ejecuciones" },
-      { to: "/aprobaciones", label: "Aprobaciones" },
-      { to: "/automatizaciones", label: "Automatizaciones" },
+      { to: "/", label: "Centro de Control", end: true },
+      { to: "/ayuda/guia", label: "Guía rápida" },
     ],
   },
   {
-    id: "salud",
-    label: "Salud",
-    items: [{ to: "/salud/diagnostico", label: "Diagnóstico IPS" }],
+    id: "trabajo",
+    label: "Trabajo",
+    items: [
+      { to: "/trabajo", label: "Mi trabajo" },
+      { to: "/operaciones", label: "Operaciones" },
+      { to: "/aprobaciones", label: "Aprobaciones" },
+    ],
+  },
+  {
+    id: "empresas",
+    label: "Empresas",
+    items: [
+      { to: "/empresas", label: "Empresas y prospectos" },
+      { to: "/evaluaciones", label: "Evaluaciones" },
+      { to: "/oportunidades", label: "Oportunidades" },
+    ],
   },
   {
     id: "empleados",
     label: "Empleados IA",
     items: [
       { to: "/directorio", label: "Directorio" },
-      { to: "/empleados/auditoria", label: "Auditoría empleados" },
-      { to: "/empleados/nuevo", label: "Crear empleado" },
-      { to: "/capacidades", label: "Capacidades" },
-      { to: "/herramientas", label: "Herramientas" },
-      { to: "/conocimiento", label: "Conocimiento" },
-      { to: "/test-lab", label: "Laboratorio de pruebas" },
+      { to: "/automatizaciones", label: "Automatizaciones" },
     ],
   },
   {
-    id: "analisis",
-    label: "Análisis y control",
+    id: "resultados",
+    label: "Resultados",
     items: [
-      { to: "/lineas-base", label: "Líneas base e impacto" },
-      { to: "/comercial", label: "Comercial y valor" },
+      { to: "/resultados", label: "Valor y resultados" },
+      { to: "/costos-valor", label: "Costos y valor" },
+      { to: "/comunicaciones", label: "Informes" },
+    ],
+  },
+];
+
+/** Administración y módulos avanzados — sección colapsable. */
+export const MENU_ADVANCED: NavSection[] = [
+  {
+    id: "analisis",
+    label: "Análisis avanzado",
+    items: [
+      { to: "/lineas-base", label: "Líneas base" },
+      { to: "/comercial", label: "Comercial" },
       { to: "/centro-negocios", label: "Centro de Negocios" },
-      { to: "/arquitecto-transformacion", label: "Arquitecto de Transformación" },
-      { to: "/resultados", label: "Inteligencia de resultados" },
-      { to: "/tco", label: "TCO y aliados" },
-      { to: "/implementacion", label: "Implementación" },
-      { to: "/comercial/segmentacion", label: "Segmentación y planes" },
-      { to: "/evaluaciones", label: "Evaluaciones EIAAX" },
+      { to: "/arquitecto-transformacion", label: "Arquitecto transformación" },
       { to: "/centro-confianza", label: "Centro de Confianza" },
-      { to: "/partners", label: "Partners y aliados" },
-      { to: "/oportunidades", label: "Centro de oportunidades" },
-      { to: "/senales", label: "Señales y fuentes" },
       { to: "/diagnosticos", label: "Diagnósticos" },
       { to: "/inteligencia-externa", label: "Inteligencia externa" },
+      { to: "/senales", label: "Señales" },
+      { to: "/implementacion", label: "Implementación" },
+      { to: "/ejecuciones", label: "Ejecuciones" },
+      { to: "/operaciones/solicitud", label: "Nueva solicitud" },
+      { to: "/conocimiento", label: "Conocimiento" },
+      { to: "/tco", label: "TCO" },
+      { to: "/partners", label: "Partners" },
       { to: "/continuidad", label: "Continuidad" },
       { to: "/soporte", label: "Mesa de Ayuda" },
       { to: "/integraciones", label: "Integraciones" },
       { to: "/aprendizaje", label: "Aprendizaje" },
       { to: "/optimizacion", label: "Optimización" },
-      { to: "/costos-valor", label: "Costos y valor" },
       { to: "/gobernanza-datos", label: "Gobierno de datos" },
-      { to: "/mi-seguridad", label: "Mi seguridad" },
-      { to: "/notificaciones", label: "Notificaciones" },
-      { to: "/comunicaciones", label: "Comunicaciones" },
-      { to: "/auditoria", label: "Auditoría" },
+      { to: "/comercial/segmentacion", label: "Segmentación" },
+      { to: "/salud/diagnostico", label: "Diagnóstico IPS" },
+      { to: "/capacidades", label: "Capacidades" },
+      { to: "/herramientas", label: "Herramientas" },
+      { to: "/empleados/auditoria", label: "Auditoría empleados" },
+      { to: "/test-lab", label: "Laboratorio" },
     ],
   },
   {
     id: "admin",
     label: "Administración",
     items: [
-      { to: "/administracion/empresas", label: "Empresas" },
+      { to: "/administracion/empresas", label: "Empresas plataforma" },
       { to: "/administracion/usuarios", label: "Usuarios" },
       { to: "/administracion/roles", label: "Roles y permisos" },
       { to: "/administracion/organizacion", label: "Organización" },
@@ -82,6 +95,11 @@ export const MENU: NavSection[] = [
       { to: "/administracion/proveedores-ia", label: "Proveedores IA" },
       { to: "/administracion/seguridad", label: "Seguridad" },
       { to: "/administracion/identidad", label: "Identidad empresarial" },
+      { to: "/mi-seguridad", label: "Mi seguridad" },
+      { to: "/notificaciones", label: "Notificaciones" },
+      { to: "/auditoria", label: "Auditoría" },
     ],
   },
 ];
+
+export const MENU: NavSection[] = [...MENU_PRIMARY, ...MENU_ADVANCED];

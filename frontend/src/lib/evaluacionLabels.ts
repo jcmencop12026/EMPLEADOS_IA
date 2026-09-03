@@ -81,3 +81,38 @@ export function labelEstadoCapacidad(estadoEs?: string, estadoInterno?: string):
   if (estadoEs) return ESTADO_CAPACIDAD_ES[estadoEs] ?? estadoEs;
   return label(ESTADO_ACCION, estadoInterno ?? "");
 }
+
+export function labelEstadoEvaluacion(estado: string): string {
+  return label(ESTADO_EXPEDIENTE, estado);
+}
+
+export function labelNivelEvaluacion(nivel: string): string {
+  return label(NIVEL_EVALUACION, nivel);
+}
+
+export function labelConfianza(c: string | undefined): string {
+  return label(CONFIANZA, c ?? "");
+}
+
+export function labelTipoContenido(t: string): string {
+  return label(TIPO_CONTENIDO, t);
+}
+
+export function labelEstadoPublicacion(e: string): string {
+  const map: Record<string, string> = {
+    PRIVADO: "Privado",
+    PREPARADO_PRESENTAR: "Preparado para presentar",
+    PUBLICADO_EMPRESA: "Publicado a empresa",
+  };
+  return map[e] ?? e;
+}
+
+export function labelEstadoRelacion(estado: string): string {
+  const map: Record<string, string> = {
+    PROSPECTO_EVALUACION: "Prospecto en evaluación",
+    PROSPECTO: "Prospecto",
+    CLIENTE: "Cliente",
+    CLIENTE_ACTIVO: "Cliente activo",
+  };
+  return map[estado] ?? estado.replace(/_/g, " ").toLowerCase();
+}

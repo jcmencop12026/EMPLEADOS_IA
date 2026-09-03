@@ -1,7 +1,6 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
-  crearIndicador,
   crearOportunidadDesdeHallazgo,
   evaluarExpediente,
   fetchEvaluacion,
@@ -10,29 +9,53 @@ import {
   fetchPiiaxStatus,
   fetchVistaEntidad,
   setHallazgoVisibilidad,
+  syncInformacionExpediente,
   updateEvaluacionInformacion,
   type EvaluacionExpedienteDetail,
   type EvaluacionHallazgo,
   type EvaluacionInfoItem,
 } from "../api";
+import { InformacionAdjuntosPanel } from "../components/evaluacion/InformacionAdjuntosPanel";
+import { CadenaAnaliticaPanel } from "../components/evaluacion/CadenaAnaliticaPanel";
+import { EiaaxTable } from "../components/EiaaxTable";
+import { EspacioExternoAdminPanel } from "../components/espacioExterno/EspacioExternoAdminPanel";
 import { AccionesExternasPanel } from "../components/evaluacion/AccionesExternasPanel";
+import { CabinaContratoPanel } from "../components/evaluacion/CabinaContratoPanel";
+import { CabinaInformesPanel } from "../components/evaluacion/CabinaInformesPanel";
+import { CabinaValorPanel } from "../components/evaluacion/CabinaValorPanel";
 import { EiaaxAskPanel } from "../components/evaluacion/EiaaxAskPanel";
+import { EmpresaOperacionPanel } from "../components/evaluacion/EmpresaOperacionPanel";
 import { ImpactoGrafico } from "../components/evaluacion/ImpactoGrafico";
 import { SiguienteAccionPanel } from "../components/evaluacion/SiguienteAccionPanel";
+import { SolucionIaProyectadaPanel } from "../components/evaluacion/SolucionIaProyectadaPanel";
 import { VistaEntidadView } from "../components/evaluacion/VistaEntidadView";
+import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { CONFIANZA, ESTADO_EXPEDIENTE, label, TIPO_CONTENIDO } from "../lib/evaluacionLabels";
 
-type Tab = "resumen" | "informacion" | "analisis" | "impacto" | "oportunidades" | "vista-entidad" | "trazabilidad";
+type Tab =
+  | "empresa"
+  | "diagnostico"
+  | "solucion"
+  | "operacion"
+  | "consumo"
+  | "valor"
+  | "resultados"
+  | "informes"
+  | "contrato"
+  | "vista-empresa";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "resumen", label: "Resumen" },
-  { id: "informacion", label: "Información" },
-  { id: "analisis", label: "Análisis EIAAX" },
-  { id: "impacto", label: "Impacto e Indicadores" },
-  { id: "oportunidades", label: "Oportunidades" },
-  { id: "vista-entidad", label: "Vista Entidad" },
-  { id: "trazabilidad", label: "Trazabilidad" },
+  { id: "empresa", label: "Empresa" },
+  { id: "diagnostico", label: "Diagnóstico" },
+  { id: "solucion", label: "Solución IA" },
+  { id: "operacion", label: "Operación" },
+  { id: "consumo", label: "Consumo" },
+  { id: "valor", label: "Valor" },
+  { id: "resultados", label: "Resultados" },
+  { id: "informes", label: "Informes" },
+  { id: "contrato", label: "Contrato" },
+  { id: "vista-empresa", label: "Vista Empresa" },
 ];
 
 const ESTADO_INFO_LABELS: Record<string, string> = {
@@ -44,8 +67,11 @@ const ESTADO_INFO_LABELS: Record<string, string> = {
 
 export function EvaluacionConsolePage() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
+  const [searchParams] = useSearchParams();
   const { has } = usePermissions();
-  const [tab, setTab] = useState<Tab>("resumen");
+  const tabParam = searchParams.get("tab");
+  const initialTab = (TABS.some((t) => t.id === tabParam) ? tabParam : "empresa") as Tab;
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [exp, setExp] = useState<EvaluacionExpedienteDetail | null>(null);
   const [impacto, setImpacto] = useState<Record<string, unknown> | null>(null);
   const [trazabilidad, setTrazabilidad] = useState<Record<string, unknown> | null>(null);
@@ -55,6 +81,21 @@ export function EvaluacionConsolePage() {
   const [askOpen, setAskOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [piiax, setPiiax] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    if (tabParam && TABS.some((t) => t.id === tabParam)) setTab(tabParam as Tab);
+  }, [tabParam]);
+
+  usePageAssistantContext(
+    {
+      tab,
+      expediente_id: evaluacionId,
+      empresa: exp?.entidad_nombre,
+      estado: exp?.estado,
+      confianza: exp?.confianza_global,
+    },
+    Boolean(evaluacionId),
+  );
 
   const load = useCallback(() => {
     if (!evaluacionId) return;
@@ -73,14 +114,12 @@ export function EvaluacionConsolePage() {
 
   useEffect(() => {
     if (!evaluacionId) return;
-    if (tab === "impacto") {
+    if (tab === "valor" || tab === "resultados") {
       fetchEvaluacionImpacto(evaluacionId).then(setImpacto).catch(() => undefined);
     }
-    if (tab === "trazabilidad") {
-      fetchEvaluacionTrazabilidad(evaluacionId).then(setTrazabilidad).catch(() => undefined);
-    }
-    if (tab === "vista-entidad" && has("evaluacion.vista_entidad")) {
+    if (tab === "vista-empresa" && has("evaluacion.vista_entidad")) {
       fetchVistaEntidad(evaluacionId).then(setVistaEntidad).catch(() => undefined);
+      fetchEvaluacionTrazabilidad(evaluacionId).then(setTrazabilidad).catch(() => undefined);
     }
   }, [tab, evaluacionId, has]);
 
@@ -90,7 +129,7 @@ export function EvaluacionConsolePage() {
       const r = await evaluarExpediente(evaluacionId);
       setExp(r.expediente);
       setMsg(`Evaluación ejecutada — ${r.hallazgos_creados} hallazgo(s) generado(s)`);
-      setTab("analisis");
+      setTab("diagnostico");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al evaluar");
     }
@@ -122,31 +161,36 @@ export function EvaluacionConsolePage() {
   const oportunidadesCount = exp.hallazgos.filter((h) => h.opportunity_id).length;
 
   return (
-    <div className={`eval-console ${askOpen ? "with-ask-panel" : ""}`}>
+    <div className={`eval-console cabina-empresa-v1 ${askOpen ? "with-ask-panel" : ""}`}>
       <div className="eval-console-main">
-        <header className="eval-console-header">
+        <header className="eval-console-header cabina-empresa-header">
           <div>
             <Link to="/evaluaciones" className="muted">← Evaluaciones</Link>
+            <p className="eyebrow">Cabina empresa V1</p>
             <h1>{exp.titulo}</h1>
-            <p className="muted">{exp.codigo}</p>
+            <p className="muted">{exp.codigo} · {exp.entidad_nombre}</p>
           </div>
-          <button type="button" className="btn primary" onClick={() => setAskOpen(true)}>
-            Preguntar a EIAAX
-          </button>
+          <div className="cabina-empresa-header__actions">
+            <Link to="/centro-control" className="btn secondary small">Centro de Control</Link>
+            <Link to={`/presentacion/${evaluacionId}`} className="btn secondary small">Presentación</Link>
+            <button type="button" className="btn primary" onClick={() => setAskOpen(true)}>
+              Preguntar a EIAAX
+            </button>
+          </div>
         </header>
 
-        <div className="piiax-status-bar compact">
-          <span className={`piiax-dot ${piiax?.disponible ? "on" : "off"}`} />
-          <span>{piiax?.disponible ? "PIIAX disponible" : "PIIAX no conectado"}</span>
+        <div className="piiax-status-bar compact inline-badge">
+          <span className={`piiax-dot ${piiax?.disponible ? "on" : "off"}`} title={piiax?.disponible ? "PIIAX disponible" : "Integración PIIAX no conectada"} />
+          <span className="small">{piiax?.disponible ? "PIIAX" : "PIIAX no conectado"}</span>
         </div>
 
-        <div className="eval-metrics metrics-grid">
-          <div className="metric-card"><span className="metric-label">Entidad</span><strong>{exp.entidad_nombre}</strong></div>
-          <div className="metric-card"><span className="metric-label">Estado</span><strong>{label(ESTADO_EXPEDIENTE, exp.estado)}</strong></div>
-          <div className="metric-card"><span className="metric-label">Información</span><strong>{exp.porcentaje_informacion}%</strong></div>
-          <div className="metric-card"><span className="metric-label">Confianza</span><strong>{label(CONFIANZA, exp.confianza_global)}</strong></div>
-          <div className="metric-card"><span className="metric-label">Oportunidades</span><strong>{oportunidadesCount}</strong></div>
-          <div className="metric-card"><span className="metric-label">Valor potencial</span><strong>{exp.valor_potencial ?? "—"}</strong></div>
+        <div className="executive-kpi-strip eval-metrics">
+          <div className="executive-kpi"><span>Entidad</span><strong>{exp.entidad_nombre}</strong></div>
+          <div className="executive-kpi"><span>Estado</span><strong>{label(ESTADO_EXPEDIENTE, exp.estado)}</strong></div>
+          <div className="executive-kpi"><span>Información</span><strong>{exp.porcentaje_informacion}%</strong></div>
+          <div className="executive-kpi"><span>Confianza</span><strong>{label(CONFIANZA, exp.confianza_global)}</strong></div>
+          <div className="executive-kpi"><span>Oportunidades</span><strong>{oportunidadesCount}</strong></div>
+          <div className="executive-kpi"><span>Valor potencial</span><strong>{exp.valor_potencial ?? "—"}</strong></div>
         </div>
 
         {error && <p className="error">{error}</p>}
@@ -160,17 +204,21 @@ export function EvaluacionConsolePage() {
           ))}
         </nav>
 
-        {tab === "resumen" && (
+        {tab === "empresa" && (
           <section className="panel compact-panel">
             <SiguienteAccionPanel
               expedienteId={evaluacionId}
               onNavigateTab={(p) => {
                 const map: Record<string, Tab> = {
-                  resumen: "resumen",
-                  informacion: "informacion",
-                  analisis: "analisis",
-                  impacto: "impacto",
-                  oportunidades: "oportunidades",
+                  resumen: "empresa",
+                  empresa: "empresa",
+                  informacion: "diagnostico",
+                  diagnostico: "diagnostico",
+                  analisis: "diagnostico",
+                  impacto: "valor",
+                  valor: "valor",
+                  oportunidades: "resultados",
+                  solucion: "solucion",
                 };
                 if (map[p]) setTab(map[p]);
               }}
@@ -183,6 +231,16 @@ export function EvaluacionConsolePage() {
               <dt>Área / proceso</dt><dd>{exp.area_proceso ?? "—"}</dd>
               <dt>Nivel</dt><dd>{exp.nivel}</dd>
             </dl>
+            {exp.oportunidades_vinculadas.length > 0 && (
+              <>
+                <h3>Oportunidades vinculadas</h3>
+                <ul>
+                  {exp.oportunidades_vinculadas.map((oid) => (
+                    <li key={oid}><Link to={`/oportunidades/${oid}`}>Ver oportunidad {oid.slice(0, 8)}…</Link></li>
+                  ))}
+                </ul>
+              </>
+            )}
             {has("evaluacion.evaluate") && (
               <button type="button" className="btn primary" onClick={onEvaluar}>
                 Ejecutar evaluación preliminar
@@ -191,122 +249,158 @@ export function EvaluacionConsolePage() {
           </section>
         )}
 
-        {tab === "informacion" && (
-          <section className="panel compact-panel">
-            <h2>Información adaptativa</h2>
-            {exp.informacion.map((item) => (
-              <InformacionRow key={item.id} item={item} editable={has("evaluacion.manage")} onSave={onSaveInfo} />
-            ))}
-          </section>
-        )}
-
-        {tab === "analisis" && (
-          <section className="panel compact-panel">
-            <h2>Hallazgos y análisis</h2>
-            {exp.hallazgos.length === 0 && <p className="muted">Sin hallazgos. Ejecute la evaluación preliminar.</p>}
-            {exp.hallazgos.map((h) => (
-              <div key={h.id}>
-                <HallazgoCard
-                  hallazgo={h}
-                  canVisibility={has("evaluacion.visibility")}
-                  canOpp={has("evaluacion.manage")}
-                  onToggleVisibilidad={() => onToggleVisibilidad(h)}
-                  onCrearOportunidad={() => onCrearOportunidad(h)}
-                />
-                {evaluacionId && has("evaluacion.accion.request") && (
-                  <AccionesExternasPanel
-                    expedienteId={evaluacionId}
-                    hallazgoId={h.id}
-                    hallazgoTitulo={h.titulo}
-                  />
+        {tab === "diagnostico" && (
+          <>
+            <section className="panel compact-panel">
+              <div className="section-head-row">
+                <h2>Información adaptativa</h2>
+                {has("evaluacion.manage") && evaluacionId && (
+                  <button
+                    type="button"
+                    className="btn small secondary"
+                    onClick={() => void syncInformacionExpediente(evaluacionId).then(() => load())}
+                  >
+                    Sincronizar requisitos
+                  </button>
                 )}
               </div>
-            ))}
-          </section>
-        )}
-
-        {tab === "impacto" && impacto && (
-          <section className="panel compact-panel">
-            <h2>Impacto e indicadores</h2>
-            <p className="muted small">{String(impacto.nota)}</p>
-            {has("evaluacion.indicadores.manage") && evaluacionId && (
-              <ImpactoIndicadorForm expedienteId={evaluacionId} onCreated={() => fetchEvaluacionImpacto(evaluacionId).then(setImpacto)} />
-            )}
-            <table className="data-table compact-table">
-              <thead>
-                <tr><th>Indicador</th><th>Antes</th><th>Proyectado</th><th>Real</th><th>Visualización</th></tr>
-              </thead>
-              <tbody>
-                {((impacto.indicadores as Record<string, unknown>[]) ?? []).map((ind) => (
-                  <ImpactoGrafico
-                    key={String(ind.id ?? ind.nombre)}
-                    nombre={String(ind.nombre ?? ind.hallazgo ?? "—")}
-                    unidad={ind.unidad as string | null}
-                    grafico={ind.grafico as { puntos: { serie: string; valor: string; numerico: number | null; es_proyeccion: boolean }[] } | null}
-                    antes={ind.antes as string | null}
-                    proyectado={ind.proyectado as string | null}
-                    real={ind.real as string | null}
+              {exp.informacion.length === 0 && (
+                <p className="muted">Sin ítems. Use «Sincronizar requisitos» según sector y profundidad.</p>
+              )}
+              {exp.informacion.map((item) => (
+                <InformacionRow
+                  key={item.id}
+                  expedienteId={evaluacionId!}
+                  item={item}
+                  editable={has("evaluacion.manage")}
+                  onSave={onSaveInfo}
+                />
+              ))}
+            </section>
+            <section className="panel compact-panel">
+              <CadenaAnaliticaPanel expedienteId={evaluacionId!} />
+            </section>
+            <section className="panel compact-panel">
+              <h2>Hallazgos y análisis</h2>
+              {exp.hallazgos.length === 0 && <p className="muted">Sin hallazgos. Ejecute la evaluación preliminar.</p>}
+              {exp.hallazgos.map((h) => (
+                <div key={h.id}>
+                  <HallazgoCard
+                    hallazgo={h}
+                    canVisibility={has("evaluacion.visibility")}
+                    canOpp={has("evaluacion.manage")}
+                    onToggleVisibilidad={() => onToggleVisibilidad(h)}
+                    onCrearOportunidad={() => onCrearOportunidad(h)}
                   />
-                ))}
-              </tbody>
-            </table>
-          </section>
-        )}
-
-        {tab === "oportunidades" && (
-          <section className="panel compact-panel">
-            <h2>Oportunidades vinculadas</h2>
-            {exp.oportunidades_vinculadas.length === 0 && (
-              <p className="muted">Cree o vincule oportunidades desde un hallazgo en la pestaña Análisis.</p>
-            )}
-            <ul>
-              {exp.oportunidades_vinculadas.map((oid) => (
-                <li key={oid}><Link to={`/oportunidades/${oid}`}>Ver oportunidad {oid.slice(0, 8)}…</Link></li>
+                  {evaluacionId && has("evaluacion.accion.request") && (
+                    <AccionesExternasPanel
+                      expedienteId={evaluacionId}
+                      hallazgoId={h.id}
+                      hallazgoTitulo={h.titulo}
+                    />
+                  )}
+                </div>
               ))}
-            </ul>
-            <Link to="/oportunidades" className="btn">Centro de oportunidades →</Link>
+            </section>
+          </>
+        )}
+
+        {tab === "solucion" && evaluacionId && (
+          <SolucionIaProyectadaPanel expedienteId={evaluacionId} canGenerate={has("evaluacion.evaluate")} />
+        )}
+
+        {tab === "operacion" && <EmpresaOperacionPanel />}
+
+        {tab === "consumo" && (
+          <section className="panel compact-panel">
+            <h2>Consumo</h2>
+            <p className="muted small">
+              Consumo de capacidad IA asociado a empleados y ejecuciones de esta evaluación.
+            </p>
+            <dl className="detail-grid">
+              <dt>Valor potencial</dt><dd>{exp.valor_potencial ?? "—"}</dd>
+              <dt>Información completada</dt><dd>{exp.porcentaje_informacion}%</dd>
+              <dt>Confianza global</dt><dd>{label(CONFIANZA, exp.confianza_global)}</dd>
+            </dl>
+            <p>
+              <Link to="/costos-valor">Ver costos y valor</Link>
+              {" · "}
+              <Link to="/ejecuciones">Ejecuciones</Link>
+            </p>
           </section>
         )}
 
-        {tab === "vista-entidad" && has("evaluacion.vista_entidad") && (
-          <section className="panel compact-panel vista-entidad-preview">
-            <h2>Vista Entidad (previsualización)</h2>
-            <p className="muted small">Lo que la entidad vería según permisos y banderas de visibilidad reales.</p>
-            {vistaEntidad ? (
-              <VistaEntidadView data={vistaEntidad} />
+        {tab === "valor" && evaluacionId && (
+          <CabinaValorPanel
+            expedienteId={evaluacionId}
+            impacto={impacto}
+            canManageIndicadores={has("evaluacion.indicadores.manage")}
+            onImpactoRefresh={() => fetchEvaluacionImpacto(evaluacionId).then(setImpacto)}
+          />
+        )}
+
+        {tab === "resultados" && (
+          <section className="panel compact-panel">
+            <h2>Resultados</h2>
+            <p><Link to={`/resultados-inteligencia?expediente=${evaluacionId}`}>Abrir inteligencia de resultados</Link></p>
+            {impacto && ((impacto.indicadores as Record<string, unknown>[]) ?? []).length > 0 ? (
+              <EiaaxTable
+                columns={[
+                  { key: "nombre", label: "Indicador", getValue: (r) => String(r.nombre ?? ""), render: (r) => String(r.nombre ?? "—") },
+                  { key: "antes", label: "Antes", getValue: (r) => String(r.antes ?? ""), render: (r) => String(r.antes ?? "—") },
+                  { key: "proyectado", label: "Proyectado", getValue: (r) => String(r.proyectado ?? ""), render: (r) => String(r.proyectado ?? "—") },
+                  { key: "real", label: "Real", getValue: (r) => String(r.real ?? ""), render: (r) => String(r.real ?? "—") },
+                ]}
+                data={(impacto.indicadores as Record<string, unknown>[]) ?? []}
+                rowKey={(r) => String(r.id ?? r.nombre)}
+                prefsKey="cabina-resultados"
+                searchPlaceholder="Buscar indicador…"
+                emptyMessage="Sin resultados registrados"
+              />
             ) : (
-              <p className="muted">Cargando vista entidad…</p>
+              <p className="muted">Sin resultados medidos. Defina indicadores en la pestaña Valor.</p>
             )}
           </section>
         )}
 
-        {tab === "trazabilidad" && trazabilidad && (
-          <section className="panel compact-panel">
-            <h2>Trazabilidad</h2>
-            <p className="muted">Correlation: {String(trazabilidad.correlation_id ?? "—")}</p>
-            <h3>Cambios de visibilidad</h3>
-            <ul>
-              {((trazabilidad.visibilidad as Record<string, unknown>[]) ?? []).map((v) => (
-                <li key={String(v.id)}>
-                  {String(v.fecha)} — {v.visible_entidad ? "Visible" : "Oculto"} ({String(v.objeto_id).slice(0, 8)})
-                </li>
-              ))}
-            </ul>
-            <h3>Hallazgos</h3>
-            <ul>
-              {((trazabilidad.hallazgos as Record<string, unknown>[]) ?? []).map((h) => (
-                <li key={String(h.id)}>{String(h.titulo)} — {String(h.confianza)} — {String(h.origen)}</li>
-              ))}
-            </ul>
-            <h3>Acciones externas</h3>
-            <ul>
-              {((trazabilidad.acciones_externas as Record<string, unknown>[]) ?? []).map((e, i) => (
-                <li key={i}>
-                  {String(e.fecha)} — {String(e.tipo_evento)}
-                </li>
-              ))}
-            </ul>
-          </section>
+        {tab === "informes" && evaluacionId && <CabinaInformesPanel expedienteId={evaluacionId} />}
+
+        {tab === "contrato" && evaluacionId && (
+          <CabinaContratoPanel expedienteId={evaluacionId} entidadNombre={exp.entidad_nombre} />
+        )}
+
+        {tab === "vista-empresa" && (
+          <>
+            <EspacioExternoAdminPanel expedienteId={evaluacionId} />
+            {has("evaluacion.vista_entidad") && (
+              <section className="panel compact-panel vista-entidad-preview">
+                <h2>Vista Empresa (previsualización)</h2>
+                <p className="muted small">Lo que la empresa vería según permisos y banderas de visibilidad reales.</p>
+                {vistaEntidad ? (
+                  <VistaEntidadView data={vistaEntidad} />
+                ) : (
+                  <p className="muted">Cargando vista empresa…</p>
+                )}
+                <p style={{ marginTop: "1rem" }}>
+                  <Link className="btn primary" to="/mi-espacio">Abrir portal externo (mi espacio)</Link>
+                </p>
+              </section>
+            )}
+            {trazabilidad && (
+              <section className="panel compact-panel">
+                <h2>Trazabilidad de publicación</h2>
+                <p className="muted">Correlation: {String(trazabilidad.correlation_id ?? "—")}</p>
+                <h3>Cambios de visibilidad</h3>
+                <ul>
+                  {((trazabilidad.visibilidad as Record<string, unknown>[]) ?? []).map((v) => (
+                    <li key={String(v.id)}>
+                      {String(v.fecha)} — {v.visible_entidad ? "Visible" : "Oculto"} ({String(v.objeto_id).slice(0, 8)})
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </>
         )}
       </div>
 
@@ -316,10 +410,12 @@ export function EvaluacionConsolePage() {
 }
 
 function InformacionRow({
+  expedienteId,
   item,
   editable,
   onSave,
 }: {
+  expedienteId: string;
   item: EvaluacionInfoItem;
   editable: boolean;
   onSave: (item: EvaluacionInfoItem, respuesta: string) => Promise<void>;
@@ -356,6 +452,7 @@ function InformacionRow({
         </form>
       )}
       {!editable && item.respuesta && <p>{item.respuesta}</p>}
+      <InformacionAdjuntosPanel expedienteId={expedienteId} itemId={item.id} editable={editable} />
     </div>
   );
 }
@@ -399,40 +496,5 @@ function HallazgoCard({
         )}
       </div>
     </article>
-  );
-}
-
-function ImpactoIndicadorForm({ expedienteId, onCreated }: { expedienteId: string; onCreated: () => void }) {
-  const [nombre, setNombre] = useState("");
-  const [antes, setAntes] = useState("");
-  const [proyectado, setProyectado] = useState("");
-  const [real, setReal] = useState("");
-
-  async function onAdd() {
-    if (!nombre.trim()) return;
-    await crearIndicador(expedienteId, {
-      nombre,
-      valor_antes: antes || undefined,
-      valor_proyectado: proyectado || undefined,
-      valor_real: real || undefined,
-    });
-    setNombre("");
-    setAntes("");
-    setProyectado("");
-    setReal("");
-    onCreated();
-  }
-
-  return (
-    <div className="impacto-form panel compact-panel">
-      <h3>Agregar indicador</h3>
-      <div className="form-grid">
-        <label>Nombre<input value={nombre} onChange={(e) => setNombre(e.target.value)} /></label>
-        <label>Antes<input value={antes} onChange={(e) => setAntes(e.target.value)} /></label>
-        <label>Proyectado<input value={proyectado} onChange={(e) => setProyectado(e.target.value)} /></label>
-        <label>Real<input value={real} onChange={(e) => setReal(e.target.value)} /></label>
-      </div>
-      <button type="button" className="btn small primary" onClick={onAdd}>Guardar indicador</button>
-    </div>
   );
 }

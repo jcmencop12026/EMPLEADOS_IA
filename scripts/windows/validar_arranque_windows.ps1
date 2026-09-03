@@ -11,5 +11,5 @@ $common = Join-Path $PSScriptRoot "EiaaxDemo.Common.ps1"
 . $common
 
 $prepareScript = Join-Path $PSScriptRoot "preparar_demo_eiaax.ps1"
-Invoke-EiaaxPowerShellFile -FilePath $prepareScript
-exit $LASTEXITCODE
+$prepareExitCode = Invoke-EiaaxPowerShellFile -FilePath $prepareScript
+exit $prepareExitCode

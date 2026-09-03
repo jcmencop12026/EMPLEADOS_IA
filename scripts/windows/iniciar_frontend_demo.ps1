@@ -40,6 +40,9 @@ try {
     }
 
     $npmCmd = Resolve-EiaaxNpmCmdExecutable
+    if ($npmCmd -match '\.ps1$') {
+        Exit-EiaaxFailure -Message ("Refusing npm.ps1 launcher for service start: " + $npmCmd + ". npm.cmd is required.")
+    }
     Write-Host ("Using npm executable: " + $npmCmd)
     $logFile = Join-Path $logsDir "frontend.log"
     if (Test-Path -LiteralPath $logFile) {
@@ -55,8 +58,10 @@ try {
         -StateDir $stateDir `
         -WrapperName "run_frontend" `
         -Environment @{}
+    Write-Host ("[frontend] Servicio lanzado (wrapper PID " + $proc.Id + ")")
 
-    $listenerPid = Wait-EiaaxListenerPid -Port $port -TimeoutSec 45
+    Write-Host "[frontend] Esperando puerto $port ..."
+    $listenerPid = Wait-EiaaxListenerPid -Port $port -TimeoutSec 60
     if ($null -eq $listenerPid) {
         $failure = New-EiaaxStartupFailureMessage `
             -Summary "Frontend process did not open port 5180 in time." `
@@ -72,7 +77,7 @@ try {
     Write-EiaaxPidFile -StateDir $stateDir -Name "frontend" -ProcessId $listenerPid
     Write-EiaaxStateValue -StateDir $stateDir -Name "frontend-wrapper" -Value ([string]$proc.Id)
 
-    if (-not (Test-EiaaxFrontendReady -Port $port -TimeoutSec 45)) {
+    if (-not (Test-EiaaxFrontendReady -Port $port -TimeoutSec 60)) {
         $failure = New-EiaaxStartupFailureMessage `
             -Summary "Frontend did not respond over HTTP in time." `
             -LogFile $logFile `
@@ -80,7 +85,7 @@ try {
         Exit-EiaaxFailure -Message $failure
     }
 
-    Write-Host "Frontend ready: http://127.0.0.1:${port}"
+    Write-Host ("Frontend ready: http://127.0.0.1:${port} (listener PID " + $listenerPid + ")")
     exit 0
 }
 catch {

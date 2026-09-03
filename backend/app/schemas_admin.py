@@ -101,6 +101,10 @@ class OrgConfigOut(BaseModel):
     timezone: str
     date_format: str
     time_format: str
+    enterprise_display_name: str | None = None
+    enterprise_logo_url: str | None = None
+    enterprise_logo_compact_url: str | None = None
+    enterprise_accent_color: str | None = None
 
 
 class OrgConfigUpdate(BaseModel):
@@ -108,6 +112,10 @@ class OrgConfigUpdate(BaseModel):
     timezone: str | None = None
     date_format: str | None = None
     time_format: str | None = None
+    enterprise_display_name: str | None = Field(default=None, max_length=200)
+    enterprise_logo_url: str | None = Field(default=None, max_length=200000)
+    enterprise_logo_compact_url: str | None = Field(default=None, max_length=200000)
+    enterprise_accent_color: str | None = Field(default=None, max_length=20)
 
 
 class SecuritySummaryOut(BaseModel):

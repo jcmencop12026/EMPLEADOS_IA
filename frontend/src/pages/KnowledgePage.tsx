@@ -41,6 +41,7 @@ export function KnowledgePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [showColsMenu, setShowColsMenu] = useState(false);
   const [showCols, setShowCols] = useState({
     tipo: true,
     fuente: true,
@@ -168,29 +169,34 @@ export function KnowledgePage() {
         <button type="button" className="btn" title="Actualizar lista" onClick={() => void load()}>
           ↻
         </button>
-      </div>
-
-      <div className="panel" style={{ marginBottom: 12 }}>
-        <span className="muted">Columnas: </span>
-        {Object.entries({
-          tipo: "Tipo",
-          fuente: "Fuente",
-          empresa: "Empresa",
-          tamano: "Tamaño",
-          carga: "Fecha de carga",
-          actualizacion: "Fecha de actualización",
-          procesado: "Procesado",
-          uso: "Uso",
-        }).map(([key, label]) => (
-          <label key={key} style={{ marginRight: 10 }}>
-            <input
-              type="checkbox"
-              checked={showCols[key as keyof typeof showCols]}
-              onChange={(e) => setShowCols((prev) => ({ ...prev, [key]: e.target.checked }))}
-            />{" "}
-            {label}
-          </label>
-        ))}
+        <div className="eiaax-table-cols-picker">
+          <button type="button" className="btn small" onClick={() => setShowColsMenu((v) => !v)}>
+            Columnas
+          </button>
+          {showColsMenu && (
+            <div className="eiaax-table-cols-menu" role="menu">
+              {Object.entries({
+                tipo: "Tipo",
+                fuente: "Fuente",
+                empresa: "Empresa",
+                tamano: "Tamaño",
+                carga: "Fecha de carga",
+                actualizacion: "Fecha de actualización",
+                procesado: "Procesado",
+                uso: "Uso",
+              }).map(([key, label]) => (
+                <label key={key} className="checkbox-inline">
+                  <input
+                    type="checkbox"
+                    checked={showCols[key as keyof typeof showCols]}
+                    onChange={(e) => setShowCols((prev) => ({ ...prev, [key]: e.target.checked }))}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {loading && <p className="muted">Cargando documentos…</p>}

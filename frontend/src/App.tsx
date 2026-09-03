@@ -41,8 +41,16 @@ import { SenalDetailPage } from "./pages/SenalDetailPage";
 import { DiagnosticosPage } from "./pages/DiagnosticosPage";
 import { DiagnosticoDetailPage } from "./pages/DiagnosticoDetailPage";
 import { EvaluacionesPage } from "./pages/EvaluacionesPage";
+import { EmpresasProspectosPage } from "./pages/EmpresasProspectosPage";
+import { GuiaRapidaPage } from "./pages/GuiaRapidaPage";
 import { EvaluacionConsolePage } from "./pages/EvaluacionConsolePage";
 import { CentroConfianzaPage } from "./pages/CentroConfianzaPage";
+import { CentroEstrategicoPage } from "./pages/CentroEstrategicoPage";
+import { DemoComercialPage } from "./pages/DemoComercialPage";
+import { PresentacionEjecutivaPage } from "./pages/PresentacionEjecutivaPage";
+import { PresentacionRealPage } from "./pages/PresentacionRealPage";
+import { InformesPeriodicosDemoPage } from "./pages/InformesPeriodicosDemoPage";
+import { EspacioExternoPortalPage } from "./pages/EspacioExternoPortalPage";
 import { PartnersPage } from "./pages/PartnersPage";
 import { PartnerDetailPage } from "./pages/PartnerDetailPage";
 import { InteligenciaExternaPage } from "./pages/InteligenciaExternaPage";
@@ -164,12 +172,25 @@ export default function App() {
           <Route path="senales/:signalId" element={<SenalDetailPage />} />
           <Route path="diagnosticos" element={<DiagnosticosPage />} />
           <Route path="diagnosticos/:diagnosticId" element={<DiagnosticoDetailPage />} />
+          <Route element={<RequirePermission anyOf={["strategic_control.view"]} />}>
+            <Route path="centro-estrategico" element={<CentroEstrategicoPage />} />
+          </Route>
           <Route element={<RequirePermission anyOf={["evaluacion.view"]} />}>
             <Route path="evaluaciones" element={<EvaluacionesPage />} />
             <Route path="evaluaciones/:evaluacionId" element={<EvaluacionConsolePage />} />
+            <Route path="empresas" element={<EmpresasProspectosPage />} />
+            <Route path="ayuda/guia" element={<GuiaRapidaPage />} />
+            <Route path="empresa/:evaluacionId" element={<EvaluacionConsolePage />} />
           </Route>
           <Route element={<RequirePermission anyOf={["gobierno.confianza.view"]} />}>
             <Route path="centro-confianza" element={<CentroConfianzaPage />} />
+          </Route>
+          <Route path="demo" element={<DemoComercialPage />} />
+          <Route path="demo/presentacion/:expedienteId" element={<PresentacionEjecutivaPage />} />
+          <Route path="presentacion/:expedienteId" element={<PresentacionRealPage />} />
+          <Route path="demo/informes-periodicos" element={<InformesPeriodicosDemoPage />} />
+          <Route element={<RequirePermission anyOf={["espacio_externo.portal"]} />}>
+            <Route path="mi-espacio" element={<EspacioExternoPortalPage />} />
           </Route>
           <Route element={<RequirePermission anyOf={["partners.view"]} />}>
             <Route path="partners" element={<PartnersPage />} />

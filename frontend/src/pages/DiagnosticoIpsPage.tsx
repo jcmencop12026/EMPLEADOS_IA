@@ -179,6 +179,7 @@ export function DiagnosticoIpsPage() {
   const [planMsg, setPlanMsg] = useState<string | null>(null);
   const [lastWorkPlanId, setLastWorkPlanId] = useState<string | null>(null);
   const [modoDemo, setModoDemo] = useState<"completo" | "parcial" | string | null>(null);
+  const [labAbierto, setLabAbierto] = useState(false);
 
   const ejecutarAnalisisMotor = useCallback(async (caseId: string) => {
     setLoading(true);
@@ -418,9 +419,11 @@ export function DiagnosticoIpsPage() {
 
   return (
     <div className="ops-page salud-page">
-      <header className="page-header">
+      <header className="page-header compact">
         <h1>Diagnóstico IPS</h1>
-        <p className="muted">Motor especializado · Análisis financiero y operativo</p>
+        <p className="muted">
+          Motor especializado vertical Salud · En producción, ejecute diagnósticos desde la cabina de evaluación de la empresa.
+        </p>
         {diag && (
           <p className="muted">
             Conocimiento documental: {diag.conocimiento?.utilizado ? "utilizado" : (diag.conocimiento?.mensaje ?? "sin documentos autorizados adicionales")}
@@ -429,18 +432,41 @@ export function DiagnosticoIpsPage() {
         )}
       </header>
 
-      <section className="panel ops-main salud-toolbar">
-        <button type="button" className="btn primary" disabled={loading} onClick={() => ejecutarAnalisis(false)}>
-          {loading && modoDemo === "completo" ? "Analizando…" : "Ejecutar diagnóstico (datos demo)"}
+      <section className="panel compact-panel salud-productivo-hint">
+        <p className="muted">
+          <strong>Flujo productivo:</strong> abra la evaluación de la empresa en{" "}
+          <Link to="/empresas">Empresas y prospectos</Link> o{" "}
+          <Link to="/evaluaciones">Evaluaciones EIAAX</Link> y use la pestaña Diagnóstico de la cabina.
+        </p>
+      </section>
+
+      <section className="panel compact-panel salud-lab-panel">
+        <button
+          type="button"
+          className="salud-lab-toggle"
+          onClick={() => setLabAbierto((v) => !v)}
+          aria-expanded={labAbierto}
+        >
+          {labAbierto ? "▾" : "▸"} Laboratorio / casos demo (vertical Salud)
         </button>
-        <button type="button" className="btn" disabled={loading} onClick={() => ejecutarAnalisis(true)} title="Solo facturación — debe mostrar Información insuficiente en otros dominios">
-          {loading && modoDemo === "parcial" ? "Analizando…" : "Demo datos incompletos"}
-        </button>
-        {["A", "B", "C", "D", "E", "CONSULTOR"].map((c) => (
-          <button key={c} type="button" className="btn" disabled={loading} onClick={() => ejecutarAnalisisMotor(c)} title={`Caso adversarial ${c}`}>
-            {loading && modoDemo === c ? "…" : `Caso ${c}`}
-          </button>
-        ))}
+        {labAbierto && (
+          <div className="salud-toolbar ops-main">
+            <p className="muted small">
+              Casos técnicos y datos sintéticos para validar el motor IPS. No forman parte del recorrido operativo estándar.
+            </p>
+            <button type="button" className="btn" disabled={loading} onClick={() => ejecutarAnalisis(false)}>
+              {loading && modoDemo === "completo" ? "Analizando…" : "Ejecutar diagnóstico (datos demo)"}
+            </button>
+            <button type="button" className="btn" disabled={loading} onClick={() => ejecutarAnalisis(true)} title="Solo facturación — debe mostrar Información insuficiente en otros dominios">
+              {loading && modoDemo === "parcial" ? "Analizando…" : "Demo datos incompletos"}
+            </button>
+            {["A", "B", "C", "D", "E", "CONSULTOR"].map((c) => (
+              <button key={c} type="button" className="btn" disabled={loading} onClick={() => ejecutarAnalisisMotor(c)} title={`Caso adversarial ${c}`}>
+                {loading && modoDemo === c ? "…" : `Caso ${c}`}
+              </button>
+            ))}
+          </div>
+        )}
         {diag && <span className="badge">{diag.ips_name} · {diag.estado}</span>}
         {error && <p className="error">{error}</p>}
         {feedbackMsg && <p className="salud-ok">{feedbackMsg}</p>}

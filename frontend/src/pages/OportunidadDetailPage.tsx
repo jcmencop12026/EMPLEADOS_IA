@@ -24,6 +24,7 @@ import {
   type FinOpsOpportunityEconomics,
 } from "../api";
 import { usePermissions } from "../hooks/usePermissions";
+import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 import { formatCalcLabel } from "../lib/uiTerms";
 
 type Tab = "resumen" | "evidencia" | "seguimiento" | "resultado" | "ejecucion" | "trazabilidad" | "finops" | "valoracion";
@@ -121,6 +122,17 @@ export function OportunidadDetailPage() {
   const canDecideApproval = has("operations.approve");
   const canValManage = has("valoracion.manage");
   const canValValidate = has("valoracion.validate");
+
+  usePageAssistantContext(
+    {
+      oportunidad_id: opportunityId,
+      tab,
+      titulo: opp?.titulo,
+      estado: opp?.estado,
+      valor_potencial: opp?.valor_potencial,
+    },
+    Boolean(opportunityId),
+  );
 
   async function reload() {
     if (!opportunityId) return;

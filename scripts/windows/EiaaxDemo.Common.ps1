@@ -14,13 +14,30 @@ $script:VenvDirName = ".venv-eiaax-demo"
 $script:StateDirName = ".runtime-eiaax-demo"
 $script:LogsDirName = "logs\demo"
 $script:DemoDbFileName = "eiaax_integrado_demo.db"
-$script:ExpectedAlembicHead = "1770a1b2c3d4e"
+$script:ExpectedAlembicHead = "1831a1b2c3d4e"
+$script:ConvergenceWorktreeDefault = "D:\EMPLEADOS_IA_CONVERGENCIA"
+$script:ReferenceDiscoveryWorktree = "D:\EMPLEADOS_IA_INTEGRADO"
+$script:ConvergenceManifestFile = "eiaax_convergence_manifest.json"
+$script:EiaaxCurrentStage = "inicio"
 
 $script:ForbiddenWorktreeNames = @(
     "EMPLEADOS_IA",
     "EMPLEADOS_IA_CERT",
     "EMPLEADOS_IA_V1_HOTFIX"
 )
+
+function Set-EiaaxStage {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    $script:EiaaxCurrentStage = $Name
+}
+
+function Get-EiaaxStage {
+    return $script:EiaaxCurrentStage
+}
 
 function Write-EiaaxError {
     param(
@@ -49,6 +66,83 @@ function Get-EiaaxWorktreeRoot {
         Exit-EiaaxFailure -Message "Worktree not found: $root"
     }
     return (Resolve-Path -LiteralPath $root).Path
+}
+
+function Initialize-EiaaxConvergenceWorktreeFromScriptRoot {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    if (-not (Test-Path -LiteralPath $ScriptsDir)) {
+        Exit-EiaaxFailure -Message ("Scripts directory not found: " + $ScriptsDir)
+    }
+
+    $resolvedScripts = (Resolve-Path -LiteralPath $ScriptsDir).Path
+    $worktree = (Resolve-Path -LiteralPath (Join-Path $resolvedScripts "..\..")).Path
+    $folderName = [System.IO.Path]::GetFileName($worktree.TrimEnd('\'))
+
+    if ($folderName -ne "EMPLEADOS_IA_CONVERGENCIA") {
+        Exit-EiaaxFailure -Message (
+            "EIAAX convergence scripts must live under EMPLEADOS_IA_CONVERGENCIA. Resolved: " + $worktree
+        )
+    }
+
+    $env:EIAAX_WORKTREE = $worktree
+    return $worktree
+}
+
+function Assert-EiaaxConvergencePathAuthority {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot,
+        [string]$LogFile = $null
+    )
+
+    Assert-EiaaxNotOriginalTree -WorktreeRoot $WorktreeRoot
+    $paths = Get-EiaaxPaths -WorktreeRoot $WorktreeRoot
+    $worktreeFull = [System.IO.Path]::GetFullPath($WorktreeRoot).TrimEnd('\')
+
+    foreach ($entry in @{
+            Backend  = $paths.Backend
+            Frontend = $paths.Frontend
+            Venv     = $paths.Venv
+            DbFile   = $paths.DbFile
+            Logs     = $paths.Logs
+        }.GetEnumerator()) {
+        $full = [System.IO.Path]::GetFullPath($entry.Value)
+        if (-not $full.StartsWith($worktreeFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $message = "Critical path outside CONVERGENCIA worktree (" + $entry.Key + "): " + $full
+            if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
+                Write-EiaaxLogLine -LogFile $LogFile -Message ("ABORT: " + $message)
+            }
+            Exit-EiaaxFailure -Message $message
+        }
+    }
+}
+
+function Write-EiaaxConvergenceExecutionContext {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot,
+        [string]$LogFile = $null
+    )
+
+    $paths = Get-EiaaxPaths -WorktreeRoot $WorktreeRoot
+    $lines = @(
+        ("RUTA DE EJECUCION EIAAX: " + $WorktreeRoot),
+        ("REPOSITORIO: " + $WorktreeRoot),
+        ("VENV: " + $paths.Venv),
+        ("BASE DEMO: " + $paths.DbFile),
+        ("LOG: " + $LogFile)
+    )
+
+    foreach ($line in $lines) {
+        Write-Host $line
+        if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
+            Write-EiaaxLogLine -LogFile $LogFile -Message $line
+        }
+    }
 }
 
 function Get-EiaaxPaths {
@@ -195,7 +289,11 @@ function Get-EiaaxCollectionCount {
         return 0
     }
 
-    return @( $Value ).Count
+    if ($Value -is [System.Collections.ICollection]) {
+        return $Value.Count
+    }
+
+    return @($Value).Count
 }
 
 function Get-EiaaxAlembicHeadRevisions {
@@ -277,8 +375,11 @@ function Invoke-EiaaxNativeCommand {
         Exit-EiaaxFailure -Message ("Refusing interactive invocation without arguments: " + $FilePath)
     }
 
-    & $FilePath @ArgumentList
-    if ($LASTEXITCODE -ne 0) {
+    $result = Invoke-EiaaxExternalCommand -FilePath $FilePath -ArgumentList $ArgumentList
+    if ($result.ExitCode -ne 0) {
+        if (-not [string]::IsNullOrWhiteSpace($result.Output)) {
+            $FailureMessage = $FailureMessage + "`n" + $result.Output
+        }
         Exit-EiaaxFailure -Message $FailureMessage
     }
 }
@@ -311,16 +412,30 @@ function Invoke-EiaaxExternalCommand {
         [string]$FilePath,
         [AllowEmptyCollection()]
         [string[]]$ArgumentList = @(),
-        [string]$WorkingDirectory = $null
+        [string]$WorkingDirectory = $null,
+        [string]$LogFile = $null,
+        [string]$Stage = $null,
+        [string]$CommandLabel = $null
     )
 
     if (Test-EiaaxInteractiveInvocationRisk -FilePath $FilePath -ArgumentList $ArgumentList) {
         Exit-EiaaxFailure -Message ("Refusing interactive invocation without arguments: " + $FilePath)
     }
 
+    $label = $CommandLabel
+    if ([string]::IsNullOrWhiteSpace($label)) {
+        $label = $FilePath
+        if ((Get-EiaaxCollectionCount $ArgumentList) -gt 0) {
+            $label += " " + ($ArgumentList -join " ")
+        }
+    }
+
     $previousPreference = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     $locationPushed = $false
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $exitCode = 1
+    $output = ""
     try {
         if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
             Push-Location $WorkingDirectory
@@ -337,11 +452,71 @@ function Invoke-EiaaxExternalCommand {
         }
     }
     finally {
+        $stopwatch.Stop()
         if ($locationPushed) {
             Pop-Location
         }
         $ErrorActionPreference = $previousPreference
+
+        if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
+            $stagePrefix = ""
+            if (-not [string]::IsNullOrWhiteSpace($Stage)) {
+                $stagePrefix = "stage=" + $Stage + " | "
+            }
+            $logLine = $stagePrefix + $label + " | exit=" + $exitCode + " | duration_ms=" + $stopwatch.ElapsedMilliseconds
+            if (-not [string]::IsNullOrWhiteSpace($output)) {
+                $logLine += " | " + ($output -replace "`r?`n", " / ")
+            }
+            Write-EiaaxLogLine -LogFile $LogFile -Message $logLine
+        }
     }
+}
+
+function Get-EiaaxGitExecutable {
+    $git = Get-Command git -ErrorAction SilentlyContinue
+    if ($null -eq $git) {
+        Exit-EiaaxFailure -Message "git not found in PATH."
+    }
+    return $git.Source
+}
+
+function Invoke-EiaaxGitCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [string[]]$ArgumentList,
+        [string]$WorkingDirectory = $null,
+        [string]$LogFile = $null,
+        [string]$FailureMessage = $null,
+        [switch]$AllowNonZeroExit
+    )
+
+    $gitExe = Get-EiaaxGitExecutable
+    $commandLabel = "git " + ($ArgumentList -join " ")
+    $result = Invoke-EiaaxExternalCommand `
+        -FilePath $gitExe `
+        -ArgumentList $ArgumentList `
+        -WorkingDirectory $WorkingDirectory `
+        -LogFile $LogFile `
+        -Stage (Get-EiaaxStage) `
+        -CommandLabel $commandLabel
+
+    if (-not [string]::IsNullOrWhiteSpace($result.Output)) {
+        Write-Host $result.Output
+    }
+
+    if ($result.ExitCode -ne 0 -and -not $AllowNonZeroExit) {
+        $message = $FailureMessage
+        if ([string]::IsNullOrWhiteSpace($message)) {
+            $message = $commandLabel + " failed with exit code " + $result.ExitCode
+        }
+        if (-not [string]::IsNullOrWhiteSpace($result.Output)) {
+            $message = $message + "`n" + $result.Output
+        }
+        Exit-EiaaxFailure -Message $message
+    }
+
+    return $result
 }
 
 function Test-EiaaxWindowsPythonStub {
@@ -358,6 +533,34 @@ function Test-EiaaxWindowsPythonStub {
         return $true
     }
     return $false
+}
+
+function Join-EiaaxPathMaybe {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Base,
+        [Parameter(Mandatory = $true)]
+        [string]$Child
+    )
+
+    if ($Base -match '^[A-Za-z]:') {
+        return Join-EiaaxWindowsPath -Base $Base -Child $Child
+    }
+
+    return Join-Path $Base $Child
+}
+
+function Join-EiaaxWindowsPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Base,
+        [Parameter(Mandatory = $true)]
+        [string]$Child
+    )
+
+    $trimmedBase = $Base.TrimEnd('\', '/')
+    $trimmedChild = $Child.TrimStart('\', '/')
+    return $trimmedBase + '\' + $trimmedChild
 }
 
 function Get-EiaaxResolvedPythonPath {
@@ -383,12 +586,125 @@ function Get-EiaaxResolvedPythonPath {
     }
 }
 
-function Get-EiaaxPythonDiscoveryCandidates {
+function Read-EiaaxPyvenvCfg {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PyvenvCfgPath
+    )
+
+    $result = [ordered]@{
+        home       = $null
+        executable = $null
+        version    = $null
+        command    = $null
+    }
+
+    if (-not (Test-Path -LiteralPath $PyvenvCfgPath)) {
+        return $result
+    }
+
+    foreach ($line in (Get-Content -LiteralPath $PyvenvCfgPath -ErrorAction SilentlyContinue)) {
+        $trimmed = $line.Trim()
+        if ([string]::IsNullOrWhiteSpace($trimmed)) {
+            continue
+        }
+        if ($trimmed -match '^(home|executable|version|command)\s*=\s*(.+)$') {
+            $key = $Matches[1]
+            $value = $Matches[2].Trim()
+            if ($value.StartsWith('"') -and $value.EndsWith('"') -and $value.Length -ge 2) {
+                $value = $value.Substring(1, $value.Length - 2)
+            }
+            $result[$key] = $value
+        }
+    }
+
+    return $result
+}
+
+function Get-EiaaxReferenceWorktreeRoot {
+    if (-not [string]::IsNullOrWhiteSpace($env:EIAAX_REFERENCE_WORKTREE)) {
+        return $env:EIAAX_REFERENCE_WORKTREE
+    }
+    return $script:ReferenceDiscoveryWorktree
+}
+
+function Get-EiaaxReferenceVenvPythonPath {
+    $referenceWorktree = Get-EiaaxReferenceWorktreeRoot
+    $venvDir = Join-EiaaxWindowsPath -Base $referenceWorktree -Child $script:VenvDirName
+    foreach ($relative in @("Scripts\python.exe", "bin\python", "bin\python3")) {
+        $candidate = if ($relative -match '^[A-Za-z]:') {
+            $relative
+        }
+        elseif ($relative -match '\\') {
+            Join-EiaaxWindowsPath -Base $venvDir -Child $relative
+        }
+        else {
+            Join-Path $venvDir $relative
+        }
+        if (Test-Path -LiteralPath $candidate) {
+            return (Resolve-Path -LiteralPath $candidate).Path
+        }
+    }
+    return Join-EiaaxWindowsPath -Base $venvDir -Child "Scripts\python.exe"
+}
+
+function Get-EiaaxVenvPythonPathForDirectory {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$VenvPath
+    )
+
+    foreach ($relative in @("Scripts\python.exe", "bin\python", "bin\python3")) {
+        $candidate = if ($relative -match '\\') {
+            Join-EiaaxWindowsPath -Base $VenvPath -Child $relative
+        }
+        else {
+            Join-Path $VenvPath $relative
+        }
+        if (Test-Path -LiteralPath $candidate) {
+            return (Resolve-Path -LiteralPath $candidate).Path
+        }
+    }
+    return $null
+}
+
+function Get-EiaaxReferencePyvenvCfgPath {
+    param(
+        [string]$ReferenceWorktree = $(Get-EiaaxReferenceWorktreeRoot)
+    )
+
+    return Join-EiaaxWindowsPath -Base (Join-EiaaxWindowsPath -Base $ReferenceWorktree -Child $script:VenvDirName) -Child "pyvenv.cfg"
+}
+
+function Test-EiaaxPythonPathLooksLikeVenvInterpreter {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $normalized = $Path.ToUpperInvariant()
+    return ($normalized -match '\\\.VENV[^\\]*\\SCRIPTS\\PYTHON\.EXE$') -or
+        ($normalized -match '\\VENV\\SCRIPTS\\PYTHON\.EXE$')
+}
+
+function Get-EiaaxPythonCandidatesFromPyvenvCfg {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PyvenvCfgPath
+    )
+
+    $cfg = Read-EiaaxPyvenvCfg -PyvenvCfgPath $PyvenvCfgPath
     $ordered = New-Object System.Collections.Generic.List[string]
     $seen = @{}
 
     $addCandidate = {
         param([string]$CandidatePath)
+        if ([string]::IsNullOrWhiteSpace($CandidatePath)) {
+            return
+        }
+        if (Test-EiaaxPythonPathLooksLikeVenvInterpreter -Path $CandidatePath) {
+            return
+        }
         $resolved = Get-EiaaxResolvedPythonPath -Path $CandidatePath
         if ($null -eq $resolved) {
             return
@@ -401,22 +717,324 @@ function Get-EiaaxPythonDiscoveryCandidates {
         [void]$ordered.Add($resolved)
     }
 
+    if (-not [string]::IsNullOrWhiteSpace($cfg.executable)) {
+        & $addCandidate $cfg.executable
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($cfg.home)) {
+        & $addCandidate (Join-EiaaxWindowsPath -Base $cfg.home -Child "python.exe")
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($cfg.command)) {
+        if ($cfg.command -match '([A-Za-z]:\\[^"\s]+python\.exe)') {
+            & $addCandidate $Matches[1]
+        }
+    }
+
+    return [string[]]$ordered.ToArray()
+}
+
+function Invoke-EiaaxPythonSysProbe {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PythonExe
+    )
+
+    $result = [ordered]@{
+        ExitCode        = 1
+        Executable      = $null
+        Prefix          = $null
+        BasePrefix      = $null
+        BaseExecutable  = $null
+        Version         = $null
+        Error           = $null
+    }
+
+    if (-not (Test-Path -LiteralPath $PythonExe)) {
+        $result.Error = "python executable missing"
+        return $result
+    }
+
+    $probeScript = "import sys; print(sys.executable); print(sys.prefix); print(sys.base_prefix); print(getattr(sys, '_base_executable', sys.executable)); print(sys.version.split()[0])"
+    $probe = Invoke-EiaaxExternalCommand -FilePath $PythonExe -ArgumentList @("-c", $probeScript)
+    $result.ExitCode = $probe.ExitCode
+    if ($probe.ExitCode -ne 0) {
+        $result.Error = ($probe.Output | Out-String).Trim()
+        if ([string]::IsNullOrWhiteSpace($result.Error)) {
+            $result.Error = "sys probe failed"
+        }
+        return $result
+    }
+
+    $lines = @($probe.Output -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_.Trim()) })
+    if ($lines.Count -lt 5) {
+        $result.Error = "sys probe returned incomplete output"
+        return $result
+    }
+
+    $result.Executable = $lines[0].Trim()
+    $result.Prefix = $lines[1].Trim()
+    $result.BasePrefix = $lines[2].Trim()
+    $result.BaseExecutable = $lines[3].Trim()
+    $result.Version = $lines[4].Trim()
+    return $result
+}
+
+function Get-EiaaxPythonBaseCandidatesFromSysProbe {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$SysProbe
+    )
+
+    $ordered = New-Object System.Collections.Generic.List[string]
+    $seen = @{}
+
+    $addCandidate = {
+        param([string]$CandidatePath)
+        if ([string]::IsNullOrWhiteSpace($CandidatePath)) {
+            return
+        }
+        if (Test-EiaaxPythonPathLooksLikeVenvInterpreter -Path $CandidatePath) {
+            return
+        }
+        $resolved = Get-EiaaxResolvedPythonPath -Path $CandidatePath
+        if ($null -eq $resolved) {
+            return
+        }
+        $key = $resolved.ToUpperInvariant()
+        if ($seen.ContainsKey($key)) {
+            return
+        }
+        $seen[$key] = $true
+        [void]$ordered.Add($resolved)
+    }
+
+    & $addCandidate $SysProbe.BaseExecutable
+    if (-not [string]::IsNullOrWhiteSpace($SysProbe.BasePrefix)) {
+        if ($SysProbe.BasePrefix -match '^[A-Za-z]:') {
+            & $addCandidate (Join-EiaaxWindowsPath -Base $SysProbe.BasePrefix -Child "python.exe")
+        }
+        else {
+            foreach ($name in @("python", "python3")) {
+                & $addCandidate (Join-Path $SysProbe.BasePrefix (Join-Path "bin" $name))
+            }
+        }
+    }
+
+    return [string[]]$ordered.ToArray()
+}
+
+function Get-EiaaxPythonCandidatesFromPyvenvCfgPaths {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Cfg
+    )
+
+    $ordered = New-Object System.Collections.Generic.List[string]
+    $seen = @{}
+
+    $addPath = {
+        param([string]$CandidatePath)
+        if ([string]::IsNullOrWhiteSpace($CandidatePath)) {
+            return
+        }
+        if (Test-EiaaxPythonPathLooksLikeVenvInterpreter -Path $CandidatePath) {
+            return
+        }
+        $key = $CandidatePath.ToUpperInvariant()
+        if ($seen.ContainsKey($key)) {
+            return
+        }
+        $seen[$key] = $true
+        [void]$ordered.Add($CandidatePath)
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($Cfg.executable)) {
+        & $addPath $Cfg.executable
+    }
+    if (-not [string]::IsNullOrWhiteSpace($Cfg.home)) {
+        & $addPath (Join-EiaaxWindowsPath -Base $Cfg.home -Child "python.exe")
+    }
+    if (-not [string]::IsNullOrWhiteSpace($Cfg.command)) {
+        if ($Cfg.command -match '([A-Za-z]:\\[^"\s]+python\.exe)') {
+            & $addPath $Matches[1]
+        }
+    }
+
+    return [string[]]$ordered.ToArray()
+}
+
+function Write-EiaaxPythonDiscoveryDiagnostics {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Diagnostics
+    )
+
+    Write-Host ""
+    Write-Host "PYTHON DISCOVERY"
+    foreach ($line in $Diagnostics.Lines) {
+        Write-Host $line
+    }
+    Write-Host ""
+}
+
+function Add-EiaaxPythonPlanCandidate {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [System.Collections.Generic.List[hashtable]]$CandidateList,
+        [Parameter(Mandatory = $true)]
+        [hashtable]$SeenKeys,
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [Parameter(Mandatory = $true)]
+        [string]$Source,
+        [string]$Role = "base"
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        return
+    }
+    $resolved = Get-EiaaxResolvedPythonPath -Path $Path
+    if ($null -eq $resolved) {
+        return
+    }
+    $key = $resolved.ToUpperInvariant()
+    if ($SeenKeys.ContainsKey($key)) {
+        return
+    }
+    $SeenKeys[$key] = $true
+    [void]$CandidateList.Add([ordered]@{
+        Path   = $resolved
+        Source = $Source
+        Role   = $Role
+    })
+}
+
+function Build-EiaaxPythonResolutionPlan {
+    param(
+        [string]$WorktreeRoot = $null
+    )
+
+    $lines = New-Object System.Collections.Generic.List[string]
+    $candidateList = New-Object System.Collections.Generic.List[hashtable]
+    $seenKeys = @{}
+    $referenceVenvPython = Get-EiaaxReferenceVenvPythonPath
+    $referenceCfgPath = Get-EiaaxReferencePyvenvCfgPath
+    $referenceCfg = Read-EiaaxPyvenvCfg -PyvenvCfgPath $referenceCfgPath
+    $referenceSysProbe = $null
+
     if (-not [string]::IsNullOrWhiteSpace($env:EIAAX_PYTHON)) {
-        & $addCandidate $env:EIAAX_PYTHON
+        if (Test-Path -LiteralPath $env:EIAAX_PYTHON) {
+            [void]$lines.Add(("Fuente 1: EIAAX_PYTHON .......... definido (" + $env:EIAAX_PYTHON + ")"))
+            Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $env:EIAAX_PYTHON -Source "EIAAX_PYTHON" -Role "base"
+        }
+        else {
+            [void]$lines.Add("Fuente 1: EIAAX_PYTHON .......... ruta invalida")
+        }
+    }
+    else {
+        [void]$lines.Add("Fuente 1: EIAAX_PYTHON .......... no definido")
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($WorktreeRoot)) {
+        $convergenceVenvPython = Get-EiaaxVenvPythonPathForDirectory -VenvPath (Join-EiaaxWindowsPath -Base $WorktreeRoot -Child $script:VenvDirName)
+        if (-not [string]::IsNullOrWhiteSpace($convergenceVenvPython)) {
+            [void]$lines.Add(("Fuente 2: venv convergencia ..... encontrado (" + $convergenceVenvPython + ")"))
+            Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $convergenceVenvPython -Source "venv convergencia" -Role "runtime"
+        }
+        else {
+            [void]$lines.Add("Fuente 2: venv convergencia ..... no existe")
+        }
+    }
+    else {
+        [void]$lines.Add("Fuente 2: venv convergencia ..... no evaluado")
+    }
+
+    if (Test-Path -LiteralPath $referenceVenvPython) {
+        [void]$lines.Add(("Fuente 3: venv integrado ........ encontrado (" + $referenceVenvPython + ")"))
+        $referenceSysProbe = Invoke-EiaaxPythonSysProbe -PythonExe $referenceVenvPython
+        if ($referenceSysProbe.ExitCode -eq 0) {
+            [void]$lines.Add(("sys.executable ................ " + $referenceSysProbe.Executable))
+            [void]$lines.Add(("sys.base_prefix ............... " + $referenceSysProbe.BasePrefix))
+            [void]$lines.Add(("sys._base_executable .......... " + $referenceSysProbe.BaseExecutable))
+            [void]$lines.Add(("sys.version ................... " + $referenceSysProbe.Version))
+            foreach ($probePath in @(Get-EiaaxPythonBaseCandidatesFromSysProbe -SysProbe $referenceSysProbe)) {
+                Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $probePath -Source "sys.base_prefix (venv integrado)" -Role "base"
+            }
+        }
+        else {
+            [void]$lines.Add(("sys probe venv integrado ...... FAIL (" + $referenceSysProbe.Error + ")"))
+        }
+    }
+    else {
+        [void]$lines.Add("Fuente 3: venv integrado ........ no encontrado")
+    }
+
+    if (Test-Path -LiteralPath $referenceCfgPath) {
+        [void]$lines.Add("pyvenv.cfg .................... leido")
+        if (-not [string]::IsNullOrWhiteSpace($referenceCfg.version)) {
+            [void]$lines.Add(("pyvenv.cfg version ............ " + $referenceCfg.version))
+        }
+        if (-not [string]::IsNullOrWhiteSpace($referenceCfg.home)) {
+            $homeExists = Test-Path -LiteralPath $referenceCfg.home
+            [void]$lines.Add(("pyvenv.cfg home ............... " + $referenceCfg.home + $(if (-not $homeExists) { " [no existe]" } else { "" })))
+        }
+        if (-not [string]::IsNullOrWhiteSpace($referenceCfg.executable)) {
+            $exeExists = Test-Path -LiteralPath $referenceCfg.executable
+            [void]$lines.Add(("pyvenv.cfg executable ......... " + $referenceCfg.executable + $(if (-not $exeExists) { " [no existe]" } else { "" })))
+        }
+        foreach ($cfgPath in @(Get-EiaaxPythonCandidatesFromPyvenvCfgPaths -Cfg $referenceCfg)) {
+            if (Test-Path -LiteralPath $cfgPath) {
+                Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $cfgPath -Source "pyvenv.cfg" -Role "base"
+            }
+        }
+    }
+    else {
+        [void]$lines.Add(("pyvenv.cfg .................... no encontrado (" + $referenceCfgPath + ")"))
+    }
+
+    foreach ($launcherPath in @(Get-EiaaxPythonLauncherCandidates)) {
+        Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $launcherPath -Source "py launcher" -Role "base"
+    }
+
+    foreach ($wherePath in @(Get-EiaaxPythonWhereCandidates)) {
+        Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $wherePath -Source "where.exe" -Role "base"
+    }
+
+    foreach ($pathDir in (($env:PATH) -split ';')) {
+        if ([string]::IsNullOrWhiteSpace($pathDir)) {
+            continue
+        }
+        $trimmed = $pathDir.Trim()
+        Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path (Join-EiaaxPathMaybe -Base $trimmed -Child "python.exe") -Source "PATH" -Role "base"
+        Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path (Join-EiaaxPathMaybe -Base $trimmed -Child "python3.exe") -Source "PATH" -Role "base"
+    }
+
+    foreach ($commandName in @("python", "python3")) {
+        $command = Get-Command $commandName -ErrorAction SilentlyContinue
+        if ($null -ne $command -and $command.CommandType -eq "Application") {
+            Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $command.Source -Source ("Get-Command " + $commandName) -Role "base"
+        }
+    }
+
+    foreach ($registryPath in @(Get-EiaaxPythonRegistryCandidates)) {
+        Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $registryPath -Source "registry" -Role "base"
     }
 
     foreach ($staticPath in @(
             "C:\Python314\python.exe",
             "C:\Python313\python.exe",
-            "C:\Python312\python.exe"
+            "C:\Python312\python.exe",
+            "C:\Python311\python.exe"
         )) {
-        & $addCandidate $staticPath
+        Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $staticPath -Source "standard install" -Role "base"
     }
 
     if (-not [string]::IsNullOrWhiteSpace($env:ProgramFiles)) {
-        foreach ($version in @("314", "313", "312")) {
+        foreach ($version in @("314", "313", "312", "311")) {
             $programFilesPath = Join-Path $env:ProgramFiles ("Python" + $version + "\python.exe")
-            & $addCandidate $programFilesPath
+            Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path $programFilesPath -Source "Program Files" -Role "base"
         }
     }
 
@@ -426,8 +1044,7 @@ function Get-EiaaxPythonDiscoveryCandidates {
             $versionDirs = Get-ChildItem -LiteralPath $userPythonRoot -ErrorAction SilentlyContinue |
                 Where-Object { $_.PSIsContainer }
             foreach ($versionDir in $versionDirs) {
-                $userPython = Join-Path $versionDir.FullName "python.exe"
-                & $addCandidate $userPython
+                Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path (Join-Path $versionDir.FullName "python.exe") -Source "LocalAppData" -Role "base"
             }
         }
     }
@@ -436,19 +1053,693 @@ function Get-EiaaxPythonDiscoveryCandidates {
         $pythonRoots = Get-ChildItem -Path "C:\" -ErrorAction SilentlyContinue |
             Where-Object { $_.PSIsContainer -and $_.Name -like "Python*" }
         foreach ($root in $pythonRoots) {
-            $rootPython = Join-Path $root.FullName "python.exe"
-            & $addCandidate $rootPython
+            Add-EiaaxPythonPlanCandidate -CandidateList $candidateList -SeenKeys $seenKeys -Path (Join-Path $root.FullName "python.exe") -Source "C:\Python*" -Role "base"
         }
     }
 
-    foreach ($commandName in @("python", "python3")) {
-        $command = Get-Command $commandName -ErrorAction SilentlyContinue
-        if ($null -ne $command -and $command.CommandType -eq "Application") {
-            & $addCandidate $command.Source
+    $venvCreatorFallback = $null
+    if ($candidateList.Count -eq 0 -and (Test-Path -LiteralPath $referenceVenvPython)) {
+        $referenceProbe = Test-EiaaxPythonRuntimeCandidate -PythonExe $referenceVenvPython
+        if ($referenceProbe.Executable) {
+            [void]$lines.Add("Python base original ............ NO DISPONIBLE")
+            [void]$lines.Add("Venv integrado ................ FUNCIONAL")
+            $venvCreatorFallback = $referenceVenvPython
+            [void]$candidateList.Add([ordered]@{
+                Path   = $referenceVenvPython
+                Source = "venv integrado (creador venv)"
+                Role   = "venv-creator"
+            })
         }
     }
 
-    return [string[]]$ordered.ToArray()
+    return [ordered]@{
+        Lines               = [string[]]$lines.ToArray()
+        Candidates          = @($candidateList.ToArray())
+        CandidateCount      = $candidateList.Count
+        ReferenceVenvPython = $referenceVenvPython
+        ReferenceSysProbe   = $referenceSysProbe
+        VenvCreatorFallback = $venvCreatorFallback
+    }
+}
+
+function Get-EiaaxPythonDiscoveryCandidates {
+    param(
+        [string]$WorktreeRoot = $null
+    )
+
+    $plan = Build-EiaaxPythonResolutionPlan -WorktreeRoot $WorktreeRoot
+    return @($plan.Candidates | ForEach-Object { $_.Path })
+}
+
+function Resolve-EiaaxPython {
+    param(
+        [string]$LogFile = $null,
+        [string]$WorktreeRoot = $null
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($env:EIAAX_PYTHON)) {
+        $explicitPath = Get-EiaaxResolvedPythonPath -Path $env:EIAAX_PYTHON
+        Write-EiaaxPythonDiscoveryDiagnostics -Diagnostics @{
+            Lines = @(
+                $(if ($null -eq $explicitPath) {
+                    "Fuente 1: EIAAX_PYTHON .......... ruta invalida"
+                }
+                else {
+                    "Fuente 1: EIAAX_PYTHON .......... definido (" + $env:EIAAX_PYTHON + ")"
+                })
+            )
+        }
+        if ($null -eq $explicitPath) {
+            Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: EIAAX_PYTHON is not a valid python executable: " + $env:EIAAX_PYTHON)
+        }
+        $explicitProbe = Test-EiaaxPythonRuntimeCandidate -PythonExe $explicitPath
+        if (-not $explicitProbe.Executable) {
+            Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: EIAAX_PYTHON failed python -V: " + $env:EIAAX_PYTHON + " -> " + $explicitProbe.Error)
+        }
+        Write-Host ("Validacion python -V .......... PASS (" + $explicitProbe.Version + ")")
+        return $explicitPath
+    }
+
+    $plan = Build-EiaaxPythonResolutionPlan -WorktreeRoot $WorktreeRoot
+    Write-EiaaxPythonDiscoveryDiagnostics -Diagnostics @{ Lines = $plan.Lines }
+
+    if ($plan.CandidateCount -eq 0) {
+        $detail = "PYTHON NOT FOUND: ningun candidato ejecutable."
+        if ($null -ne $plan.ReferenceSysProbe -and $plan.ReferenceSysProbe.ExitCode -eq 0) {
+            $detail += " sys.base_prefix=" + $plan.ReferenceSysProbe.BasePrefix + " sys._base_executable=" + $plan.ReferenceSysProbe.BaseExecutable + "."
+        }
+        elseif (Test-Path -LiteralPath $plan.ReferenceVenvPython) {
+            $detail += " Venv integrado existe pero no se pudo resolver Python base ni usar como creador."
+        }
+        Exit-EiaaxFailure -Message ($detail + " Revise el bloque PYTHON DISCOVERY arriba.")
+    }
+
+    $probeDirectory = $null
+    if (-not [string]::IsNullOrWhiteSpace($WorktreeRoot)) {
+        $probeDirectory = Ensure-EiaaxLogsDir -WorktreeRoot $WorktreeRoot
+    }
+
+    $failures = New-Object System.Collections.Generic.List[string]
+    foreach ($entry in @($plan.Candidates)) {
+        $candidate = $entry.Path
+        $source = $entry.Source
+        $message = "Checking Python candidate (" + $source + "): " + $candidate
+        Write-Host $message
+        if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
+            Write-EiaaxLogLine -LogFile $LogFile -Message $message
+        }
+
+        $probe = Test-EiaaxPythonRuntimeCandidate -PythonExe $candidate
+        if (-not $probe.Executable) {
+            [void]$failures.Add($candidate + " -> " + $probe.Error)
+            continue
+        }
+
+        if ($entry.Role -eq "venv-creator") {
+            if ($null -eq $probeDirectory) {
+                $probeDirectory = [System.IO.Path]::GetTempPath()
+            }
+            $venvProbeError = Test-EiaaxPythonVenvCapability -PythonExe $candidate -ProbeDirectory $probeDirectory
+            if ($null -ne $venvProbeError) {
+                [void]$failures.Add($candidate + " -> venv creator probe failed: " + $venvProbeError)
+                [void]$plan.Lines.Add("Prueba python -m venv ............ FAIL (" + $venvProbeError + ")")
+                continue
+            }
+            [void]$plan.Lines.Add("Prueba python -m venv ............ PASS (venv integrado como creador)")
+        }
+
+        Write-Host ("Validacion python -V .......... PASS (" + $probe.Version + ")")
+        $selectedMessage = "Selected Python (" + $source + "): " + $candidate + " (" + $probe.Version + ")"
+        Write-Host ("Python base ................... " + $candidate)
+        Write-Host $selectedMessage
+        if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
+            Write-EiaaxLogLine -LogFile $LogFile -Message $selectedMessage
+        }
+        return $candidate
+    }
+
+    $detail = ($failures.ToArray() -join "; ")
+    if ($null -ne $plan.VenvCreatorFallback) {
+        Exit-EiaaxFailure -Message ("PYTHON BASE ORIGINAL NO DISPONIBLE. VENV ANTERIOR FUNCIONAL pero no pudo crear venv convergencia. " + $detail)
+    }
+    Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: candidatos detectados pero ninguno ejecuto correctamente. " + $detail)
+}
+
+function Find-EiaaxPython {
+    param(
+        [string]$LogFile = $null,
+        [string]$WorktreeRoot = $null
+    )
+
+    return Resolve-EiaaxPython -LogFile $LogFile -WorktreeRoot $WorktreeRoot
+}
+
+function Get-EiaaxPythonWhereCandidates {
+    if ([string]::IsNullOrWhiteSpace($env:SystemRoot)) {
+        return @()
+    }
+
+    $whereExe = Join-EiaaxWindowsPath -Base $env:SystemRoot -Child "System32\where.exe"
+    if (-not (Test-Path -LiteralPath $whereExe)) {
+        return @()
+    }
+
+    $paths = New-Object System.Collections.Generic.List[string]
+    foreach ($target in @("python.exe", "python3.exe")) {
+        $result = Invoke-EiaaxExternalCommand -FilePath $whereExe -ArgumentList @($target)
+        if ($result.ExitCode -ne 0) {
+            continue
+        }
+        foreach ($line in ($result.Output -split "`r?`n")) {
+            $trimmed = $line.Trim()
+            if (-not [string]::IsNullOrWhiteSpace($trimmed)) {
+                [void]$paths.Add($trimmed)
+            }
+        }
+    }
+    return [string[]]$paths.ToArray()
+}
+
+function Get-EiaaxPythonLauncherCandidates {
+    $py = Get-Command py.exe -ErrorAction SilentlyContinue
+    if ($null -eq $py) {
+        $py = Get-Command py -ErrorAction SilentlyContinue
+    }
+    if ($null -eq $py) {
+        return @()
+    }
+
+    $paths = New-Object System.Collections.Generic.List[string]
+    $listResult = Invoke-EiaaxExternalCommand -FilePath $py.Source -ArgumentList @("-0p")
+    if ($listResult.ExitCode -eq 0) {
+        foreach ($line in ($listResult.Output -split "`r?`n")) {
+            if ($line -match '(C:\\[^`\r\n]+\.exe)\s*$') {
+                [void]$paths.Add($Matches[1].Trim())
+            }
+        }
+    }
+
+    foreach ($version in @("3.12", "3.13", "3.11")) {
+        $resolveResult = Invoke-EiaaxExternalCommand -FilePath $py.Source `
+            -ArgumentList @("-$version", "-c", "import sys; print(sys.executable)")
+        if ($resolveResult.ExitCode -eq 0) {
+            foreach ($line in ($resolveResult.Output -split "`r?`n")) {
+                $trimmed = $line.Trim()
+                if ($trimmed -match '^[A-Za-z]:\\') {
+                    [void]$paths.Add($trimmed)
+                }
+            }
+        }
+    }
+
+    return [string[]]$paths.ToArray()
+}
+
+function Get-EiaaxPythonRegistryCandidates {
+    $paths = New-Object System.Collections.Generic.List[string]
+    foreach ($root in @("HKLM:\SOFTWARE\Python\PythonCore", "HKCU:\SOFTWARE\Python\PythonCore")) {
+        if (-not (Test-Path -LiteralPath $root)) {
+            continue
+        }
+        $versions = Get-ChildItem -LiteralPath $root -ErrorAction SilentlyContinue
+        foreach ($versionKey in $versions) {
+            $installPath = (Get-ItemProperty -LiteralPath (Join-Path $versionKey.PSPath "InstallPath") -ErrorAction SilentlyContinue).'(default)'
+            if (-not [string]::IsNullOrWhiteSpace($installPath)) {
+                [void]$paths.Add((Join-Path $installPath "python.exe"))
+            }
+        }
+    }
+    return [string[]]$paths.ToArray()
+}
+
+function Get-EiaaxConvergenceManifest {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    $manifestPath = Join-Path $ScriptsDir $script:ConvergenceManifestFile
+    if (-not (Test-Path -LiteralPath $manifestPath)) {
+        Exit-EiaaxFailure -Message ("Missing convergence manifest: " + $manifestPath)
+    }
+    return (Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json)
+}
+
+function Get-EiaaxGitBranchName {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot
+    )
+
+    $result = Invoke-EiaaxGitCommand `
+        -ArgumentList @("rev-parse", "--abbrev-ref", "HEAD") `
+        -WorkingDirectory $WorktreeRoot `
+        -AllowNonZeroExit
+    if ($result.ExitCode -ne 0) {
+        return $null
+    }
+    return $result.Output.Trim()
+}
+
+function Get-EiaaxGitShortSha {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot
+    )
+
+    $result = Invoke-EiaaxGitCommand `
+        -ArgumentList @("rev-parse", "--short", "HEAD") `
+        -WorkingDirectory $WorktreeRoot `
+        -AllowNonZeroExit
+    if ($result.ExitCode -ne 0) {
+        return $null
+    }
+    return $result.Output.Trim()
+}
+
+function Confirm-EiaaxConvergenceRepository {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    $manifest = Get-EiaaxConvergenceManifest -ScriptsDir $ScriptsDir
+    $branch = Get-EiaaxGitBranchName -WorktreeRoot $WorktreeRoot
+    $sha = Get-EiaaxGitShortSha -WorktreeRoot $WorktreeRoot
+
+    if ([string]::IsNullOrWhiteSpace($branch)) {
+        Exit-EiaaxFailure -Message "Cannot resolve git branch for convergence validation."
+    }
+    if ($branch -ne $manifest.branch) {
+        Exit-EiaaxFailure -Message ("Wrong git branch. Expected " + $manifest.branch + " but found " + $branch + ".")
+    }
+
+    if ([string]::IsNullOrWhiteSpace($sha)) {
+        Exit-EiaaxFailure -Message "Cannot resolve git SHA for convergence validation."
+    }
+
+    Write-Host ("Repository OK: branch=" + $branch + " sha=" + $sha)
+    return [ordered]@{
+        Manifest = $manifest
+        Branch   = $branch
+        Sha      = $sha
+    }
+}
+
+function Test-EiaaxVenvIntegrity {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$VenvPath
+    )
+
+    $result = [ordered]@{
+        Valid  = $false
+        Reason = $null
+    }
+
+    if (-not (Test-Path -LiteralPath $VenvPath)) {
+        $result.Reason = "venv directory missing"
+        return $result
+    }
+
+    $venvPython = Get-EiaaxVenvPythonPathForDirectory -VenvPath $VenvPath
+    if ([string]::IsNullOrWhiteSpace($venvPython)) {
+        $result.Reason = "venv python missing (Scripts\python.exe or bin/python)"
+        return $result
+    }
+
+    $pyvenvCfg = Join-Path $VenvPath "pyvenv.cfg"
+    if (-not (Test-Path -LiteralPath $pyvenvCfg)) {
+        $result.Reason = "pyvenv.cfg missing"
+        return $result
+    }
+
+    $probe = Test-EiaaxPythonRuntimeCandidate -PythonExe $venvPython
+    if (-not $probe.Executable) {
+        $result.Reason = "venv python not executable: " + $probe.Error
+        return $result
+    }
+
+    $result.Valid = $true
+    return $result
+}
+
+function Remove-EiaaxDamagedVenv {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$VenvPath,
+        [Parameter(Mandatory = $true)]
+        [string]$Reason,
+        [string]$LogFile = $null
+    )
+
+    $message = "Removing damaged venv at " + $VenvPath + " (" + $Reason + ")"
+    Write-Host $message
+    if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
+        Write-EiaaxLogLine -LogFile $LogFile -Message $message
+    }
+    Remove-Item -LiteralPath $VenvPath -Recurse -Force -ErrorAction Stop
+}
+
+function Invoke-EiaaxDemoStopForWorktree {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    if (-not (Test-Path -LiteralPath $WorktreeRoot)) {
+        return
+    }
+
+    $stopScript = Join-Path $ScriptsDir "detener_demo_eiaax.ps1"
+    if (-not (Test-Path -LiteralPath $stopScript)) {
+        return
+    }
+
+    $previousWorktree = $env:EIAAX_WORKTREE
+    try {
+        $env:EIAAX_WORKTREE = $WorktreeRoot
+        Write-Host ("Stopping EIAAX demo for worktree: " + $WorktreeRoot)
+        $stopExitCode = Invoke-EiaaxScriptInProcess -FilePath $stopScript
+        if ($stopExitCode -ne 0) {
+            Exit-EiaaxFailure -Message ("Failed to stop EIAAX demo for worktree: " + $WorktreeRoot)
+        }
+    }
+    finally {
+        if ($null -eq $previousWorktree) {
+            Remove-Item Env:EIAAX_WORKTREE -ErrorAction SilentlyContinue
+        }
+        else {
+            $env:EIAAX_WORKTREE = $previousWorktree
+        }
+    }
+}
+
+function Sync-EiaaxConvergenceRepository {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedBranch,
+        [string]$LogFile = $null
+    )
+
+    Write-Host ("Syncing repository: fetch/checkout/pull --ff-only " + $ExpectedBranch)
+
+    Invoke-EiaaxGitCommand `
+        -ArgumentList @("fetch", "origin", $ExpectedBranch) `
+        -WorkingDirectory $WorktreeRoot `
+        -LogFile $LogFile `
+        -FailureMessage ("git fetch failed for branch " + $ExpectedBranch)
+
+    Invoke-EiaaxGitCommand `
+        -ArgumentList @("checkout", $ExpectedBranch) `
+        -WorkingDirectory $WorktreeRoot `
+        -LogFile $LogFile `
+        -FailureMessage ("git checkout failed for branch " + $ExpectedBranch)
+
+    Invoke-EiaaxGitCommand `
+        -ArgumentList @("pull", "--ff-only", "origin", $ExpectedBranch) `
+        -WorkingDirectory $WorktreeRoot `
+        -LogFile $LogFile `
+        -FailureMessage ("git pull --ff-only failed for branch " + $ExpectedBranch)
+}
+
+function Get-EiaaxPortOccupantInfo {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$Port,
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot
+    )
+
+    $listener = Get-EiaaxListenerPid -Port $Port
+    if ($null -eq $listener) {
+        return $null
+    }
+
+    $serviceName = if ($Port -eq $script:BackendPort) { "backend" } else { "frontend" }
+    $commandLine = Get-EiaaxProcessCommandLine -ProcessId $listener
+    $managed = Test-EiaaxManagedProcess -ProcessId $listener -WorktreeRoot $WorktreeRoot -ServiceName $serviceName
+    $sameWorktree = $false
+    if (-not [string]::IsNullOrWhiteSpace($commandLine)) {
+        $sameWorktree = $commandLine.ToUpperInvariant().Contains($WorktreeRoot.ToUpperInvariant())
+    }
+
+    return [ordered]@{
+        Port         = $Port
+        ProcessId    = $listener
+        CommandLine  = $commandLine
+        Managed      = $managed
+        SameWorktree = $sameWorktree
+        ServiceName  = $serviceName
+    }
+}
+
+function Clear-EiaaxPortsForConvergence {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    $referenceWorktree = $script:ReferenceDiscoveryWorktree
+    $foreign = New-Object System.Collections.Generic.List[string]
+    $stopWorktrees = New-Object System.Collections.Generic.List[string]
+    $seenStop = @{}
+
+    $queueStop = {
+        param([string]$TargetWorktree)
+        if ([string]::IsNullOrWhiteSpace($TargetWorktree)) {
+            return
+        }
+        if (-not (Test-Path -LiteralPath $TargetWorktree)) {
+            return
+        }
+        $key = $TargetWorktree.ToUpperInvariant()
+        if ($seenStop.ContainsKey($key)) {
+            return
+        }
+        $seenStop[$key] = $true
+        [void]$stopWorktrees.Add($TargetWorktree)
+    }
+
+    foreach ($port in @($script:BackendPort, $script:FrontendPort)) {
+        $info = Get-EiaaxPortOccupantInfo -Port $port -WorktreeRoot $WorktreeRoot
+        if ($null -eq $info) {
+            Write-Host ("Port " + $port + ": libre.")
+            continue
+        }
+
+        Write-Host ("Port " + $port + " ocupado por PID " + $info.ProcessId)
+        if (-not [string]::IsNullOrWhiteSpace($info.CommandLine)) {
+            Write-Host ("  CMD: " + $info.CommandLine)
+        }
+
+        if (-not $info.Managed) {
+            [void]$foreign.Add("Port " + $port + " used by non-EIAAX process PID " + $info.ProcessId + ".")
+            continue
+        }
+
+        $normalizedCommand = $info.CommandLine.ToUpperInvariant()
+        $convergenceKey = $WorktreeRoot.ToUpperInvariant()
+        $referenceKey = $referenceWorktree.ToUpperInvariant()
+
+        if ($normalizedCommand.Contains($convergenceKey)) {
+            Write-Host ("  -> proceso EIAAX del worktree convergencia; se detendra.")
+            & $queueStop $WorktreeRoot
+            continue
+        }
+
+        if ($normalizedCommand.Contains($referenceKey)) {
+            Write-Host ("  -> proceso EIAAX del entorno INTEGRADO; se detendra via script oficial.")
+            & $queueStop $referenceWorktree
+            continue
+        }
+
+        [void]$foreign.Add("Port " + $port + " used by EIAAX from unsupported worktree (PID " + $info.ProcessId + ").")
+    }
+
+    if ($foreign.Count -gt 0) {
+        Exit-EiaaxFailure -Message ("Cannot start convergence candidate safely: " + ($foreign -join " "))
+    }
+
+    foreach ($target in $stopWorktrees) {
+        Invoke-EiaaxDemoStopForWorktree -WorktreeRoot $target -ScriptsDir $ScriptsDir
+    }
+
+    foreach ($port in @($script:BackendPort, $script:FrontendPort)) {
+        $remaining = Get-EiaaxListenerPid -Port $port
+        if ($null -ne $remaining) {
+            Exit-EiaaxFailure -Message ("Port " + $port + " still in use by PID " + $remaining + " after stop.")
+        }
+    }
+}
+
+function Confirm-EiaaxStartedProcessWorktree {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorktreeRoot,
+        [int]$BackendPort = $script:BackendPort,
+        [int]$FrontendPort = $script:FrontendPort
+    )
+
+    foreach ($pair in @(
+            @{ Port = $BackendPort; Service = "backend" },
+            @{ Port = $FrontendPort; Service = "frontend" }
+        )) {
+        $listener = Get-EiaaxListenerPid -Port $pair.Port
+        if ($null -eq $listener) {
+            Exit-EiaaxFailure -Message ($pair.Service + " port " + $pair.Port + " has no listener after start.")
+        }
+
+        if (-not (Test-EiaaxManagedProcess -ProcessId $listener -WorktreeRoot $WorktreeRoot -ServiceName $pair.Service)) {
+            $commandLine = Get-EiaaxProcessCommandLine -ProcessId $listener
+            Exit-EiaaxFailure -Message ($pair.Service + " PID " + $listener + " is not owned by worktree " + $WorktreeRoot + ". CMD=" + $commandLine)
+        }
+
+        $commandLine = Get-EiaaxProcessCommandLine -ProcessId $listener
+        Write-Host ($pair.Service + " ownership PASS (PID " + $listener + ")")
+        if (-not [string]::IsNullOrWhiteSpace($commandLine)) {
+            Write-Host ("  CMD: " + $commandLine)
+        }
+    }
+
+    return $true
+}
+
+function Write-EiaaxRuntimeIdentityState {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$StateDir,
+        [Parameter(Mandatory = $true)]
+        [string]$GitSha,
+        [Parameter(Mandatory = $true)]
+        [string]$DemoProfile,
+        [Parameter(Mandatory = $true)]
+        [string]$RuntimeMarker
+    )
+
+    Write-EiaaxStateValue -StateDir $StateDir -Name "runtime_git_sha" -Value $GitSha
+    Write-EiaaxStateValue -StateDir $StateDir -Name "runtime_demo_profile" -Value $DemoProfile
+    Write-EiaaxStateValue -StateDir $StateDir -Name "runtime_marker" -Value $RuntimeMarker
+}
+
+function Get-EiaaxBackendRuntimeEnvironment {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$DatabaseUrl,
+        [Parameter(Mandatory = $true)]
+        [string]$StateDir
+    )
+
+    $envMap = @{ DATABASE_URL = $DatabaseUrl }
+    foreach ($pair in @(
+            @{ Name = "runtime_git_sha"; Env = "EIAAX_GIT_SHA" },
+            @{ Name = "runtime_demo_profile"; Env = "EIAAX_DEMO_PROFILE" },
+            @{ Name = "runtime_marker"; Env = "EIAAX_RUNTIME_MARKER" }
+        )) {
+        $value = Get-EiaaxStateValue -StateDir $StateDir -Name $pair.Name
+        if (-not [string]::IsNullOrWhiteSpace($value)) {
+            $envMap[$pair.Env] = $value
+        }
+    }
+    return $envMap
+}
+
+function Invoke-EiaaxHealthJson {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$Port,
+        [string]$Path = "/health"
+    )
+
+    $uri = "http://127.0.0.1:" + $Port + $Path
+    try {
+        $response = Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 10
+        return [ordered]@{
+            StatusCode = [int]$response.StatusCode
+            Body       = $response.Content
+        }
+    }
+    catch {
+        return [ordered]@{
+            StatusCode = 0
+            Body       = $_.Exception.Message
+        }
+    }
+}
+
+function Confirm-EiaaxRuntimeIdentity {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedGitSha,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedAlembicHead,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedDemoProfile,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedRuntimeMarker,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedDemoDbName,
+        [int]$BackendPort = $script:BackendPort,
+        [int]$FrontendPort = $script:FrontendPort
+    )
+
+    $backend = Invoke-EiaaxHealthJson -Port $BackendPort -Path "/health"
+    if ($backend.StatusCode -ne 200) {
+        Exit-EiaaxFailure -Message ("Backend /health failed. Status=" + $backend.StatusCode + " Body=" + $backend.Body)
+    }
+
+    $health = $backend.Body | ConvertFrom-Json
+    if ($health.status -ne "up") {
+        Exit-EiaaxFailure -Message ("Backend health status is not up: " + $health.status)
+    }
+    if (-not $health.runtime) {
+        Exit-EiaaxFailure -Message "Backend /health missing runtime identity block."
+    }
+
+    $runtime = $health.runtime
+    if ($runtime.git_sha -ne $ExpectedGitSha) {
+        Exit-EiaaxFailure -Message ("Runtime git_sha mismatch. Expected " + $ExpectedGitSha + " got " + $runtime.git_sha)
+    }
+    if ($runtime.demo_profile -ne $ExpectedDemoProfile) {
+        Exit-EiaaxFailure -Message ("Runtime demo_profile mismatch. Expected " + $ExpectedDemoProfile + " got " + $runtime.demo_profile)
+    }
+    if ($runtime.runtime_marker -ne $ExpectedRuntimeMarker) {
+        Exit-EiaaxFailure -Message ("Runtime marker mismatch. Expected " + $ExpectedRuntimeMarker + " got " + $runtime.runtime_marker)
+    }
+    if ($runtime.alembic_current -ne $ExpectedAlembicHead) {
+        Exit-EiaaxFailure -Message ("Alembic current mismatch. Expected " + $ExpectedAlembicHead + " got " + $runtime.alembic_current)
+    }
+    if ($runtime.demo_db_name -ne $ExpectedDemoDbName) {
+        Exit-EiaaxFailure -Message ("Demo DB name mismatch. Expected " + $ExpectedDemoDbName + " got " + $runtime.demo_db_name)
+    }
+
+    $proxy = Invoke-EiaaxHealthJson -Port $FrontendPort -Path "/health"
+    if ($proxy.StatusCode -ne 200) {
+        Exit-EiaaxFailure -Message ("Frontend proxy /health failed. Status=" + $proxy.StatusCode)
+    }
+    $proxyHealth = $proxy.Body | ConvertFrom-Json
+    if (-not $proxyHealth.runtime) {
+        Exit-EiaaxFailure -Message "Frontend proxy /health missing runtime identity."
+    }
+    if ($proxyHealth.runtime.git_sha -ne $ExpectedGitSha) {
+        Exit-EiaaxFailure -Message "Frontend proxy points to a different backend instance."
+    }
+
+    $frontend = Invoke-EiaaxHealthJson -Port $FrontendPort -Path "/"
+    if ($frontend.StatusCode -ne 200) {
+        Exit-EiaaxFailure -Message ("Frontend root failed. Status=" + $frontend.StatusCode)
+    }
+
+    Write-Host "Runtime identity PASS (backend + frontend proxy)."
+    return $true
 }
 
 function Invoke-EiaaxPythonVersionProbe {
@@ -457,19 +1748,10 @@ function Invoke-EiaaxPythonVersionProbe {
         [string]$PythonExe
     )
 
-    $previousPreference = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    try {
-        $output = & $PythonExe -V 2>&1
-        $exitCode = $LASTEXITCODE
-        $text = ($output | Out-String).Trim()
-        return [ordered]@{
-            ExitCode = $exitCode
-            Text     = $text
-        }
-    }
-    finally {
-        $ErrorActionPreference = $previousPreference
+    $result = Invoke-EiaaxExternalCommand -FilePath $PythonExe -ArgumentList @("-V")
+    return [ordered]@{
+        ExitCode = $result.ExitCode
+        Text     = $result.Output.Trim()
     }
 }
 
@@ -518,118 +1800,52 @@ function Test-EiaaxPythonVenvCapability {
     }
 
     $probeVenv = Join-Path $ProbeDirectory ("probe-venv-" + [Guid]::NewGuid().ToString("N"))
-    $previousPreference = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
     try {
-        & $PythonExe -m venv $probeVenv 2>&1 | Out-Null
-        if ($LASTEXITCODE -ne 0) {
+        $result = Invoke-EiaaxExternalCommand -FilePath $PythonExe -ArgumentList @("-m", "venv", $probeVenv)
+        if ($result.ExitCode -ne 0) {
             return "venv probe failed for " + $PythonExe
         }
 
-        $probePython = Join-Path $probeVenv "Scripts\python.exe"
-        if (-not (Test-Path -LiteralPath $probePython)) {
-            return "venv probe created no Scripts\python.exe"
+        $probePython = Get-EiaaxVenvPythonPathForDirectory -VenvPath $probeVenv
+        if ([string]::IsNullOrWhiteSpace($probePython)) {
+            return "venv probe created no python interpreter"
         }
 
         return $null
     }
     finally {
-        $ErrorActionPreference = $previousPreference
         if (Test-Path -LiteralPath $probeVenv) {
             Remove-Item -LiteralPath $probeVenv -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
 }
 
-function Find-EiaaxPython {
-    param(
-        [string]$LogFile = $null,
-        [string]$WorktreeRoot = $null
-    )
-
-    if (-not [string]::IsNullOrWhiteSpace($env:EIAAX_PYTHON)) {
-        $explicitPath = Get-EiaaxResolvedPythonPath -Path $env:EIAAX_PYTHON
-        if ($null -eq $explicitPath) {
-            Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: EIAAX_PYTHON is not a valid python executable: " + $env:EIAAX_PYTHON)
-        }
-
-        $explicitProbe = Test-EiaaxPythonRuntimeCandidate -PythonExe $explicitPath
-        if ($explicitProbe.Executable) {
-            $selectedMessage = "Selected Python (EIAAX_PYTHON): " + $explicitPath + " (" + $explicitProbe.Version + ")"
-            Write-Host $selectedMessage
-            if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
-                Write-EiaaxLogLine -LogFile $LogFile -Message $selectedMessage
-            }
-            return $explicitPath
-        }
-
-        Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: EIAAX_PYTHON failed python -V: " + $env:EIAAX_PYTHON + " -> " + $explicitProbe.Error)
-    }
-
-    if (-not [string]::IsNullOrWhiteSpace($WorktreeRoot)) {
-        $venvPython = Join-Path (Join-Path $WorktreeRoot $script:VenvDirName) "Scripts\python.exe"
-        $venvResolved = Get-EiaaxResolvedPythonPath -Path $venvPython
-        if ($null -ne $venvResolved) {
-            $venvProbe = Test-EiaaxPythonRuntimeCandidate -PythonExe $venvResolved
-            if ($venvProbe.Executable) {
-                $selectedMessage = "Selected Python (existing venv): " + $venvResolved + " (" + $venvProbe.Version + ")"
-                Write-Host $selectedMessage
-                if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
-                    Write-EiaaxLogLine -LogFile $LogFile -Message $selectedMessage
-                }
-                return $venvResolved
-            }
-        }
-    }
-
-    $candidates = @(Get-EiaaxPythonDiscoveryCandidates)
-    if (Get-EiaaxCollectionCount $candidates -eq 0) {
-        Exit-EiaaxFailure -Message "PYTHON NOT FOUND: no python.exe candidates detected on this machine."
-    }
-
-    $failures = @()
-    foreach ($candidate in $candidates) {
-        $message = "Checking Python candidate: " + $candidate
-        Write-Host $message
-        if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
-            Write-EiaaxLogLine -LogFile $LogFile -Message $message
-        }
-
-        $probe = Test-EiaaxPythonRuntimeCandidate -PythonExe $candidate
-        if (-not $probe.Executable) {
-            $failures += ($candidate + " -> " + $probe.Error)
-            continue
-        }
-
-        $selectedMessage = "Selected Python: " + $candidate + " (" + $probe.Version + ")"
-        Write-Host $selectedMessage
-        if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
-            Write-EiaaxLogLine -LogFile $LogFile -Message $selectedMessage
-        }
-        return $candidate
-    }
-
-    $detail = ($failures -join "; ")
-    Exit-EiaaxFailure -Message ("PYTHON NOT FOUND: candidates were detected but none executed successfully. " + $detail)
-}
-
 function Confirm-EiaaxProductionPrerequisites {
     param(
         [Parameter(Mandatory = $true)]
         [string]$WorktreeRoot,
-        [string]$LogFile = $null
+        [string]$LogFile = $null,
+        [string]$ResolvedPython = $null,
+        [switch]$SkipPythonCheck
     )
 
     Write-Host "Checking production prerequisites..."
     Test-EiaaxWorktree -WorktreeRoot $WorktreeRoot
 
-    $python = Find-EiaaxPython -LogFile $LogFile -WorktreeRoot $WorktreeRoot
-    if ([string]::IsNullOrWhiteSpace($python)) {
-        Exit-EiaaxFailure -Message "PYTHON NOT FOUND during production prerequisite check."
-    }
+    if (-not $SkipPythonCheck) {
+        $python = if (-not [string]::IsNullOrWhiteSpace($ResolvedPython)) {
+            $ResolvedPython
+        }
+        else {
+            Resolve-EiaaxPython -LogFile $LogFile -WorktreeRoot $WorktreeRoot
+        }
+        if ([string]::IsNullOrWhiteSpace($python)) {
+            Exit-EiaaxFailure -Message "PYTHON NOT FOUND during production prerequisite check."
+        }
 
-    $versionLine = Get-EiaaxPythonVersionLine -PythonExe $python
-    Write-Host ("Production Python OK: " + $python + " (" + $versionLine + ")")
+        $versionLine = Get-EiaaxPythonVersionLine -PythonExe $python
+        Write-Host ("Production Python OK: " + $python + " (" + $versionLine + ")")
+    }
 
     $npm = Get-Command npm -ErrorAction SilentlyContinue
     if ($null -eq $npm) {
@@ -638,7 +1854,8 @@ function Confirm-EiaaxProductionPrerequisites {
     Write-Host ("Production npm OK: " + $npm.Source)
 
     if (-not [string]::IsNullOrWhiteSpace($LogFile)) {
-        Write-EiaaxLogLine -LogFile $LogFile -Message ("Production prerequisites OK. Python=" + $python)
+        $pythonNote = if ($SkipPythonCheck) { "skipped" } else { $python }
+        Write-EiaaxLogLine -LogFile $LogFile -Message ("Production prerequisites OK. Python=" + $pythonNote)
     }
 }
 
@@ -673,8 +1890,8 @@ function Get-EiaaxVenvPython {
     )
 
     $paths = Get-EiaaxPaths -WorktreeRoot $WorktreeRoot
-    $venvPython = Join-Path $paths.Venv "Scripts\python.exe"
-    if (-not (Test-Path -LiteralPath $venvPython)) {
+    $venvPython = Get-EiaaxVenvPythonPathForDirectory -VenvPath $paths.Venv
+    if ([string]::IsNullOrWhiteSpace($venvPython)) {
         Exit-EiaaxFailure -Message "Virtualenv missing. Run scripts\windows\preparar_demo_eiaax.ps1 first."
     }
     return $venvPython
@@ -967,6 +2184,44 @@ function Test-EiaaxManagedProcess {
     return $false
 }
 
+function Build-EiaaxManagedProcessWrapperContent {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+        [Parameter(Mandatory = $true)]
+        [string[]]$ArgumentList,
+        [Parameter(Mandatory = $true)]
+        [string]$WorkingDirectory,
+        [Parameter(Mandatory = $true)]
+        [string]$LogFile,
+        [Parameter(Mandatory = $true)]
+        [string]$WrapperName,
+        [hashtable]$Environment = @{}
+    )
+
+    $lines = New-Object System.Collections.Generic.List[string]
+    [void]$lines.Add("@echo off")
+    foreach ($key in $Environment.Keys) {
+        [void]$lines.Add("set " + $key + "=" + $Environment[$key])
+    }
+    [void]$lines.Add("cd /d " + (Get-EiaaxBatchQuotedArgument -Value $WorkingDirectory))
+
+    $commandParts = New-Object System.Collections.Generic.List[string]
+    $executableLower = $FilePath.ToLowerInvariant()
+    if ($executableLower.EndsWith(".cmd") -or $executableLower.EndsWith(".bat")) {
+        [void]$commandParts.Add("call")
+    }
+    [void]$commandParts.Add((Get-EiaaxBatchQuotedArgument -Value $FilePath))
+    foreach ($arg in $ArgumentList) {
+        [void]$commandParts.Add((Get-EiaaxBatchQuotedArgument -Value ([string]$arg)))
+    }
+    $command = ($commandParts -join " ")
+    $redirect = " >> " + (Get-EiaaxBatchQuotedArgument -Value $LogFile) + " 2>>&1"
+    [void]$lines.Add($command + $redirect)
+    [void]$lines.Add("echo [EIAAX] EXIT_CODE=%ERRORLEVEL%>> " + (Get-EiaaxBatchQuotedArgument -Value $LogFile))
+    return ,$lines.ToArray()
+}
+
 function Start-EiaaxManagedProcess {
     param(
         [Parameter(Mandatory = $true)]
@@ -985,29 +2240,21 @@ function Start-EiaaxManagedProcess {
     )
 
     $wrapperBat = Join-Path $StateDir ($WrapperName + ".bat")
-    $lines = New-Object System.Collections.Generic.List[string]
-    [void]$lines.Add("@echo off")
-    foreach ($key in $Environment.Keys) {
-        [void]$lines.Add("set " + $key + "=" + $Environment[$key])
-    }
-    [void]$lines.Add("cd /d " + (Get-EiaaxBatchQuotedArgument -Value $WorkingDirectory))
+    $lines = Build-EiaaxManagedProcessWrapperContent `
+        -FilePath $FilePath `
+        -ArgumentList $ArgumentList `
+        -WorkingDirectory $WorkingDirectory `
+        -LogFile $LogFile `
+        -WrapperName $WrapperName `
+        -Environment $Environment
 
-    $commandParts = New-Object System.Collections.Generic.List[string]
-    $executableLower = $FilePath.ToLowerInvariant()
-    if ($executableLower.EndsWith(".cmd") -or $executableLower.EndsWith(".bat")) {
-        [void]$commandParts.Add("call")
-    }
-    [void]$commandParts.Add((Get-EiaaxBatchQuotedArgument -Value $FilePath))
-    foreach ($arg in $ArgumentList) {
-        [void]$commandParts.Add((Get-EiaaxBatchQuotedArgument -Value ([string]$arg)))
-    }
-    $command = ($commandParts -join " ")
-    [void]$lines.Add($command + " >> " + (Get-EiaaxBatchQuotedArgument -Value $LogFile) + " 2>>&1")
-    [void]$lines.Add("echo [EIAAX] EXIT_CODE=%ERRORLEVEL%>> " + (Get-EiaaxBatchQuotedArgument -Value $LogFile))
+    [System.IO.File]::WriteAllLines($wrapperBat, $lines)
 
-    [System.IO.File]::WriteAllLines($wrapperBat, $lines.ToArray())
-
-    return Start-Process -FilePath $wrapperBat -WorkingDirectory $WorkingDirectory -PassThru -WindowStyle Hidden
+    $launcher = Start-Process -FilePath $wrapperBat -WorkingDirectory $WorkingDirectory -PassThru -WindowStyle Hidden
+    if ($null -eq $launcher) {
+        Exit-EiaaxFailure -Message ("Failed to launch managed process wrapper: " + $WrapperName)
+    }
+    return $launcher
 }
 
 function Wait-EiaaxListenerPid {
@@ -1177,6 +2424,45 @@ function Confirm-EiaaxAlembicState {
     Write-Host ("Alembic current OK: " + $currentRevision)
 }
 
+function Test-EiaaxScriptUtf8Bom {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    return ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)
+}
+
+function Get-EiaaxParserValidationFiles {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    return @(Get-ChildItem -LiteralPath $ScriptsDir -Filter "*.ps1" |
+        Where-Object { $_.Name -ne "validate_ps_parse.ps1" } |
+        Sort-Object Name)
+}
+
+function Ensure-EiaaxWindowsScriptsUtf8Bom {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptsDir
+    )
+
+    $updated = New-Object System.Collections.Generic.List[string]
+    foreach ($file in (Get-EiaaxParserValidationFiles -ScriptsDir $ScriptsDir)) {
+        if (Test-EiaaxScriptUtf8Bom -Path $file.FullName) {
+            continue
+        }
+        $text = [System.IO.File]::ReadAllText($file.FullName, [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText($file.FullName, $text, [System.Text.UTF8Encoding]::new($true))
+        [void]$updated.Add($file.Name)
+    }
+    return @($updated)
+}
+
 function Get-EiaaxWindowsPowerShellExecutable {
     if (-not [string]::IsNullOrWhiteSpace($env:WINDIR)) {
         $windowsPowerShell = Join-Path $env:WINDIR "System32\WindowsPowerShell\v1.0\powershell.exe"
@@ -1202,11 +2488,63 @@ function Invoke-EiaaxPowerShellFile {
     param(
         [Parameter(Mandatory = $true)]
         [string]$FilePath,
-        [string[]]$ArgumentList = @()
+        [string[]]$ArgumentList = @(),
+        [int]$TimeoutSec = 0
     )
 
     $shell = Get-EiaaxWindowsPowerShellExecutable
-    & $shell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $FilePath @ArgumentList
+    $argumentList = @("-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", $FilePath) + $ArgumentList
+    $stdoutFile = [System.IO.Path]::GetTempFileName()
+    $stderrFile = [System.IO.Path]::GetTempFileName()
+    try {
+        $process = Start-Process `
+            -FilePath $shell `
+            -ArgumentList $argumentList `
+            -PassThru `
+            -NoNewWindow `
+            -RedirectStandardOutput $stdoutFile `
+            -RedirectStandardError $stderrFile
+        if ($null -eq $process) {
+            Exit-EiaaxFailure -Message ("Failed to start PowerShell process for: " + $FilePath)
+        }
+
+        $waitMs = if ($TimeoutSec -gt 0) { $TimeoutSec * 1000 } else { [int]::MaxValue }
+        $completed = $process.WaitForExit($waitMs)
+        if (-not $completed) {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            return 124
+        }
+
+        if (Test-Path -LiteralPath $stdoutFile) {
+            $stdout = Get-Content -LiteralPath $stdoutFile -Raw -ErrorAction SilentlyContinue
+            if (-not [string]::IsNullOrWhiteSpace($stdout)) {
+                Write-Host $stdout.TrimEnd()
+            }
+        }
+        if (Test-Path -LiteralPath $stderrFile) {
+            $stderr = Get-Content -LiteralPath $stderrFile -Raw -ErrorAction SilentlyContinue
+            if (-not [string]::IsNullOrWhiteSpace($stderr)) {
+                Write-Host $stderr.TrimEnd()
+            }
+        }
+
+        return [int]$process.ExitCode
+    }
+    finally {
+        Remove-Item -LiteralPath $stdoutFile -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $stderrFile -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Invoke-EiaaxScriptInProcess {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+        [string[]]$ArgumentList = @()
+    )
+
+    & $FilePath @ArgumentList
+    return [int]$LASTEXITCODE
 }
 
 function Invoke-EiaaxPowerShellParserValidation {
@@ -1220,8 +2558,10 @@ function Invoke-EiaaxPowerShellParserValidation {
         Exit-EiaaxFailure -Message "Missing validate_ps_parse.ps1"
     }
 
-    Invoke-EiaaxPowerShellFile -FilePath $validator
-    if ($LASTEXITCODE -ne 0) {
-        Exit-EiaaxFailure -Message "PowerShell parser validation failed."
+    $shell = Get-EiaaxWindowsPowerShellExecutable
+    Write-Host ("Parser shell: " + $shell)
+    $parseExitCode = Invoke-EiaaxPowerShellFile -FilePath $validator
+    if ($parseExitCode -ne 0) {
+        Exit-EiaaxFailure -Message ("PowerShell parser validation failed (exit " + $parseExitCode + "). See FAILED FILES above.")
     }
 }
