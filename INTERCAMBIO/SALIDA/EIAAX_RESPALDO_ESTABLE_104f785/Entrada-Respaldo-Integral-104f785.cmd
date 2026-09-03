@@ -2,6 +2,7 @@
 setlocal EnableExtensions
 set "REPO=D:\EMPLEADOS_IA_CONVERGENCIA"
 set "TAG=eiaax-tools-respaldo-104f785"
+set "TOOLS_REF=refs/eiaax/bootstrap-tools-104f785"
 set "TOOLS_GIT=INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785"
 set "TOOLS_DIR=INTERCAMBIO\SALIDA\EIAAX_RESPALDO_ESTABLE_104f785"
 set "ERRLOG=%TEMP%\eiaax_entrada_err_%RANDOM%.txt"
@@ -30,7 +31,7 @@ exit /b 0
 :stage_fetch
 echo [2/5] Fetch herramientas .........
 if exist "%ERRLOG%" del /f /q "%ERRLOG%" 2>nul
-git fetch origin tag %TAG% 1>nul 2>"%ERRLOG%"
+git fetch origin +refs/tags/%TAG%:%TOOLS_REF% 1>nul 2>"%ERRLOG%"
 if errorlevel 1 (
   echo FAIL
   echo CAUSA:
@@ -44,7 +45,7 @@ exit /b 0
 echo [3/5] Materializar launcher .......
 if exist "%ERRLOG%" del /f /q "%ERRLOG%" 2>nul
 if exist "%ZIP%" del /f /q "%ZIP%" 2>nul
-git archive --format=zip -o "%ZIP%" %TAG% %TOOLS_GIT%/Launch-Respaldo-Integral-104f785.ps1 2>"%ERRLOG%"
+git archive --format=zip -o "%ZIP%" %TOOLS_REF% %TOOLS_GIT%/Launch-Respaldo-Integral-104f785.ps1 2>"%ERRLOG%"
 if errorlevel 1 (
   echo FAIL
   echo CAUSA:

@@ -15,6 +15,8 @@ ENTRADA = TOOLS / "Entrada-Respaldo-Integral-104f785.cmd"
 COMANDO = (TOOLS / "COMANDO_WINDOWS_UNA_LINEA.txt").read_text(encoding="utf-8").strip()
 PROTECTED = "104f7850d7196d08d80fff9b4e7a8a83a5a1fa9a"
 TAG = "eiaax-tools-respaldo-104f785"
+TOOLS_REF = "refs/eiaax/bootstrap-tools-104f785"
+FETCH_SPEC = f"+refs/tags/{TAG}:{TOOLS_REF}"
 ENTRADA_GIT = (
     "INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/"
     "Entrada-Respaldo-Integral-104f785.cmd"
@@ -23,8 +25,8 @@ LAUNCH_GIT = (
     "INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/"
     "Launch-Respaldo-Integral-104f785.ps1"
 )
-ENTRADA_BLOB = "131a328bc00dfaae7e8b6ea9b75253d2906074bb"
-ENTRADA_SHA256 = "baca7c3261c7a546e99d740bf613639576bc70b7cce48eaad3bfc37e9ebd966c"
+ENTRADA_BLOB = "66866426094f8bd3d549689e2141ae5ccc6a9b39"
+ENTRADA_SHA256 = "2f977a6569ff642bd3c4decb4d297ac6bda611c44d15cf5d8210fdd07e5b5c53"
 
 
 def fail(msg: str) -> None:
@@ -103,11 +105,17 @@ def test_entrada_structure() -> None:
     for label in ("[1/5]", "[2/5]", "[3/5]", "[4/5]", "[5/5]", "RESPALDO NO REALIZADO"):
         if label not in text:
             fail(f"Entrada sin etiqueta {label}")
+    if "TOOLS_REF=refs/eiaax/bootstrap-tools-104f785" not in text:
+        fail("Entrada sin ref bootstrap dedicada")
+    if "git fetch origin tag" in text:
+        fail("Entrada no debe usar fetch tag (clobber)")
+    if "+refs/tags/%TAG%:%TOOLS_REF%" not in text:
+        fail("Entrada no usa fetch spec sin clobber")
     if re.search(r"git\s+.*2>nul", text):
         fail("Entrada no debe ocultar stderr de git con 2>nul")
     if "type \"%ERRLOG%\"" not in text:
         fail("Entrada no muestra causa en FAIL")
-    ok("Entrada.cmd: 5 etapas + causa en FAIL")
+    ok("Entrada.cmd: 5 etapas + fetch bootstrap sin clobber")
 
 
 def test_comando_structure() -> None:
@@ -117,6 +125,10 @@ def test_comando_structure() -> None:
             fail(f"COMANDO contiene patron prohibido: {token.strip()}")
     if "Set-Location D:\\EMPLEADOS_IA_CONVERGENCIA" not in COMANDO:
         fail("COMANDO no entra al repo")
+    if "refs/eiaax/bootstrap-tools-104f785" not in COMANDO:
+        fail("COMANDO no usa ref bootstrap")
+    if "git fetch origin tag" in COMANDO:
+        fail("COMANDO no debe usar fetch tag")
     if "Entrada-Respaldo-Integral-104f785.cmd" not in COMANDO:
         fail("COMANDO no materializa Entrada.cmd")
     if 'call "%TEMP%\\eiaax_in\\INTERCAMBIO\\SALIDA\\EIAAX_RESPALDO_ESTABLE_104f785\\Entrada-Respaldo-Integral-104f785.cmd"' not in COMANDO:
@@ -162,6 +174,46 @@ def test_materialize_entrada_hash() -> None:
         if mat_blob != ENTRADA_BLOB:
             fail(f"hash-object materializado: {mat_blob}")
     ok(f"Entrada.cmd byte-safe blob={ENTRADA_BLOB[:12]}...")
+
+
+def test_tag_conflict_no_clobber() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        repo = Path(tmp) / "repo"
+        subprocess.check_call(["git", "init", "-q", str(repo)])
+        subprocess.check_call(["git", "-C", str(repo), "remote", "add", "origin", str(REPO)])
+        subprocess.check_call(["git", "-C", str(repo), "fetch", "-q", "origin", "ae146e0"])
+        wrong = subprocess.check_output(
+            ["git", "-C", str(repo), "rev-parse", "ae146e0~1"], text=True
+        ).strip()
+        right = subprocess.check_output(
+            ["git", "-C", str(REPO), "rev-parse", TAG], text=True
+        ).strip()
+        subprocess.check_call(["git", "-C", str(repo), "tag", "-f", TAG, wrong])
+        proc = subprocess.run(
+            ["git", "-C", str(repo), "fetch", "origin", f"refs/tags/{TAG}:refs/tags/{TAG}"],
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode == 0:
+            fail("fetch tag deberia rechazar clobber")
+        proc2 = subprocess.run(
+            ["git", "-C", str(repo), "fetch", "origin", FETCH_SPEC],
+            capture_output=True,
+            text=True,
+        )
+        if proc2.returncode != 0:
+            fail(f"fetch bootstrap ref fallo: {proc2.stderr}")
+        local_tag = subprocess.check_output(
+            ["git", "-C", str(repo), "rev-parse", TAG], text=True
+        ).strip()
+        bootstrap = subprocess.check_output(
+            ["git", "-C", str(repo), "rev-parse", TOOLS_REF], text=True
+        ).strip()
+        if local_tag != wrong:
+            fail("tag local fue modificado")
+        if bootstrap != right:
+            fail(f"bootstrap ref incorrecto: {bootstrap} != {right}")
+    ok("conflicto tag: bootstrap ref sin tocar tag local")
 
 
 def test_ejecuta_cmd_real() -> None:
@@ -214,6 +266,7 @@ def main() -> int:
     test_entrada_structure()
     test_comando_structure()
     test_materialize_entrada_hash()
+    test_tag_conflict_no_clobber()
     test_ejecuta_cmd_real()
     test_cmd_chain_stops_on_fail()
     with tempfile.TemporaryDirectory() as tmp:

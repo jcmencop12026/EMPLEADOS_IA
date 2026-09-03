@@ -17,7 +17,9 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $ProtectedFullSha = '104f7850d7196d08d80fff9b4e7a8a83a5a1fa9a'
-$ToolsRef = 'eiaax-tools-respaldo-104f785'
+$ToolsTagName = 'eiaax-tools-respaldo-104f785'
+$ToolsRef = 'refs/eiaax/bootstrap-tools-104f785'
+$ToolsFetchSpec = "+refs/tags/${ToolsTagName}:${ToolsRef}"
 $ToolsPrefix = 'INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785'
 
 function Stop-Launcher([string]$Message) {
@@ -71,8 +73,12 @@ if ($headBefore -ne $ProtectedFullSha) {
     Stop-Launcher "HEAD debe ser $ProtectedFullSha (actual: $headBefore)"
 }
 
-$fetchCode = Invoke-GitCmd -WorkDir $RepoRoot -GitArgs @('fetch', 'origin', 'tag', $ToolsRef)
-if ($fetchCode -ne 0) { Stop-Launcher "fetch tag $ToolsRef falló (exit $fetchCode)" }
+$localTag = Get-GitCmdOutput -WorkDir $RepoRoot -GitArgs @('rev-parse', $ToolsTagName)
+if ($null -ne $localTag) {
+    Write-Host "[launcher] Tag local $ToolsTagName -> $localTag (no se modifica)"
+}
+$fetchCode = Invoke-GitCmd -WorkDir $RepoRoot -GitArgs @('fetch', 'origin', $ToolsFetchSpec)
+if ($fetchCode -ne 0) { Stop-Launcher "fetch remoto -> $ToolsRef falló (exit $fetchCode)" }
 
 $zipPath = Join-Path $env:TEMP ("eiaax_launch_{0}.zip" -f [guid]::NewGuid().ToString())
 $extractRoot = Join-Path $env:TEMP ("eiaax_launch_{0}" -f [guid]::NewGuid().ToString())

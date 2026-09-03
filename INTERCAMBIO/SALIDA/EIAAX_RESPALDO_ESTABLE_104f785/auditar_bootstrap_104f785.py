@@ -12,7 +12,8 @@ from pathlib import Path
 ROOT = Path("/workspace")
 REPO = ROOT
 PROTECTED = "104f7850d7196d08d80fff9b4e7a8a83a5a1fa9a"
-TOOLS_REF = "eiaax-tools-respaldo-104f785"
+TOOLS_TAG = "eiaax-tools-respaldo-104f785"
+TOOLS_REF = "refs/eiaax/bootstrap-tools-104f785"
 PREFIX = "INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785"
 FILES = [
     "Cerrar-Respaldo-Integral-104f785.ps1",
@@ -40,14 +41,21 @@ def main() -> int:
     subprocess.run(["git", "-C", str(REPO), "cat-file", "-t", PROTECTED], check=True, capture_output=True)
 
     tag_commit = subprocess.run(
-        ["git", "-C", str(REPO), "rev-parse", f"{TOOLS_REF}^{{commit}}"],
+        ["git", "-C", str(REPO), "rev-parse", f"{TOOLS_TAG}^{{commit}}"],
         capture_output=True,
         text=True,
     )
     if tag_commit.returncode != 0:
-        fail("tag herramientas no disponible localmente (ejecutar git fetch origin tag)")
+        fail("tag herramientas no disponible localmente")
 
-    ok(f"Tools ref {TOOLS_REF} -> {tag_commit.stdout.strip()}")
+    ok(f"Tools tag {TOOLS_TAG} -> {tag_commit.stdout.strip()}")
+
+    bootstrap_text = (ROOT / PREFIX / "Bootstrap-Ejecutar-Respaldo-104f785.ps1").read_text(encoding="utf-8")
+    if TOOLS_REF not in bootstrap_text:
+        fail("bootstrap sin ref dedicada refs/eiaax/bootstrap-tools-104f785")
+    if "fetch', 'origin', 'tag'" in bootstrap_text:
+        fail("bootstrap aun usa fetch tag (clobber)")
+    ok(f"Bootstrap usa ref bootstrap {TOOLS_REF}")
 
     with tempfile.TemporaryDirectory() as tmp:
         staging = Path(tmp) / "tools"
@@ -55,7 +63,7 @@ def main() -> int:
         for name in FILES:
             path = f"{PREFIX}/{name}"
             show = subprocess.run(
-                ["git", "-C", str(REPO), "show", f"{TOOLS_REF}:{path}"],
+                ["git", "-C", str(REPO), "show", f"{TOOLS_TAG}:{path}"],
                 capture_output=True,
             )
             if show.returncode != 0:
@@ -66,13 +74,13 @@ def main() -> int:
                 fail(f"archivo vacío: {name}")
         ok("Materialización git show sin checkout")
 
-    bootstrap = (ROOT / PREFIX / "Bootstrap-Ejecutar-Respaldo-104f785.ps1").read_text(encoding="utf-8")
+    bootstrap = bootstrap_text
     checks = [
         ("Protected SHA", PROTECTED in bootstrap),
-        ("ToolsRef", TOOLS_REF in bootstrap),
+        ("ToolsRef bootstrap", TOOLS_REF in bootstrap),
         ("sin checkout", "checkout" not in bootstrap.lower() or "sin checkout" in bootstrap.lower()),
         ("sin merge", "merge" not in bootstrap.lower()),
-        ("hash verify", "ExpectedHashes" in bootstrap),
+        ("hash verify", "ToolCatalog" in bootstrap),
         ("staging fuera producto", r"D:\RESPALDOS_EIAAX\_bootstrap_tools_104f785" in bootstrap),
         ("HEAD guard", "headBefore" in bootstrap and "headAfter" in bootstrap),
     ]

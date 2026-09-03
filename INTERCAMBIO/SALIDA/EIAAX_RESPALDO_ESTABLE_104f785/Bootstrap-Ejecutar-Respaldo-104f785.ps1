@@ -18,7 +18,9 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $ProtectedFullSha = '104f7850d7196d08d80fff9b4e7a8a83a5a1fa9a'
-$ToolsRef = 'eiaax-tools-respaldo-104f785'
+$ToolsTagName = 'eiaax-tools-respaldo-104f785'
+$ToolsRef = 'refs/eiaax/bootstrap-tools-104f785'
+$ToolsFetchSpec = "+refs/tags/${ToolsTagName}:${ToolsRef}"
 $ToolsPrefix = 'INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785'
 $ToolsStagingRoot = 'D:\RESPALDOS_EIAAX\_bootstrap_tools_104f785'
 
@@ -95,24 +97,23 @@ function Get-HeadSha {
     return $head
 }
 
-function Ensure-GitObject([string]$Ref) {
-    $null = Get-GitCmdOutput -WorkDir $RepoRoot -GitArgs @('rev-parse', $Ref)
-    if ($LASTEXITCODE -eq 0) { return $Ref }
-
-    Write-Step "Objeto Git $Ref no local; fetch desde origin..."
-    $fetchCode = Invoke-GitCmd -WorkDir $RepoRoot -GitArgs @('fetch', 'origin', 'tag', $ToolsRef)
-    if ($fetchCode -ne 0) {
-        $fetchCode = Invoke-GitCmd -WorkDir $RepoRoot -GitArgs @('fetch', 'origin', $ToolsRef, '--depth=1')
+function Ensure-GitObject {
+    $localTag = Get-GitCmdOutput -WorkDir $RepoRoot -GitArgs @('rev-parse', $ToolsTagName)
+    if ($null -ne $localTag) {
+        Write-Step "Tag local $ToolsTagName -> $localTag (no se modifica)"
     }
+
+    Write-Step "Fetch remoto -> $ToolsRef (sin tocar tag local)..."
+    $fetchCode = Invoke-GitCmd -WorkDir $RepoRoot -GitArgs @('fetch', 'origin', $ToolsFetchSpec)
     if ($fetchCode -ne 0) {
         Stop-Bootstrap "fetch de herramientas falló (exit $fetchCode)"
     }
 
-    $null = Get-GitCmdOutput -WorkDir $RepoRoot -GitArgs @('rev-parse', $Ref)
+    $null = Get-GitCmdOutput -WorkDir $RepoRoot -GitArgs @('rev-parse', $ToolsRef)
     if ($LASTEXITCODE -ne 0) {
-        Stop-Bootstrap "No se pudo recuperar ref de herramientas: $Ref"
+        Stop-Bootstrap "No se pudo recuperar ref de herramientas: $ToolsRef"
     }
-    return $Ref
+    return $ToolsRef
 }
 
 function Get-GitBlobId([string]$Ref, [string]$GitPath) {
@@ -206,7 +207,7 @@ try {
     }
     Write-Step "HEAD protegido verificado: $headBefore"
 
-    $toolsRefResolved = Ensure-GitObject -Ref $ToolsRef
+    $toolsRefResolved = Ensure-GitObject
     $toolsCommit = Get-GitCmdOutput -WorkDir $RepoRoot -GitArgs @('rev-parse', "$toolsRefResolved^{commit}")
     if ($null -eq $toolsCommit) { Stop-Bootstrap 'rev-parse commit herramientas falló' }
     Write-Step "Ref herramientas: $toolsRefResolved -> $toolsCommit"
