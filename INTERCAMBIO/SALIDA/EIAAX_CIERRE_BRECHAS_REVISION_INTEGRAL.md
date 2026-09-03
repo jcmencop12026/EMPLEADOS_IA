@@ -4,7 +4,7 @@
 **Rama:** `cursor/revision-integral-completa-85e4`  
 **PR:** #169  
 **Base:** `cursor/convergencia-comercial-v1-85e4`  
-**SHA:** *(actualizar tras commit — ver `git rev-parse --short HEAD`)*  
+**SHA:** `4b77c49`  
 **Estado:** Cierre P1 material V1 ejecutado — pendiente decisión ChatGPT (no comando al usuario)
 
 ---
