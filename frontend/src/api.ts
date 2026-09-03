@@ -1559,6 +1559,38 @@ export async function fetchPlannerMargen(): Promise<Record<string, unknown>> {
   return api<Record<string, unknown>>("/api/finops/planner/margen");
 }
 
+export type InteligenciaEconomicaResultado = {
+  beneficio_neto: number;
+  roi_pct: number | null;
+  payback_meses: number | null;
+  costo_valor_ratio: number | null;
+  nota_potencial?: string;
+};
+
+export type InteligenciaEscenarioComparacion = {
+  tipo: string;
+  personas: number;
+  costo_total: number;
+  ahorro_neto: number;
+  roi_pct: number | null;
+  capacidad_liberada_horas: number;
+};
+
+export async function fetchInteligenciaResultadoEconomico(periodDays = 30): Promise<InteligenciaEconomicaResultado> {
+  return api<InteligenciaEconomicaResultado>(`/api/inteligencia-economica/resultado-economico?period_days=${periodDays}`);
+}
+
+export async function compararEscenariosInteligencia(data: Record<string, unknown>): Promise<{
+  escenarios: InteligenciaEscenarioComparacion[];
+  comparacion: Record<string, unknown>;
+}> {
+  return api("/api/inteligencia-economica/escenarios/comparar", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function dimensionarInteligencia(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return api("/api/inteligencia-economica/dimensionar", { method: "POST", body: JSON.stringify(data) });
+}
+
 export type ValuationSummary = {
   has_valuation: boolean;
   opportunity_id: string;
