@@ -82,4 +82,3 @@ def _on_domain_event(event: EventMessage, db: Session) -> None:
 
 def register_employee_audit_event_handlers() -> None:
     subscribe(_on_domain_event)
-

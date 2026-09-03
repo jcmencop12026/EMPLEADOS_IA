@@ -51,4 +51,3 @@ def resolve_database_url_from_environ() -> str | None:
 def parse_database_password(database_url: str) -> str | None:
     """Round-trip de contraseña desde URL (para pruebas sin loguear el valor)."""
     return make_url(database_url).password
-
