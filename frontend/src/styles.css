@@ -2754,6 +2754,41 @@ tr.row-selected {
   padding: 2px 5px;
 }
 
+.cc-ciclo-chip--link {
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.cc-ciclo-chip--link:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+.cc-compact-chart-strip {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.valor-chart--compact .cc-subtitle {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.valor-chart--compact .impacto-bar-row {
+  font-size: 11px;
+}
+
+.cc-tablero-empresa .cc-tablero-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
 .cc-first-viewport {
   padding: 10px 12px;
 }

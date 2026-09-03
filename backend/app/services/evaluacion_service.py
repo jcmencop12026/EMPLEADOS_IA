@@ -848,6 +848,12 @@ def get_impacto_resumen(
         for ind in res_svc.list_indicadores(db, organization_id, expediente_id=exp.id):
             if vista_entidad and not ind.get("visible_entidad"):
                 continue
+            grafico_src = {
+                "valor_antes": ind["antes"],
+                "valor_proyectado": ind["proyectado"],
+                "valor_real": ind["real"],
+                "unidad": ind["unidad"],
+            }
             indicadores.append({
                 "id": ind["id"],
                 "nombre": ind["nombre"],
@@ -861,7 +867,7 @@ def get_impacto_resumen(
                 "unidad": ind["unidad"],
                 "fuente": ind["fuente"],
                 "indicador_id": ind["id"],
-                "grafico": None,
+                "grafico": _build_grafico_puntos(grafico_src),
             })
     except Exception:
         pass

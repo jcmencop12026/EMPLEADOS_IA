@@ -17,7 +17,6 @@ import {
 } from "../api";
 import { InformacionAdjuntosPanel } from "../components/evaluacion/InformacionAdjuntosPanel";
 import { CadenaAnaliticaPanel } from "../components/evaluacion/CadenaAnaliticaPanel";
-import { EiaaxTable } from "../components/EiaaxTable";
 import { EspacioExternoAdminPanel } from "../components/espacioExterno/EspacioExternoAdminPanel";
 import { AccionesExternasPanel } from "../components/evaluacion/AccionesExternasPanel";
 import { CabinaContratoPanel } from "../components/evaluacion/CabinaContratoPanel";
@@ -111,6 +110,11 @@ export function EvaluacionConsolePage() {
   useEffect(() => {
     fetchPiiaxStatus().then(setPiiax).catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (!evaluacionId) return;
+    fetchEvaluacionImpacto(evaluacionId).then(setImpacto).catch(() => undefined);
+  }, [evaluacionId]);
 
   useEffect(() => {
     if (!evaluacionId) return;
@@ -341,22 +345,30 @@ export function EvaluacionConsolePage() {
 
         {tab === "resultados" && (
           <section className="panel compact-panel">
-            <h2>Resultados</h2>
-            <p><Link to={`/resultados-inteligencia?expediente=${evaluacionId}`}>Abrir inteligencia de resultados</Link></p>
+            <h2>Resultados e indicadores</h2>
+            <p className="muted small">
+              Tablero Antes → Proyectado → Real. Las proyecciones no se presentan como resultados conseguidos.
+            </p>
+            <p><Link to={`/resultados-inteligencia?expediente_id=${evaluacionId}`}>Abrir inteligencia de resultados</Link></p>
             {impacto && ((impacto.indicadores as Record<string, unknown>[]) ?? []).length > 0 ? (
-              <EiaaxTable
-                columns={[
-                  { key: "nombre", label: "Indicador", getValue: (r) => String(r.nombre ?? ""), render: (r) => String(r.nombre ?? "—") },
-                  { key: "antes", label: "Antes", getValue: (r) => String(r.antes ?? ""), render: (r) => String(r.antes ?? "—") },
-                  { key: "proyectado", label: "Proyectado", getValue: (r) => String(r.proyectado ?? ""), render: (r) => String(r.proyectado ?? "—") },
-                  { key: "real", label: "Real", getValue: (r) => String(r.real ?? ""), render: (r) => String(r.real ?? "—") },
-                ]}
-                data={(impacto.indicadores as Record<string, unknown>[]) ?? []}
-                rowKey={(r) => String(r.id ?? r.nombre)}
-                prefsKey="cabina-resultados"
-                searchPlaceholder="Buscar indicador…"
-                emptyMessage="Sin resultados registrados"
-              />
+              <table className="data-table compact-table impacto-indicadores-table">
+                <thead>
+                  <tr><th>Indicador</th><th>Antes</th><th>Proyectado</th><th>Real</th><th>Evolución</th></tr>
+                </thead>
+                <tbody>
+                  {((impacto.indicadores as Record<string, unknown>[]) ?? []).map((ind) => (
+                    <ImpactoGrafico
+                      key={String(ind.id ?? ind.nombre)}
+                      nombre={String(ind.nombre ?? "—")}
+                      unidad={ind.unidad as string | null | undefined}
+                      grafico={ind.grafico as { puntos: Array<{ serie: string; valor: string; numerico: number | null; es_proyeccion: boolean }>; unidad?: string | null } | null | undefined}
+                      antes={ind.antes != null ? String(ind.antes) : null}
+                      proyectado={ind.proyectado != null ? String(ind.proyectado) : null}
+                      real={ind.real != null ? String(ind.real) : null}
+                    />
+                  ))}
+                </tbody>
+              </table>
             ) : (
               <p className="muted">Sin resultados medidos. Defina indicadores en la pestaña Valor.</p>
             )}

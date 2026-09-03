@@ -153,9 +153,30 @@ def list_operations(
     orden: str | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
+    expediente_id: str | None = None,
     limit: int = 100,
 ) -> list[dict[str, Any]]:
     query = db.query(WorkPlan).filter(WorkPlan.organization_id == organization_id)
+    if expediente_id:
+        from app.evaluacion_models import EvaluacionExpediente
+
+        exp = (
+            db.query(EvaluacionExpediente)
+            .filter(
+                EvaluacionExpediente.id == expediente_id,
+                EvaluacionExpediente.organization_id == organization_id,
+            )
+            .first()
+        )
+        if exp and exp.correlation_id:
+            query = query.filter(WorkPlan.correlation_id == exp.correlation_id)
+        else:
+            pattern = f"%{expediente_id}%"
+            query = query.filter(
+                (WorkPlan.objective.ilike(pattern))
+                | (WorkPlan.request.ilike(pattern))
+                | (WorkPlan.summary.ilike(pattern))
+            )
     if search:
         pattern = f"%{search}%"
         query = query.filter(

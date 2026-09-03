@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import type { CentroControlResumen } from "../../api";
 import { ValorComparacionChart } from "../charts/ValorComparacionChart";
-import { CICLO_ETAPAS } from "../../lib/cicloOperativo";
+import { CICLO_ETAPAS, cicloEtapaRuta } from "../../lib/cicloOperativo";
 import { CentroControlMasterAccess } from "./CentroControlMasterAccess";
 
 type Props = {
@@ -26,12 +26,12 @@ function ValorIndicador({ valor, disponible, estado }: { valor: unknown; disponi
 }
 
 const KPI_PRIORITY = new Set([
-  "empleados_activos",
-  "ejecuciones",
-  "aprobaciones_pendientes",
-  "atencion",
-  "valor_realizado",
-  "salud",
+  "employees_active",
+  "executions_running",
+  "approvals_pending",
+  "opportunities_open",
+  "realized_value",
+  "failed_executions",
 ]);
 
 export function CentroControlCockpit({ data, periodo, expedienteId, compact = false, isDemoExpediente = false }: Props) {
@@ -56,9 +56,14 @@ export function CentroControlCockpit({ data, periodo, expedienteId, compact = fa
         <span className="muted small cc-ciclo-label">Ciclo</span>
         <div className="cc-ciclo-scroll">
           {CICLO_ETAPAS.map((etapa, idx) => (
-            <span key={etapa} className="cc-ciclo-chip" title={`Etapa ${idx + 1}: ${etapa}`}>
+            <Link
+              key={etapa}
+              to={cicloEtapaRuta(etapa, { expedienteId, isDemo: isDemoExpediente })}
+              className="cc-ciclo-chip cc-ciclo-chip--link"
+              title={`Etapa ${idx + 1}: ${etapa}`}
+            >
               {etapa}
-            </span>
+            </Link>
           ))}
         </div>
         {expedienteId && (
@@ -126,6 +131,11 @@ export function CentroControlCockpit({ data, periodo, expedienteId, compact = fa
             </p>
           </div>
         </div>
+        {compact && valorChartPuntos.some((p) => p.valor != null) && (
+          <div className="cc-compact-chart-strip">
+            <ValorComparacionChart title="Valor consolidado" puntos={valorChartPuntos} unidad="COP" compact />
+          </div>
+        )}
       </section>
 
       {!compact && (

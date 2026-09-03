@@ -103,7 +103,7 @@ export function CentroControlPage() {
     );
   }
 
-  const secciones = data?.secciones?.length ? data.secciones : SECCIONES_DEFAULT;
+  const secciones = SECCIONES_DEFAULT;
   const valor = data?.valor_consolidado ?? data?.resumen_ejecutivo?.valor;
 
   return (

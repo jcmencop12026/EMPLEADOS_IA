@@ -180,6 +180,7 @@ export default function App() {
             <Route path="evaluaciones/:evaluacionId" element={<EvaluacionConsolePage />} />
             <Route path="empresas" element={<EmpresasProspectosPage />} />
             <Route path="ayuda/guia" element={<GuiaRapidaPage />} />
+            <Route path="instructivo" element={<GuiaRapidaPage />} />
             <Route path="empresa/:evaluacionId" element={<EvaluacionConsolePage />} />
           </Route>
           <Route element={<RequirePermission anyOf={["gobierno.confianza.view"]} />}>

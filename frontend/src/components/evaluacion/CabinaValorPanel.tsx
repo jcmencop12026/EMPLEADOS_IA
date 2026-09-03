@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchFinOpsDashboard, type FinOpsDashboard } from "../../api";
+import { ImpactoGrafico } from "./ImpactoGrafico";
 import { ImpactoIndicadorForm } from "./ImpactoIndicadorForm";
 
 type Props = {
@@ -70,22 +71,28 @@ export function CabinaValorPanel({ expedienteId, impacto, canManageIndicadores, 
             Sin indicadores registrados. Complete información y diagnóstico; EIAAX puede proponer indicadores desde hallazgos.
           </p>
         ) : (
-          <table className="data-table compact-table">
+          <table className="data-table compact-table impacto-indicadores-table">
             <thead>
-              <tr><th>Indicador</th><th>Antes</th><th>Proyectado</th><th>Real</th></tr>
+              <tr><th>Indicador</th><th>Antes</th><th>Proyectado</th><th>Real</th><th>Evolución</th></tr>
             </thead>
             <tbody>
               {indicadores.map((ind) => (
-                <tr key={String(ind.id ?? ind.nombre)}>
-                  <td>{String(ind.nombre ?? "—")}</td>
-                  <td>{String(ind.antes ?? "—")}</td>
-                  <td>{String(ind.proyectado ?? "—")}</td>
-                  <td>{String(ind.real ?? "—")}</td>
-                </tr>
+                <ImpactoGrafico
+                  key={String(ind.id ?? ind.nombre)}
+                  nombre={String(ind.nombre ?? "—")}
+                  unidad={ind.unidad as string | null | undefined}
+                  grafico={ind.grafico as { puntos: Array<{ serie: string; valor: string; numerico: number | null; es_proyeccion: boolean }>; unidad?: string | null } | null | undefined}
+                  antes={ind.antes != null ? String(ind.antes) : null}
+                  proyectado={ind.proyectado != null ? String(ind.proyectado) : null}
+                  real={ind.real != null ? String(ind.real) : null}
+                />
               ))}
             </tbody>
           </table>
         )}
+        <p className="muted small">
+          <Link to={`/resultados-inteligencia?expediente_id=${expedienteId}`}>Tablero completo de resultados</Link>
+        </p>
       </section>
     </div>
   );

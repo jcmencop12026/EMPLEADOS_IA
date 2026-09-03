@@ -7,6 +7,7 @@ import {
 } from "../../api";
 import { SiguienteAccionPanel } from "../evaluacion/SiguienteAccionPanel";
 import { CadenaAnaliticaPanel } from "../evaluacion/CadenaAnaliticaPanel";
+import { ImpactoGrafico } from "../evaluacion/ImpactoGrafico";
 import { CONFIANZA, ESTADO_EXPEDIENTE, label } from "../../lib/evaluacionLabels";
 
 type Props = {
@@ -134,6 +135,43 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
         <CadenaAnaliticaPanel expedienteId={evaluacionId} compact />
       </section>
 
+      {indicadores.length > 0 && (
+        <section className="panel compact-panel cc-tablero-empresa">
+          <div className="cc-tablero-head">
+            <h2 className="section-title">Tablero empresarial — indicadores</h2>
+            <Link to={`/evaluaciones/${evaluacionId}?tab=resultados`} className="btn small secondary">Profundizar</Link>
+          </div>
+          <p className="muted small">
+            Qué ocurrió → por qué importa → qué requiere atención. Proyectado nunca se presenta como real.
+          </p>
+          <table className="data-table compact-table impacto-indicadores-table">
+            <thead>
+              <tr><th>Indicador</th><th>Antes</th><th>Proyectado</th><th>Real</th><th>Evolución</th></tr>
+            </thead>
+            <tbody>
+              {indicadores.slice(0, 6).map((ind) => (
+                <ImpactoGrafico
+                  key={String(ind.id ?? ind.nombre)}
+                  nombre={String(ind.nombre ?? "—")}
+                  unidad={ind.unidad as string | null | undefined}
+                  grafico={ind.grafico as { puntos: Array<{ serie: string; valor: string; numerico: number | null; es_proyeccion: boolean }>; unidad?: string | null } | null | undefined}
+                  antes={ind.antes != null ? String(ind.antes) : ind.valor_antes != null ? String(ind.valor_antes) : null}
+                  proyectado={ind.proyectado != null ? String(ind.proyectado) : ind.valor_proyectado != null ? String(ind.valor_proyectado) : null}
+                  real={ind.real != null ? String(ind.real) : ind.valor_real != null ? String(ind.valor_real) : null}
+                />
+              ))}
+            </tbody>
+          </table>
+          <p className="cc-inline-links">
+            <Link to={`/evaluaciones/${evaluacionId}?tab=informes`}>Informes</Link>
+            {" · "}
+            <Link to={`/resultados-inteligencia?expediente_id=${evaluacionId}`}>Resultados</Link>
+            {" · "}
+            <Link to={`/evaluaciones/${evaluacionId}?tab=valor`}>Valoración</Link>
+          </p>
+        </section>
+      )}
+
       <div className="cc-grid-2">
         <section className="panel compact-panel">
           <SiguienteAccionPanel
@@ -159,27 +197,6 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
           </p>
         </section>
       </div>
-
-      {indicadores.length > 0 && (
-        <section className="panel compact-panel">
-          <h2 className="section-title">Valor — antes / proyectado / real</h2>
-          <table className="data-table compact-table">
-            <thead>
-              <tr><th>Indicador</th><th>Antes</th><th>Proyectado</th><th>Real</th></tr>
-            </thead>
-            <tbody>
-              {indicadores.slice(0, 6).map((ind) => (
-                <tr key={String(ind.id ?? ind.nombre)}>
-                  <td>{String(ind.nombre ?? "—")}</td>
-                  <td>{String(ind.valor_antes ?? "—")}</td>
-                  <td>{String(ind.valor_proyectado ?? "—")}</td>
-                  <td>{String(ind.valor_real ?? "—")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      )}
     </div>
   );
 }

@@ -68,7 +68,7 @@ export function CabinaInformesPanel({ expedienteId }: Props) {
         )}
         <div className="ops-actions">
           <Link className="btn primary small" to={`/presentacion/${expedienteId}`}>Ver / generar presentación</Link>
-          <Link className="btn secondary small" to={`/informes-impacto?expediente=${expedienteId}`}>Informes de impacto</Link>
+          <Link className="btn secondary small" to={`/resultados-inteligencia?expediente_id=${expedienteId}`}>Informes de impacto</Link>
           <Link className="btn secondary small" to="/comunicaciones">Centro de comunicaciones</Link>
           <Link className="btn secondary small" to="/demo/informes-periodicos">Informes periódicos</Link>
         </div>
@@ -88,7 +88,7 @@ export function CabinaInformesPanel({ expedienteId }: Props) {
                   <td>{String(inf.tipo ?? "—")}</td>
                   <td>{String(inf.version ?? "—")}</td>
                   <td>{inf.created_at ? new Date(inf.created_at).toLocaleDateString("es-CO") : "—"}</td>
-                  <td><Link to={`/informes-impacto/${inf.id}`}>Ver</Link></td>
+                  <td><Link to={`/resultados/informes/${inf.id}`}>Ver</Link></td>
                 </tr>
               ))}
             </tbody>
