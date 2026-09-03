@@ -2,6 +2,7 @@
 
 **Rama:** `cursor/inteligencia-empresarial-evolucion-dec7`  
 **Base:** `cursor/arquitecto-transformacion-dec7` @ `3b4397f`  
+**SHA feature:** `8225b37` — ver [SHA.txt](./SHA.txt)  
 **Sin integrar a GENERAL. Sin tocar V1 estable ni scripts/windows.**
 
 ## Entrega
