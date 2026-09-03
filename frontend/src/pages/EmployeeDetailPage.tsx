@@ -19,9 +19,10 @@ import {
   type CatalogItem,
 } from "../api";
 import { ErrorState, LoadingState } from "../components/AsyncState";
+import { EmployeeFicha20Tab } from "../components/EmployeeFicha20Tab";
 import { label, LIFECYCLE_STATUS, MATURITY, RISK_LEVEL } from "../lib/labels";
 
-const TABS = ["Resumen", "Asignaciones", "Pruebas", "Certificación", "Versiones", "Actividad"] as const;
+const TABS = ["Resumen", "Ficha 2.0", "Asignaciones", "Pruebas", "Certificación", "Versiones", "Actividad"] as const;
 
 export function EmployeeDetailPage() {
   const { employeeId } = useParams<{ employeeId: string }>();
@@ -137,6 +138,7 @@ export function EmployeeDetailPage() {
             </div>
           </>
         )}
+        {tab === "Ficha 2.0" && employeeId && <EmployeeFicha20Tab employeeId={employeeId} />}
         {tab === "Asignaciones" && (
           <div className="assign-grid">
             <div>

@@ -396,6 +396,24 @@ export async function activateEmployee(id: string): Promise<Record<string, unkno
   return api(`/api/agent-factory/employees/${id}/activate`, { method: "POST" });
 }
 
+export type EmployeeFicha20 = Record<string, unknown>;
+
+export async function fetchEmployeeFicha20(id: string): Promise<EmployeeFicha20> {
+  return api(`/api/empleados-ia-20/employees/${id}/ficha`);
+}
+
+export async function updateEmployeeFicha20(id: string, data: Record<string, unknown>): Promise<EmployeeFicha20> {
+  return api(`/api/empleados-ia-20/employees/${id}/ficha`, { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function fetchEmployeeEvaluacion20(id: string): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-ia-20/employees/${id}/evaluacion`);
+}
+
+export async function fetchEmployeeSupervision20(id: string): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-ia-20/employees/${id}/supervision`);
+}
+
 
 export type AutomationItem = {
   id: string;

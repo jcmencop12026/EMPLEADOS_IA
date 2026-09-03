@@ -13,9 +13,11 @@ from app import orchestration_models, notifications  # noqa: F401 — registra t
 from app import salud_models  # noqa: F401 — registra tablas IPS
 from app import experience_models  # noqa: F401 — experiencia transversal core
 from app import opportunity_models  # noqa: F401 — oportunidades proactivas 1030
+from app import employee_20_models  # noqa: F401 — empleado IA 2.0
 from app.routers import (
     admin,
     agent_factory,
+    employee_20,
     assistant,
     audit,
     auth,
@@ -89,6 +91,7 @@ app.include_router(admin.router)
 app.include_router(audit.router)
 app.include_router(assistant.router)
 app.include_router(agent_factory.router)
+app.include_router(employee_20.router)
 app.include_router(capabilities.router)
 app.include_router(tools.router)
 app.include_router(knowledge.router)

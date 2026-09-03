@@ -46,6 +46,8 @@ from app.services.authorization import (
     assert_employee_has_capability,
     evaluate_tool_execution,
 )
+from app.services.employee_20_autonomy import AutonomyBlockedError, apply_autonomy_to_decision
+from app.services.employee_20_service import record_supervision
 from app.tools import docint, rips
 
 _TOOL_EXECUTION_COUNTER = 0
@@ -493,6 +495,22 @@ def _execute_task(db: Session, *, task: EmployeeTask, plan: WorkPlan, user_id: s
             capability_id=task.capability_id,
             user_id=user_id,
         )
+
+        if employee:
+            try:
+                decision = apply_autonomy_to_decision(db, plan.organization_id, employee, decision)
+            except AutonomyBlockedError as exc:
+                record_supervision(
+                    db,
+                    plan.organization_id,
+                    employee.id,
+                    event_type="CUMPLIMIENTO",
+                    descripcion=str(exc),
+                    work_plan_id=plan.id,
+                    task_id=task.id,
+                    actor_user_id=user_id,
+                )
+                raise AuthorizationError(str(exc)) from exc
 
         if decision == ExecutionDecision.DENY:
             publish(
