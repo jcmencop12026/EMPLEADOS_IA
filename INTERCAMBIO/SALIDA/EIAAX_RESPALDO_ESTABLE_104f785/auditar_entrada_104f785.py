@@ -181,14 +181,13 @@ def test_tag_conflict_no_clobber() -> None:
         repo = Path(tmp) / "repo"
         subprocess.check_call(["git", "init", "-q", str(repo)])
         subprocess.check_call(["git", "-C", str(repo), "remote", "add", "origin", str(REPO)])
-        subprocess.check_call(["git", "-C", str(repo), "fetch", "-q", "origin", "ae146e0"])
-        wrong = subprocess.check_output(
-            ["git", "-C", str(repo), "rev-parse", "ae146e0~1"], text=True
-        ).strip()
+        subprocess.check_call(["git", "-C", str(repo), "fetch", "-q", "origin", TAG])
+        wrong_parent = "ae146e0ecf9aa1958687d939ce029185ed5209b2"
+        subprocess.check_call(["git", "-C", str(repo), "fetch", "-q", "origin", wrong_parent])
         right = subprocess.check_output(
             ["git", "-C", str(REPO), "rev-parse", TAG], text=True
         ).strip()
-        subprocess.check_call(["git", "-C", str(repo), "tag", "-f", TAG, wrong])
+        subprocess.check_call(["git", "-C", str(repo), "tag", "-f", TAG, wrong_parent])
         proc = subprocess.run(
             ["git", "-C", str(repo), "fetch", "origin", f"refs/tags/{TAG}:refs/tags/{TAG}"],
             capture_output=True,
@@ -209,7 +208,7 @@ def test_tag_conflict_no_clobber() -> None:
         bootstrap = subprocess.check_output(
             ["git", "-C", str(repo), "rev-parse", TOOLS_REF], text=True
         ).strip()
-        if local_tag != wrong:
+        if local_tag != wrong_parent:
             fail("tag local fue modificado")
         if bootstrap != right:
             fail(f"bootstrap ref incorrecto: {bootstrap} != {right}")
@@ -253,12 +252,28 @@ def test_full_flow_equivalent() -> None:
 
 def test_product_intact() -> None:
     head = subprocess.check_output(
-        ["git", "-C", str(REPO), "rev-parse", "origin/cursor/convergencia-comercial-v1-85e4"],
+        ["git", "-C", str(REPO), "rev-parse", PROTECTED],
         text=True,
     ).strip()
     if head != PROTECTED:
         fail("producto protegido alterado")
-    ok(f"producto intacto: {head[:12]}...")
+    diff = subprocess.check_output(
+        [
+            "git",
+            "-C",
+            str(REPO),
+            "diff",
+            "--name-only",
+            "0014a4b01a3ccf3e849a6609c8c784873f20f497",
+            PROTECTED,
+            "--",
+            "scripts/windows/",
+        ],
+        text=True,
+    ).strip()
+    if diff:
+        fail("scripts/windows alterados en producto protegido")
+    ok(f"producto intacto: {head[:12]}... scripts/windows sin cambios")
 
 
 def main() -> int:
