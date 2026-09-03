@@ -8,6 +8,8 @@ type Item = {
 
 type Props = {
   expedienteId?: string;
+  /** Sin encabezado duplicado cuando va dentro de &lt;details&gt;. */
+  embedded?: boolean;
 };
 
 function withContext(path: string, expedienteId?: string): string {
@@ -58,15 +60,19 @@ const GROUPS: Array<{ title: string; items: Item[] }> = [
   },
 ];
 
-export function CentroControlMasterAccess({ expedienteId }: Props) {
+export function CentroControlMasterAccess({ expedienteId, embedded = false }: Props) {
   return (
-    <section className="panel compact-panel cc-master-access">
-      <h2 className="section-title">Consola maestra — acceso directo</h2>
-      <p className="muted small">
-        {expedienteId
-          ? "Navegue el ciclo completo de la empresa seleccionada sin recorrer la arquitectura técnica."
-          : "Supervise empresas, operación, valor y publicación desde un solo lugar."}
-      </p>
+    <section className={`cc-master-access ${embedded ? "cc-master-access--embedded" : ""}`}>
+      {!embedded && (
+        <>
+          <h2 className="section-title">Accesos de profundidad</h2>
+          <p className="muted small">
+            {expedienteId
+              ? "Navegue el ciclo de la empresa seleccionada."
+              : "Módulos detallados bajo demanda."}
+          </p>
+        </>
+      )}
       <div className="cc-master-grid">
         {GROUPS.map((group) => (
           <div key={group.title} className="cc-master-group">

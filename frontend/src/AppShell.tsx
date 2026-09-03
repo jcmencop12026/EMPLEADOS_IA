@@ -179,9 +179,7 @@ function AppShellInner() {
                 <span className="topbar-attribution"> · {EIAAX_BRAND.platformAttribution}</span>
               </>
             ) : (
-              <>
-                {EIAAX_BRAND.name} · {EIAAX_BRAND.descriptor}
-              </>
+              EIAAX_BRAND.productLine
             )}
           </span>
           <div className="topbar-actions">

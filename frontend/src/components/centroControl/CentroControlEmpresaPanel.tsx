@@ -36,14 +36,8 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  if (loading && !exp) return <p className="muted">Cargando contexto de empresa…</p>;
-  if (error && !exp) return <p className="error">{error}</p>;
-  if (!exp) return null;
-
-  const oportunidades = exp.hallazgos.filter((h) => h.opportunity_id).length;
-  const indicadores = (impacto?.indicadores as Array<Record<string, unknown>> | undefined) ?? [];
-
   const entidadesRelacionadas = useMemo(() => {
+    if (!exp) return [];
     const items: Array<{ nombre: string; tipo: string; enlace: string }> = [];
     const sector = String((exp as Record<string, unknown>).sector ?? "").toLowerCase();
     if (sector.includes("salud")) {
@@ -74,6 +68,13 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
     });
   }, [exp, evaluacionId]);
 
+  if (loading && !exp) return <p className="muted">Cargando contexto de empresa…</p>;
+  if (error && !exp) return <p className="error">{error}</p>;
+  if (!exp) return null;
+
+  const oportunidades = exp.hallazgos.filter((h) => h.opportunity_id).length;
+  const indicadores = (impacto?.indicadores as Array<Record<string, unknown>> | undefined) ?? [];
+
   return (
     <div className="cc-empresa-panel">
       <section className="panel compact-panel cc-empresa-header-panel">
@@ -85,7 +86,12 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
           </div>
           <div className="cc-empresa-actions">
             <Link to={`/evaluaciones/${evaluacionId}`} className="btn primary small">Abrir cabina</Link>
-            <Link to={`/presentacion/${evaluacionId}`} className="btn secondary small">Presentación</Link>
+            <Link
+              to={exp.entidad_nombre?.startsWith("[DEMO]") ? `/demo/presentacion/${evaluacionId}` : `/presentacion/${evaluacionId}`}
+              className="btn secondary small"
+            >
+              Presentación
+            </Link>
             <Link to={`/evaluaciones/${evaluacionId}?tab=vista-empresa`} className="btn secondary small">Ver como empresa</Link>
           </div>
         </div>

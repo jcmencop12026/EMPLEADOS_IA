@@ -66,6 +66,15 @@ export function CentroControlPage() {
     return match ? `${match.entidad_nombre} · ${match.codigo}` : "Empresa seleccionada";
   }, [expedienteContext, evaluaciones]);
 
+  const presentacionPath = useMemo(() => {
+    if (!expedienteContext) return null;
+    const match = evaluaciones.find((e) => e.id === expedienteContext);
+    if (match?.entidad_nombre?.startsWith("[DEMO]")) {
+      return `/demo/presentacion/${expedienteContext}`;
+    }
+    return `/presentacion/${expedienteContext}`;
+  }, [expedienteContext, evaluaciones]);
+
   function setExpedienteContext(id: string) {
     const next = new URLSearchParams(searchParams);
     if (id) next.set("expediente", id);
@@ -130,7 +139,7 @@ export function CentroControlPage() {
           </select>
           {expedienteContext && (
             <>
-              <Link to={`/presentacion/${expedienteContext}`} className="btn secondary small">Presentación</Link>
+              <Link to={presentacionPath ?? `/presentacion/${expedienteContext}`} className="btn secondary small">Presentación</Link>
               <Link to={`/evaluaciones/${expedienteContext}?tab=vista-empresa`} className="btn secondary small">Ver como empresa</Link>
             </>
           )}
@@ -166,7 +175,15 @@ export function CentroControlPage() {
               {expedienteContext && has("evaluacion.view") && (
                 <CentroControlEmpresaPanel evaluacionId={expedienteContext} />
               )}
-              <CentroControlCockpit data={data} periodo={periodo} expedienteId={expedienteContext || undefined} />
+              <CentroControlCockpit
+                data={data}
+                periodo={periodo}
+                expedienteId={expedienteContext || undefined}
+                compact={Boolean(expedienteContext)}
+                isDemoExpediente={Boolean(
+                  evaluaciones.find((e) => e.id === expedienteContext)?.entidad_nombre?.startsWith("[DEMO]"),
+                )}
+              />
             </>
           )}
 

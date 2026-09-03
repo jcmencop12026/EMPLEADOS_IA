@@ -191,8 +191,7 @@ export function LoginPage() {
       <div className="login-layout">
         <aside className="login-brand-panel">
           <BrandMark level="hero" />
-          <p className="login-brand-copy">{EIAAX_BRAND.descriptor}</p>
-          <p className="login-brand-sub">{EIAAX_BRAND.loginTagline}</p>
+          <p className="login-brand-copy">{EIAAX_BRAND.loginTagline}</p>
         </aside>
 
         <div className="login-forms">
