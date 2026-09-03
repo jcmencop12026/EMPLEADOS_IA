@@ -10,10 +10,10 @@
 ## A. SHA exacto
 
 ```
-3189f09a (extiende 33d7cb21 — integración Horizonte en seed_lote3)
+526ec19c353fde8aa8fe6b296be474a7b5ca848
 ```
 
-Verificar: `git rev-parse --short HEAD` en `cursor/experiencia-v1-convergencia-85e4`.
+(Base macrobloque: `33d7cb21`. Este commit añade Horizonte al seed certificado Windows.)
 
 ---
 
