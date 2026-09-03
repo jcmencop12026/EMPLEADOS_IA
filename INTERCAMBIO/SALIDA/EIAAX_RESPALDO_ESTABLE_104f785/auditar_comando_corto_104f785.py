@@ -21,10 +21,11 @@ PROTECTED = "104f7850d7196d08d80fff9b4e7a8a83a5a1fa9a"
 
 COMMAND = (
     'Set-Location D:\\EMPLEADOS_IA_CONVERGENCIA; '
-    'git fetch origin tag eiaax-tools-respaldo-104f785 2>$null; '
+    'git fetch origin tag eiaax-tools-respaldo-104f785 2>&1 | Out-Null; '
     'git archive --format=zip -o $env:TEMP\\eiaax_r104f785.zip '
     'eiaax-tools-respaldo-104f785 '
-    'INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/Launch-Respaldo-Integral-104f785.ps1; '
+    'INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/Launch-Respaldo-Integral-104f785.ps1 '
+    '2>&1 | Out-Null; '
     'Expand-Archive -Force $env:TEMP\\eiaax_r104f785.zip $env:TEMP\\eiaax_r104f785; '
     'powershell -NoProfile -ExecutionPolicy Bypass -File '
     '"$env:TEMP\\eiaax_r104f785\\INTERCAMBIO\\SALIDA\\EIAAX_RESPALDO_ESTABLE_104f785\\'
@@ -85,7 +86,7 @@ def main() -> int:
             fail(f"hash-object: {hash_object}")
 
     ok("Materialización byte-safe solo Launch (git archive archivo único)")
-    ok(f"Comando corto ({len(COMMAND)} chars) — sin iex, sin bloques {{}}")
+    ok(f"Comando corto ({len(COMMAND)} chars) — sin iex, sin bloques {{}}, git stderr seguro PS 5.1")
 
     # Launch interno delega a bootstrap (probado en auditar_integral)
     subprocess.check_call(
