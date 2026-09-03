@@ -4,8 +4,8 @@
 **Rama:** `cursor/revision-integral-completa-85e4`
 **PR:** [#169](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/169)
 **Base:** `cursor/convergencia-comercial-v1-85e4` (`1416671`)
-**HEAD final:** `6fea9fd954434a4205590305c1e5219913a1a7b4`
-**integration_sha:** `6fea9fd`
+**HEAD final:** `a48150547bb8293668a9e9026c7b62b1b5079a11`
+**integration_sha:** `a481505`
 **NO merge · NO promoción Windows · NO comando al usuario**
 
 ---
@@ -53,7 +53,7 @@ RuntimeError: JWT_SECRET demasiado corto: use al menos 32 caracteres en producci
 
 ## C. HEAD final
 
-`6fea9fd954434a4205590305c1e5219913a1a7b4` (`6fea9fd`)
+`a481505954434a4205590305c1e5219913a1a7b4` (`a481505`)
 
 ---
 
@@ -63,7 +63,7 @@ RuntimeError: JWT_SECRET demasiado corto: use al menos 32 caracteres en producci
 
 ---
 
-## E. Backend / PostgreSQL (local HEAD `6fea9fd`)
+## E. Backend / PostgreSQL (local HEAD `a481505`)
 
 | Step | Resultado |
 |---|---|
@@ -75,7 +75,7 @@ PostgreSQL CI: esperado PASS tras fix JWT (misma causa que bloqueó 4 tests clie
 
 ---
 
-## F. Windows (local HEAD `6fea9fd`)
+## F. Windows (local HEAD `a481505`)
 
 | Test | Resultado |
 |---|---|
@@ -94,7 +94,7 @@ Process tree Windows: pendiente ejecución CI post-push (skipped en run anterior
 
 ---
 
-## H. E2E completos (HEAD `6fea9fd`)
+## H. E2E completos (HEAD `a481505`)
 
 | Script | Resultado |
 |---|---|
@@ -108,13 +108,13 @@ Process tree Windows: pendiente ejecución CI post-push (skipped en run anterior
 
 ---
 
-## I. QA visual (HEAD `6fea9fd`)
+## I. QA visual (HEAD `a481505`)
 
 `cert_visual_audit.mjs` — 11/11 PASS @ 1440×900. Screenshots: `data/evidence/cert-visual/`.
 
 ---
 
-## J. Persistencia REAL (HEAD `6fea9fd`)
+## J. Persistencia REAL (HEAD `a481505`)
 
 `test_documentos_persisten_tras_reinicio_real`:
 
@@ -140,7 +140,7 @@ Process tree Windows: pendiente ejecución CI post-push (skipped en run anterior
 
 ---
 
-## L. P0 / P1 / P2 (HEAD `6fea9fd`)
+## L. P0 / P1 / P2 (HEAD `a481505`)
 
 | Nivel | Count | Notas |
 |---|---|---|
@@ -154,10 +154,10 @@ Process tree Windows: pendiente ejecución CI post-push (skipped en run anterior
 
 | Artefacto | HEAD |
 |---|---|
-| `EIAAX_CIERRE_CERTIFICACION_CI_PR169.md` | `6fea9fd` |
+| `EIAAX_CIERRE_CERTIFICACION_CI_PR169.md` | `a481505` |
 | `EIAAX_VERIFICACION_COHERENCIA_D3FF7F1.md` | actualizado — sin SHAs obsoletos certificados |
-| `scripts/windows/eiaax_convergence_manifest.json` | `integration_sha: 6fea9fd` |
-| PR #169 rama | `cursor/revision-integral-completa-85e4` @ `6fea9fd` |
+| `scripts/windows/eiaax_convergence_manifest.json` | `integration_sha: a481505` |
+| PR #169 rama | `cursor/revision-integral-completa-85e4` @ `a481505` |
 
 ---
 
