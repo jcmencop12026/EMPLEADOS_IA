@@ -197,25 +197,42 @@ def upload_adjuntos_externo(
         )
         if not item:
             raise HTTPException(status_code=404, detail="Ítem de información no encontrado")
-        entrega = EvaluacionEntregaExterna(
-            organization_id=user.organization_id,
-            expediente_id=expediente_id,
-            entidad_id=entidad_id,
-            informacion_item_id=item.id,
-            titulo=item.etiqueta,
-            descripcion=item.explicacion,
-            estado="RECIBIDO",
-            fuente_tipo=fuente_tipo,
-            contenido=observacion or "(entrega con adjuntos)",
-            entregado_por=user.id,
-            entregado_at=_utcnow(),
-            correlation_id=correlation_id,
+        entrega = (
+            db.query(EvaluacionEntregaExterna)
+            .filter(
+                EvaluacionEntregaExterna.organization_id == user.organization_id,
+                EvaluacionEntregaExterna.expediente_id == expediente_id,
+                EvaluacionEntregaExterna.informacion_item_id == item.id,
+                EvaluacionEntregaExterna.estado.in_(
+                    ("SOLICITADO", "RECIBIDO", "REQUIERE_COMPLEMENTO", "EN_VALIDACION")
+                ),
+            )
+            .order_by(EvaluacionEntregaExterna.solicitado_at.desc())
+            .first()
         )
-        db.add(entrega)
-        db.flush()
-        item.estado = "RECIBIDO"
-        item.estado_validacion = "EN_VALIDACION"
-        item.entregado_por = user.id
+        if entrega:
+            if entrega.entidad_id != entidad_id:
+                raise HTTPException(status_code=403, detail="Entrega no autorizada")
+        else:
+            entrega = EvaluacionEntregaExterna(
+                organization_id=user.organization_id,
+                expediente_id=expediente_id,
+                entidad_id=entidad_id,
+                informacion_item_id=item.id,
+                titulo=item.etiqueta,
+                descripcion=item.explicacion,
+                estado="RECIBIDO",
+                fuente_tipo=fuente_tipo,
+                contenido=observacion or "(entrega con adjuntos)",
+                entregado_por=user.id,
+                entregado_at=_utcnow(),
+                correlation_id=correlation_id,
+            )
+            db.add(entrega)
+            db.flush()
+            item.estado = "RECIBIDO"
+            item.estado_validacion = "EN_VALIDACION"
+            item.entregado_por = user.id
     else:
         raise HTTPException(status_code=422, detail="entrega_id o item_id requerido")
 
@@ -277,21 +294,32 @@ def list_adjuntos_by_informacion_item(
     expediente_id: str,
     item_id: str,
 ) -> dict[str, Any]:
-    entrega = (
+    entregas = (
         db.query(EvaluacionEntregaExterna)
         .filter(
             EvaluacionEntregaExterna.organization_id == organization_id,
             EvaluacionEntregaExterna.expediente_id == expediente_id,
             EvaluacionEntregaExterna.informacion_item_id == item_id,
         )
-        .order_by(EvaluacionEntregaExterna.created_at.desc())
-        .first()
+        .order_by(EvaluacionEntregaExterna.solicitado_at.desc())
+        .all()
     )
-    if not entrega:
+    if not entregas:
         return {"entrega_id": None, "adjuntos": []}
+    entrega_ids = [e.id for e in entregas]
+    rows = (
+        db.query(EvaluacionEntregaAdjunto)
+        .filter(
+            EvaluacionEntregaAdjunto.organization_id == organization_id,
+            EvaluacionEntregaAdjunto.entrega_id.in_(entrega_ids),
+            EvaluacionEntregaAdjunto.es_version_actual.is_(True),
+        )
+        .order_by(EvaluacionEntregaAdjunto.created_at.asc())
+        .all()
+    )
     return {
-        "entrega_id": entrega.id,
-        "adjuntos": list_adjuntos_entrega(db, organization_id, entrega.id, include_internal=True),
+        "entrega_id": entregas[0].id,
+        "adjuntos": [adjunto_dict(r, include_internal=True) for r in rows],
     }
 
 

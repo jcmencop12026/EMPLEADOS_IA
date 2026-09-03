@@ -738,6 +738,7 @@ def get_vista_entidad(db: Session, expediente_id: str, organization_id: str) -> 
         ],
         "impacto": get_impacto_resumen(db, exp.id, organization_id, vista_entidad=True),
         "oportunidades": _oportunidades_visibles(db, exp),
+        "etiqueta_demo": "DEMO — DATOS SIMULADOS" if _is_demo_expediente(exp) else None,
     }
     return safe
 
@@ -1052,6 +1053,125 @@ def _has_usable_llm(db: Session, organization_id: str) -> bool:
     return False
 
 
+def _is_demo_expediente(exp: EvaluacionExpediente) -> bool:
+    from app.demo_comercial_constants import DEMO_CORRELATION_PREFIX, DEMO_ENTIDAD_PREFIX
+
+    if exp.correlation_id and exp.correlation_id.startswith(DEMO_CORRELATION_PREFIX):
+        return True
+    return exp.entidad_nombre.startswith(DEMO_ENTIDAD_PREFIX)
+
+
+def _demo_ask_response(
+    db: Session,
+    exp: EvaluacionExpediente,
+    organization_id: str,
+    *,
+    mensaje: str,
+    accion: str | None,
+    base: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Respuestas demo coherentes sin LLM — contexto Horizonte."""
+    if not _is_demo_expediente(exp):
+        return None
+
+    from app.services import economic_motor_service as motor_svc
+
+    q = (mensaje or accion or "").lower()
+    valores = motor_svc.sum_values_by_nature(db, organization_id)
+    top_opp = (
+        db.query(Opportunity)
+        .join(EvaluacionOportunidadLink, EvaluacionOportunidadLink.opportunity_id == Opportunity.id)
+        .filter(
+            EvaluacionOportunidadLink.expediente_id == exp.id,
+            EvaluacionOportunidadLink.organization_id == organization_id,
+        )
+        .order_by(Opportunity.valor_potencial.desc().nullslast())
+        .first()
+    )
+
+    if any(k in q for k in ("falta", "informacion_faltante", "qué falta", "que falta")):
+        pend = base["contexto_expediente"].get("informacion_pendiente") or []
+        return {
+            **base,
+            "estado": "respuesta_demo",
+            "mensaje": (
+                f"[DEMO] En {exp.entidad_nombre} falta completar: "
+                f"{', '.join(pend[:5]) if pend else 'documentación de soporte y validación de codificación'}."
+            ),
+        }
+
+    if any(k in q for k in ("encontró", "encontro", "hallazgo", "detectó", "detecto")):
+        hallazgos = [
+            h.titulo
+            for h in db.query(EvaluacionHallazgo)
+            .filter(EvaluacionHallazgo.expediente_id == exp.id, EvaluacionHallazgo.visible_entidad.is_(True))
+            .limit(4)
+            .all()
+        ]
+        return {
+            **base,
+            "estado": "respuesta_demo",
+            "mensaje": f"[DEMO] EIAAX identificó: {'; '.join(hallazgos) or 'glosas y reprocesos manuales'}.",
+        }
+
+    if "oportunidad" in q or accion == "identificar_oportunidades":
+        titulo = top_opp.titulo if top_opp else "Automatización facturación"
+        return {
+            **base,
+            "estado": "respuesta_demo",
+            "mensaje": f"[DEMO] Oportunidad prioritaria: {titulo} (eficiencia/ahorro estimado).",
+        }
+
+    if any(k in q for k in ("valor", "cuánto", "cuanto", "valem", "roi")):
+        est = valores.get("valor_estimado")
+        pot = valores.get("valor_potencial")
+        return {
+            **base,
+            "estado": "respuesta_demo",
+            "mensaje": (
+                f"[DEMO — ESTIMADO/PROYECTADO] Valor estimado org: {est or '—'} · "
+                f"Potencial: {pot or '—'}. No equivale a valor verificado."
+            ),
+        }
+
+    if any(k in q for k in ("decidir", "decisión", "decision", "aprob")):
+        return {
+            **base,
+            "estado": "respuesta_demo",
+            "mensaje": "[DEMO] Decisión pendiente: aprobar piloto automatización codificación y publicar hallazgos a la empresa.",
+        }
+
+    if any(k in q for k in ("presentar", "presentación", "presentacion", "reunión")):
+        return {
+            **base,
+            "estado": "respuesta_demo",
+            "mensaje": "[DEMO] Use Presentar en reunión con audiencia Gerencia/Dirección — sin costos internos ni margen.",
+        }
+
+    if any(k in q for k in ("empresa", "verá", "vera", "cliente", "vista")):
+        return {
+            **base,
+            "estado": "respuesta_demo",
+            "mensaje": "[DEMO] La empresa verá hallazgos autorizados, indicadores antes/proyectado/real y recomendaciones — sin economía privada.",
+        }
+
+    if any(k in q for k in ("resultado", "indicador", "medición", "medicion")):
+        return {
+            **base,
+            "estado": "respuesta_demo",
+            "mensaje": "[DEMO] Resultados: días respuesta glosa 16→9.5 (real piloto); recuperación cartera en mejora. Proyectado ≠ real.",
+        }
+
+    if any(k in q for k in ("siguiente", "acción", "accion", "siguiente_analisis")):
+        return {
+            **base,
+            "estado": "respuesta_demo",
+            "mensaje": "[DEMO] Siguiente acción: completar documentación faltante y decidir aprobación del piloto Empleado IA.",
+        }
+
+    return None
+
+
 def ask_eiaax(
     db: Session,
     expediente_id: str,
@@ -1091,11 +1211,18 @@ def ask_eiaax(
         "piiax": piiax,
         "contexto_expediente": {
             "codigo": exp.codigo,
+            "entidad": exp.entidad_nombre,
             "estado": exp.estado,
             "confianza_global": exp.confianza_global,
             "informacion_pendiente": pendientes[:8],
         },
     }
+
+    demo_resp = _demo_ask_response(
+        db, exp, organization_id, mensaje=mensaje, accion=accion, base=base,
+    )
+    if demo_resp:
+        return demo_resp
 
     codigo = intencion["intencion"]
 

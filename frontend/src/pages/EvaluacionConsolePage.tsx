@@ -375,7 +375,13 @@ export function EvaluacionConsolePage() {
           </section>
         )}
 
-        {tab === "informes" && evaluacionId && <CabinaInformesPanel expedienteId={evaluacionId} />}
+        {tab === "informes" && evaluacionId && (
+          <CabinaInformesPanel
+            expedienteId={evaluacionId}
+            entidadNombre={exp.entidad_nombre}
+            isDemo={exp.entidad_nombre?.startsWith("[DEMO]")}
+          />
+        )}
 
         {tab === "contrato" && evaluacionId && (
           <CabinaContratoPanel expedienteId={evaluacionId} entidadNombre={exp.entidad_nombre} />

@@ -113,8 +113,8 @@ class OrgConfigUpdate(BaseModel):
     date_format: str | None = None
     time_format: str | None = None
     enterprise_display_name: str | None = Field(default=None, max_length=200)
-    enterprise_logo_url: str | None = Field(default=None, max_length=200000)
-    enterprise_logo_compact_url: str | None = Field(default=None, max_length=200000)
+    enterprise_logo_url: str | None = Field(default=None, max_length=700_000)
+    enterprise_logo_compact_url: str | None = Field(default=None, max_length=700_000)
     enterprise_accent_color: str | None = Field(default=None, max_length=20)
 
 
