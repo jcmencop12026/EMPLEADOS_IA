@@ -10,7 +10,7 @@
 ## A. SHA exacto
 
 ```
-526ec19c353fde8aa8fe6b296be474a7b5ca848
+526ec1987c2cb87f308266f87599d8b8d5e18200
 ```
 
 (Base macrobloque: `33d7cb21`. Este commit añade Horizonte al seed certificado Windows.)
