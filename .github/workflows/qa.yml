@@ -132,6 +132,12 @@ jobs:
             else
               PYTHONPATH=backend:. python -m pytest -m "$FOCAL" -v
             fi
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR: regresión focal (certificación ya cubierta en steps previos)."
+            PYTHONPATH=backend:. python -m pytest \
+              tests/test_cierre_brechas_horizonte.py \
+              tests/test_db_startup_805e.py \
+              -v
           else
             PYTHONPATH=backend:. python -m pytest -m "not certification_intensive" -v
           fi
