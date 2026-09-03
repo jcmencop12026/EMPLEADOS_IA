@@ -12,7 +12,7 @@
 | Campo | Valor |
 |---|---|
 | **Base exacta** | `14166710932fa87115e700ae0b1e2aa7e110b744` (`cursor/convergencia-comercial-v1-85e4`) |
-| **Candidato HEAD** | `d3ff7f1` (+ commit coherencia pendiente push) |
+| **Candidato HEAD** | `8d693bb` (coherencia post-d3ff7f1) |
 | **producto / integration_sha** | `4b77c49` (cierre brechas) → actualizar tras commit coherencia |
 | **PR** | [#169](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/169) |
 | **Conflictos con base** | **0** (`git merge-tree` sin changed-in-both) |
