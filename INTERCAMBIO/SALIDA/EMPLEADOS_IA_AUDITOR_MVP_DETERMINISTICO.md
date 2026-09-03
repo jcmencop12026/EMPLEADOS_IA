@@ -1,7 +1,7 @@
 # EMPLEADOS IA — Auditor MVP determinístico (Fase 1)
 
-**Rama:** `cursor/auditor-empleados-ia-mvp-deterministico`  
-**Base diseño:** `fccd21e` (diseño aprobado + bandeja unificada)  
+**Rama:** `cursor/auditor-empleados-ia-mvp-deterministico`
+**Base diseño:** `fccd21e` (diseño aprobado + bandeja unificada)
 **Tipo:** implementación funcional determinística — sin LLM real
 
 ---

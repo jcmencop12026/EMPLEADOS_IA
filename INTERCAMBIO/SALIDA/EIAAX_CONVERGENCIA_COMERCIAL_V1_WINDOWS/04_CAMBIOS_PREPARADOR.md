@@ -18,7 +18,7 @@ Actualizacion minima sobre mecanismo certificado `d034566`:
 
 ## Migracion BD existente (1770 → 1820)
 
-El preparador **recrea** la BD demo (`data\eiaax_integrado_demo.db`) y ejecuta `alembic upgrade head`.  
+El preparador **recrea** la BD demo (`data\eiaax_integrado_demo.db`) y ejecuta `alembic upgrade head`.
 No borra otras bases. Para conservar una BD demo previa, copiar el archivo `.db` antes de preparar.
 
 Upgrade in-place sin recrear (avanzado):

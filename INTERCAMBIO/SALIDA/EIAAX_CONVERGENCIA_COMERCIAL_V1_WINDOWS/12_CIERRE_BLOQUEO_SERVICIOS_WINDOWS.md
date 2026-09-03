@@ -1,13 +1,13 @@
 # Cierre bloqueo post-backend health — arranque servicios Windows
 
-**Rama:** `cursor/convergencia-comercial-v1-85e4`  
+**Rama:** `cursor/convergencia-comercial-v1-85e4`
 **Worktree:** `D:\EMPLEADOS_IA_CONVERGENCIA`
 
 ---
 
 ## 1. Causa exacta del bloqueo
 
-**Archivo:** `iniciar_demo_eiaax.ps1` + `Invoke-EiaaxPowerShellFile` en `EiaaxDemo.Common.ps1`  
+**Archivo:** `iniciar_demo_eiaax.ps1` + `Invoke-EiaaxPowerShellFile` en `EiaaxDemo.Common.ps1`
 **Operación:** `Start-Process -Wait -NoNewWindow` anidado (arrancar → iniciar_demo → backend/frontend)
 
 Tras imprimir `Backend health OK`, `iniciar_demo` lanzaba el frontend en **otro proceso PowerShell** con `-Wait` compartiendo consola. Esa cadena anidada podía quedar bloqueada indefinidamente (deadlock de consola / espera sobre proceso hijo) antes de mostrar cualquier salida del frontend.

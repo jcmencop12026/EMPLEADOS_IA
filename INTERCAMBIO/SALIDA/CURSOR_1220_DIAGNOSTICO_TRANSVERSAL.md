@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — BLOQUE 1220
 ## Diagnóstico transversal multidominio
 
-**Rama:** `cursor/1220-diagnostico-transversal`  
-**Base:** `5eaad7e4e605465a6ba4145b03c7ec043a5f62b4` (1120 APTO)  
+**Rama:** `cursor/1220-diagnostico-transversal`
+**Base:** `5eaad7e4e605465a6ba4145b03c7ec043a5f62b4` (1120 APTO)
 **HEAD:** _(ver commit final)_
 
 ---

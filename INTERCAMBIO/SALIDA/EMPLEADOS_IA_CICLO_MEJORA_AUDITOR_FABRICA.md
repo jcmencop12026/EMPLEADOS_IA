@@ -1,8 +1,8 @@
 # EMPLEADOS IA — CICLO MEJORA AUDITOR → FÁBRICA
 
-**Agente:** C  
-**Fecha:** 2026-08-29  
-**Rama:** `cursor/ciclo-auditor-fabrica-dec7`  
+**Agente:** C
+**Fecha:** 2026-08-29
+**Rama:** `cursor/ciclo-auditor-fabrica-dec7`
 
 ## Fuentes certificadas integradas
 
@@ -116,7 +116,7 @@ Sin secretos en respuestas API.
 | `14b0c1d2e3f4` | **Merge** factory + auditor |
 | `14b1c2d3e4f5` | **Puente** `employee_improvement_traces` |
 
-**HEAD único:** `14b1c2d3e4f5`  
+**HEAD único:** `14b1c2d3e4f5`
 Revisiones NO reutilizadas para nueva persistencia: `1390`, `1400`, `6b06` (solo como ancestros).
 
 ---
@@ -207,7 +207,7 @@ VEREDICTO: APTO PARA PORTAR
 
 ## 12. CERTIFICACIÓN FINAL DE PORTABILIDAD
 
-**Fecha certificación:** 2026-08-29  
+**Fecha certificación:** 2026-08-29
 **Receta detallada:** `INTERCAMBIO/SALIDA/EMPLEADOS_IA_RECETA_PORT_AUDITOR_FABRICA.md`
 
 ### 12.1 Inventario de dependencias
@@ -249,10 +249,10 @@ Revisiones presentes en rama para el ciclo:
 | `14b0c1d2e3f4` | `6b06` + `1400` | SÍ | merge |
 | `14b1c2d3e4f5` | `14b0c1d2e3f4` | SÍ | **HEAD** |
 
-**MIGRACIONES INVENTARIADAS:** PASS  
-**REVISION 6B06:** PASS  
-**REVISION 1400:** PASS  
-**REVISION 14B1:** PASS  
+**MIGRACIONES INVENTARIADAS:** PASS
+**REVISION 6B06:** PASS
+**REVISION 1400:** PASS
+**REVISION 14B1:** PASS
 **ALEMBIC HEADS:** 1
 
 ### 12.4 Colisiones revision_id

@@ -1,6 +1,6 @@
 # Datos semilla demostrativos
 
-Script: `backend/scripts/seed_lote3_demo.py`  
+Script: `backend/scripts/seed_lote3_demo.py`
 BD: `sqlite:////workspace/data/eiaax_integrado_demo.db`
 
 ## Organización A — Empresa Demo A

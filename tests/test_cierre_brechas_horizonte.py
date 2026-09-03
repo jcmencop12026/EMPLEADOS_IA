@@ -5,13 +5,22 @@ from __future__ import annotations
 import io
 import json
 import os
+import shutil
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
 from conftest import auth_header
 
+BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend"
 DEMO_DB_URL = "sqlite:////workspace/data/eiaax_integrado_demo.db"
+DEMO_DB_PATH = Path("/workspace/data/eiaax_integrado_demo.db")
 PASSWORD_ORG_A = "DemoA2026!"
 
 
@@ -199,34 +208,210 @@ def test_ask_eiaax_demo_horizonte_contexto(client: TestClient, demo_a_headers):
         assert body.get("llm_real") is False
 
 
-def test_documentos_persisten_tras_reinicio_simulado(client: TestClient, demo_a_headers):
-    """Simula reinicio: nueva consulta GET debe devolver los mismos adjuntos."""
-    headers = demo_a_headers
-    exp_id = _horizonte_expediente_id(client, headers)
-    item_id = _first_informacion_item_id(client, headers, exp_id)
-    marker = "persist-restart-marker.csv"
-    csv_bytes = b"indicador,valor\npersistencia,1\n"
-    up = client.post(
-        f"/api/evaluaciones/{exp_id}/informacion/{item_id}/adjuntos",
-        headers=headers,
-        files=[("files", (marker, io.BytesIO(csv_bytes), "text/csv"))],
-    )
-    assert up.status_code in (200, 201), up.text
-    lista1 = client.get(
-        f"/api/evaluaciones/{exp_id}/informacion/{item_id}/adjuntos",
-        headers=headers,
-    ).json()
-    lista2 = client.get(
-        f"/api/evaluaciones/{exp_id}/informacion/{item_id}/adjuntos",
-        headers=headers,
-    ).json()
-    nombres = {a["nombre"] for a in lista2.get("adjuntos", [])}
-    assert marker.replace(".csv", "") in " ".join(nombres) or marker in nombres
-    adj = next(a for a in lista2["adjuntos"] if marker in a["nombre"])
-    dl = client.get(f"/api/espacio-externo/adjuntos/{adj['id']}/descarga", headers=headers)
-    assert dl.status_code == 200
-    assert b"persistencia" in dl.content
-    assert lista1.get("entrega_id") == lista2.get("entrega_id")
+def test_documentos_persisten_tras_reinicio_real(tmp_path):
+    """Reinicio real del backend: PDF/CSV, logo y datos Horizonte persisten en SQLite."""
+    if not DEMO_DB_PATH.exists():
+        pytest.skip("Demo DB no disponible")
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    db_path = data_dir / "enterprise_ai_os.db"
+    shutil.copy2(DEMO_DB_PATH, db_path)
+    db_url = f"sqlite:///{db_path.as_posix()}"
+    port = 18199
+    env = {
+        **os.environ,
+        "DATABASE_URL": db_url,
+        "JWT_SECRET": "test-secret-mvp-cert803-minimum-32",
+        "ALLOW_INSECURE_DEV_DEFAULTS": "1",
+    }
+
+    def _http_json(method: str, path: str, token: str | None = None, payload: dict | None = None) -> tuple[int, dict]:
+        headers = {"Content-Type": "application/json"}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        data = json.dumps(payload).encode() if payload is not None else None
+        req = urllib.request.Request(f"http://127.0.0.1:{port}{path}", data=data, headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                body = resp.read()
+                return resp.status, json.loads(body) if body else {}
+        except urllib.error.HTTPError as exc:
+            body = exc.read()
+            return exc.code, json.loads(body) if body else {}
+
+    def _http_multipart(path: str, token: str, fields: list[tuple[str, str, bytes, str]]) -> tuple[int, dict]:
+        boundary = "----eiaax-persist-boundary"
+        body = b""
+        for name, filename, content, content_type in fields:
+            body += f"--{boundary}\r\n".encode()
+            body += (
+                f'Content-Disposition: form-data; name="{name}"; filename="{filename}"\r\n'
+                f"Content-Type: {content_type}\r\n\r\n"
+            ).encode()
+            body += content + b"\r\n"
+        body += f"--{boundary}--\r\n".encode()
+        req = urllib.request.Request(
+            f"http://127.0.0.1:{port}{path}",
+            data=body,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                raw = resp.read()
+                return resp.status, json.loads(raw) if raw else {}
+        except urllib.error.HTTPError as exc:
+            raw = exc.read()
+            return exc.code, json.loads(raw) if raw else {}
+
+    def _http_download(path: str, token: str) -> tuple[int, bytes]:
+        req = urllib.request.Request(
+            f"http://127.0.0.1:{port}{path}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                return resp.status, resp.read()
+        except urllib.error.HTTPError as exc:
+            return exc.code, exc.read()
+
+    def _start_server() -> subprocess.Popen:
+        proc = subprocess.Popen(
+            [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", str(port)],
+            cwd=str(BACKEND_DIR),
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        for _ in range(40):
+            try:
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=2):
+                    return proc
+            except Exception:
+                time.sleep(0.5)
+        proc.terminate()
+        proc.wait(timeout=10)
+        pytest.fail("Backend no arrancó tras reinicio")
+
+    def _stop_server(proc: subprocess.Popen) -> None:
+        proc.terminate()
+        proc.wait(timeout=15)
+
+    proc = _start_server()
+    try:
+        status, login = _http_json(
+            "POST",
+            "/api/auth/login",
+            payload={"username": "org_a_admin", "password": PASSWORD_ORG_A},
+        )
+        assert status == 200, login
+        token = login["access_token"]
+
+        status, evals = _http_json("GET", "/api/evaluaciones", token=token)
+        assert status == 200, evals
+        items = evals.get("items", evals)
+        exp_id = next(i["id"] for i in items if "Horizonte" in (i.get("entidad_nombre") or ""))
+
+        status, detail = _http_json("GET", f"/api/evaluaciones/{exp_id}", token=token)
+        assert status == 200, detail
+        item_id = detail["informacion"][0]["id"]
+
+        pdf_bytes = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF"
+        csv_bytes = b"indicador,valor\npersistencia_real,42\n"
+        marker_pdf = "persist-restart-real.pdf"
+        marker_csv = "persist-restart-real.csv"
+
+        status, _ = _http_multipart(
+            f"/api/evaluaciones/{exp_id}/informacion/{item_id}/adjuntos",
+            token,
+            [("files", marker_pdf, pdf_bytes, "application/pdf")],
+        )
+        assert status in (200, 201)
+        status, _ = _http_multipart(
+            f"/api/evaluaciones/{exp_id}/informacion/{item_id}/adjuntos",
+            token,
+            [("files", marker_csv, csv_bytes, "text/csv")],
+        )
+        assert status in (200, 201)
+
+        status, lista = _http_json(
+            "GET",
+            f"/api/evaluaciones/{exp_id}/informacion/{item_id}/adjuntos",
+            token=token,
+        )
+        assert status == 200, lista
+        entrega_id = lista.get("entrega_id")
+        adjuntos = {a["nombre"]: a for a in lista.get("adjuntos", [])}
+        assert marker_pdf in adjuntos and marker_csv in adjuntos
+
+        logo_payload = "data:image/png;base64," + ("B" * 120_000)
+        status, _ = _http_json(
+            "PUT",
+            "/api/admin/config",
+            token=token,
+            payload={"enterprise_logo_url": logo_payload},
+        )
+        assert status == 200
+
+        status, impacto = _http_json("GET", f"/api/evaluaciones/{exp_id}/impacto", token=token)
+        assert status == 200, impacto
+        resumen = impacto.get("resumen") or {}
+        assert resumen.get("es_demo") is True
+        horizonte_snapshot = {
+            "banner": resumen.get("banner"),
+            "simulacion": resumen.get("simulacion_verificado"),
+            "estimado": resumen.get("estimado"),
+            "potencial": resumen.get("potencial"),
+        }
+    finally:
+        _stop_server(proc)
+
+    proc2 = _start_server()
+    try:
+        status, login = _http_json(
+            "POST",
+            "/api/auth/login",
+            payload={"username": "org_a_admin", "password": PASSWORD_ORG_A},
+        )
+        assert status == 200, login
+        token = login["access_token"]
+
+        status, lista2 = _http_json(
+            "GET",
+            f"/api/evaluaciones/{exp_id}/informacion/{item_id}/adjuntos",
+            token=token,
+        )
+        assert status == 200, lista2
+        assert lista2.get("entrega_id") == entrega_id
+        adjuntos2 = {a["nombre"]: a for a in lista2.get("adjuntos", [])}
+        assert marker_pdf in adjuntos2 and marker_csv in adjuntos2
+
+        pdf_id = adjuntos2[marker_pdf]["id"]
+        csv_id = adjuntos2[marker_csv]["id"]
+        status, pdf_content = _http_download(f"/api/espacio-externo/adjuntos/{pdf_id}/descarga", token)
+        assert status == 200
+        assert b"%PDF" in pdf_content
+        status, csv_content = _http_download(f"/api/espacio-externo/adjuntos/{csv_id}/descarga", token)
+        assert status == 200
+        assert b"persistencia_real" in csv_content
+
+        status, cfg = _http_json("GET", "/api/admin/config", token=token)
+        assert status == 200, cfg
+        assert len(cfg.get("enterprise_logo_url") or "") > 100_000
+
+        status, impacto2 = _http_json("GET", f"/api/evaluaciones/{exp_id}/impacto", token=token)
+        assert status == 200, impacto2
+        resumen2 = impacto2.get("resumen") or {}
+        assert resumen2.get("banner") == horizonte_snapshot["banner"]
+        assert resumen2.get("simulacion_verificado") == horizonte_snapshot["simulacion"]
+    finally:
+        _stop_server(proc2)
+
+    assert db_path.exists() and db_path.stat().st_size > 0
 
 
 def test_oportunidades_demo_variedad(client: TestClient, demo_a_headers):

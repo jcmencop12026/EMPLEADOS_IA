@@ -1,14 +1,14 @@
 # Cierre regresión frontend — quoting npm.cmd con espacios (Windows)
 
-**Rama:** `cursor/convergencia-comercial-v1-85e4`  
+**Rama:** `cursor/convergencia-comercial-v1-85e4`
 **Worktree:** `D:\EMPLEADOS_IA_CONVERGENCIA`
 
 ---
 
 ## 1. Causa exacta
 
-**Archivo:** `scripts/windows/EiaaxDemo.Common.ps1`  
-**Función:** `Start-EiaaxManagedProcess` (ahora delega en `Build-EiaaxManagedProcessWrapperContent`)  
+**Archivo:** `scripts/windows/EiaaxDemo.Common.ps1`
+**Función:** `Start-EiaaxManagedProcess` (ahora delega en `Build-EiaaxManagedProcessWrapperContent`)
 **Línea afectada (patrón anterior):** construcción de `$serviceCommand` + `Get-EiaaxBatchQuotedArgument` sobre el comando completo
 
 ### Comando incorrecto anterior

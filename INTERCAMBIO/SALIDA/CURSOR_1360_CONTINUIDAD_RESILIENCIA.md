@@ -1,8 +1,8 @@
 # EMPLEADOS IA — BLOQUE 1360
 ## Continuidad operativa, resiliencia, backup y recuperación
 
-**Rama:** `cursor/1360-continuidad-resiliencia`  
-**Base:** `cursor/1250-convergencia-final-post-v1` @ `eb229806136e29acddc0f592b5f017f5c3cb2958`  
+**Rama:** `cursor/1360-continuidad-resiliencia`
+**Base:** `cursor/1250-convergencia-final-post-v1` @ `eb229806136e29acddc0f592b5f017f5c3cb2958`
 **Alcance:** Capa administrativa de continuidad (no sustituye infraestructura real ni herramientas externas).
 
 ---
@@ -77,9 +77,9 @@
 | ALEMBIC | PASS |
 | FRONTEND | PASS |
 
-**P0:** 0  
-**P1:** 0  
-**P2:** 0  
+**P0:** 0
+**P1:** 0
+**P2:** 0
 
 **VEREDICTO:** APTO
 

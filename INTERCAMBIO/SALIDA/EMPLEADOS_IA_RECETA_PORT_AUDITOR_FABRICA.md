@@ -1,10 +1,10 @@
 # EMPLEADOS IA — RECETA DE PORTABILIDAD
 ## Ciclo Auditor → Mi Trabajo → Fábrica
 
-**Agente:** C (certificación final)  
-**Fecha:** 2026-08-29  
-**Rama origen certificada:** `cursor/ciclo-auditor-fabrica-dec7`  
-**HEAD:** `0de93ec5abf03670fc2e6d27635b3bc9314e8b39`  
+**Agente:** C (certificación final)
+**Fecha:** 2026-08-29
+**Rama origen certificada:** `cursor/ciclo-auditor-fabrica-dec7`
+**HEAD:** `0de93ec5abf03670fc2e6d27635b3bc9314e8b39`
 **Base destino esperada:** rama de integración vigente (NO `cursor/fase2-central-integracion`, NO `main`, NO `V1`)
 
 ---

@@ -1,9 +1,9 @@
 # EMPLEADOS IA — CORRECCIÓN FINAL DATABASE_URL TERMINADA
 
-**Agente:** B — Corrección precedencia P1  
-**Rama:** `cursor/v1-fix-docker-p1-3581`  
-**Base:** `831d0c2`  
-**HEAD anterior:** `36a7af6`  
+**Agente:** B — Corrección precedencia P1
+**Rama:** `cursor/v1-fix-docker-p1-3581`
+**Base:** `831d0c2`
+**HEAD anterior:** `36a7af6`
 **NO merge**
 
 ---

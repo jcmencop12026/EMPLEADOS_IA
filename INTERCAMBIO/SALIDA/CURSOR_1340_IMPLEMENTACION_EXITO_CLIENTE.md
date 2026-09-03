@@ -1,9 +1,9 @@
 # EMPLEADOS_IA — BLOQUE 1340 IMPLEMENTACIÓN Y ÉXITO DEL CLIENTE
 
-**Agente:** A  
-**Rama:** `cursor/1340-implementacion-exito-cliente`  
-**Base:** `703bbf9aec8e807e96c16c16c6415994ff01df9f4` (Bloque 1320)  
-**Alembic HEAD:** `1340a1b2c3d4e`  
+**Agente:** A
+**Rama:** `cursor/1340-implementacion-exito-cliente`
+**Base:** `703bbf9aec8e807e96c16c16c6415994ff01df9f4` (Bloque 1320)
+**Alembic HEAD:** `1340a1b2c3d4e`
 **Modo:** POST-V1 — sin V1, Docker, 1250, 1270, 1300, 1310, 1330
 
 ---

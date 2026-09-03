@@ -1,7 +1,7 @@
 # EIAAX — Candidato V1 experiencia y convergencia
 
-**SHA:** (ver commit final)  
-**Rama:** `cursor/experiencia-v1-convergencia-85e4`  
+**SHA:** (ver commit final)
+**Rama:** `cursor/experiencia-v1-convergencia-85e4`
 **Base Windows:** `0014a4b` — **PRESERVADA**
 
 ## WINDOWS STARTUP BASE 0014a4b PRESERVADA: **SÍ**

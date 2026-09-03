@@ -1,9 +1,9 @@
 # EMPLEADOS_IA — BLOQUE 1100 — CIERRE OPERATIVO DE OPORTUNIDADES Y EJECUCIÓN
 
-**Agente:** D  
-**Base:** `4c03cbe` (certificación V1 R2 PostgreSQL)  
-**Rama:** `cursor/1100-cierre-operativo-oportunidades`  
-**Alcance:** B1.1 cierre UI oportunidades + B1.4 cadena de ejecución  
+**Agente:** D
+**Base:** `4c03cbe` (certificación V1 R2 PostgreSQL)
+**Rama:** `cursor/1100-cierre-operativo-oportunidades`
+**Alcance:** B1.1 cierre UI oportunidades + B1.4 cadena de ejecución
 **Restricción:** Sin tocar `cursor/v1-integracion-final` ni PR #32
 
 ---

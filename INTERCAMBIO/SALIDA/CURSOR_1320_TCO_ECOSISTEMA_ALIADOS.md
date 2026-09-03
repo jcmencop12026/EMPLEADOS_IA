@@ -1,9 +1,9 @@
 # EMPLEADOS_IA — BLOQUE 1320 TCO Y ECOSISTEMA DE ALIADOS
 
-**Agente:** A  
-**Rama:** `cursor/1320-tco-ecosistema-aliados`  
-**Base:** `9a616739c4ab1f0766cf7d46005baf2a4c3e4fec` (Bloque 1280)  
-**Alembic HEAD:** `1320a1b2c3d4e`  
+**Agente:** A
+**Rama:** `cursor/1320-tco-ecosistema-aliados`
+**Base:** `9a616739c4ab1f0766cf7d46005baf2a4c3e4fec` (Bloque 1280)
+**Alembic HEAD:** `1320a1b2c3d4e`
 **Modo:** POST-V1 — sin V1, Docker, 1250, 1270, 1300, 1310
 
 ---

@@ -1,10 +1,10 @@
 # CURSOR 1240 — Inteligencia externa y oportunidades estratégicas
 
-**Fecha:** 2026-08-29  
-**Rama:** `cursor/1240-inteligencia-externa-85e4`  
-**Base:** `5eaad7e` (bloque 1120)  
-**HEAD:** _pendiente commit_  
-**Estado:** **BLOQUE 1240 TERMINADO**  
+**Fecha:** 2026-08-29
+**Rama:** `cursor/1240-inteligencia-externa-85e4`
+**Base:** `5eaad7e` (bloque 1120)
+**HEAD:** _pendiente commit_
+**Estado:** **BLOQUE 1240 TERMINADO**
 **NO MERGE**
 
 ---

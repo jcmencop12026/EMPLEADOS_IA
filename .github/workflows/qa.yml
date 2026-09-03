@@ -38,7 +38,7 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql+psycopg2://empleados_test:empleados_test@localhost:5432/empleados_ia_test
-      JWT_SECRET: ci-test-secret-qa-infra-001
+      JWT_SECRET: ci-test-secret-qa-infra-001-min-32-chars
     steps:
       - name: Checkout
         uses: actions/checkout@v4

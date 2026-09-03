@@ -1,7 +1,7 @@
 # EMPLEADOS_IA — CORRECCIÓN P0 PRE-CERTIFICACIÓN V1
 
-**Rama:** `cursor/v1-integracion-final`  
-**PR:** #32 (DRAFT)  
+**Rama:** `cursor/v1-integracion-final`
+**PR:** #32 (DRAFT)
 **Fecha:** 2026-08-28
 
 ---

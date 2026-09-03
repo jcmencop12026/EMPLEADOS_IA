@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text, create_engine, inspect, text
+from sqlalchemy import Boolean, DateTime, Float, Integer, LargeBinary, String, Text, create_engine, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.types import Numeric, TypeEngine
 
@@ -37,6 +37,7 @@ _TYPE_MAP: dict[type[TypeEngine], str] = {
     Float: "REAL",
     Numeric: "NUMERIC",
     DateTime: "TEXT",
+    LargeBinary: "BLOB",
 }
 
 
@@ -124,7 +125,7 @@ def _normalize_sqlite_type(declared: str) -> str:
         return "INTEGER"
     if "CHAR" in upper or "CLOB" in upper or "TEXT" in upper:
         return "TEXT"
-    if "BLOB" in upper:
+    if "BLOB" in upper or upper == "BINARY":
         return "BLOB"
     if "REAL" in upper or "FLOA" in upper or "DOUB" in upper or "NUM" in upper or "DEC" in upper:
         return "REAL"

@@ -1,6 +1,6 @@
 # 04 — Brechas para experiencia comercial real (Grupo B)
 
-**Grupo B — FALTA PARA EXPERIENCIA COMERCIAL REAL:** construir prioritariamente.  
+**Grupo B — FALTA PARA EXPERIENCIA COMERCIAL REAL:** construir prioritariamente.
 **Filas Grupo B:** **19 / 136** (14,0%)
 
 ---

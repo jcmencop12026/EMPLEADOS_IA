@@ -1,11 +1,11 @@
 # EMPLEADOS_IA — Corrección final pre-release V1
 
-**Agente:** D / Integrador  
-**Rama:** `cursor/v1-integracion-final`  
-**PR:** #32 (DRAFT — NO MERGE)  
-**HEAD anterior:** `3745b5ab6811834b8a3128457020fcf77ef116cb`  
-**HEAD nuevo:** `b3b2eaf8c82cce8b17625c940e0342c387e2a197`  
-**Commit:** `fix(v1): close prerelease ia onboarding and pg certification gaps`  
+**Agente:** D / Integrador
+**Rama:** `cursor/v1-integracion-final`
+**PR:** #32 (DRAFT — NO MERGE)
+**HEAD anterior:** `3745b5ab6811834b8a3128457020fcf77ef116cb`
+**HEAD nuevo:** `b3b2eaf8c82cce8b17625c940e0342c387e2a197`
+**Commit:** `fix(v1): close prerelease ia onboarding and pg certification gaps`
 **Alembic head:** `d1e2f3a4b5c6` (único head, sin migración nueva)
 
 ---

@@ -1,9 +1,9 @@
 # EMPLEADOS_IA — CONVERGENCIA 1250B
 ## Inteligencia externa + Diagnóstico transversal
 
-**Rama:** `cursor/1250b-inteligencia-externa-diagnostico-85e4`  
-**Base:** `166a04fa228433073936ea5d7dc2702f1a8324ae` (1220)  
-**HEAD:** ver commit final tras push  
+**Rama:** `cursor/1250b-inteligencia-externa-diagnostico-85e4`
+**Base:** `166a04fa228433073936ea5d7dc2702f1a8324ae` (1220)
+**HEAD:** ver commit final tras push
 **Fecha:** 2026-08-29
 
 ---

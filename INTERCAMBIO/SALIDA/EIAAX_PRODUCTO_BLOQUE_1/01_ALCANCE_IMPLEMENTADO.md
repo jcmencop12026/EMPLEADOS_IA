@@ -1,7 +1,7 @@
 # 01 — Alcance implementado — Bloque Producto 1
 
-**Proyecto:** EIAAX / EMPLEADOS_IA  
-**Base certificada:** `b19b04dd438f5b13b422e9a760f54fa074fb52ed`  
+**Proyecto:** EIAAX / EMPLEADOS_IA
+**Base certificada:** `b19b04dd438f5b13b422e9a760f54fa074fb52ed`
 **Rama:** `cursor/producto-bloque-1-evaluacion-85e4`
 
 ## Objetivo cumplido

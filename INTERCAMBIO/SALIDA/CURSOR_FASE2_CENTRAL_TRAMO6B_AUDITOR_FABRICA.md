@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — FASE 2 CENTRAL TRAMO 6B (AUDITOR + FÁBRICA + CICLO DE MEJORA)
 
-**Tipo:** Integración selectiva Auditor, Fábrica MB-06 y ciclo de mejora  
-**Fecha:** 2026-08-30  
-**Agente:** GENERAL  
+**Tipo:** Integración selectiva Auditor, Fábrica MB-06 y ciclo de mejora
+**Fecha:** 2026-08-30
+**Agente:** GENERAL
 **Rama:** `cursor/fase2-central-integracion`
 
 ---

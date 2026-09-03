@@ -1,7 +1,7 @@
 # EMPLEADOS_IA — CORRECCIÓN P1 MIGRATION ROUNDTRIP 1250B
 
-**Rama:** `cursor/1250b-fix-migration-roundtrip-85e4`  
-**Base:** `af26097ee48d34255b2ffa6ba79ba977c2d7b1a24`  
+**Rama:** `cursor/1250b-fix-migration-roundtrip-85e4`
+**Base:** `af26097ee48d34255b2ffa6ba79ba977c2d7b1a24`
 **Fecha:** 2026-08-29
 
 ---
@@ -25,7 +25,7 @@ Alembic en modo batch para SQLite exige restricciones con nombre explícito. La 
 
 ## Corrección aplicada
 
-**Tipo:** Opción A — corregir operación de constraint en migración histórica `1120a1b2c3d4e`  
+**Tipo:** Opción A — corregir operación de constraint en migración histórica `1120a1b2c3d4e`
 **Revision IDs modificados:** NO (solo contenido de la migración existente)
 
 Cambios en `backend/alembic/versions/1120a1b2c3d4e_senales_reales_deteccion.py`:

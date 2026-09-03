@@ -24,7 +24,7 @@ Ensayo real en rama aislada `cursor/ensayo-1330-sobre-fase1` (sin tocar `cursor/
 commits posteriores: AJUSTES-CONFLICTOS, TESTS, DOC
 ```
 
-**Rama central modificada:** NO  
+**Rama central modificada:** NO
 **Merge:** NO
 
 ---
@@ -45,8 +45,8 @@ Cherry-pick `4f802c4` sobre Fase 1 generó **9 conflictos** (coincide con receta
 | `frontend/src/auth/permissions.ts` | CONFLICTO MANUAL | Rutas continuidad + integraciones | Ninguno |
 | `tests/conftest.py` | CONFLICTO MANUAL | Imports modelos todos los bloques | Ninguno |
 
-**CONFLICTOS REALES:** 9  
-**CONFLICTOS MANUALES:** 9  
+**CONFLICTOS REALES:** 9
+**CONFLICTOS MANUALES:** 9
 **CONFLICTO AUTOMÁTICO RESUELTO:** 0 (todos requirieron edición explícita)
 
 ### Hub sin conflicto en este ensayo

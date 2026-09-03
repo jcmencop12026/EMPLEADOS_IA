@@ -1,9 +1,9 @@
 # 02 — Diferencial V1 ↔ V2 (pre-inventario mínimo)
 
-**V1 certificado:** `e8cb853a2c447fd5e136a0907e44d68ce2c8cf81`  
-**V2 certificado:** `dc1e6cda8d3de6695d9a052a2a13afdb5f431077`  
-**Merge-base común:** `4c03cbe0ba0ff8537452ec58f7aaca7ce18bede4`  
-**Commits V1→V2:** 116  
+**V1 certificado:** `e8cb853a2c447fd5e136a0907e44d68ce2c8cf81`
+**V2 certificado:** `dc1e6cda8d3de6695d9a052a2a13afdb5f431077`
+**Merge-base común:** `4c03cbe0ba0ff8537452ec58f7aaca7ce18bede4`
+**Commits V1→V2:** 116
 **Diff agregado:** 376 archivos, +85 124 / −886 líneas
 
 ---

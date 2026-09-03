@@ -13,7 +13,7 @@
 | G | Oportunidad de mejora |
 | H | Tarea / seguimiento |
 
-**Servicio:** `evaluacion_intent_service.py`  
+**Servicio:** `evaluacion_intent_service.py`
 **Panel:** `EiaaxAskPanel.tsx` — sin ejecución externa automática.
 
 ## Capacidades (no conectores)

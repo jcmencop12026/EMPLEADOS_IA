@@ -1,9 +1,9 @@
 # EIAAX — Matriz revisión integral (candidato post-1416671)
 
-**Fecha:** 2026-09-03  
-**Rama:** `cursor/revision-integral-completa-85e4`  
-**Base:** `14166710932fa87115e700ae0b1e2aa7e110b744`  
-**Alembic:** `1831a1b2c3d4e`  
+**Fecha:** 2026-09-03
+**Rama:** `cursor/revision-integral-completa-85e4`
+**Base:** `14166710932fa87115e700ae0b1e2aa7e110b744`
+**Alembic:** `1831a1b2c3d4e`
 **Estado:** NO autorizado para prueba humana — entrega a ChatGPT para revisión previa
 
 ---

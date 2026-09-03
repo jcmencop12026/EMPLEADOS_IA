@@ -1,8 +1,8 @@
 # 01 — Corrección P1-D-UX-01 (C1-R1)
 
-**Proyecto:** EIAAX / EMPLEADOS_IA  
-**Rama:** `cursor/eiaax-convergencia-v1-v2`  
-**Fecha UTC:** 2026-08-31  
+**Proyecto:** EIAAX / EMPLEADOS_IA
+**Rama:** `cursor/eiaax-convergencia-v1-v2`
+**Fecha UTC:** 2026-08-31
 **Tipo:** Corrección única de cierre UX — fallback determinístico de ruta inicial `/`
 
 ---

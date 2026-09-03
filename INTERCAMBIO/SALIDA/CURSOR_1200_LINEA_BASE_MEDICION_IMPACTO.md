@@ -1,9 +1,9 @@
 # EMPLEADOS_IA — BLOQUE 1200 — LÍNEA BASE Y MEDICIÓN ANTES/DESPUÉS
 
-**Agente:** D  
-**Base:** `4c03cbe`  
-**Rama:** `cursor/1200-linea-base-impacto`  
-**Alcance:** B2.1 línea base → intervención → medición → comparación → impacto real  
+**Agente:** D
+**Base:** `4c03cbe`
+**Rama:** `cursor/1200-linea-base-impacto`
+**Alcance:** B2.1 línea base → intervención → medición → comparación → impacto real
 **Restricción:** Sin tocar bloque 1100, V1, PR #32, ROI, pricing, FinOps 1110, señales 1120
 
 ---

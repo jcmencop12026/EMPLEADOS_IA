@@ -2,8 +2,8 @@
 
 Procedimiento minimo para arrancar EIAAX integrado (Lote 3) en Windows con SQLite demo.
 
-**Rama:** `cursor/windows-demo-arranque-85e4`  
-**Worktree:** `D:\EMPLEADOS_IA_INTEGRADO`  
+**Rama:** `cursor/windows-demo-arranque-85e4`
+**Worktree:** `D:\EMPLEADOS_IA_INTEGRADO`
 **Alembic head:** `1770a1b2c3d4e`
 
 ---
@@ -34,7 +34,7 @@ Procedimiento minimo para arrancar EIAAX integrado (Lote 3) en Windows con SQLit
 
 ### Validacion agente
 
-Parser PowerShell real (`ParseFile`): **7/7 scripts, 0 errores**.  
+Parser PowerShell real (`ParseFile`): **7/7 scripts, 0 errores**.
 Ejecucion Windows real: **pendiente confirmacion usuario**.
 
 ---

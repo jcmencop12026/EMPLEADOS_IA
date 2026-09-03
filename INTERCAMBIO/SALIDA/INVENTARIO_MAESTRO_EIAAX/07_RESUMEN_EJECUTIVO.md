@@ -1,7 +1,7 @@
 # 07 — Resumen ejecutivo
 
-**Proyecto:** EIAAX / EMPLEADOS_IA  
-**Fecha UTC:** 2026-08-31  
+**Proyecto:** EIAAX / EMPLEADOS_IA
+**Fecha UTC:** 2026-08-31
 **Producto evaluado:** `b19b04dd438f5b13b422e9a760f54fa074fb52ed`
 
 ---

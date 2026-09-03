@@ -1,7 +1,7 @@
 # 04 — Plan de integración controlada V1 + V2
 
-**Base convergencia:** `cursor/eiaax-convergencia-v1-v2` @ `dc1e6cda8d3de6695d9a052a2a13afdb5f431077`  
-**V1 referencia:** `e8cb853a2c447fd5e136a0907e44d68ce2c8cf81`  
+**Base convergencia:** `cursor/eiaax-convergencia-v1-v2` @ `dc1e6cda8d3de6695d9a052a2a13afdb5f431077`
+**V1 referencia:** `e8cb853a2c447fd5e136a0907e44d68ce2c8cf81`
 **Principio:** incremental, verificable, sin merge masivo
 
 ---

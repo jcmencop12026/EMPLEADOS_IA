@@ -1,8 +1,8 @@
 # EIAAX — Verificación final de coherencia (candidato d3ff7f1+)
 
-**Fecha:** 2026-09-03  
-**Rama PR #169:** `cursor/revision-integral-completa-85e4`  
-**Candidato aislado:** sí — **NO** es rama autoritativa Windows  
+**Fecha:** 2026-09-03
+**Rama PR #169:** `cursor/revision-integral-completa-85e4`
+**Candidato aislado:** sí — **NO** es rama autoritativa Windows
 **NO merge** · **NO promoción** · **NO comando al usuario**
 
 ---
@@ -12,8 +12,8 @@
 | Campo | Valor |
 |---|---|
 | **Base exacta** | `14166710932fa87115e700ae0b1e2aa7e110b744` (`cursor/convergencia-comercial-v1-85e4`) |
-| **Candidato HEAD** | `8d693bb` (coherencia post-d3ff7f1) |
-| **producto / integration_sha** | `4b77c49` (cierre brechas) → actualizar tras commit coherencia |
+| **Candidato HEAD** | _ver HEAD final sección C en `EIAAX_CIERRE_CERTIFICACION_CI_PR169.md`_ |
+| **producto / integration_sha** | _alineado al HEAD final en manifest_ |
 | **PR** | [#169](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/169) |
 | **Conflictos con base** | **0** (`git merge-tree` sin changed-in-both) |
 | **Migraciones nuevas** | **0** — Alembic head sin cambio: `1831a1b2c3d4e` |
@@ -85,7 +85,7 @@ Semilla usaba `RealValueNature.VERIFICADO` junto a banner DEMO → riesgo de int
 
 ### Fuga cross-org
 
-`test_vista_entidad` org B → 403/404 — **PASS**  
+`test_vista_entidad` org B → 403/404 — **PASS**
 Asistente demo atado a `organization_id` del expediente.
 
 Respuesta incluye `modo_respuesta`, `proveedor`, `llm_real`.
@@ -113,7 +113,7 @@ Motor único: `fetchEvaluacionImpacto` + datos expediente. Sin motores duplicado
 
 - qué_ocurrió → por_qué → qué_significa → requiere_atención → oportunidad → valor → recomendación → acciones
 
-**CC Horizonte:** `CentroControlEmpresaPanel` — strip interpretación + tablero `ImpactoGrafico`  
+**CC Horizonte:** `CentroControlEmpresaPanel` — strip interpretación + tablero `ImpactoGrafico`
 **Evidencia:** `data/evidence/coherencia-verificacion/01-cc-horizonte-tablero.png`
 
 ---
@@ -150,7 +150,7 @@ Motor único: `fetchEvaluacionImpacto` + datos expediente. Sin motores duplicado
 | Check | Estado |
 |---|---|
 | PDF + CSV upload/list/download | PASS |
-| Persistencia post-reinicio simulado | `test_documentos_persisten_tras_reinicio_simulado` PASS |
+| Persistencia post-reinicio real | `test_documentos_persisten_tras_reinicio_real` PASS (uvicorn stop/start) |
 | Metadatos | organization_id vía sesión; expediente + item_id en ruta |
 | Excel adicional | No exigido — CSV cubre tabular V1 |
 
@@ -212,13 +212,16 @@ Motor único: `fetchEvaluacionImpacto` + datos expediente. Sin motores duplicado
 ## 12. Pruebas ejecutadas
 
 ```
-pytest tests/test_cierre_brechas_horizonte.py  → 8/8 PASS
-cert_horizonte_e2e.mjs                         → 13/13 (previo)
-cert_empresarial_completo.mjs                  → 24/24 (previo)
-cert_visual_audit.mjs                          → 11/11 (previo)
-cert_logo_upload.mjs                           → PASS >1MB
-cert_opciones_e2e.mjs                          → ROTA=0
-cert_coherencia_verificacion.mjs               → capturas 5 pantallas
+pytest tests/test_db_startup_805e.py              → 4/4 PASS (HEAD final)
+pytest tests/test_cierre_brechas_horizonte.py     → 8/8 PASS (HEAD final)
+pytest -m "certification and not certification_intensive" → PASS (HEAD final)
+cert_horizonte_e2e.mjs                            → 13/13 (HEAD final)
+cert_empresarial_completo.mjs                     → 24/24 (HEAD final)
+cert_visual_audit.mjs                             → 11/11 (HEAD final)
+cert_logo_upload.mjs                              → PASS (HEAD final)
+cert_opciones_e2e.mjs                             → ROTA=0 (HEAD final)
+cert_coherencia_verificacion.mjs                  → PASS (HEAD final)
+frontend npm run build                            → PASS (HEAD final)
 ```
 
 ---

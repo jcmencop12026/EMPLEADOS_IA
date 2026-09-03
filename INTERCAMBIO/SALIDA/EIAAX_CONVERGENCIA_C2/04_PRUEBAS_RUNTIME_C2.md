@@ -1,6 +1,6 @@
 # 04 — Pruebas y Runtime C2
 
-**Proyecto:** EIAAX / EMPLEADOS_IA  
+**Proyecto:** EIAAX / EMPLEADOS_IA
 **Fecha UTC:** 2026-08-31
 
 ---

@@ -1,7 +1,7 @@
 # EMPLEADOS_IA — BASE PUENTE FIJADA Y PLAN ACTUALIZADO
 
-**Fecha:** 2026-08-29  
-**Tipo:** Control / documentación — **sin convergencia ejecutada**  
+**Fecha:** 2026-08-29
+**Tipo:** Control / documentación — **sin convergencia ejecutada**
 **Rama:** `cursor/base-puente-v1-post-v1`
 
 ---

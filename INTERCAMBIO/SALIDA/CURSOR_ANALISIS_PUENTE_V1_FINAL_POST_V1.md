@@ -1,7 +1,7 @@
 # EMPLEADOS_IA — ANÁLISIS DEL PUENTE V1 FINAL → CONVERGENCIA POST-V1
 
-**Tipo:** Solo lectura — crítico antes de converger  
-**Fecha:** 2026-08-29  
+**Tipo:** Solo lectura — crítico antes de converger
+**Fecha:** 2026-08-29
 **Verificado en:** `origin` (fetch explícito de ambos SHA)
 
 ---
@@ -223,7 +223,7 @@ d1e2f3a4b5c6  (merge multitenant+LLM — presente en AMBOS)
 
 ## 8. Impacto en plan único anterior
 
-**Archivo:** `CURSOR_PLAN_UNICO_CONVERGENCIA_FINAL_POST_V1.md`  
+**Archivo:** `CURSOR_PLAN_UNICO_CONVERGENCIA_FINAL_POST_V1.md`
 **¿Requiere actualización?** **SÍ**
 
 ### Correcciones necesarias (cuando se actualice, no ahora)

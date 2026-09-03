@@ -1,7 +1,7 @@
 # 02 — Pruebas C1-R1
 
-**Proyecto:** EIAAX / EMPLEADOS_IA  
-**Corrección:** P1-D-UX-01 — fallback determinístico `/`  
+**Proyecto:** EIAAX / EMPLEADOS_IA
+**Corrección:** P1-D-UX-01 — fallback determinístico `/`
 **Fecha UTC:** 2026-08-31
 
 ---

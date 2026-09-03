@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — Corrección de interfaz pre-release
 
-**Agente:** C  
-**Base:** `4c03cbe0ba0ff8537452ec58f7aaca7ce18bede4` (`4c03cbe`)  
-**Rama:** `cursor/v1-fix-interfaz-prerelease`  
+**Agente:** C
+**Base:** `4c03cbe0ba0ff8537452ec58f7aaca7ce18bede4` (`4c03cbe`)
+**Rama:** `cursor/v1-fix-interfaz-prerelease`
 **NO merge** · **NO tocar** `cursor/v1-integracion-final` / PR #32
 
 ---

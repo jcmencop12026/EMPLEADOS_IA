@@ -1,8 +1,8 @@
 # EIAAX — Preparación prueba humana Windows (candidato 33d7cb21)
 
-**Fecha:** 2026-09-03  
-**Rama:** `cursor/experiencia-v1-convergencia-85e4`  
-**PR:** #168  
+**Fecha:** 2026-09-03
+**Rama:** `cursor/experiencia-v1-convergencia-85e4`
+**PR:** #168
 **Ruta Windows autoritativa:** `D:\EMPLEADOS_IA_CONVERGENCIA`
 
 ---

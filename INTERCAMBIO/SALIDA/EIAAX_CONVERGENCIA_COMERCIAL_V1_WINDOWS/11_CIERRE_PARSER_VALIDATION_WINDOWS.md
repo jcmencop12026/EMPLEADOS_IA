@@ -1,15 +1,15 @@
 # Cierre pipeline Windows — PARSER VALIDATION FAIL
 
-**Rama:** `cursor/convergencia-comercial-v1-85e4`  
+**Rama:** `cursor/convergencia-comercial-v1-85e4`
 **Worktree:** `D:\EMPLEADOS_IA_CONVERGENCIA`
 
 ---
 
 ## 1. Causa exacta de `PARSER VALIDATION: FAIL`
 
-**Archivo:** `scripts/windows/test_convergence_atomic.ps1`  
-**Línea:** 124  
-**Contenido:** cadena con em-dash Unicode (`EIAAX — WINDOWS NO CERTIFICADO`)  
+**Archivo:** `scripts/windows/test_convergence_atomic.ps1`
+**Línea:** 124
+**Contenido:** cadena con em-dash Unicode (`EIAAX — WINDOWS NO CERTIFICADO`)
 **Error en Windows PowerShell 5.1:** el archivo estaba en UTF-8 **sin BOM**. PS 5.1 interpreta archivos sin BOM con la codepage del sistema; los bytes UTF-8 del em-dash producen errores de parseo.
 
 Los archivos visibles al final del scroll (`test_preparador_productivo.ps1`, `validar_arranque_windows.ps1`, etc.) mostraban PASS porque se listan alfabéticamente **después** del archivo fallido. El agregador terminaba en FAIL sin listar explícitamente cuál archivo había fallado.

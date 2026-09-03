@@ -1,8 +1,8 @@
 # EIAAX — Promoción controlada candidato Windows
 
-**Fecha:** 2026-09-03  
-**Candidato promovido:** `e7808efcad2d61d9d671079ac33a02ac1f8f6455`  
-**PR:** #168 → integrado en rama autoritativa  
+**Fecha:** 2026-09-03
+**Candidato promovido:** `e7808efcad2d61d9d671079ac33a02ac1f8f6455`
+**PR:** #168 → integrado en rama autoritativa
 **Contrato anterior preservado:** `0014a4b` (ver `EIAAX_WINDOWS_CONTRATO_0014a4b_PRESERVADO.md`)
 
 ---
@@ -156,8 +156,8 @@ Desde `D:\EMPLEADOS_IA_CONVERGENCIA`:
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\windows\arrancar_convergencia_windows.ps1"
 ```
 
-**Credenciales:** `org_a_admin` / `DemoA2026!`  
-**Horizonte:** Centro de Control → Contexto → `[DEMO] Clínica Demo Horizonte — EVA-2026-0002`  
+**Credenciales:** `org_a_admin` / `DemoA2026!`
+**Horizonte:** Centro de Control → Contexto → `[DEMO] Clínica Demo Horizonte — EVA-2026-0002`
 **Detener:** `scripts\windows\detener_demo_eiaax.ps1`
 
 ---

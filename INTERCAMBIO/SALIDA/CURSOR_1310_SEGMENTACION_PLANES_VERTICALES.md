@@ -1,9 +1,9 @@
 # CURSOR 1310 — Segmentación de clientes + planes verticales + paquetes comerciales
 
-**Fecha:** 2026-08-29  
-**Rama:** `cursor/1310-segmentacion-planes-verticales`  
-**Base:** `cursor/1280-modelo-comercial-valor-85e4` @ `9a61673b28ec194bbf561f76bd14a1f50bc8adbb`  
-**Estado:** **BLOQUE 1310 TERMINADO**  
+**Fecha:** 2026-08-29
+**Rama:** `cursor/1310-segmentacion-planes-verticales`
+**Base:** `cursor/1280-modelo-comercial-valor-85e4` @ `9a61673b28ec194bbf561f76bd14a1f50bc8adbb`
+**Estado:** **BLOQUE 1310 TERMINADO**
 **NO MERGE**
 
 ---

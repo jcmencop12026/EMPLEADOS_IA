@@ -1,8 +1,8 @@
 # 01 — Resultado Bloque C2
 
-**Proyecto:** EIAAX / EMPLEADOS_IA  
-**Rama:** `cursor/eiaax-convergencia-v1-v2`  
-**Fecha UTC:** 2026-08-31  
+**Proyecto:** EIAAX / EMPLEADOS_IA
+**Rama:** `cursor/eiaax-convergencia-v1-v2`
+**Fecha UTC:** 2026-08-31
 **Tipo:** Gobierno multiempresa y operación central
 
 ---

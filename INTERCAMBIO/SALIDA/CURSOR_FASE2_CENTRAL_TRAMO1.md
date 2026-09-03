@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — FASE 2 CENTRAL TRAMO 1
 
-**Tipo:** Integración incremental controlada  
-**Fecha:** 2026-08-29  
-**Agente:** GENERAL  
+**Tipo:** Integración incremental controlada
+**Fecha:** 2026-08-29
+**Agente:** GENERAL
 **Rama:** `cursor/fase2-central-integracion`
 
 ---

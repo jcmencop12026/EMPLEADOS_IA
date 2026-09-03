@@ -1,9 +1,9 @@
 # EMPLEADOS_IA — BLOQUE 1230 — CENTRO DE CONTROL EJECUTIVO
 
-**Agente:** D  
-**Base:** `4c03cbe`  
-**Rama:** `cursor/1230-centro-control-ejecutivo`  
-**Alcance:** Capa de consolidación ejecutiva (solo consulta/agregación/presentación)  
+**Agente:** D
+**Base:** `4c03cbe`
+**Rama:** `cursor/1230-centro-control-ejecutivo`
+**Alcance:** Capa de consolidación ejecutiva (solo consulta/agregación/presentación)
 **Restricción:** Sin duplicar persistencia, sin tocar bloques 1100/1110/1120/1200/1210/1220, V1, PR #32
 
 ---

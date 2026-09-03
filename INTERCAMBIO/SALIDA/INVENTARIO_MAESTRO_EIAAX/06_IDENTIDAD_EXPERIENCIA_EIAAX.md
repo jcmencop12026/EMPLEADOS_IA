@@ -1,6 +1,6 @@
 # 06 — Identidad y experiencia EIAAX
 
-**Base evaluada:** SHA `b19b04dd438f5b13b422e9a760f54fa074fb52ed`  
+**Base evaluada:** SHA `b19b04dd438f5b13b422e9a760f54fa074fb52ed`
 **Alcance:** identidad visual, verbal, shell, navegación, español, temas
 
 ---

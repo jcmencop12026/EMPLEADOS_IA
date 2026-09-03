@@ -1,10 +1,10 @@
 # EMPLEADOS_IA — PLAN ÚNICO DE CONVERGENCIA FINAL POST-V1
 
-**Tipo:** Diseño / procedimiento — **NO EJECUTAR**  
-**Fecha:** 2026-08-29 (actualizado — base puente fijada)  
-**Base de integración:** `f2f1c0e832d17255c0d4a42a0c6ac06b4814d002` (`cursor/base-puente-v1-post-v1`)  
-**HEAD funcional puente:** `d57b831e41b8e017da612c3c442f9f29c981f674`  
-**Referencia histórica (ya no es base directa):** `eb229806136e29acddc0f592b5f017f5c3cb2958`  
+**Tipo:** Diseño / procedimiento — **NO EJECUTAR**
+**Fecha:** 2026-08-29 (actualizado — base puente fijada)
+**Base de integración:** `f2f1c0e832d17255c0d4a42a0c6ac06b4814d002` (`cursor/base-puente-v1-post-v1`)
+**HEAD funcional puente:** `d57b831e41b8e017da612c3c442f9f29c981f674`
+**Referencia histórica (ya no es base directa):** `eb229806136e29acddc0f592b5f017f5c3cb2958`
 **Agente:** Cursor (plan de convergencia)
 
 ---
@@ -114,8 +114,8 @@ G6  1360 (continuidad)
   →     integración Centro de Control
 ```
 
-**No dar por definitivo** el orden relativo de `1260` / `1270` / `1290` hasta el mapa quirúrgico de **C**.  
-**No dar por definitiva** la identidad hasta la cadena limpia de **A**.  
+**No dar por definitivo** el orden relativo de `1260` / `1270` / `1290` hasta el mapa quirúrgico de **C**.
+**No dar por definitiva** la identidad hasta la cadena limpia de **A**.
 **No dar por definitivo** `1330` hasta la versión limpia de **B**.
 
 ### Tabla de grupos
@@ -412,9 +412,9 @@ Tras G3: ejecutar tests de protección SUPERADMIN.
 | 1370 | `3c545f64fe06569ecadbfa8523d65af798d472e3` | Cherry-pick #2 |
 | 1380 | `a1c3319e87a4bd17279ab3b4756cca006208e932` | Cherry-pick #3 |
 
-**Secuencia obligatoria:** 1300 → 1370 → 1380.  
-**Alembic:** re-anclar `1300a` a `1250f`.  
-**NO** merge directo de ningún HEAD de esta cadena.  
+**Secuencia obligatoria:** 1300 → 1370 → 1380.
+**Alembic:** re-anclar `1300a` a `1250f`.
+**NO** merge directo de ningún HEAD de esta cadena.
 **[EN CURSO A]** — usar SHAs de cadena limpia cuando A entregue.
 
 ---

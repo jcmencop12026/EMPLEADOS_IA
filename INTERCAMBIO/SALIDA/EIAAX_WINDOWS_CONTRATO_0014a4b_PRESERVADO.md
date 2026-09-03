@@ -1,6 +1,6 @@
 # EIAAX — Preservación contrato Windows certificado 0014a4b
 
-**Fecha preservación:** 2026-09-03  
+**Fecha preservación:** 2026-09-03
 **SHA certificado anterior:** `0014a4b` (recuperable vía `git show 0014a4b:scripts/windows/...`)
 
 ---

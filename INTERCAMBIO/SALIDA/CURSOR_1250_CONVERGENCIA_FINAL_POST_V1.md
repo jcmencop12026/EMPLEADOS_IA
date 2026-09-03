@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — CONVERGENCIA FINAL POST-V1 (1250A + 1250B + 1250C)
 
-**Agente:** C  
-**Fecha:** 2026-08-29  
-**Rama final:** `cursor/1250-convergencia-final-post-v1`  
+**Agente:** C
+**Fecha:** 2026-08-29
+**Rama final:** `cursor/1250-convergencia-final-post-v1`
 **HEAD:** `7c92f25`
 
 ---
@@ -45,7 +45,7 @@ Contiene bloques 1100–1220 + limpieza de aislamiento de tests (sin cambios de 
 | Convergencia | `c80671e` | Merge Alembic final `1250f1a2b3c4d` |
 | Fix roundtrip | `7c92f25` | Batch SQLite FK en `1110a1b2c3d4e` (requerido al converger 1110+1120) |
 
-**NO integrado:** 1260, 1270, 1280, 1290.  
+**NO integrado:** 1260, 1270, 1280, 1290.
 **NO tocado:** `main`, PR #32, ramas V1 candidata, Docker, `DATABASE_URL`.
 
 ---
@@ -71,7 +71,7 @@ Contiene bloques 1100–1220 + limpieza de aislamiento de tests (sin cambios de 
 | `1250b1c2d3e4f` | Merge 1220 + 1240 (1250B) |
 | `1250f1a2b3c4d` | **HEAD única final** — merge 1250A + 1250B |
 
-**Número de heads:** 1  
+**Número de heads:** 1
 **Roundtrip:** PASS (`test_migration_roundtrip_upgrade_downgrade_upgrade`)
 
 Correcciones SQLite reversibles (sin cambiar revision IDs):

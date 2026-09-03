@@ -1,6 +1,6 @@
 # EIAAX — Informe de cierre V1 (integración rama autoritativa)
 
-**Fecha:** 2026-09-02  
+**Fecha:** 2026-09-02
 **Estado:** Integración avanzada en rama autoritativa — **revisión humana condicionada** (ver sección V)
 
 ---

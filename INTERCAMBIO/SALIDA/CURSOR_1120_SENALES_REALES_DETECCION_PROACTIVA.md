@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — BLOQUE 1120
 ## Señales reales y detección proactiva (B1.5)
 
-**Rama:** `cursor/1120-senales-reales-deteccion`  
-**Base:** `4c03cbe`  
+**Rama:** `cursor/1120-senales-reales-deteccion`
+**Base:** `4c03cbe`
 **HEAD:** _(ver commit final)_
 
 ---

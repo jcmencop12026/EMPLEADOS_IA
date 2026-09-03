@@ -1,8 +1,8 @@
 # 03 — Capacidades existentes (Grupo A)
 
-**Grupo A — YA EXISTE:** preservar y reutilizar.  
-**Criterio:** estado VERDE, AMARILLO funcional, o MORADO (operativo con deuda UX no bloqueante).  
-**Base:** SHA `b19b04dd438f5b13b422e9a760f54fa074fb52ed`  
+**Grupo A — YA EXISTE:** preservar y reutilizar.
+**Criterio:** estado VERDE, AMARILLO funcional, o MORADO (operativo con deuda UX no bloqueante).
+**Base:** SHA `b19b04dd438f5b13b422e9a760f54fa074fb52ed`
 **Filas Grupo A:** **109 / 136** (80,1%)
 
 ---

@@ -1,7 +1,7 @@
 # EMPLEADOS IA — FASE 2 CENTRAL TRAMO 6E — CENTRO DE CONTROL EJECUTIVO
 
-**Rama:** `cursor/tramo6e-centro-control-85e4`  
-**Base:** `cursor/fase2-central-integracion` @ `1db7a7e5b0947cf89108b4cf8606a20497d21385`  
+**Rama:** `cursor/tramo6e-centro-control-85e4`
+**Base:** `cursor/fase2-central-integracion` @ `1db7a7e5b0947cf89108b4cf8606a20497d21385`
 **Fecha:** 2026-08-30
 
 ---

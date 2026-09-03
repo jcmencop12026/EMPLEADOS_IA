@@ -1,6 +1,6 @@
 # 05 — Roadmap post-V1 (Grupo C)
 
-**Grupo C — PRODUCTO MAESTRO POST-V1:** conservar en roadmap; no olvidar.  
+**Grupo C — PRODUCTO MAESTRO POST-V1:** conservar en roadmap; no olvidar.
 **Filas Grupo C:** **27 / 136** (19,9%)
 
 ---

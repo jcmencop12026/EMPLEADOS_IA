@@ -1,6 +1,6 @@
 # EMPLEADOS IA — Vistas identidad, seguridad y accesos
 
-**BASE:** `33793ae` (cadena 1300/1370/1380 + vistas integraciones)  
+**BASE:** `33793ae` (cadena 1300/1370/1380 + vistas integraciones)
 **RAMA:** `cursor/vistas-identidad-seguridad-accesos`
 
 ---

@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — GATE CONSOLIDADO POST-6D
 
-**Tipo:** Correcciones P1 consolidadas (agentes A/B/C/D) sobre central post-6D  
-**Fecha:** 2026-08-30  
-**Agente:** GENERAL  
+**Tipo:** Correcciones P1 consolidadas (agentes A/B/C/D) sobre central post-6D
+**Fecha:** 2026-08-30
+**Agente:** GENERAL
 **Rama:** `cursor/gate-consolidado-post6d-85e4`
 
 ---

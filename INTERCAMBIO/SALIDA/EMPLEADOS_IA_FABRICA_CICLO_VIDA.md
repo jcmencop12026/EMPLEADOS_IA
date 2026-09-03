@@ -1,10 +1,10 @@
 # EMPLEADOS IA — FÁBRICA CICLO DE VIDA (MB-06)
 
-**Agente:** C  
-**Fecha:** 2026-08-29  
-**Base:** `3049cc586d60fecfe18c035e94e5ea412b649270` (`cursor/fase2-central-integracion`)  
-**Rama:** `cursor/fabrica-empleados-ia-ciclo-vida`  
-**Fase2 central:** NO modificada  
+**Agente:** C
+**Fecha:** 2026-08-29
+**Base:** `3049cc586d60fecfe18c035e94e5ea412b649270` (`cursor/fase2-central-integracion`)
+**Rama:** `cursor/fabrica-empleados-ia-ciclo-vida`
+**Fase2 central:** NO modificada
 
 ---
 
@@ -71,9 +71,9 @@
 
 ## CIERRE P1 Y CERTIFICACIÓN DIFERENCIAL
 
-**Fecha cierre:** 2026-08-29  
-**Commits P1:** `dccc40f` (UI aprobaciones + segregación), `<HEAD_FINAL>` (certificación diferencial + fixes)  
-**HEAD antes P1:** `6430da879fd108bd3585f99d0b925674ed473cc6`  
+**Fecha cierre:** 2026-08-29
+**Commits P1:** `dccc40f` (UI aprobaciones + segregación), `<HEAD_FINAL>` (certificación diferencial + fixes)
+**HEAD antes P1:** `6430da879fd108bd3585f99d0b925674ed473cc6`
 **HEAD final:** ver §8
 
 ### P1 visual — Aprobaciones en ficha
@@ -104,8 +104,8 @@ Condiciones: SQLite aislado por corrida, mismos 2 tests, BASE `3049cc5` vs MB-06
 | `test_deny_blocks_orchestrator_execution` | PASS | PASS | **INTERMITENTE/ENTORNO** — fallaba en suite acumulada por selección de empleado DOCINT ajeno; estabilizado con `context.employee_id` |
 | `test_finops_limit_reached_is_published_from_real_execution` | PASS | PASS (tras fix) | **INTRODUCIDO POR MB-06** — `publish_with_guards` exige configuración completa; el fixture e2e no incluía instrucciones/modelo. Corregido en test sin relajar reglas de negocio |
 
-**FALLOS PREEXISTENTES CONFIRMADOS:** 0  
-**FALLOS INTRODUCIDOS MB-06 (sin corregir):** 0  
+**FALLOS PREEXISTENTES CONFIRMADOS:** 0
+**FALLOS INTRODUCIDOS MB-06 (sin corregir):** 0
 **ERRORES INTRODUCIDOS MB-06:** 0
 
 ### Segregación y publicación protegida

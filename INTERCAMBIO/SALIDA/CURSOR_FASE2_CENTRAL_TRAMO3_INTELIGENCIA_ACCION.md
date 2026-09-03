@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — FASE 2 CENTRAL TRAMO 3 (ID03 + 1260 → 1290 → 1270 + VISTAS)
 
-**Tipo:** Integración selectiva acumulativa — inteligencia, aprendizaje, optimización y multiproveedor  
-**Fecha:** 2026-08-29  
-**Agente:** GENERAL  
+**Tipo:** Integración selectiva acumulativa — inteligencia, aprendizaje, optimización y multiproveedor
+**Fecha:** 2026-08-29
+**Agente:** GENERAL
 **Rama:** `cursor/fase2-central-integracion`
 
 ---

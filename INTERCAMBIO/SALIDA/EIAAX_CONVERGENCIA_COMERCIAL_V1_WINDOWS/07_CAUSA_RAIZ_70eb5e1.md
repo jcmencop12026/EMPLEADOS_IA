@@ -1,6 +1,6 @@
 # Causa raíz: por qué 70eb5e1 no resolvió el caso real Windows
 
-**Fecha:** 2026-09-02  
+**Fecha:** 2026-09-02
 **SHA corregido:** ver commit actual en rama `cursor/convergencia-comercial-v1-85e4`
 
 ---
@@ -15,7 +15,7 @@ no python.exe candidates detected.
 Tried PATH, where.exe, py launcher, registry and standard install paths.
 ```
 
-Ese texto corresponde al código **anterior a 70eb5e1** (commit `7e6f4e4`).  
+Ese texto corresponde al código **anterior a 70eb5e1** (commit `7e6f4e4`).
 Si el usuario ejecutó tras `git pull`, posibles causas de código viejo:
 
 - `arrancar_convergencia_windows.ps1` no completó `git pull` (conflictos/red)
@@ -50,7 +50,7 @@ no se ejecutaba para obtener `sys.base_prefix` / `sys._base_executable`.
 
 ### B3. Bug de scope en `Build-EiaaxPythonResolutionPlan`
 
-El scriptblock `$addCandidate` usaba `$script:seen` persistente entre invocaciones.  
+El scriptblock `$addCandidate` usaba `$script:seen` persistente entre invocaciones.
 En la segunda llamada (p. ej. `Resolve-EiaaxPython` tras un `Build` previo en tests), los candidatos quedaban vacíos aunque la sonda sys funcionara.
 
 ---

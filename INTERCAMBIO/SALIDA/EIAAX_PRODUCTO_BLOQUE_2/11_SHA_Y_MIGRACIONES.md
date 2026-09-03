@@ -9,7 +9,7 @@
 
 ## Migración
 
-**Revisión:** `1410a1b2c3d4e`  
+**Revisión:** `1410a1b2c3d4e`
 **Archivo:** `backend/alembic/versions/1410a1b2c3d4e_evaluacion_piiax_prep_1410.py`
 
 Tablas nuevas:

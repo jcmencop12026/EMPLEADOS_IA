@@ -1,10 +1,10 @@
 # EIAAX — Cierre brechas revisión integral (entrega ChatGPT)
 
-**Fecha:** 2026-09-03  
-**Rama:** `cursor/revision-integral-completa-85e4`  
-**PR:** #169  
-**Base:** `cursor/convergencia-comercial-v1-85e4`  
-**SHA:** `4b77c49`  
+**Fecha:** 2026-09-03
+**Rama:** `cursor/revision-integral-completa-85e4`
+**PR:** #169
+**Base:** `cursor/convergencia-comercial-v1-85e4`
+**SHA:** `4b77c49`
 **Estado:** Cierre P1 material V1 ejecutado — pendiente decisión ChatGPT (no comando al usuario)
 
 ---
@@ -47,15 +47,15 @@
 }
 ```
 
-Script: `scripts/cert_logo_upload.mjs`  
+Script: `scripts/cert_logo_upload.mjs`
 Screenshot: `data/evidence/logo-upload/` (generado por cert)
 
 ---
 
 ## 2. P1 Valor Horizonte — CERRADO
 
-Semilla idempotente: `backend/app/services/demo_economico_horizonte.py`  
-Marcador: `DEMO_HORIZONTE_ECON_V1`  
+Semilla idempotente: `backend/app/services/demo_economico_horizonte.py`
+Marcador: `DEMO_HORIZONTE_ECON_V1`
 Etiqueta: **DEMO — DATOS SIMULADOS** / **ESTIMADO / PROYECTADO**
 
 | Naturaleza | Monto (COP) | Nota |
@@ -171,7 +171,7 @@ node scripts/cert_logo_upload.mjs            # originalBytes>1MB OK
 node scripts/cert_opciones_e2e.mjs         # ROTA=0
 ```
 
-`pageerror` material en certs: **0**  
+`pageerror` material en certs: **0**
 `console.error` material en certs: **0** (warnings de red no bloqueantes)
 
 ---
