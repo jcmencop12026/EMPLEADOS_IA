@@ -688,6 +688,24 @@ export async function activateEmployee(id: string): Promise<Record<string, unkno
   return api(`/api/agent-factory/employees/${id}/activate`, { method: "POST" });
 }
 
+export type EmployeeFicha20 = Record<string, unknown>;
+
+export async function fetchEmployeeFicha20(id: string): Promise<EmployeeFicha20> {
+  return api(`/api/empleados-ia-20/employees/${id}/ficha`);
+}
+
+export async function updateEmployeeFicha20(id: string, data: Record<string, unknown>): Promise<EmployeeFicha20> {
+  return api(`/api/empleados-ia-20/employees/${id}/ficha`, { method: "PUT", body: JSON.stringify(data) });
+}
+
+export async function fetchEmployeeEvaluacion20(id: string): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-ia-20/employees/${id}/evaluacion`);
+}
+
+export async function fetchEmployeeSupervision20(id: string): Promise<Record<string, unknown>> {
+  return api(`/api/empleados-ia-20/employees/${id}/supervision`);
+}
+
 export async function fetchEmployeeInventory(id: string): Promise<Record<string, unknown>> {
   return api<Record<string, unknown>>(`/api/agent-factory/employees/${id}/inventory`);
 }
@@ -1562,6 +1580,38 @@ export async function comparePlannerProviders(data: Record<string, unknown>): Pr
 
 export async function fetchPlannerMargen(): Promise<Record<string, unknown>> {
   return api<Record<string, unknown>>("/api/finops/planner/margen");
+}
+
+export type InteligenciaEconomicaResultado = {
+  beneficio_neto: number;
+  roi_pct: number | null;
+  payback_meses: number | null;
+  costo_valor_ratio: number | null;
+  nota_potencial?: string;
+};
+
+export type InteligenciaEscenarioComparacion = {
+  tipo: string;
+  personas: number;
+  costo_total: number;
+  ahorro_neto: number;
+  roi_pct: number | null;
+  capacidad_liberada_horas: number;
+};
+
+export async function fetchInteligenciaResultadoEconomico(periodDays = 30): Promise<InteligenciaEconomicaResultado> {
+  return api<InteligenciaEconomicaResultado>(`/api/inteligencia-economica/resultado-economico?period_days=${periodDays}`);
+}
+
+export async function compararEscenariosInteligencia(data: Record<string, unknown>): Promise<{
+  escenarios: InteligenciaEscenarioComparacion[];
+  comparacion: Record<string, unknown>;
+}> {
+  return api("/api/inteligencia-economica/escenarios/comparar", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function dimensionarInteligencia(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return api("/api/inteligencia-economica/dimensionar", { method: "POST", body: JSON.stringify(data) });
 }
 
 export type ValuationSummary = {
@@ -5103,4 +5153,32 @@ export async function linkProyectoEntidad(entidadId: string, proyectoId: string)
     method: "POST",
     body: JSON.stringify({ proyecto_id: proyectoId }),
   });
+}
+
+export type CadenaAnaliticaNodo = {
+  paso: string;
+  id?: string | null;
+  titulo: string;
+  detalle?: string | null;
+  enlace?: string | null;
+};
+
+export type CadenaAnaliticaResponse = {
+  expediente_id: string;
+  correlation_id?: string | null;
+  pasos_canonicos: string[];
+  nodos: CadenaAnaliticaNodo[];
+  total: number;
+};
+
+export async function fetchCadenaAnalitica(expedienteId: string): Promise<CadenaAnaliticaResponse> {
+  return api(`/api/inteligencia-empresarial/expedientes/${expedienteId}/cadena-analitica`);
+}
+
+export async function importarDiagnosticoExpediente(
+  expedienteId: string,
+  diagnosticId?: string,
+): Promise<{ importados: Array<Record<string, unknown>>; diagnostic_id: string; omitidos: number }> {
+  const q = diagnosticId ? `?diagnostic_id=${encodeURIComponent(diagnosticId)}` : "";
+  return api(`/api/flujo-comercial/expedientes/${expedienteId}/importar-diagnostico${q}`, { method: "POST" });
 }

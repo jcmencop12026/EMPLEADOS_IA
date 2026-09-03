@@ -59,7 +59,8 @@ Sin nuevas migraciones en este bloque. Head Alembic: `1820a1b2c3d4e`.
 | `test_convergencia_maestro_v1.py` | 6/6 PASS |
 | `test_convergencia_cierre_v1.py` | 8/8 PASS |
 | `test_presentacion_real_v1.py` | 9/9 PASS |
-| `npm run build` (frontend) | PASS |
+| `test_inteligencia_empresarial_evolution.py` | 9/9 PASS |
+| `test_arquitecto_transformacion.py` | 8/8 PASS |
 | `seed_demo_horizonte.py` | PASS |
 | `git diff 0014a4b -- scripts/windows/` | 0 líneas (intacto) |
 
@@ -86,7 +87,7 @@ Etiqueta visible: **DEMO — DATOS SIMULADOS**.
 | P1 Centro Operaciones densidad | Parcial | Requiere seed operativo adicional |
 | P1 Presentación vs publicar UI | Parcial | Flujo existe; diferenciación visual pendiente |
 | P2 Integración PR #162 económica | Pendiente | Cherry-pick `08e9ea1` + migración 1830 |
-| P2 Integración PR #166 empresarial | Pendiente | Cherry-pick `8225b37`; P0 import hallazgos |
+| P2 Integración PR #166 empresarial | **Parcial** | Módulo IE + API + escenarios ampliados; P0 import y P1 UI cadena pendientes |
 | P2 Integración PR #163 empleado IA | Pendiente | Evaluar `bb6a379` selectivo |
 
 ---

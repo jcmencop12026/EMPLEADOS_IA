@@ -37,6 +37,7 @@ import { ErrorState, LoadingState } from "../components/AsyncState";
 import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { label, LIFECYCLE_STATUS, LIFECYCLE_PHASE, RISK_LEVEL } from "../lib/labels";
+import { EmployeeFicha20Tab } from "../components/EmployeeFicha20Tab";
 import { resolveEmployeeLifecycleStage } from "../lib/employeeLifecycle";
 
 const TABS = [
@@ -51,6 +52,7 @@ const TABS = [
   "Pruebas",
   "Aprobación",
   "Publicación",
+  "Ficha 2.0",
   "Historial",
 ] as const;
 
@@ -627,6 +629,8 @@ export function EmployeeDetailPage() {
             {certResult && <pre className="mono result-pre">{JSON.stringify(certResult, null, 2)}</pre>}
           </>
         )}
+
+        {tab === "Ficha 2.0" && employeeId && <EmployeeFicha20Tab employeeId={employeeId} />}
 
         {tab === "Historial" && (
           <p className="muted">Estado operativo: {String(detail?.status)} · Versión activa: v{String(health?.active_version ?? detail?.version)}</p>

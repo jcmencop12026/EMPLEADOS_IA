@@ -45,7 +45,9 @@ from app import transformacion_models  # noqa: F401 — arquitecto transformaci�
 from app import resultados_models  # noqa: F401 — inteligencia resultados Lote 3
 from app import flujo_comercial_models  # noqa: F401 — flujo comercial V1 convergencia
 from app import presentacion_models  # noqa: F401 — presentación ejecutiva convergencia
-from app import espacio_externo_models  # noqa: F401 — espacio externo convergencia
+from app import espacio_externo_models  # noqa: F401
+from app import inteligencia_economica_models  # noqa: F401
+from app import employee_20_models  # noqa: F401 — espacio externo convergencia
 from app.health import build_health_report, health_http_status
 from app.routers import (
     admin,
@@ -86,6 +88,8 @@ from app.routers import (
     espacio_externo,
     inteligencia_externa,
     inteligencia_empresarial,
+    inteligencia_economica,
+    employee_20,
     continuidad,
     governance,
     integraciones,
@@ -221,6 +225,8 @@ app.include_router(demo_comercial.router)
 app.include_router(espacio_externo.router)
 app.include_router(inteligencia_externa.router)
 app.include_router(inteligencia_empresarial.router)
+app.include_router(inteligencia_economica.router)
+app.include_router(employee_20.router)
 app.include_router(continuidad.router)
 app.include_router(control_center.router)
 app.include_router(governance.router)

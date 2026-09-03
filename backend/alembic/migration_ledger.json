@@ -1,5 +1,5 @@
 {
-  "baseline_head": "1820a1b2c3d4e",
+  "baseline_head": "1831a1b2c3d4e",
   "protected_revisions": [
     "4355c73adcb8",
     "5b2eb2437398",
@@ -73,7 +73,9 @@
     "1790a1b2c3d4e",
     "1800a1b2c3d4e",
     "1810a1b2c3d4e",
-    "1820a1b2c3d4e"
+    "1820a1b2c3d4e",
+    "1830a1b2c3d4e",
+    "1831a1b2c3d4e"
   ],
   "upgrade_from_baseline": {
     "enabled": false,

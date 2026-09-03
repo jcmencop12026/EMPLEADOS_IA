@@ -2513,6 +2513,90 @@ tr.row-selected {
   margin-bottom: 6px;
 }
 
+.cadena-analitica-panel {
+  margin-top: 4px;
+}
+
+.cadena-analitica-panel.compact .cadena-detalle {
+  display: none;
+}
+
+.cadena-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cadena-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.cadena-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.cadena-arrow {
+  color: #94a3b8;
+  font-size: 12px;
+  padding-top: 18px;
+}
+
+.cadena-step-box {
+  min-width: 120px;
+  max-width: 200px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: #fafafa;
+}
+
+.cadena-step-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.cadena-step-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+}
+
+.cadena-step-items li {
+  margin-bottom: 4px;
+}
+
+.cadena-detalle {
+  margin: 2px 0 0;
+  font-size: 11px;
+}
+
+.presentacion-mode-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.presentacion-mode-banner .btn.small {
+  margin-left: auto;
+}
+
 .logo-field {
   margin: 10px 0;
 }

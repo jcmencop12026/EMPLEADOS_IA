@@ -92,6 +92,27 @@ def importar_inteligencia(
     return {"importados": result}
 
 
+@router.post("/expedientes/{evaluacion_id}/importar-diagnostico")
+def importar_diagnostico(
+    evaluacion_id: str,
+    diagnostic_id: str | None = Query(None),
+    limite: int = Query(50, ge=1, le=100),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "evaluacion.evaluate", db)
+    result = svc.importar_hallazgos_diagnostico(
+        db,
+        user,
+        user.organization_id,
+        evaluacion_id,
+        diagnostic_id=diagnostic_id,
+        limite=limite,
+    )
+    db.commit()
+    return result
+
+
 @router.get("/expedientes/{evaluacion_id}/oportunidades")
 def listar_oportunidades(
     evaluacion_id: str,

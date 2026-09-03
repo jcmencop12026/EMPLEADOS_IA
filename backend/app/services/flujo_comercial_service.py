@@ -262,6 +262,107 @@ def importar_inteligencia_externa(
     return imported
 
 
+def importar_hallazgos_diagnostico(
+    db: Session,
+    user: User,
+    org_id: str,
+    evaluacion_id: str,
+    *,
+    diagnostic_id: str | None = None,
+    limite: int = 50,
+    skip_existing: bool = True,
+) -> dict[str, Any]:
+    """Importa hallazgos del diagnóstico transversal (1220) al expediente sin duplicar."""
+    from app.services import diagnostic_service as diag_svc
+
+    exp = eval_svc._get_expediente(db, evaluacion_id, org_id)
+    diag_id = diagnostic_id or exp.diagnostic_id
+    if not diag_id:
+        raise HTTPException(status_code=422, detail="Indique diagnostic_id o vincule el expediente a un diagnóstico")
+    if exp.diagnostic_id and exp.diagnostic_id != diag_id:
+        raise HTTPException(status_code=409, detail="El expediente ya está vinculado a otro diagnóstico")
+    if not exp.diagnostic_id:
+        exp.diagnostic_id = diag_id
+        db.flush()
+
+    detail = diag_svc.diagnostic_to_detail(db, org_id, diag_id)
+    structured = {item["hallazgo"]["id"]: item for item in detail.get("structured_items", []) if item.get("hallazgo")}
+
+    existing_ids: set[str] = set()
+    if skip_existing:
+        existing_ids = {
+            row[0]
+            for row in db.query(EvaluacionHallazgo.diagnostic_finding_id)
+            .filter(
+                EvaluacionHallazgo.expediente_id == exp.id,
+                EvaluacionHallazgo.diagnostic_finding_id.isnot(None),
+            )
+            .all()
+            if row[0]
+        }
+
+    imported: list[dict[str, Any]] = []
+    omitted = 0
+    for finding in detail.get("hallazgos", [])[:limite]:
+        fid = finding.get("id")
+        if not fid:
+            continue
+        if fid in existing_ids:
+            omitted += 1
+            continue
+        struct = structured.get(fid, {})
+        impacto = struct.get("impacto")
+        impacto_resumen = None
+        if isinstance(impacto, dict):
+            impacto_resumen = impacto.get("resumen") or impacto.get("descripcion")
+        elif impacto:
+            impacto_resumen = str(impacto)[:500]
+        evidencia_raw = finding.get("evidencia")
+        evidencia = json.dumps(evidencia_raw, ensure_ascii=False) if isinstance(evidencia_raw, dict) else str(evidencia_raw or "")
+        donde = finding.get("donde") or ""
+        dominio = finding.get("dominio") or ""
+        descripcion_parts = [p for p in [donde, dominio, finding.get("proceso")] if p]
+        descripcion = " · ".join(descripcion_parts) if descripcion_parts else None
+
+        hallazgo = eval_svc.create_hallazgo(
+            db,
+            exp.id,
+            org_id,
+            user_id=user.id,
+            titulo=finding.get("que_ocurre") or finding.get("codigo") or "Hallazgo diagnóstico",
+            descripcion=descripcion,
+            tipo_contenido=eval_svc._tipo_contenido_desde_diagnostico(finding.get("tipo_contenido")),
+            confianza=eval_svc._confianza_from_float(float(finding.get("confianza") or 0.5)),
+            evidencia=evidencia[:4000] if evidencia else None,
+            origen="diagnostico_transversal_1220",
+            impacto_resumen=impacto_resumen,
+            visible_entidad=False,
+            diagnostic_finding_id=fid,
+        )
+        imported.append({
+            "hallazgo_id": hallazgo.id,
+            "diagnostic_finding_id": fid,
+            "titulo": hallazgo.titulo,
+            "origen": hallazgo.origen,
+        })
+        existing_ids.add(fid)
+
+    write_audit(
+        db,
+        action="flujo_comercial.diagnostico_importado",
+        organization_id=org_id,
+        user_id=user.id,
+        detail=_json({
+            "evaluacion_id": evaluacion_id,
+            "diagnostic_id": diag_id,
+            "importados": len(imported),
+            "omitidos": omitted,
+        }),
+        commit=False,
+    )
+    return {"importados": imported, "diagnostic_id": diag_id, "omitidos": omitted}
+
+
 def listar_oportunidades_expediente(db: Session, org_id: str, evaluacion_id: str) -> list[dict[str, Any]]:
     links = (
         db.query(EvaluacionOportunidadLink, Opportunity)

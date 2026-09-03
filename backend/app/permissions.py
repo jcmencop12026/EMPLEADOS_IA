@@ -203,6 +203,12 @@ EVALUACION_PERMISSIONS = {
     "evaluacion.indicadores.manage",
 }
 
+INTELIGENCIA_ECONOMICA_PERMISSIONS = {
+    "inteligencia_economica.view",
+    "inteligencia_economica.simulate",
+    "inteligencia_economica.private",
+}
+
 INTELIGENCIA_EMPRESARIAL_PERMISSIONS = {
     "inteligencia_empresarial.view",
     "inteligencia_empresarial.manage",
@@ -566,6 +572,9 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "partners.org.grant": ("Partners", "Asociar organizaciones a partners"),
     "partners.user.assign": ("Partners", "Asignar usuarios a partners"),
     "partners.audit": ("Partners", "Consultar auditoría de partners"),
+    "inteligencia_economica.view": ("Inteligencia económica", "Ver valor empresarial y resultado económico"),
+    "inteligencia_economica.simulate": ("Inteligencia económica", "Simular escenarios y dimensionamiento"),
+    "inteligencia_economica.private": ("Inteligencia económica", "Ver inteligencia comercial interna y pricing valor"),
     "inteligencia_empresarial.view": ("Inteligencia Empresarial", "Ver panorama adaptativo, suficiencia y cadena analítica"),
     "inteligencia_empresarial.manage": ("Inteligencia Empresarial", "Ejecutar evaluación adaptativa y registrar evidencia proactiva"),
     "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
@@ -678,6 +687,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | FLUJO_COMERCIAL_PERMISSIONS
         | ESPACIO_EXTERNO_PERMISSIONS
         | RESULTADOS_PERMISSIONS
+        | INTELIGENCIA_ECONOMICA_PERMISSIONS
         | INTELIGENCIA_EMPRESARIAL_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
@@ -727,6 +737,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | FLUJO_COMERCIAL_PERMISSIONS
         | ESPACIO_EXTERNO_PERMISSIONS
         | RESULTADOS_PERMISSIONS
+        | INTELIGENCIA_ECONOMICA_PERMISSIONS
         | INTELIGENCIA_EMPRESARIAL_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS

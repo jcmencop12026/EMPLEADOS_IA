@@ -64,6 +64,17 @@ export function PresentacionRealPage() {
         </div>
       </header>
 
+      <div className="presentacion-mode-banner" role="note">
+        <strong>Presentar en reunión</strong>
+        <span className="muted small">Experiencia temporal y controlada para la reunión en vivo.</span>
+        <Link to={`/evaluaciones/${expedienteId}?tab=vista-empresa`} className="btn small secondary">
+          Ver como empresa
+        </Link>
+        <Link to={`/evaluaciones/${expedienteId}?tab=vista-empresa`} className="btn small secondary">
+          Publicar para consulta
+        </Link>
+      </div>
+
       <nav className="tab-bar" aria-label="Audiencia">
         {AUDIENCIAS.map((a) => (
           <button

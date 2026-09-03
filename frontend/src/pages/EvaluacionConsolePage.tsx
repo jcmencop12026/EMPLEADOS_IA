@@ -16,6 +16,7 @@ import {
   type EvaluacionInfoItem,
 } from "../api";
 import { InformacionAdjuntosPanel } from "../components/evaluacion/InformacionAdjuntosPanel";
+import { CadenaAnaliticaPanel } from "../components/evaluacion/CadenaAnaliticaPanel";
 import { EiaaxTable } from "../components/EiaaxTable";
 import { EspacioExternoAdminPanel } from "../components/espacioExterno/EspacioExternoAdminPanel";
 import { AccionesExternasPanel } from "../components/evaluacion/AccionesExternasPanel";
@@ -275,6 +276,9 @@ export function EvaluacionConsolePage() {
                   onSave={onSaveInfo}
                 />
               ))}
+            </section>
+            <section className="panel compact-panel">
+              <CadenaAnaliticaPanel expedienteId={evaluacionId!} />
             </section>
             <section className="panel compact-panel">
               <h2>Hallazgos y análisis</h2>

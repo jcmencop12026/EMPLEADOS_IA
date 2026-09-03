@@ -6,6 +6,7 @@ import {
   type EvaluacionExpedienteDetail,
 } from "../../api";
 import { SiguienteAccionPanel } from "../evaluacion/SiguienteAccionPanel";
+import { CadenaAnaliticaPanel } from "../evaluacion/CadenaAnaliticaPanel";
 import { CONFIANZA, ESTADO_EXPEDIENTE, label } from "../../lib/evaluacionLabels";
 
 type Props = {
@@ -122,6 +123,10 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
           </ul>
         </section>
       )}
+
+      <section className="panel compact-panel">
+        <CadenaAnaliticaPanel expedienteId={evaluacionId} compact />
+      </section>
 
       <div className="cc-grid-2">
         <section className="panel compact-panel">

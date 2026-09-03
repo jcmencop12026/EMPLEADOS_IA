@@ -20,11 +20,15 @@ import {
   fetchPlannerMargen,
   fetchPlannerPresupuesto,
   fetchPlannerResumen,
+  fetchInteligenciaResultadoEconomico,
+  compararEscenariosInteligencia,
   simulatePlannerConsumption,
+  type InteligenciaEconomicaResultado,
+  type InteligenciaEscenarioComparacion,
 } from "../api";
 import { getCachedUser } from "../auth/session";
 
-type Tab = "resumen" | "consumos" | "capacidad" | "simulador" | "presupuesto" | "comparacion" | "presupuestos" | "tarifas";
+type Tab = "resumen" | "consumos" | "capacidad" | "simulador" | "presupuesto" | "comparacion" | "presupuestos" | "tarifas" | "inteligencia";
 
 export function CostosValorPage() {
   const user = getCachedUser();
@@ -32,6 +36,8 @@ export function CostosValorPage() {
   const canRates = user?.permissions?.includes("finops.rates");
   const canSimulate = user?.permissions?.includes("finops.planner.simulate");
   const canMargin = user?.permissions?.includes("finops.margin.view");
+  const canInteligencia = user?.permissions?.includes("inteligencia_economica.view");
+  const canInteligenciaSim = user?.permissions?.includes("inteligencia_economica.simulate");
   const [tab, setTab] = useState<Tab>("resumen");
   const [summary, setSummary] = useState<FinOpsDashboard | null>(null);
   const [planner, setPlanner] = useState<PlannerResumen | null>(null);
@@ -51,6 +57,9 @@ export function CostosValorPage() {
     opportunity_id: "",
     category: "",
   });
+  const [ieResultado, setIeResultado] = useState<InteligenciaEconomicaResultado | null>(null);
+  const [ieEscenarios, setIeEscenarios] = useState<InteligenciaEscenarioComparacion[]>([]);
+  const [ieParams] = useState({ personas: 12, personasEscenario: 8, empleadosIa: 2 });
 
   const load = useCallback(() => {
     setError(null);
@@ -96,6 +105,28 @@ export function CostosValorPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (tab === "inteligencia" && canInteligencia) {
+      void fetchInteligenciaResultadoEconomico().then(setIeResultado).catch((e) => setError(e instanceof Error ? e.message : "Error IE"));
+    }
+  }, [tab, canInteligencia]);
+
+  async function runEscenariosInteligencia() {
+    if (!canInteligenciaSim) return;
+    setError(null);
+    try {
+      const res = await compararEscenariosInteligencia({
+        personas: ieParams.personas,
+        personas_escenario: ieParams.personasEscenario,
+        empleados_ia: ieParams.empleadosIa,
+        persistir: false,
+      });
+      setIeEscenarios(res.escenarios ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error en escenarios");
+    }
+  }
 
   async function runSimulation() {
     if (!canSimulate) return;
@@ -173,6 +204,7 @@ export function CostosValorPage() {
     { id: "comparacion", label: "Comparación" },
     { id: "presupuestos", label: "Presupuestos" },
     { id: "tarifas", label: "Tarifas" },
+    ...(canInteligencia ? [{ id: "inteligencia" as const, label: "Inteligencia económica" }] : []),
   ];
 
   return (
@@ -542,6 +574,47 @@ export function CostosValorPage() {
             </table>
           </div>
         </>
+      )}
+
+      {tab === "inteligencia" && canInteligencia && (
+        <section className="panel compact-panel">
+          <h2 className="section-title">Resultado económico</h2>
+          {ieResultado ? (
+            <dl className="detail-grid compact">
+              <dt>Beneficio neto</dt><dd>{ieResultado.beneficio_neto?.toLocaleString("es-CO")}</dd>
+              <dt>ROI</dt><dd>{ieResultado.roi_pct != null ? `${ieResultado.roi_pct}%` : "—"}</dd>
+              <dt>Payback</dt><dd>{ieResultado.payback_meses != null ? `${ieResultado.payback_meses} meses` : "—"}</dd>
+              <dt>Costo/valor</dt><dd>{ieResultado.costo_valor_ratio ?? "—"}</dd>
+            </dl>
+          ) : (
+            <p className="muted">Cargando…</p>
+          )}
+          {canInteligenciaSim && (
+            <>
+              <button type="button" className="btn small secondary" onClick={() => void runEscenariosInteligencia()}>
+                Comparar escenarios
+              </button>
+              {ieEscenarios.length > 0 && (
+                <table className="data-table compact-table">
+                  <thead>
+                    <tr><th>Escenario</th><th>Personas</th><th>Ahorro neto</th><th>ROI</th></tr>
+                  </thead>
+                  <tbody>
+                    {ieEscenarios.map((e) => (
+                      <tr key={e.tipo}>
+                        <td>{e.tipo}</td>
+                        <td>{e.personas}</td>
+                        <td>{e.ahorro_neto?.toLocaleString("es-CO")}</td>
+                        <td>{e.roi_pct != null ? `${e.roi_pct}%` : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </>
+          )}
+          <p className="muted small potential-excluded">Proyecciones — no son resultados reales verificados.</p>
+        </section>
       )}
     </div>
   );

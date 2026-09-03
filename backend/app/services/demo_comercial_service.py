@@ -177,9 +177,84 @@ def seed_demo_comercial(db: Session, organization_id: str, user_id: str) -> dict
     informe = res_svc.generate_informe_impacto(
         db, organization_id, user_id, expediente_id=exp.id, visibilidad="VISIBLE_ENTIDAD"
     )
+
+    _seed_demo_operaciones(db, organization_id, user_id, exp.id, exp.correlation_id)
+
     db.commit()
     db.refresh(exp)
     return _manifest_from_expediente(exp, informe["id"], reused=False)
+
+
+def _seed_demo_operaciones(
+    db: Session,
+    organization_id: str,
+    user_id: str,
+    expediente_id: str,
+    correlation_id: str | None,
+) -> None:
+    """Planes de trabajo y aprobaciones demo para Centro de Operaciones."""
+    import uuid
+
+    from app.models import User
+    from app.orchestration_models import ApprovalRequest, EmployeeTask, WorkEvent, WorkPlan
+    from app.services import diagnostic_service as diag_svc
+    from app.services import flujo_comercial_service as flujo_svc
+
+    admin = db.query(User).filter(User.id == user_id).first()
+    if not admin:
+        return
+
+    try:
+        diag = diag_svc.generate_diagnostic(db, organization_id=organization_id, user_id=user_id)
+        flujo_svc.importar_hallazgos_diagnostico(
+            db, admin, organization_id, expediente_id, diagnostic_id=diag["id"], limite=20,
+        )
+    except Exception:
+        pass
+
+    plans_spec = [
+        ("RUNNING", "Auditoría documental facturas demo", "Revisión automática soportes radicación"),
+        ("WAITING_APPROVAL", "Validación glosas recurrentes", "Empleado IA — propuesta de corrección"),
+        ("COMPLETED", "Conciliación cartera Q1", "Cierre demo recuperación cartera"),
+        ("FAILED", "Reproceso RIPS pendiente", "Error simulado en carga masiva"),
+    ]
+    for status, objective, request in plans_spec:
+        plan = WorkPlan(
+            organization_id=organization_id,
+            user_id=user_id,
+            correlation_id=correlation_id or str(uuid.uuid4()),
+            status=status,
+            objective=objective,
+            request=request,
+            prioridad="MEDIA",
+            error="Error simulado demo" if status == "FAILED" else None,
+        )
+        db.add(plan)
+        db.flush()
+        task_status = "COMPLETED" if status == "COMPLETED" else ("FAILED" if status == "FAILED" else "RUNNING")
+        db.add(EmployeeTask(
+            organization_id=organization_id,
+            work_plan_id=plan.id,
+            title=objective[:120],
+            executor_type="SYSTEM",
+            status=task_status,
+            inputs_json="{}",
+        ))
+        db.add(WorkEvent(
+            organization_id=organization_id,
+            work_plan_id=plan.id,
+            event_type="DEMO_SEED",
+            payload_json=f'{{"expediente_id":"{expediente_id}","demo":true}}',
+        ))
+        if status == "WAITING_APPROVAL":
+            db.add(ApprovalRequest(
+                organization_id=organization_id,
+                work_plan_id=plan.id,
+                action="Publicar hallazgos demo facturación",
+                reason="Aprobación demo — publicación hallazgos facturación",
+                requested_by=user_id,
+                status="PENDING",
+            ))
 
 
 def _manifest_from_expediente(
