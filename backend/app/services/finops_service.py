@@ -8,8 +8,8 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.audit import write_audit
-from app.finops_enums import FinOpsBudgetState
-from app.finops_models import FinOpsBudget, FinOpsRate, FinOpsValueRecord
+from app.finops_enums import FinOpsBudgetPolicy, FinOpsBudgetState
+from app.finops_models import FinOpsBudget, FinOpsBudgetAlertState, FinOpsRate, FinOpsValueRecord
 from app.orchestration_models import AIEmployee, FinOpsRecord, WorkPlan
 
 COST_UNAVAILABLE = "Costo no disponible"
@@ -19,6 +19,59 @@ ROI_UNAVAILABLE = "ROI no disponible"
 
 class FinOpsValidationError(ValueError):
     """Referencias cruzadas o datos inválidos en operaciones FinOps."""
+
+
+class FinOpsBudgetBlockedError(PermissionError):
+    """Presupuesto con política Bloquear alcanzado — ejecución no permitida."""
+
+
+def _validate_opportunity_ref(db: Session, organization_id: str, opportunity_id: str | None) -> None:
+    if not opportunity_id:
+        return
+    from app.opportunity_models import Opportunity
+
+    opp = (
+        db.query(Opportunity)
+        .filter(Opportunity.id == opportunity_id, Opportunity.organization_id == organization_id)
+        .first()
+    )
+    if not opp:
+        raise FinOpsValidationError("Oportunidad no encontrada en la organización.")
+
+
+def resolve_opportunity_id(
+    db: Session,
+    organization_id: str,
+    *,
+    opportunity_id: str | None = None,
+    work_plan_id: str | None = None,
+) -> str | None:
+    if opportunity_id:
+        _validate_opportunity_ref(db, organization_id, opportunity_id)
+        return opportunity_id
+    if not work_plan_id:
+        return None
+    from app.opportunity_models import Opportunity
+
+    opp = (
+        db.query(Opportunity)
+        .filter(
+            Opportunity.organization_id == organization_id,
+            Opportunity.work_plan_id == work_plan_id,
+        )
+        .first()
+    )
+    return opp.id if opp else None
+
+
+def _budget_applies(budget: FinOpsBudget, employee_id: str | None, category: str | None) -> bool:
+    if budget.scope_type == "empresa":
+        return True
+    if budget.scope_type == "empleado":
+        return bool(employee_id and budget.scope_id == employee_id)
+    if budget.scope_type == "proceso":
+        return bool(category and budget.scope_id == category)
+    return False
 
 
 def _validate_org_refs(
@@ -136,7 +189,6 @@ def budget_spent_for_scope(
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
-    return datetime.now(timezone.utc)
 
 
 def _aware(dt: datetime | None) -> datetime | None:
@@ -224,6 +276,7 @@ def registrar_consumo(
     employee_id: str | None = None,
     work_plan_id: str | None = None,
     task_id: str | None = None,
+    opportunity_id: str | None = None,
     execution_ref: str | None = None,
     provider: str | None = None,
     model_name: str | None = None,
@@ -236,6 +289,7 @@ def registrar_consumo(
     currency: str | None = None,
     cost: Decimal | None = None,
     rate_id: str | None = None,
+    skip_budget_enforcement: bool = False,
 ) -> FinOpsRecord:
     _validate_org_refs(
         db,
@@ -244,6 +298,19 @@ def registrar_consumo(
         work_plan_id=work_plan_id,
         task_id=task_id,
     )
+    resolved_opportunity_id = resolve_opportunity_id(
+        db,
+        organization_id,
+        opportunity_id=opportunity_id,
+        work_plan_id=work_plan_id,
+    )
+    if not skip_budget_enforcement:
+        assert_budget_allows_consumption(
+            db,
+            organization_id,
+            employee_id=employee_id,
+            category=category,
+        )
     rate_source: str | None = None
     resolved_rate_id = rate_id
     resolved_currency = currency
@@ -283,6 +350,7 @@ def registrar_consumo(
         employee_id=employee_id,
         work_plan_id=work_plan_id,
         task_id=task_id,
+        opportunity_id=resolved_opportunity_id,
         execution_ref=execution_ref,
         model_name=model_name,
         provider=provider,
@@ -307,6 +375,7 @@ def registrar_consumo(
         user_id=user_id,
         detail=f"consumo:{record.id}",
     )
+    process_budget_alerts(db, organization_id, user_id=user_id)
     return record
 
 
@@ -334,6 +403,7 @@ def registrar_valor(
         work_plan_id=work_plan_id,
         task_id=task_id,
     )
+    _validate_opportunity_ref(db, organization_id, opportunity_id)
     row = FinOpsValueRecord(
         organization_id=organization_id,
         employee_id=employee_id,
@@ -387,7 +457,10 @@ def _sum_costs(
     period_end: datetime | None = None,
     employee_id: str | None = None,
     work_plan_id: str | None = None,
+    opportunity_id: str | None = None,
     category: str | None = None,
+    provider: str | None = None,
+    model_name: str | None = None,
 ) -> Decimal | None:
     query = db.query(func.coalesce(func.sum(FinOpsRecord.cost), 0)).filter(
         FinOpsRecord.organization_id == organization_id
@@ -400,8 +473,14 @@ def _sum_costs(
         query = query.filter(FinOpsRecord.employee_id == employee_id)
     if work_plan_id:
         query = query.filter(FinOpsRecord.work_plan_id == work_plan_id)
+    if opportunity_id:
+        query = query.filter(FinOpsRecord.opportunity_id == opportunity_id)
     if category:
         query = query.filter(FinOpsRecord.category == category)
+    if provider:
+        query = query.filter(FinOpsRecord.provider == provider)
+    if model_name:
+        query = query.filter(FinOpsRecord.model_name == model_name)
     total = query.scalar()
     if total is None:
         return None
@@ -589,6 +668,7 @@ def serialize_consumption(record: FinOpsRecord) -> dict[str, Any]:
         "employee_id": record.employee_id,
         "work_plan_id": record.work_plan_id,
         "task_id": record.task_id,
+        "opportunity_id": record.opportunity_id,
         "execution_ref": record.execution_ref,
         "provider": record.provider,
         "model_name": record.model_name,
@@ -668,3 +748,246 @@ def build_drill_down(
             }
         )
     return nodes
+
+
+def assert_budget_allows_consumption(
+    db: Session,
+    organization_id: str,
+    *,
+    employee_id: str | None = None,
+    category: str | None = None,
+) -> None:
+    """Bloquea solo si política=Bloquear y límite alcanzado. Nunca silencioso."""
+    now = _utcnow()
+    budgets = (
+        db.query(FinOpsBudget)
+        .filter(
+            FinOpsBudget.organization_id == organization_id,
+            FinOpsBudget.active.is_(True),
+            FinOpsBudget.policy == FinOpsBudgetPolicy.BLOQUEAR,
+        )
+        .all()
+    )
+    for budget in budgets:
+        if not _budget_applies(budget, employee_id, category):
+            continue
+        period_start = _aware(budget.period_start)
+        period_end = _aware(budget.period_end)
+        if period_start and now < period_start:
+            continue
+        if period_end and now > period_end:
+            continue
+        spent = budget_spent_for_scope(db, budget)
+        state = budget_state(spent, budget.amount_limit)
+        if state == FinOpsBudgetState.LIMITE_ALCANZADO:
+            raise FinOpsBudgetBlockedError(
+                f"Presupuesto IA alcanzado ({budget.name or budget.scope_type}). "
+                "Política: Bloquear. Contacte al administrador para revisar el presupuesto."
+            )
+
+
+def process_budget_alerts(
+    db: Session,
+    organization_id: str,
+    *,
+    user_id: str | None = None,
+) -> list[str]:
+    """Emite alertas por umbral sin duplicar en el mismo período/estado."""
+    from app.notifications import emit_event
+
+    alerted: list[str] = []
+    now = _utcnow()
+    budgets = (
+        db.query(FinOpsBudget)
+        .filter(FinOpsBudget.organization_id == organization_id, FinOpsBudget.active.is_(True))
+        .all()
+    )
+    alert_states = {
+        FinOpsBudgetState.ATENCION,
+        FinOpsBudgetState.CERCA_LIMITE,
+        FinOpsBudgetState.LIMITE_ALCANZADO,
+    }
+    for budget in budgets:
+        period_start = _aware(budget.period_start)
+        period_end = _aware(budget.period_end)
+        if period_start and now < period_start:
+            continue
+        if period_end and now > period_end:
+            continue
+        spent = budget_spent_for_scope(db, budget)
+        state = budget_state(spent, budget.amount_limit)
+        if state not in alert_states:
+            continue
+        threshold = budget.alert_threshold_pct or 90
+        ratio = float(spent / budget.amount_limit) if budget.amount_limit > 0 else 0.0
+        if state == FinOpsBudgetState.ATENCION and ratio * 100 < 75:
+            continue
+        if state == FinOpsBudgetState.CERCA_LIMITE and ratio * 100 < threshold:
+            continue
+        exists = (
+            db.query(FinOpsBudgetAlertState)
+            .filter(
+                FinOpsBudgetAlertState.budget_id == budget.id,
+                FinOpsBudgetAlertState.state_alerted == state,
+                FinOpsBudgetAlertState.period_start == period_start,
+            )
+            .first()
+        )
+        if exists:
+            continue
+        balance = budget.amount_limit - spent
+        message = (
+            f"Presupuesto «{budget.name or budget.scope_type}»: estado {state}. "
+            f"Consumido {spent} / {budget.amount_limit} {budget.currency}. "
+            f"Disponible: {balance}. Política: {budget.policy}."
+        )
+        emit_event(
+            "FINOPS_LIMIT_REACHED",
+            organization_id,
+            "finops_budget",
+            budget.id,
+            {
+                "title": "Alerta de presupuesto IA",
+                "message": message,
+                "budget_id": budget.id,
+                "state": state,
+                "spent": str(spent),
+                "limit": str(budget.amount_limit),
+                "balance": str(balance),
+                "policy": budget.policy,
+                "alert_only": budget.policy != FinOpsBudgetPolicy.BLOQUEAR,
+            },
+            db,
+            commit=False,
+        )
+        db.add(
+            FinOpsBudgetAlertState(
+                budget_id=budget.id,
+                organization_id=organization_id,
+                state_alerted=state,
+                period_start=period_start or now,
+            )
+        )
+        write_audit(
+            db,
+            action="finops.budget.alert",
+            organization_id=organization_id,
+            user_id=user_id,
+            detail=message[:500],
+        )
+        alerted.append(budget.id)
+    if alerted:
+        db.commit()
+    return alerted
+
+
+def serialize_budget_detail(db: Session, row: FinOpsBudget) -> dict[str, Any]:
+    spent = budget_spent_for_scope(db, row)
+    limit = row.amount_limit
+    balance = limit - spent
+    state = budget_state(spent, limit)
+    return {
+        "id": row.id,
+        "organization_id": row.organization_id,
+        "scope_type": row.scope_type,
+        "scope_id": row.scope_id,
+        "period_start": row.period_start,
+        "period_end": row.period_end,
+        "amount_limit": limit,
+        "currency": row.currency,
+        "policy": row.policy,
+        "alert_threshold_pct": row.alert_threshold_pct,
+        "name": row.name,
+        "active": row.active,
+        "spent": spent,
+        "balance": balance,
+        "state": state,
+        "projection": project_budget_spend(db, row),
+        "blocks_execution": row.policy == FinOpsBudgetPolicy.BLOQUEAR and state == FinOpsBudgetState.LIMITE_ALCANZADO,
+    }
+
+
+def summarize_opportunity_economics(
+    db: Session,
+    organization_id: str,
+    opportunity_id: str,
+) -> dict[str, Any]:
+    from app.opportunity_models import Opportunity
+
+    opp = (
+        db.query(Opportunity)
+        .filter(Opportunity.id == opportunity_id, Opportunity.organization_id == organization_id)
+        .first()
+    )
+    if not opp:
+        raise FinOpsValidationError("Oportunidad no encontrada.")
+    total_cost = _sum_costs(db, organization_id, opportunity_id=opportunity_id)
+    values = (
+        db.query(FinOpsValueRecord)
+        .filter(
+            FinOpsValueRecord.organization_id == organization_id,
+            FinOpsValueRecord.opportunity_id == opportunity_id,
+        )
+        .all()
+    )
+    potential = opp.valor_potencial
+    materialized = opp.valor_materializado
+    value_sum = sum((Decimal(str(v.amount)) for v in values if v.amount is not None), Decimal("0"))
+    records = (
+        db.query(FinOpsRecord)
+        .filter(FinOpsRecord.organization_id == organization_id, FinOpsRecord.opportunity_id == opportunity_id)
+        .order_by(FinOpsRecord.created_at.desc())
+        .limit(100)
+        .all()
+    )
+    return {
+        "opportunity_id": opportunity_id,
+        "opportunity_codigo": opp.codigo,
+        "total_cost": total_cost,
+        "total_cost_label": cost_label(total_cost),
+        "valor_potencial": potential,
+        "valor_materializado": materialized,
+        "finops_value_sum": value_sum if value_sum else None,
+        "consumption_count": len(records),
+        "consumptions": [serialize_consumption(r) for r in records],
+        "finops_reference": opp.finops_reference,
+        "atribucion_nivel": opp.atribucion_nivel,
+    }
+
+
+def query_consumptions(
+    db: Session,
+    organization_id: str,
+    *,
+    employee_id: str | None = None,
+    work_plan_id: str | None = None,
+    opportunity_id: str | None = None,
+    provider: str | None = None,
+    model_name: str | None = None,
+    category: str | None = None,
+    period_start: datetime | None = None,
+    period_end: datetime | None = None,
+    limit: int = 200,
+):
+    query = (
+        db.query(FinOpsRecord)
+        .filter(FinOpsRecord.organization_id == organization_id)
+        .order_by(FinOpsRecord.created_at.desc())
+    )
+    if employee_id:
+        query = query.filter(FinOpsRecord.employee_id == employee_id)
+    if work_plan_id:
+        query = query.filter(FinOpsRecord.work_plan_id == work_plan_id)
+    if opportunity_id:
+        query = query.filter(FinOpsRecord.opportunity_id == opportunity_id)
+    if provider:
+        query = query.filter(FinOpsRecord.provider == provider)
+    if model_name:
+        query = query.filter(FinOpsRecord.model_name == model_name)
+    if category:
+        query = query.filter(FinOpsRecord.category == category)
+    if period_start:
+        query = query.filter(FinOpsRecord.created_at >= period_start)
+    if period_end:
+        query = query.filter(FinOpsRecord.created_at <= period_end)
+    return query.limit(limit).all()
