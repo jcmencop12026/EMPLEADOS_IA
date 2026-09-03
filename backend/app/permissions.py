@@ -203,6 +203,11 @@ EVALUACION_PERMISSIONS = {
     "evaluacion.indicadores.manage",
 }
 
+INTELIGENCIA_EMPRESARIAL_PERMISSIONS = {
+    "inteligencia_empresarial.view",
+    "inteligencia_empresarial.manage",
+}
+
 INTELIGENCIA_EXTERNA_PERMISSIONS = {
     "inteligencia_externa.view",
     "inteligencia_externa.manage",
@@ -561,6 +566,8 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "partners.org.grant": ("Partners", "Asociar organizaciones a partners"),
     "partners.user.assign": ("Partners", "Asignar usuarios a partners"),
     "partners.audit": ("Partners", "Consultar auditoría de partners"),
+    "inteligencia_empresarial.view": ("Inteligencia Empresarial", "Ver panorama adaptativo, suficiencia y cadena analítica"),
+    "inteligencia_empresarial.manage": ("Inteligencia Empresarial", "Ejecutar evaluación adaptativa y registrar evidencia proactiva"),
     "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
     "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
     "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
@@ -671,6 +678,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | FLUJO_COMERCIAL_PERMISSIONS
         | ESPACIO_EXTERNO_PERMISSIONS
         | RESULTADOS_PERMISSIONS
+        | INTELIGENCIA_EMPRESARIAL_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
@@ -719,6 +727,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | FLUJO_COMERCIAL_PERMISSIONS
         | ESPACIO_EXTERNO_PERMISSIONS
         | RESULTADOS_PERMISSIONS
+        | INTELIGENCIA_EMPRESARIAL_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS

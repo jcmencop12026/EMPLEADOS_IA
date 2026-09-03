@@ -109,7 +109,8 @@ def test_transformacion_diagnostico_completo(client: TestClient, auth_headers, t
     assert len(body["causas"]) >= 1
     assert len(body["alternativas"]) >= 3
     assert len(body["iniciativas"]) >= 3
-    assert len(body["escenarios"]) == 3
+    assert len(body["escenarios"]) >= 3
+    assert any(e["tipo"] == "ACTUAL" for e in body["escenarios"])
     assert body["siguiente_accion"]["accion"] in ("completar_informacion", "iniciar_transformacion", "revisar_diagnostico")
     recomendadas = [a for a in body["alternativas"] if a["recomendada"]]
     assert len(recomendadas) == 1

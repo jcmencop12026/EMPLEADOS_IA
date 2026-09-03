@@ -85,6 +85,7 @@ from app.routers import (
     demo_comercial,
     espacio_externo,
     inteligencia_externa,
+    inteligencia_empresarial,
     continuidad,
     governance,
     integraciones,
@@ -219,6 +220,7 @@ app.include_router(presentacion.router)
 app.include_router(demo_comercial.router)
 app.include_router(espacio_externo.router)
 app.include_router(inteligencia_externa.router)
+app.include_router(inteligencia_empresarial.router)
 app.include_router(continuidad.router)
 app.include_router(control_center.router)
 app.include_router(governance.router)
