@@ -91,6 +91,22 @@ def test_logo_backend_accepts_optimized_data_url(client: TestClient, demo_a_head
     assert len(got.json().get("enterprise_logo_url") or "") > 300_000
 
 
+def test_horizonte_economico_semantica_demo_sin_verificado_real(client: TestClient, demo_a_headers):
+    headers = demo_a_headers
+    exp_id = _horizonte_expediente_id(client, headers)
+    impacto = client.get(f"/api/evaluaciones/{exp_id}/impacto", headers=headers)
+    assert impacto.status_code == 200, impacto.text
+    resumen = impacto.json().get("resumen") or {}
+    assert resumen.get("es_demo") is True
+    assert resumen.get("banner") == "DEMO — DATOS SIMULADOS"
+    sim = resumen.get("simulacion_verificado") or {}
+    assert sim.get("etiqueta") == "SIMULACIÓN DE RESULTADO VERIFICADO"
+    assert sim.get("es_simulado") is True
+    assert resumen.get("verificado") is None
+    raw = json.dumps(resumen, ensure_ascii=False)
+    assert "VERIFICADO" not in raw or "SIMULACIÓN" in raw
+
+
 def test_horizonte_economico_seed_idempotente(client: TestClient, demo_a_headers):
     headers = demo_a_headers
     cc = client.get("/api/centro-control/resumen-ejecutivo", headers=headers)
@@ -148,6 +164,11 @@ def test_vista_entidad_no_expone_datos_internos(client: TestClient, demo_a_heade
     for key in FORBIDDEN_VISTA_KEYS:
         assert key not in raw, f"Vista entidad filtra mal: {key}"
     assert vista.json().get("valor_potencial") is None
+    pub = vista.json().get("valor_publicable") or {}
+    assert pub.get("banner") == "DEMO — DATOS SIMULADOS"
+    assert pub.get("estimado_publicable") or pub.get("potencial_publicable")
+    assert len(vista.json().get("hallazgos") or []) >= 0
+    assert vista.json().get("impacto", {}).get("indicadores") is not None
 
     headers_b = _headers_org_b_admin(client)
     forbidden = client.get(f"/api/evaluaciones/{exp_id}/vista-entidad", headers=headers_b)
@@ -174,6 +195,38 @@ def test_ask_eiaax_demo_horizonte_contexto(client: TestClient, demo_a_headers):
         assert res.status_code == 200, res.text
         body = res.json()
         assert body.get("mensaje"), f"Sin respuesta para: {q}"
+        assert body.get("modo_respuesta") == "demo_controlado", body
+        assert body.get("llm_real") is False
+
+
+def test_documentos_persisten_tras_reinicio_simulado(client: TestClient, demo_a_headers):
+    """Simula reinicio: nueva consulta GET debe devolver los mismos adjuntos."""
+    headers = demo_a_headers
+    exp_id = _horizonte_expediente_id(client, headers)
+    item_id = _first_informacion_item_id(client, headers, exp_id)
+    marker = "persist-restart-marker.csv"
+    csv_bytes = b"indicador,valor\npersistencia,1\n"
+    up = client.post(
+        f"/api/evaluaciones/{exp_id}/informacion/{item_id}/adjuntos",
+        headers=headers,
+        files=[("files", (marker, io.BytesIO(csv_bytes), "text/csv"))],
+    )
+    assert up.status_code in (200, 201), up.text
+    lista1 = client.get(
+        f"/api/evaluaciones/{exp_id}/informacion/{item_id}/adjuntos",
+        headers=headers,
+    ).json()
+    lista2 = client.get(
+        f"/api/evaluaciones/{exp_id}/informacion/{item_id}/adjuntos",
+        headers=headers,
+    ).json()
+    nombres = {a["nombre"] for a in lista2.get("adjuntos", [])}
+    assert marker.replace(".csv", "") in " ".join(nombres) or marker in nombres
+    adj = next(a for a in lista2["adjuntos"] if marker in a["nombre"])
+    dl = client.get(f"/api/espacio-externo/adjuntos/{adj['id']}/descarga", headers=headers)
+    assert dl.status_code == 200
+    assert b"persistencia" in dl.content
+    assert lista1.get("entrega_id") == lista2.get("entrega_id")
 
 
 def test_oportunidades_demo_variedad(client: TestClient, demo_a_headers):

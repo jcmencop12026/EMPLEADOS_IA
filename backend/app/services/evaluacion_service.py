@@ -739,8 +739,41 @@ def get_vista_entidad(db: Session, expediente_id: str, organization_id: str) -> 
         "impacto": get_impacto_resumen(db, exp.id, organization_id, vista_entidad=True),
         "oportunidades": _oportunidades_visibles(db, exp),
         "etiqueta_demo": "DEMO — DATOS SIMULADOS" if _is_demo_expediente(exp) else None,
+        "valor_publicable": _valor_publicable_entidad(db, exp, organization_id),
+        "recomendacion_publicable": (
+            "Priorizar piloto de automatización de codificación y publicar hallazgos autorizados."
+            if _is_demo_expediente(exp)
+            else None
+        ),
     }
     return safe
+
+
+def _valor_publicable_entidad(
+    db: Session,
+    exp: EvaluacionExpediente,
+    organization_id: str,
+) -> dict[str, Any] | None:
+    """Valor/impacto autorizado para vista empresa — sin economía privada."""
+    from app.services.demo_economico_horizonte import expediente_economic_resumen
+
+    resumen = expediente_economic_resumen(db, organization_id, exp.id, vista_entidad=True)
+    if not resumen:
+        return None
+    if _is_demo_expediente(exp):
+        return {
+            "banner": "DEMO — DATOS SIMULADOS",
+            "nota": "Cifras ilustrativas para demostración; no constituyen verificación real.",
+            "estimado_publicable": resumen.get("estimado"),
+            "proyectado_publicable": resumen.get("proyectado"),
+            "potencial_publicable": resumen.get("potencial"),
+            "simulacion_verificado_publicable": resumen.get("simulacion_verificado"),
+        }
+    return {
+        "estimado": resumen.get("estimado"),
+        "potencial": resumen.get("potencial"),
+        "verificado": resumen.get("verificado"),
+    }
 
 
 def _oportunidades_visibles(db: Session, exp: EvaluacionExpediente) -> list[dict[str, Any]]:
@@ -913,6 +946,47 @@ def get_impacto_resumen(
         "indicadores": indicadores,
         "tiene_graficos": any(i.get("grafico") for i in indicadores),
         "nota": "PROYECTADO identifica estimaciones; REAL solo con evidencia verificada.",
+        "resumen": _impacto_resumen_economico(db, exp, organization_id, vista_entidad=vista_entidad),
+        "interpretacion": _impacto_interpretacion(exp, indicadores, vista_entidad=vista_entidad),
+    }
+
+
+def _impacto_resumen_economico(
+    db: Session,
+    exp: EvaluacionExpediente,
+    organization_id: str,
+    *,
+    vista_entidad: bool = False,
+) -> dict[str, Any]:
+    from app.services.demo_economico_horizonte import expediente_economic_resumen
+
+    return expediente_economic_resumen(db, organization_id, exp.id, vista_entidad=vista_entidad)
+
+
+def _impacto_interpretacion(
+    exp: EvaluacionExpediente,
+    indicadores: list[dict[str, Any]],
+    *,
+    vista_entidad: bool = False,
+) -> dict[str, Any]:
+    is_demo = _is_demo_expediente(exp)
+    banner = "DEMO — DATOS SIMULADOS" if is_demo else None
+    return {
+        "banner": banner,
+        "que_ocurrio": "Glosas recurrentes y reprocesos en facturación/cartera detectados en el expediente.",
+        "por_que": "Codificación inconsistente y validación documental lenta en procesos críticos.",
+        "que_significa": "Pérdida de ingresos recuperables y sobrecarga operativa del equipo.",
+        "requiere_atencion": "Completar documentación pendiente y decidir piloto de automatización.",
+        "oportunidad": "Automatizar codificación y auditoría documental asistida por Empleado IA.",
+        "valor": "Ver pestaña Valor — cifras etiquetadas; en demo son simulaciones, no verificación real.",
+        "recomendacion": "Capacitar equipo, desplegar reglas IA y medir antes/proyectado/real trimestral.",
+        "acciones": [
+            {"label": "Abrir cabina", "ruta": f"/evaluaciones/{exp.id}"},
+            {"label": "Oportunidades", "ruta": "/oportunidades"},
+            {"label": "Presentar", "ruta": f"/demo/presentacion/{exp.id}" if is_demo else f"/presentacion/{exp.id}"},
+        ],
+        "indicadores_clave": len(indicadores),
+        "vista_entidad": vista_entidad,
     }
 
 
@@ -1093,6 +1167,8 @@ def _demo_ask_response(
         pend = base["contexto_expediente"].get("informacion_pendiente") or []
         return {
             **base,
+            "modo_respuesta": "demo_controlado",
+            "proveedor": "plantillas_demo_horizonte",
             "estado": "respuesta_demo",
             "mensaje": (
                 f"[DEMO] En {exp.entidad_nombre} falta completar: "
@@ -1127,6 +1203,8 @@ def _demo_ask_response(
         pot = valores.get("valor_potencial")
         return {
             **base,
+            "modo_respuesta": "demo_controlado",
+            "proveedor": "plantillas_demo_horizonte",
             "estado": "respuesta_demo",
             "mensaje": (
                 f"[DEMO — ESTIMADO/PROYECTADO] Valor estimado org: {est or '—'} · "
@@ -1222,6 +1300,9 @@ def ask_eiaax(
         db, exp, organization_id, mensaje=mensaje, accion=accion, base=base,
     )
     if demo_resp:
+        demo_resp.setdefault("modo_respuesta", "demo_controlado")
+        demo_resp.setdefault("proveedor", "plantillas_demo_horizonte")
+        demo_resp.setdefault("llm_real", False)
         return demo_resp
 
     codigo = intencion["intencion"]
@@ -1229,6 +1310,9 @@ def ask_eiaax(
     if codigo == "A":
         return {
             **base,
+            "modo_respuesta": "local_heuristica",
+            "proveedor": "evaluacion_intent_service",
+            "llm_real": False,
             "estado": "respuesta_local",
             "mensaje": (
                 f"Con la información actual ({exp.porcentaje_informacion}% completada), "
@@ -1317,9 +1401,16 @@ def ask_eiaax(
             },
             auto_execute=False,
         )
-        return {**base, "estado": "ok", "respuesta": result}
+        return {
+            **base,
+            "modo_respuesta": "llm_real",
+            "proveedor": "route_task",
+            "llm_real": True,
+            "estado": "ok",
+            "respuesta": result,
+        }
 
-    return {**base, "estado": "ok", "respuesta": None}
+    return {**base, "modo_respuesta": "local_heuristica", "llm_real": False, "estado": "ok", "respuesta": None}
 
 
 def get_siguiente_accion(

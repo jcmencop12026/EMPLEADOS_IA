@@ -26,27 +26,59 @@ export function CabinaValorPanel({ expedienteId, impacto, canManageIndicadores, 
 
   const indicadores = (impacto?.indicadores as Array<Record<string, unknown>> | undefined) ?? [];
   const resumen = impacto?.resumen as Record<string, unknown> | undefined;
+  const interpretacion = impacto?.interpretacion as Record<string, unknown> | undefined;
+  const esDemo = Boolean(resumen?.es_demo);
+
+  const demoAmount = (key: string) => {
+    const block = resumen?.[key] as { monto?: number; etiqueta?: string } | undefined;
+    if (!block?.monto) return "—";
+    return `${block.etiqueta ?? key}: $${Number(block.monto).toLocaleString("es-CO")} COP`;
+  };
 
   return (
     <div className="cabina-valor-panel">
       <section className="panel compact-panel">
         <h2>Valor económico ejecutivo</h2>
+        {esDemo && (
+          <p className="demo-banner" role="status">
+            <strong>DEMO — DATOS SIMULADOS</strong> — ninguna cifra equivale a verificación real.
+          </p>
+        )}
         <p className="muted small potential-excluded">
           El valor potencial no se suma al valor realizado. Precio sugerido y margen son información privada.
         </p>
         <div className="value-nature-grid compact">
-          <div className="value-nature-card verified">
-            <span className="value-nature-head">Verificado</span>
-            <span className="value-nature-amount">{fmt(resumen?.verificado)}</span>
-          </div>
-          <div className="value-nature-card estimated">
-            <span className="value-nature-head">Estimado</span>
-            <span className="value-nature-amount">{fmt(resumen?.estimado)}</span>
-          </div>
-          <div className="value-nature-card potential">
-            <span className="value-nature-head">Potencial</span>
-            <span className="value-nature-amount">{fmt(resumen?.potencial)}</span>
-          </div>
+          {esDemo ? (
+            <>
+              <div className="value-nature-card estimated">
+                <span className="value-nature-head">Simulación verificado</span>
+                <span className="value-nature-amount">{demoAmount("simulacion_verificado")}</span>
+              </div>
+              <div className="value-nature-card estimated">
+                <span className="value-nature-head">Estimado</span>
+                <span className="value-nature-amount">{demoAmount("estimado")}</span>
+              </div>
+              <div className="value-nature-card potential">
+                <span className="value-nature-head">Potencial</span>
+                <span className="value-nature-amount">{demoAmount("potencial")}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="value-nature-card verified">
+                <span className="value-nature-head">Verificado</span>
+                <span className="value-nature-amount">{fmt(resumen?.verificado)}</span>
+              </div>
+              <div className="value-nature-card estimated">
+                <span className="value-nature-head">Estimado</span>
+                <span className="value-nature-amount">{fmt(resumen?.estimado)}</span>
+              </div>
+              <div className="value-nature-card potential">
+                <span className="value-nature-head">Potencial</span>
+                <span className="value-nature-amount">{fmt(resumen?.potencial)}</span>
+              </div>
+            </>
+          )}
           <div className="value-nature-card price-base">
             <span className="value-nature-head">Realizado</span>
             <span className="value-nature-amount">{fmt(resumen?.realizado ?? finops?.total_value)}</span>
@@ -58,6 +90,13 @@ export function CabinaValorPanel({ expedienteId, impacto, canManageIndicadores, 
           <dt>ROI</dt><dd>{finops?.roi_label ?? "—"}</dd>
           <dt>Ahorro estimado</dt><dd>{finops?.estimated_savings ?? "—"}</dd>
         </dl>
+        {interpretacion && (
+          <dl className="detail-grid compact cc-interpretacion">
+            <dt>Qué significa</dt><dd>{String(interpretacion.que_significa ?? "—")}</dd>
+            <dt>Requiere atención</dt><dd>{String(interpretacion.requiere_atencion ?? "—")}</dd>
+            <dt>Recomendación EIAAX</dt><dd>{String(interpretacion.recomendacion ?? "—")}</dd>
+          </dl>
+        )}
         <p><Link to="/costos-valor">Consola FinOps completa</Link></p>
       </section>
 

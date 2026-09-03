@@ -141,6 +141,16 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
             <h2 className="section-title">Tablero empresarial — indicadores</h2>
             <Link to={`/evaluaciones/${evaluacionId}?tab=resultados`} className="btn small secondary">Profundizar</Link>
           </div>
+          {exp.entidad_nombre?.startsWith("[DEMO]") && (
+            <p className="demo-banner" role="status">DEMO — DATOS SIMULADOS — proyecciones no equivalen a verificación real.</p>
+          )}
+          <dl className="detail-grid compact cc-interpretacion-strip">
+            <dt>Qué ocurrió</dt><dd>{String((impacto?.interpretacion as Record<string, unknown> | undefined)?.que_ocurrio ?? "—")}</dd>
+            <dt>Por qué</dt><dd>{String((impacto?.interpretacion as Record<string, unknown> | undefined)?.por_que ?? "—")}</dd>
+            <dt>Requiere atención</dt><dd>{String((impacto?.interpretacion as Record<string, unknown> | undefined)?.requiere_atencion ?? "—")}</dd>
+            <dt>Oportunidad</dt><dd>{String((impacto?.interpretacion as Record<string, unknown> | undefined)?.oportunidad ?? "—")}</dd>
+            <dt>Recomendación EIAAX</dt><dd>{String((impacto?.interpretacion as Record<string, unknown> | undefined)?.recomendacion ?? "—")}</dd>
+          </dl>
           <p className="muted small">
             Qué ocurrió → por qué importa → qué requiere atención. Proyectado nunca se presenta como real.
           </p>

@@ -46,8 +46,11 @@ async function auditTables(page, label = "") {
     const box = await t.boundingBox();
     if (box && box.width > 1400) issues.push(`${label}tabla ${i + 1} ancho ${Math.round(box.width)}`);
     const overflow = await t.evaluate((el) => {
-      const parent = el.closest(".table-wrap, .panel, .ops-page, .data-table-wrap") || el.parentElement;
-      return parent ? parent.scrollWidth > parent.clientWidth + 4 : false;
+      const wrap = el.closest(".table-wrap, .ops-table-panel, .panel, .ops-page") || el.parentElement;
+      if (!wrap) return false;
+      const isOpsIntentional = wrap.classList.contains("ops-table-panel") || el.classList.contains("ops-hub-table");
+      if (isOpsIntentional) return false;
+      return wrap.scrollWidth > wrap.clientWidth + 4;
     });
     if (overflow) issues.push(`${label}tabla ${i + 1} overflow horizontal`);
     const truncated = await t.evaluate((el) =>

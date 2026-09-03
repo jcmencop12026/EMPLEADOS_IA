@@ -156,8 +156,8 @@ export function OperationsHubPage() {
         <p className="muted">No hay operaciones para los filtros seleccionados.</p>
       )}
 
-      <div className="panel table-wrap">
-        <table className="data-table">
+      <div className="panel table-wrap ops-table-panel">
+        <table className="data-table ops-hub-table">
           <thead>
             <tr>
               <th>Trabajo</th>
