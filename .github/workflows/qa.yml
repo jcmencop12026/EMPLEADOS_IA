@@ -39,6 +39,7 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg2://empleados_test:empleados_test@localhost:5432/empleados_ia_test
       JWT_SECRET: ci-test-secret-qa-infra-001-min-32-chars
+      ALLOW_INSECURE_DEV_DEFAULTS: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
