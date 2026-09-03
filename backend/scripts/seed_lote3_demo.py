@@ -70,6 +70,7 @@ from app.seed_orchestration import bootstrap_orchestration  # noqa: E402
 from app.seed_permissions import bootstrap_permissions  # noqa: E402
 from app.seed_salud import bootstrap_salud  # noqa: E402
 from app.services import communications_service as comm_svc  # noqa: E402
+from app.services import demo_comercial_service as demo_svc  # noqa: E402
 from app.services import evaluacion_service as eval_svc  # noqa: E402
 from app.services import gobierno_operacional_service as gob_svc  # noqa: E402
 from app.services import negocio_service as neg_svc  # noqa: E402
@@ -338,6 +339,9 @@ def main() -> int:
         db.commit()
 
         entities_a = _seed_org_a_demo_data(db, org_a, users_a)
+        horizonte_manifest = demo_svc.seed_demo_comercial(
+            db, org_a.id, users_a["org_a_admin"].id
+        )
 
         summary: dict[str, Any] = {
             "database_url": database_url,
@@ -356,6 +360,15 @@ def main() -> int:
                         for u in DEMO_ORG_A["users"]
                     ],
                     "entities": entities_a,
+                    "demo_horizonte": {
+                        "etiqueta": horizonte_manifest.get("etiqueta"),
+                        "empresa_ficticia": horizonte_manifest.get("empresa_ficticia"),
+                        "expediente_id": horizonte_manifest.get("expediente_id"),
+                        "expediente_codigo": horizonte_manifest.get("expediente_codigo"),
+                        "centro_control": horizonte_manifest.get("enlaces", {}).get(
+                            "centro_control", "/"
+                        ),
+                    },
                 },
                 "org_b": {
                     "id": org_b.id,
