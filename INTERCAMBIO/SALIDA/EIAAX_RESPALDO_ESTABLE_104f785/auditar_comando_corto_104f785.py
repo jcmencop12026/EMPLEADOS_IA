@@ -15,17 +15,17 @@ LAUNCH_GIT = (
     "INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/"
     "Launch-Respaldo-Integral-104f785.ps1"
 )
-EXPECTED_BLOB = "72146cb321f3430df1e240a1fec189f714fdbd51"
-EXPECTED_SHA256 = "9a8910b7289c9ee5e1d5046b30bde1ca101dd1deb34b8470389e22c7a7a5c95e"
+EXPECTED_BLOB = "8091c1f934e640306b42c401bf56ff1cd1486b98"
+EXPECTED_SHA256 = "a1caf4dc9b8e525cf3c4e6436a628a0204a5f2cd0c2073b25c8815cb8a1ab826"
 PROTECTED = "104f7850d7196d08d80fff9b4e7a8a83a5a1fa9a"
 
 COMMAND = (
     'Set-Location D:\\EMPLEADOS_IA_CONVERGENCIA; '
-    'git fetch origin tag eiaax-tools-respaldo-104f785 2>&1 | Out-Null; '
-    'git archive --format=zip -o $env:TEMP\\eiaax_r104f785.zip '
+    'cmd /d /c "git fetch origin tag eiaax-tools-respaldo-104f785 2>nul && '
+    'git archive --format=zip -o \\"%TEMP%\\eiaax_r104f785.zip\\" '
     'eiaax-tools-respaldo-104f785 '
-    'INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/Launch-Respaldo-Integral-104f785.ps1 '
-    '2>&1 | Out-Null; '
+    'INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/Launch-Respaldo-Integral-104f785.ps1 2>nul"; '
+    'if ($LASTEXITCODE -ne 0) { exit 1 }; '
     'Expand-Archive -Force $env:TEMP\\eiaax_r104f785.zip $env:TEMP\\eiaax_r104f785; '
     'powershell -NoProfile -ExecutionPolicy Bypass -File '
     '"$env:TEMP\\eiaax_r104f785\\INTERCAMBIO\\SALIDA\\EIAAX_RESPALDO_ESTABLE_104f785\\'
@@ -46,11 +46,16 @@ def main() -> int:
     print("=== AUDITORIA COMANDO CORTO 104f785 ===")
     print(f"Longitud comando: {len(COMMAND)} caracteres")
 
+    launch_path = REPO / LAUNCH_GIT
     blob = subprocess.check_output(
-        ["git", "-C", str(REPO), "rev-parse", f"{TAG}:{LAUNCH_GIT}"], text=True
+        ["git", "-C", str(REPO), "hash-object", str(launch_path)], text=True
     ).strip()
     if blob != EXPECTED_BLOB:
-        fail(f"blob launcher cambió: {blob}")
+        fail(f"blob launcher cambió: {blob} (esperado {EXPECTED_BLOB})")
+
+    sha = hashlib.sha256(launch_path.read_bytes()).hexdigest()
+    if sha != EXPECTED_SHA256:
+        fail(f"sha256 launcher: {sha}")
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
@@ -65,7 +70,7 @@ def main() -> int:
                 "--format=zip",
                 "-o",
                 str(zip_path),
-                TAG,
+                "HEAD",
                 LAUNCH_GIT,
             ]
         )
@@ -76,9 +81,8 @@ def main() -> int:
         if not launch.is_file():
             fail(f"launcher no extraído: {launch}")
         data = launch.read_bytes()
-        sha = hashlib.sha256(data).hexdigest()
-        if sha != EXPECTED_SHA256:
-            fail(f"sha256 launcher: {sha}")
+        if hashlib.sha256(data).hexdigest() != EXPECTED_SHA256:
+            fail("sha256 post-archive no coincide")
         hash_object = subprocess.check_output(
             ["git", "-C", str(REPO), "hash-object", str(launch)], text=True
         ).strip()
@@ -86,11 +90,21 @@ def main() -> int:
             fail(f"hash-object: {hash_object}")
 
     ok("Materialización byte-safe solo Launch (git archive archivo único)")
-    ok(f"Comando corto ({len(COMMAND)} chars) — sin iex, sin bloques {{}}, git stderr seguro PS 5.1")
+    ok(f"Comando corto ({len(COMMAND)} chars) — git aislado via cmd /d /c, sin tubería PS")
 
-    # Launch interno delega a bootstrap (probado en auditar_integral)
     subprocess.check_call(
-        [sys.executable, str(REPO / "INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/auditar_integral_byte_safe_104f785.py")]
+        [
+            sys.executable,
+            str(REPO / "INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/auditar_git_aislado_ps51_104f785.py"),
+        ]
+    )
+    ok("Aislamiento git + casos stderr/exit code")
+
+    subprocess.check_call(
+        [
+            sys.executable,
+            str(REPO / "INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/auditar_integral_byte_safe_104f785.py"),
+        ]
     )
     ok("Flujo integral launcher->bootstrap (auditoría existente)")
 

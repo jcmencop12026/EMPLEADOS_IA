@@ -5,6 +5,7 @@
 
 .DESCRIPTION
     Invocado desde launcher archive. NO usa git show -> texto -> WriteAllText.
+    Git se ejecuta via cmd.exe para evitar NativeCommandError en PS 5.1.
     Verifica blob Git + SHA-256 del contenido exacto tras materialización.
 #>
 [CmdletBinding()]
@@ -51,20 +52,63 @@ function Get-FileSha256([string]$Path) {
     return (Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash.ToLowerInvariant()
 }
 
+function Format-GitArgLine([string[]]$GitArgs) {
+    $parts = @()
+    foreach ($arg in $GitArgs) {
+        if ($arg -match '[\s"&|<>^]') {
+            $parts += '"' + ($arg -replace '"', '""') + '"'
+        }
+        else {
+            $parts += $arg
+        }
+    }
+    return ($parts -join ' ')
+}
+
+function Invoke-GitCmd([string]$WorkDir, [string[]]$GitArgs) {
+    $gitLine = Format-GitArgLine -GitArgs $GitArgs
+    if ([string]::IsNullOrWhiteSpace($WorkDir)) {
+        cmd /d /c "git $gitLine"
+    }
+    else {
+        cmd /d /c "cd /d `"$WorkDir`" && git $gitLine"
+    }
+    return $LASTEXITCODE
+}
+
+function Get-GitCmdOutput([string]$WorkDir, [string[]]$GitArgs) {
+    $gitLine = Format-GitArgLine -GitArgs $GitArgs
+    if ([string]::IsNullOrWhiteSpace($WorkDir)) {
+        $out = cmd /d /c "git $gitLine 2>nul"
+    }
+    else {
+        $out = cmd /d /c "cd /d `"$WorkDir`" && git $gitLine 2>nul"
+    }
+    if ($LASTEXITCODE -ne 0) { return $null }
+    if ($null -eq $out) { return '' }
+    return ($out | Out-String).Trim()
+}
+
 function Get-HeadSha {
-    return (git -C $RepoRoot rev-parse HEAD).Trim()
+    $head = Get-GitCmdOutput -WorkDir $RepoRoot -GitArgs @('rev-parse', 'HEAD')
+    if ($null -eq $head) { Stop-Bootstrap 'git rev-parse HEAD falló' }
+    return $head
 }
 
 function Ensure-GitObject([string]$Ref) {
-    $null = git -C $RepoRoot rev-parse $Ref 2>$null
+    $null = Get-GitCmdOutput -WorkDir $RepoRoot -GitArgs @('rev-parse', $Ref)
     if ($LASTEXITCODE -eq 0) { return $Ref }
 
     Write-Step "Objeto Git $Ref no local; fetch desde origin..."
-    git -C $RepoRoot fetch origin tag $ToolsRef 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        git -C $RepoRoot fetch origin $ToolsRef --depth=1 2>&1 | Out-Null
+    $fetchCode = Invoke-GitCmd -WorkDir $RepoRoot -GitArgs @('fetch', 'origin', 'tag', $ToolsRef)
+    if ($fetchCode -ne 0) {
+        $fetchCode = Invoke-GitCmd -WorkDir $RepoRoot -GitArgs @('fetch', 'origin', $ToolsRef, '--depth=1')
     }
-    $null = git -C $RepoRoot rev-parse $Ref 2>$null
+    if ($fetchCode -ne 0) {
+        Stop-Bootstrap "fetch de herramientas falló (exit $fetchCode)"
+    }
+
+    $null = Get-GitCmdOutput -WorkDir $RepoRoot -GitArgs @('rev-parse', $Ref)
     if ($LASTEXITCODE -ne 0) {
         Stop-Bootstrap "No se pudo recuperar ref de herramientas: $Ref"
     }
@@ -72,7 +116,9 @@ function Ensure-GitObject([string]$Ref) {
 }
 
 function Get-GitBlobId([string]$Ref, [string]$GitPath) {
-    return (git -C $RepoRoot rev-parse "${Ref}:${GitPath}").Trim()
+    $blob = Get-GitCmdOutput -WorkDir $RepoRoot -GitArgs @('rev-parse', "${Ref}:${GitPath}")
+    if ($null -eq $blob) { Stop-Bootstrap "rev-parse blob falló: ${Ref}:${GitPath}" }
+    return $blob
 }
 
 function Install-ToolsFromArchive([string]$Ref, [string]$DestinationRoot) {
@@ -86,9 +132,11 @@ function Install-ToolsFromArchive([string]$Ref, [string]$DestinationRoot) {
 
     try {
         Write-Step 'Materializando herramientas via git archive (byte-safe)...'
-        git -C $RepoRoot archive --format=zip -o $zipPath $Ref $ToolsPrefix 2>&1 | Out-Null
-        if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $zipPath)) {
-            Stop-Bootstrap 'git archive falló al materializar herramientas.'
+        $archiveCode = Invoke-GitCmd -WorkDir $RepoRoot -GitArgs @(
+            'archive', '--format=zip', '-o', $zipPath, $Ref, $ToolsPrefix
+        )
+        if ($archiveCode -ne 0 -or -not (Test-Path -LiteralPath $zipPath)) {
+            Stop-Bootstrap "git archive falló al materializar herramientas (exit $archiveCode)."
         }
 
         Expand-Archive -LiteralPath $zipPath -DestinationPath $extractRoot -Force
@@ -127,7 +175,8 @@ function Test-ToolIntegrity([string]$Ref, [string]$ToolsRoot) {
             Stop-Bootstrap "Blob Git inesperado para ${name}: esperado $($meta.BlobId), remoto $blobId"
         }
 
-        $hashObject = (git -C $RepoRoot hash-object $filePath).Trim()
+        $hashObject = Get-GitCmdOutput -WorkDir $RepoRoot -GitArgs @('hash-object', $filePath)
+        if ($null -eq $hashObject) { Stop-Bootstrap "git hash-object falló para $name" }
         if ($hashObject -ne $meta.BlobId) {
             Stop-Bootstrap "git hash-object no coincide para ${name}: esperado $($meta.BlobId), obtenido $hashObject (bytes alterados)"
         }
@@ -158,7 +207,8 @@ try {
     Write-Step "HEAD protegido verificado: $headBefore"
 
     $toolsRefResolved = Ensure-GitObject -Ref $ToolsRef
-    $toolsCommit = (git -C $RepoRoot rev-parse "$toolsRefResolved^{commit}").Trim()
+    $toolsCommit = Get-GitCmdOutput -WorkDir $RepoRoot -GitArgs @('rev-parse', "$toolsRefResolved^{commit}")
+    if ($null -eq $toolsCommit) { Stop-Bootstrap 'rev-parse commit herramientas falló' }
     Write-Step "Ref herramientas: $toolsRefResolved -> $toolsCommit"
 
     $activeToolsRoot = $ToolsDirectory
