@@ -9,6 +9,8 @@ ROLE_LABELS = {
     "admin": "Administrador",
     "operator": "Operador",
     "viewer": "Consulta",
+    "superadmin": "Superadministrador de plataforma",
+    "external_prospect": "Usuario externo empresa/prospecto",
 }
 
 

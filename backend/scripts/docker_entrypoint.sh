@@ -12,7 +12,11 @@ import time
 
 from sqlalchemy import create_engine, text
 
-url = os.environ.get("DATABASE_URL", "")
+from app.db_url import resolve_database_url_from_environ
+
+url = resolve_database_url_from_environ() or ""
+if url:
+    os.environ["DATABASE_URL"] = url
 if not url.startswith("postgresql"):
     print("[entrypoint] DATABASE_URL no es PostgreSQL; omitiendo espera.")
     sys.exit(0)
