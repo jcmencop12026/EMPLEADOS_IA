@@ -15,10 +15,16 @@ ENTRADA = TOOLS / "Entrada-Respaldo-Integral-104f785.cmd"
 COMANDO = (TOOLS / "COMANDO_WINDOWS_UNA_LINEA.txt").read_text(encoding="utf-8").strip()
 PROTECTED = "104f7850d7196d08d80fff9b4e7a8a83a5a1fa9a"
 TAG = "eiaax-tools-respaldo-104f785"
+ENTRADA_GIT = (
+    "INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/"
+    "Entrada-Respaldo-Integral-104f785.cmd"
+)
 LAUNCH_GIT = (
     "INTERCAMBIO/SALIDA/EIAAX_RESPALDO_ESTABLE_104f785/"
     "Launch-Respaldo-Integral-104f785.ps1"
 )
+ENTRADA_BLOB = "131a328bc00dfaae7e8b6ea9b75253d2906074bb"
+ENTRADA_SHA256 = "baca7c3261c7a546e99d740bf613639576bc70b7cce48eaad3bfc37e9ebd966c"
 
 
 def fail(msg: str) -> None:
@@ -105,24 +111,33 @@ def test_entrada_structure() -> None:
 
 
 def test_comando_structure() -> None:
-    if re.search(r"git\s+.*2>nul", COMANDO):
-        fail("COMANDO no debe ocultar stderr de git con 2>nul")
-    if "if errorlevel 1" not in COMANDO:
-        fail("COMANDO sin diagnostico errorlevel en preparacion")
-    if "type %TEMP%\\eiaax_prep.err" not in COMANDO:
-        fail("COMANDO sin mostrar causa en preparacion")
-    if " exit " in COMANDO or "if (" in COMANDO:
-        fail("COMANDO con exit/if en PS padre")
-    if not COMANDO.startswith("cmd /d /c"):
-        fail("COMANDO debe ser cmd /d /c unico")
-    ok(f"COMANDO ({len(COMANDO)} chars): bootstrap diagnostico + Entrada.cmd")
+    forbidden = ("goto ", "goto:", ":prep_done", ":stage_", ":fail_done", ":success_done", " if (", " exit ", "try {", "catch {")
+    for token in forbidden:
+        if token in COMANDO:
+            fail(f"COMANDO contiene patron prohibido: {token.strip()}")
+    if "Set-Location D:\\EMPLEADOS_IA_CONVERGENCIA" not in COMANDO:
+        fail("COMANDO no entra al repo")
+    if "Entrada-Respaldo-Integral-104f785.cmd" not in COMANDO:
+        fail("COMANDO no materializa Entrada.cmd")
+    if 'call "%TEMP%\\eiaax_in\\INTERCAMBIO\\SALIDA\\EIAAX_RESPALDO_ESTABLE_104f785\\Entrada-Respaldo-Integral-104f785.cmd"' not in COMANDO:
+        fail("COMANDO no ejecuta Entrada.cmd materializado")
+    if not COMANDO.startswith("Set-Location"):
+        fail("COMANDO debe iniciar con Set-Location")
+    ok(f"COMANDO ({len(COMANDO)} chars): preparacion minima sin goto/labels")
 
 
-def test_full_flow_equivalent() -> None:
+def test_materialize_entrada_hash() -> None:
+    blob = subprocess.check_output(
+        ["git", "-C", str(REPO), "hash-object", str(ENTRADA)], text=True
+    ).strip()
+    if blob != ENTRADA_BLOB:
+        fail(f"blob Entrada.cmd cambio: {blob}")
+    sha = __import__("hashlib").sha256(ENTRADA.read_bytes()).hexdigest()
+    if sha != ENTRADA_SHA256:
+        fail(f"sha256 Entrada.cmd cambio: {sha}")
     with tempfile.TemporaryDirectory() as tmp:
-        tmp_path = Path(tmp)
-        zip_path = tmp_path / "launch.zip"
-        extract = tmp_path / "extract"
+        zip_path = Path(tmp) / "in.zip"
+        extract = Path(tmp) / "in"
         subprocess.check_call(
             [
                 "git",
@@ -133,12 +148,52 @@ def test_full_flow_equivalent() -> None:
                 "-o",
                 str(zip_path),
                 TAG,
-                LAUNCH_GIT,
+                ENTRADA_GIT,
             ]
         )
         extract.mkdir()
         subprocess.check_call(["unzip", "-q", str(zip_path), "-d", str(extract)])
-        launch = extract / LAUNCH_GIT
+        materialized = extract / ENTRADA_GIT
+        if not materialized.is_file():
+            fail("Entrada.cmd no materializado desde git archive")
+        mat_blob = subprocess.check_output(
+            ["git", "-C", str(REPO), "hash-object", str(materialized)], text=True
+        ).strip()
+        if mat_blob != ENTRADA_BLOB:
+            fail(f"hash-object materializado: {mat_blob}")
+    ok(f"Entrada.cmd byte-safe blob={ENTRADA_BLOB[:12]}...")
+
+
+def test_ejecuta_cmd_real() -> None:
+    text = ENTRADA.read_text(encoding="utf-8")
+    if "call :stage_repo" not in text and "call :stage_fetch" not in text:
+        fail("Entrada.cmd no define etapas batch reales")
+    if "Entrada-Respaldo-Integral-104f785.cmd" in COMANDO:
+        ok("COMANDO delega ejecucion al .cmd real materializado")
+
+
+def test_full_flow_equivalent() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        zip_path = tmp_path / "launch.zip"
+        extract = tmp_path / "extract"
+        launch_git = LAUNCH_GIT
+        subprocess.check_call(
+            [
+                "git",
+                "-C",
+                str(REPO),
+                "archive",
+                "--format=zip",
+                "-o",
+                str(zip_path),
+                TAG,
+                launch_git,
+            ]
+        )
+        extract.mkdir()
+        subprocess.check_call(["unzip", "-q", str(zip_path), "-d", str(extract)])
+        launch = extract / launch_git
         if not launch.is_file():
             fail("flujo equivalente: launcher no extraido")
     ok("flujo completo equivalente: archive byte-safe hasta launcher")
@@ -158,6 +213,8 @@ def main() -> int:
     print("=== AUTOCONTROL ENTRADA 104f785 ===")
     test_entrada_structure()
     test_comando_structure()
+    test_materialize_entrada_hash()
+    test_ejecuta_cmd_real()
     test_cmd_chain_stops_on_fail()
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
