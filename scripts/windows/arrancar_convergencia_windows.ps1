@@ -10,7 +10,7 @@
     - repository branch/manifest
     - Python discovery (reference pyvenv.cfg, py launcher, where.exe, registry, PATH)
     - port/process isolation (stops INTEGRADO demo via official script when needed)
-    - seed + Alembic 1820
+    - seed + Alembic 1831
     - backend/frontend owned by THIS worktree (PID/command validation)
     - runtime identity via /health
 
