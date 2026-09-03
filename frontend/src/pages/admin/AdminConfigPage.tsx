@@ -102,7 +102,7 @@ export function AdminConfigPage() {
         {tab === "identidad" && (
           <div className="config-identidad">
             <div className="config-brand-mother">
-              <BrandMark level="corporativo" />
+              <BrandMark level="micro" />
               <p className="muted small">Marca madre EIAAX — no sustituible por la identidad tenant.</p>
             </div>
             <label className="config-field">Nombre visible de la empresa

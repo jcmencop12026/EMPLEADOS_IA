@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -14,6 +15,8 @@ from app.models import User
 from app.permissions import require_permission, user_permissions
 from app.services import evaluacion_service as svc
 from app.services import evaluacion_accion_service as acc_svc
+from app.services import espacio_externo_service as esp_svc
+from app.services import evidencia_entrega_service as evid_svc
 from app.services.evaluacion_proveedor_externo_service import listar_proveedores
 from app.services.piiax_bridge_service import get_piiax_status, list_capacidades_catalog
 
@@ -235,6 +238,51 @@ def update_informacion(
     db.commit()
     exp = svc._get_expediente(db, expediente_id, user.organization_id)  # noqa: SLF001
     return svc.expediente_to_detail(db, exp)
+
+
+@router.get("/{expediente_id}/informacion/{item_id}/adjuntos")
+def listar_adjuntos_informacion(
+    expediente_id: str,
+    item_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.manage")),
+):
+    svc._get_expediente(db, expediente_id, user.organization_id)  # noqa: SLF001
+    return evid_svc.list_adjuntos_by_informacion_item(
+        db, user.organization_id, expediente_id, item_id
+    )
+
+
+@router.post("/{expediente_id}/informacion/{item_id}/adjuntos")
+async def subir_adjuntos_informacion(
+    expediente_id: str,
+    item_id: str,
+    files: list[UploadFile] = File(...),
+    observacion: str | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.manage")),
+):
+    exp = svc._get_expediente(db, expediente_id, user.organization_id)  # noqa: SLF001
+    ent_payload = esp_svc.create_entidad_from_expediente(
+        db, user.organization_id, user.id, expediente_id=expediente_id
+    )
+    entidad_id = str(ent_payload["entidad"]["id"])
+    tuples: list[tuple[str, bytes, str | None]] = []
+    for f in files:
+        data = await f.read()
+        tuples.append((f.filename or "documento", data, f.content_type))
+    result = evid_svc.upload_adjuntos_operador(
+        db,
+        user,
+        expediente_id=expediente_id,
+        item_id=item_id,
+        files=tuples,
+        observacion=observacion,
+        entidad_id=entidad_id,
+        correlation_id=exp.correlation_id,
+    )
+    db.commit()
+    return result
 
 
 @router.post("/{expediente_id}/evaluar")

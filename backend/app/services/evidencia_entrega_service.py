@@ -271,6 +271,55 @@ def upload_adjuntos_externo(
     return {"entrega_id": entrega.id, "adjuntos": creados}
 
 
+def list_adjuntos_by_informacion_item(
+    db: Session,
+    organization_id: str,
+    expediente_id: str,
+    item_id: str,
+) -> dict[str, Any]:
+    entrega = (
+        db.query(EvaluacionEntregaExterna)
+        .filter(
+            EvaluacionEntregaExterna.organization_id == organization_id,
+            EvaluacionEntregaExterna.expediente_id == expediente_id,
+            EvaluacionEntregaExterna.informacion_item_id == item_id,
+        )
+        .order_by(EvaluacionEntregaExterna.created_at.desc())
+        .first()
+    )
+    if not entrega:
+        return {"entrega_id": None, "adjuntos": []}
+    return {
+        "entrega_id": entrega.id,
+        "adjuntos": list_adjuntos_entrega(db, organization_id, entrega.id, include_internal=True),
+    }
+
+
+def upload_adjuntos_operador(
+    db: Session,
+    user: User,
+    *,
+    expediente_id: str,
+    item_id: str,
+    files: list[tuple[str, bytes, str | None]],
+    observacion: str | None = None,
+    entidad_id: str,
+    correlation_id: str | None,
+) -> dict[str, Any]:
+    """Carga de documentos recibidos por el operador EIAAX (no portal externo)."""
+    return upload_adjuntos_externo(
+        db,
+        user,
+        item_id=item_id,
+        files=files,
+        observacion=observacion,
+        fuente_tipo="VALIDADA",
+        entidad_id=entidad_id,
+        expediente_id=expediente_id,
+        correlation_id=correlation_id,
+    )
+
+
 def reemplazar_adjunto_externo(
     db: Session,
     user: User,

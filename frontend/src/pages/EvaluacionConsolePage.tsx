@@ -9,11 +9,13 @@ import {
   fetchPiiaxStatus,
   fetchVistaEntidad,
   setHallazgoVisibilidad,
+  syncInformacionExpediente,
   updateEvaluacionInformacion,
   type EvaluacionExpedienteDetail,
   type EvaluacionHallazgo,
   type EvaluacionInfoItem,
 } from "../api";
+import { InformacionAdjuntosPanel } from "../components/evaluacion/InformacionAdjuntosPanel";
 import { EiaaxTable } from "../components/EiaaxTable";
 import { EspacioExternoAdminPanel } from "../components/espacioExterno/EspacioExternoAdminPanel";
 import { AccionesExternasPanel } from "../components/evaluacion/AccionesExternasPanel";
@@ -249,9 +251,29 @@ export function EvaluacionConsolePage() {
         {tab === "diagnostico" && (
           <>
             <section className="panel compact-panel">
-              <h2>Información adaptativa</h2>
+              <div className="section-head-row">
+                <h2>Información adaptativa</h2>
+                {has("evaluacion.manage") && evaluacionId && (
+                  <button
+                    type="button"
+                    className="btn small secondary"
+                    onClick={() => void syncInformacionExpediente(evaluacionId).then(() => load())}
+                  >
+                    Sincronizar requisitos
+                  </button>
+                )}
+              </div>
+              {exp.informacion.length === 0 && (
+                <p className="muted">Sin ítems. Use «Sincronizar requisitos» según sector y profundidad.</p>
+              )}
               {exp.informacion.map((item) => (
-                <InformacionRow key={item.id} item={item} editable={has("evaluacion.manage")} onSave={onSaveInfo} />
+                <InformacionRow
+                  key={item.id}
+                  expedienteId={evaluacionId!}
+                  item={item}
+                  editable={has("evaluacion.manage")}
+                  onSave={onSaveInfo}
+                />
               ))}
             </section>
             <section className="panel compact-panel">
@@ -384,10 +406,12 @@ export function EvaluacionConsolePage() {
 }
 
 function InformacionRow({
+  expedienteId,
   item,
   editable,
   onSave,
 }: {
+  expedienteId: string;
   item: EvaluacionInfoItem;
   editable: boolean;
   onSave: (item: EvaluacionInfoItem, respuesta: string) => Promise<void>;
@@ -424,6 +448,7 @@ function InformacionRow({
         </form>
       )}
       {!editable && item.respuesta && <p>{item.respuesta}</p>}
+      <InformacionAdjuntosPanel expedienteId={expedienteId} itemId={item.id} editable={editable} />
     </div>
   );
 }

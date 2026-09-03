@@ -80,12 +80,14 @@ def seed_demo_comercial(db: Session, organization_id: str, user_id: str) -> dict
 
     hallazgos_demo = [
         ("Glosas por codificación incorrecta", "HECHO", True),
-        ("Reprocesos manuales en facturación", "HECHO", True),
+        ("Reprocesos manuales en facturación y radicación", "HECHO", True),
+        ("Demoras en auditoría documental de soportes", "HECHO", True),
         ("Oportunidad de automatización con Empleado IA", "RECOMENDACION", True),
         ("Nota interna de calibración", "INFERENCIA", False),
     ]
+    hallazgo_ids: list[str] = []
     for titulo, tipo, visible in hallazgos_demo:
-        ev_svc.create_hallazgo(
+        h = ev_svc.create_hallazgo(
             db,
             exp.id,
             organization_id,
@@ -95,6 +97,20 @@ def seed_demo_comercial(db: Session, organization_id: str, user_id: str) -> dict
             tipo_contenido=tipo,
             confianza="MEDIA",
             visible_entidad=visible,
+        )
+        hallazgo_ids.append(h.id)
+
+    ev_svc.sync_informacion_adaptativa(db, exp, user_id=user_id)
+    ev_svc.ejecutar_evaluacion_preliminar(db, exp.id, organization_id, user_id=user_id)
+
+    for hid in hallazgo_ids[:3]:
+        ev_svc.crear_oportunidad_desde_hallazgo(
+            db,
+            exp.id,
+            organization_id,
+            hallazgo_id=hid,
+            user_id=user_id,
+            dominio="facturacion",
         )
 
     lb = baseline_svc.create_linea_base(

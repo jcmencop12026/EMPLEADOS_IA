@@ -4024,6 +4024,10 @@ export async function updateEvaluacionInformacion(
   });
 }
 
+export async function syncInformacionExpediente(expedienteId: string): Promise<EvaluacionExpedienteDetail> {
+  return api(`/api/evaluaciones/${expedienteId}/informacion/sync`, { method: "POST" });
+}
+
 export async function evaluarExpediente(id: string): Promise<{ expediente: EvaluacionExpedienteDetail; hallazgos_creados: number }> {
   return api(`/api/evaluaciones/${id}/evaluar`, { method: "POST" });
 }
@@ -4985,6 +4989,56 @@ export async function descargarAdjuntoExterno(adjuntoId: string, filename: strin
   if (token) headers.set("Authorization", `Bearer ${token}`);
   const res = await fetch(urlDescargaAdjuntoExterno(adjuntoId), { headers });
   if (!res.ok) throw new Error(await res.text() || res.statusText);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export type AdjuntoEntregaItem = {
+  id: string;
+  nombre: string;
+  estado: string;
+  size_bytes?: number;
+  extension?: string;
+};
+
+export async function fetchAdjuntosInformacion(
+  expedienteId: string,
+  itemId: string,
+): Promise<{ entrega_id: string | null; adjuntos: AdjuntoEntregaItem[] }> {
+  return api(`/api/evaluaciones/${expedienteId}/informacion/${itemId}/adjuntos`);
+}
+
+export async function subirAdjuntosOperador(
+  expedienteId: string,
+  itemId: string,
+  files: File[],
+  observacion?: string,
+): Promise<Record<string, unknown>> {
+  const form = new FormData();
+  for (const f of files) form.append("files", f);
+  const q = observacion ? `?observacion=${encodeURIComponent(observacion)}` : "";
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(
+    `/api/evaluaciones/${expedienteId}/informacion/${itemId}/adjuntos${q}`,
+    { method: "POST", headers, body: form },
+  );
+  if (!res.ok) throw new Error((await res.text()) || res.statusText);
+  return res.json() as Promise<Record<string, unknown>>;
+}
+
+export async function descargarAdjuntoInterno(adjuntoId: string, filename: string): Promise<void> {
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(`/api/espacio-externo/adjuntos/${encodeURIComponent(adjuntoId)}/descarga`, { headers });
+  if (!res.ok) throw new Error((await res.text()) || res.statusText);
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

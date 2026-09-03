@@ -55,6 +55,18 @@ export function CentroControlCockpit({ data, periodo, expedienteId }: Props) {
     <div className="cc-cockpit">
       <CentroControlMasterAccess expedienteId={expedienteId} />
 
+      <section className="cc-ciclo-strip panel compact-panel">
+        <span className="muted small cc-ciclo-label">Ciclo:</span>
+        {["Conocer", "Evaluar", "Diagnosticar", "Valorar", "Decidir", "Presentar", "Operar", "Medir", "Informar"].map((etapa) => (
+          <span key={etapa} className="cc-ciclo-chip">{etapa}</span>
+        ))}
+        {expedienteId && (
+          <Link to={`/evaluaciones/${expedienteId}`} className="btn small secondary cc-ciclo-action">
+            Ver expediente
+          </Link>
+        )}
+      </section>
+
       <section className="cc-zone cc-zone-status panel compact-panel">
         <div className="cc-zone-head">
           <h2 className="section-title">Estado general</h2>

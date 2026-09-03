@@ -1,7 +1,5 @@
 import { useId, useState } from "react";
-
-const MAX_BYTES = 180_000;
-const ALLOWED = ["image/png", "image/jpeg", "image/svg+xml", "image/webp"];
+import { processLogoFile } from "../../lib/logoUpload";
 
 type Props = {
   label: string;
@@ -13,26 +11,28 @@ type Props = {
 export function EnterpriseLogoField({ label, value, onChange, compact }: Props) {
   const inputId = useId();
   const [error, setError] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<"file" | "url">(value.startsWith("data:") || !value ? "file" : "url");
 
   async function onFileSelected(file: File | null) {
     setError(null);
+    setHint(null);
     if (!file) return;
-    if (!ALLOWED.includes(file.type)) {
-      setError("Formato no permitido. Use PNG, JPG, SVG o WebP.");
-      return;
+    setBusy(true);
+    try {
+      const result = await processLogoFile(file);
+      onChange(result.dataUrl);
+      if (result.optimized) {
+        setHint(
+          `Optimizado automáticamente (${Math.round(result.originalBytes / 1024)} KB → ${Math.round(result.outputBytes / 1024)} KB).`,
+        );
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo procesar el archivo.");
+    } finally {
+      setBusy(false);
     }
-    if (file.size > MAX_BYTES) {
-      setError("El archivo supera el límite de 180 KB.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = String(reader.result ?? "");
-      onChange(result);
-    };
-    reader.onerror = () => setError("No se pudo leer el archivo.");
-    reader.readAsDataURL(file);
   }
 
   return (
@@ -50,8 +50,9 @@ export function EnterpriseLogoField({ label, value, onChange, compact }: Props) 
         <input
           id={inputId}
           type="file"
-          accept={ALLOWED.join(",")}
+          accept="image/png,image/jpeg,image/svg+xml,image/webp"
           className="logo-file-input"
+          disabled={busy}
           onChange={(e) => void onFileSelected(e.target.files?.[0] ?? null)}
         />
       ) : (
@@ -62,6 +63,7 @@ export function EnterpriseLogoField({ label, value, onChange, compact }: Props) 
           placeholder="https://…/logo.svg"
         />
       )}
+      <p className="muted small logo-field-hint">PNG, JPG, SVG o WebP · hasta 2,5 MB · optimización automática si es necesario</p>
       {(value || compact) && (
         <div className="logo-preview-row">
           {value ? (
@@ -71,6 +73,8 @@ export function EnterpriseLogoField({ label, value, onChange, compact }: Props) 
           )}
         </div>
       )}
+      {busy && <p className="muted small">Procesando imagen…</p>}
+      {hint && <p className="muted small">{hint}</p>}
       {error && <p className="error small">{error}</p>}
     </div>
   );

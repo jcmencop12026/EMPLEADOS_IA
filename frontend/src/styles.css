@@ -16,7 +16,9 @@ body {
 
 .layout {
   display: flex;
+  height: 100vh;
   min-height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -26,7 +28,26 @@ body {
   padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+  flex-shrink: 0;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px 16px 16px;
 }
 
 .brand {
@@ -62,12 +83,6 @@ body {
   text-align: left;
   cursor: pointer;
   padding: 6px 8px;
-}
-
-.main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
 }
 
 .topbar {
@@ -132,10 +147,6 @@ body {
 .severity-low { color: #166534; background: #dcfce7; }
 .notification-actions { white-space: nowrap; }
 .notification-actions button, .notification-actions a { border: 0; background: transparent; color: #2563eb; cursor: pointer; padding: 2px 5px; text-decoration: none; font-weight: 600; }
-
-.content {
-  padding: 16px 24px 16px 16px;
-}
 
 @media (min-width: 1200px) {
   .content {
@@ -2389,6 +2400,117 @@ tr.row-selected {
   margin-bottom: 12px;
   padding-bottom: 12px;
   border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.config-identidad .config-brand-mother .brand-mark,
+.config-identidad .config-brand-mother img {
+  max-height: 28px;
+  max-width: 120px;
+  object-fit: contain;
+}
+
+.logo-field-hint {
+  margin: 4px 0 0;
+}
+
+.info-adjuntos-panel {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.info-adjuntos-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.info-adjuntos-input {
+  display: none;
+}
+
+.info-adjuntos-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.info-adjuntos-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.info-adjunto-name {
+  flex: 1;
+  min-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cc-page-header-compact .page-header.compact {
+  margin-bottom: 4px;
+}
+
+.cc-page-header-compact .page-header.compact h1 {
+  font-size: 17px;
+  margin-bottom: 2px;
+}
+
+.cc-page-header-compact .page-header.compact .muted {
+  font-size: 12px;
+  margin: 0;
+}
+
+.cc-context-toolbar {
+  margin-top: 6px;
+}
+
+.cc-ciclo-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+}
+
+.cc-ciclo-label {
+  font-weight: 600;
+}
+
+.cc-ciclo-chip {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.instructivo-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.instructivo-list li {
+  margin-bottom: 6px;
 }
 
 .logo-field {

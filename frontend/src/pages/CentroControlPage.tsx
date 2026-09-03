@@ -98,11 +98,11 @@ export function CentroControlPage() {
   const valor = data?.valor_consolidado ?? data?.resumen_ejecutivo?.valor;
 
   return (
-    <div className="ops-page centro-control-page">
+    <div className="ops-page centro-control-page cc-page-header-compact">
       <header className="page-header compact">
         <h1>Centro de Control</h1>
-        <p className="muted">
-          Una sola pantalla para operar, priorizar atención y conectar valor con la vista empresa
+        <p className="muted cc-tagline">
+          Consola maestra — contexto, ciclo, atención y siguiente acción
           {isViewingOtherOrganization && (
             <> · <strong>Organización: {effectiveOrganizationName}</strong></>
           )}
@@ -146,15 +146,8 @@ export function CentroControlPage() {
       {loading && <p className="muted">Cargando centro de control…</p>}
       {error && <p className="error">{error}</p>}
 
-      {expedienteContext && has("evaluacion.view") && (
-        <CentroControlEmpresaPanel evaluacionId={expedienteContext} />
-      )}
-
       {data && (
         <>
-          {expedienteContext && (
-            <h2 className="section-title cc-global-heading">Vista global del periodo</h2>
-          )}
           <nav className="tab-bar compact-tabs" aria-label="Secciones ejecutivas">
             {secciones.map((s) => (
               <button
@@ -169,7 +162,12 @@ export function CentroControlPage() {
           </nav>
 
           {seccion === "resumen" && (
-            <CentroControlCockpit data={data} periodo={periodo} expedienteId={expedienteContext || undefined} />
+            <>
+              {expedienteContext && has("evaluacion.view") && (
+                <CentroControlEmpresaPanel evaluacionId={expedienteContext} />
+              )}
+              <CentroControlCockpit data={data} periodo={periodo} expedienteId={expedienteContext || undefined} />
+            </>
           )}
 
           {seccion === "valor" && (
