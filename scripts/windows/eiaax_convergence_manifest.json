@@ -2,7 +2,7 @@
   "profile": "convergencia_comercial_v1",
   "branch": "cursor/convergencia-comercial-v1-85e4",
   "alembic_head": "1831a1b2c3d4e",
-  "integration_sha": "e7808ef",
+  "integration_sha": "a1592de",
   "worktree_default": "D:\\EMPLEADOS_IA_CONVERGENCIA",
   "demo_db_name": "eiaax_integrado_demo.db",
   "runtime_marker": "eiaax-convergencia-v1-windows"
