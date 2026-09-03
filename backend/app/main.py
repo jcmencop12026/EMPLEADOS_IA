@@ -64,6 +64,7 @@ from app.routers import (
     evaluaciones,
     partners,
     transformacion,
+    inteligencia_empresarial,
     inteligencia_externa,
     continuidad,
     governance,
@@ -187,6 +188,7 @@ app.include_router(diagnosticos.router)
 app.include_router(evaluaciones.router)
 app.include_router(partners.router)
 app.include_router(transformacion.router)
+app.include_router(inteligencia_empresarial.router)
 app.include_router(inteligencia_externa.router)
 app.include_router(continuidad.router)
 app.include_router(control_center.router)

@@ -38,7 +38,10 @@ ALTERNATIVA_TIPOS = frozenset({
 })
 
 INICIATIVA_CLASES = frozenset({"RAPIDA", "TACTICA", "ESTRATEGICA"})
-ESCENARIO_TIPOS = frozenset({"ACTUAL", "MEJORADO", "TRANSFORMADO"})
+ESCENARIO_TIPOS = frozenset({
+    "ACTUAL", "OPTIMIZADO", "MEJORADO", "AUTOMATIZADO", "ASISTIDO_IA",
+    "ALTAMENTE_AUTOMATIZADO", "TRANSFORMADO",
+})
 CALIDAD_NIVELES = frozenset({"ALTA", "MEDIA", "BAJA"})
 FUENTE_TIPOS = frozenset({
     "captura_guiada", "carga_manual", "documento", "archivo", "base_datos",

@@ -209,6 +209,11 @@ TRANSFORMACION_PERMISSIONS = {
     "transformacion.execute",
 }
 
+INTELIGENCIA_EMPRESARIAL_PERMISSIONS = {
+    "inteligencia_empresarial.view",
+    "inteligencia_empresarial.manage",
+}
+
 INTELIGENCIA_EXTERNA_PERMISSIONS = {
     "inteligencia_externa.view",
     "inteligencia_externa.manage",
@@ -455,6 +460,8 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "transformacion.view": ("Transformación", "Consultar dossier y diagnóstico adaptativo"),
     "transformacion.manage": ("Transformación", "Registrar necesidades y gestionar dossier"),
     "transformacion.execute": ("Transformación", "Ejecutar diagnóstico y motor de transformación"),
+    "inteligencia_empresarial.view": ("Inteligencia Empresarial", "Ver panorama adaptativo, suficiencia y cadena analítica"),
+    "inteligencia_empresarial.manage": ("Inteligencia Empresarial", "Ejecutar evaluación adaptativa y registrar evidencia proactiva"),
     "inteligencia_externa.view": ("Inteligencia externa", "Consultar fuentes y señales externas"),
     "inteligencia_externa.manage": ("Inteligencia externa", "Administrar fuentes externas"),
     "inteligencia_externa.ingest": ("Inteligencia externa", "Registrar señales externas"),
@@ -557,6 +564,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | EVALUACION_PERMISSIONS
         | PARTNER_PERMISSIONS
         | TRANSFORMACION_PERMISSIONS
+        | INTELIGENCIA_EMPRESARIAL_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS
@@ -597,6 +605,7 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         | EVALUACION_PERMISSIONS
         | PARTNER_PERMISSIONS
         | TRANSFORMACION_PERMISSIONS
+        | INTELIGENCIA_EMPRESARIAL_PERMISSIONS
         | INTELIGENCIA_EXTERNA_PERMISSIONS
         | CONTROL_CENTER_PERMISSIONS
         | CONTINUIDAD_PERMISSIONS

@@ -310,3 +310,13 @@ def preguntar_eiaax(
         mensaje=body.mensaje,
         accion=body.accion,
     )
+
+
+@router.get("/{expediente_id}/suficiencia")
+def suficiencia_expediente(
+    expediente_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.view")),
+):
+    from app.modules.inteligencia_empresarial.suficiencia import evaluar_suficiencia_unificada
+    return evaluar_suficiencia_unificada(db, user.organization_id, expediente_id)

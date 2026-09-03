@@ -488,18 +488,21 @@ def _generar_escenarios(
     exp: EvaluacionExpediente,
     iniciativas: list[TransformacionIniciativa],
 ) -> list[TransformacionEscenario]:
+    escenarios_def = [
+        ("ACTUAL", "Situación actual (proceso vigente)", False, "Estado base sin cambios estructurales."),
+        ("OPTIMIZADO", "Escenario optimizado (proyectado)", True, "Mejoras de proceso sin automatización completa."),
+        ("AUTOMATIZADO", "Escenario automatizado (proyectado)", True, "Automatización de tareas repetitivas."),
+        ("ASISTIDO_IA", "Escenario asistido por IA (proyectado)", True, "IA asiste al humano — no sustituye todo el proceso."),
+        ("ALTAMENTE_AUTOMATIZADO", "Altamente automatizado (proyectado)", True, "Máxima automatización viable con controles."),
+    ]
     escenarios: list[TransformacionEscenario] = []
-    for tipo, titulo, proyectado in [
-        ("ACTUAL", "Situación actual", False),
-        ("MEJORADO", "Escenario mejorado (proyectado)", True),
-        ("TRANSFORMADO", "Escenario transformado (proyectado)", True),
-    ]:
+    for tipo, titulo, proyectado, nota in escenarios_def:
         if tipo not in ESCENARIO_TIPOS:
             continue
         desc = (
             exp.necesidad or "Estado base registrado en el dossier."
             if tipo == "ACTUAL"
-            else f"Proyección basada en {len(iniciativas)} iniciativa(s) priorizada(s)."
+            else f"{nota} Basado en {len(iniciativas)} iniciativa(s)."
         )
         esc = TransformacionEscenario(
             organization_id=dossier.organization_id,
