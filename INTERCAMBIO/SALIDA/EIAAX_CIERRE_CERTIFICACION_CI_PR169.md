@@ -4,8 +4,8 @@
 **Rama:** `cursor/revision-integral-completa-85e4`
 **PR:** [#169](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/169)
 **Base:** `cursor/convergencia-comercial-v1-85e4` (`1416671`)
-**HEAD final:** `b070461c8c8f8e8f8e8f8e8f8e8f8e8f8e8f8e8f`
-**integration_sha:** `4c41153`
+**HEAD final:** `d3dd6428d5dc85aba48921d284ee5a14f2571433`
+**integration_sha:** `d3dd642`
 **NO merge · NO promoción Windows · NO comando al usuario**
 
 ---
@@ -53,7 +53,7 @@ RuntimeError: JWT_SECRET demasiado corto: use al menos 32 caracteres en producci
 
 ## C. HEAD final
 
-`b070461bee39e0246c997c591e937bbbed8bff38` (`b070461`)
+`d3dd6428d5dc85aba48921d284ee5a14f2571433` (`d3dd642`)
 
 ---
 
