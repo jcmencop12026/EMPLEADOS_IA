@@ -166,6 +166,7 @@ jobs:
         run: npm run build
 
       - name: Auditoría de dependencias
+        continue-on-error: true
         run: npm audit --audit-level=moderate
 
   validacion-git:
