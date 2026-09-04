@@ -1,7 +1,7 @@
 # EMPLEADOS IA — Cableado real WIRING 1330/1350/1360 sobre Fase 1
 
-**BASE:** `d4ba063ec4d09c7e3cce2a32f0581cd0adb131af`  
-**RAMA:** `cursor/1330-wiring-real-sobre-fase1`  
+**BASE:** `d4ba063ec4d09c7e3cce2a32f0581cd0adb131af`
+**RAMA:** `cursor/1330-wiring-real-sobre-fase1`
 **HEAD:** `953a4ec9f5fbeee0c4099f7a8a8e8d057dde5b2c`
 
 ---
@@ -55,8 +55,8 @@ SUPERADMIN conserva permisos globales (`PLATFORM_PERMISSIONS`). Preflight de gob
 
 ## Alembic
 
-Cadena: `1380a → 1330a → 1330b`  
-**HEAD:** `1330b1b2c3d4f` (1 head)  
+Cadena: `1380a → 1330a → 1330b`
+**HEAD:** `1330b1b2c3d4f` (1 head)
 SQLite roundtrip upgrade/downgrade/upgrade: **PASS**
 
 ---

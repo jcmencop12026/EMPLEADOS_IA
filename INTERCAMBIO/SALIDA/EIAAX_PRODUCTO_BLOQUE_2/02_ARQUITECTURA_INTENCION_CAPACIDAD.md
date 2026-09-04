@@ -25,7 +25,7 @@ Definido en `backend/app/evaluacion_models.py` (`CAPACIDADES_EXTERNAS`):
 - `notificar`
 - `consultar_estado`
 
-API: `GET /api/evaluaciones/capacidades`  
+API: `GET /api/evaluaciones/capacidades`
 Servicio: `piiax_bridge_service.list_capacidades_catalog()`
 
 ## Flujo conceptual

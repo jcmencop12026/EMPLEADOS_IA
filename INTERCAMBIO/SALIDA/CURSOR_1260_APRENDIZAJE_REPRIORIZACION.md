@@ -1,9 +1,9 @@
 # EMPLEADOS_IA — BLOQUE 1260 APRENDIZAJE, RETROALIMENTACIÓN Y REPRIORIZACIÓN
 
-**Agente:** A  
-**Rama:** `cursor/1260-aprendizaje-repriorizacion`  
-**Base:** `062db083ab9439e74f766ea570cdfbddb1af49e1` (`062db08` — `cursor/1250a-convergencia-post-v1`)  
-**Alembic HEAD:** `1260a1b2c3d4e`  
+**Agente:** A
+**Rama:** `cursor/1260-aprendizaje-repriorizacion`
+**Base:** `062db083ab9439e74f766ea570cdfbddb1af49e1` (`062db08` — `cursor/1250a-convergencia-post-v1`)
+**Alembic HEAD:** `1260a1b2c3d4e`
 **Modo:** POST-V1 independiente — sin tocar V1, PR #32, Docker ni `DATABASE_URL`
 
 ---

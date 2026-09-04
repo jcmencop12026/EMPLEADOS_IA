@@ -1,8 +1,8 @@
 # CURSOR V1 — PAQUETE A: INFRAESTRUCTURA, PRODUCCIÓN, BACKUP Y HEALTH
 
-**Fecha:** 2026-08-28  
-**Agente:** Cloud Agent Paquete A  
-**Rama:** `cursor/v1-infra-produccion`  
+**Fecha:** 2026-08-28
+**Agente:** Cloud Agent Paquete A
+**Rama:** `cursor/v1-infra-produccion`
 **Base certificada:** `dc51d5c` (`dc51d5ce4852d37e5eef8b5112d1260a002ee3bf`)
 
 ---
@@ -203,7 +203,7 @@ Script: `backend/scripts/pg_restore.py`
 | `GET /health/ready` | Readiness (DB) | **503** |
 | `GET /health` | Diagnóstico completo | **503** (status `degraded`) |
 
-Componentes: `api`, `database`, `schedulers` (automation + proactive).  
+Componentes: `api`, `database`, `schedulers` (automation + proactive).
 No expone passwords, URLs con secretos ni stack traces.
 
 ---

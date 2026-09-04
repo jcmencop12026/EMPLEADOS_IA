@@ -1,6 +1,6 @@
 # 07 — Orden de portado recomendado
 
-**Base de integración:** candidato central `75fc689`  
+**Base de integración:** candidato central `75fc689`
 **Orden propuesto:** **C → B → D → A** (no A→B→C→D)
 
 ---

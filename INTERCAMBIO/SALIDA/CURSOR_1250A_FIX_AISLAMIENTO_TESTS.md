@@ -1,9 +1,9 @@
 # EMPLEADOS_IA — LIMPIEZA QUIRÚRGICA 1250A — AISLAMIENTO DE ESTADO ENTRE PRUEBAS
 
-**Agente:** C  
-**Base:** `062db08`  
-**Rama:** `cursor/1250a-fix-aislamiento-tests`  
-**Fecha:** 2026-08-29  
+**Agente:** C
+**Base:** `062db08`
+**Rama:** `cursor/1250a-fix-aislamiento-tests`
+**Fecha:** 2026-08-29
 
 ---
 
@@ -16,7 +16,7 @@
 | 3 | `test_duplicate_slug_returns_409` | `tests/test_prerelease_v1_corrections.py` | ~578 | duplicado → 409 | 403 (fallo previo en create) |
 | 4 | `test_07_inactive_org_blocks_ingestion` | `tests/test_senales_reales_1120.py` | ~649 | `POST .../status` INACTIVE → 200 | 403 |
 
-**Roundtrip Alembic (excluido de esta tarea):**  
+**Roundtrip Alembic (excluido de esta tarea):**
 `tests/test_admin_840b_v3.py::test_migration_roundtrip_upgrade_downgrade_upgrade` — P1 pendiente agente General.
 
 ### Reproducción

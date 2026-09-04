@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — FASE 2 CENTRAL TRAMO 6C (MB-07 PLANIFICADOR)
 
-**Tipo:** Integración selectiva MB-07 Planificador de Consumo y Capacidad IA  
-**Fecha:** 2026-08-30  
-**Agente:** GENERAL  
+**Tipo:** Integración selectiva MB-07 Planificador de Consumo y Capacidad IA
+**Fecha:** 2026-08-30
+**Agente:** GENERAL
 **Rama:** `cursor/fase2-central-integracion`
 
 ---

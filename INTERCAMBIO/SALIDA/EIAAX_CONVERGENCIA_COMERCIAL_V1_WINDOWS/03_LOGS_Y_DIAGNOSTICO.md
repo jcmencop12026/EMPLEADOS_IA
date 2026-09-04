@@ -38,5 +38,5 @@ Invoke-WebRequest http://127.0.0.1:5180/ -UseBasicParsing
 
 ## Aborto seguro
 
-Todos los scripts usan `$ErrorActionPreference = Stop` y `exit 1` ante fallo.  
+Todos los scripts usan `$ErrorActionPreference = Stop` y `exit 1` ante fallo.
 No modifican `D:\EMPLEADOS_IA` ni borran worktrees ajenos.

@@ -1,7 +1,7 @@
 # EIAAX — Corrección integral post-rechazo Windows (abd505f)
 
-**Fecha:** 2026-09-03  
-**Rama:** `cursor/convergencia-comercial-v1-85e4`  
+**Fecha:** 2026-09-03
+**Rama:** `cursor/convergencia-comercial-v1-85e4`
 **Candidato rechazado:** `abd505f2d9ab66d08f97e37ad8cdb9369214d7a3`
 
 ---
@@ -99,5 +99,5 @@ Set-Location "D:\EMPLEADOS_IA_CONVERGENCIA"
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\windows\arrancar_convergencia_windows.ps1"
 ```
 
-**Credenciales:** `org_a_admin` / `DemoA2026!`  
+**Credenciales:** `org_a_admin` / `DemoA2026!`
 **Horizonte:** Centro de Control → `[DEMO] Clínica Demo Horizonte — EVA-2026-0002`

@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — FASE 2 CENTRAL TRAMO 2 (1330 + WIRING 01–14)
 
-**Tipo:** Integración incremental controlada  
-**Fecha:** 2026-08-29  
-**Agente:** GENERAL  
+**Tipo:** Integración incremental controlada
+**Fecha:** 2026-08-29
+**Agente:** GENERAL
 **Rama:** `cursor/fase2-central-integracion`
 
 ---
@@ -108,7 +108,7 @@ Cadena:
 | failed | 0 | **0** | 0 |
 | errors | 0 | **0** | 0 |
 
-**FALLOS NUEVOS INTRODUCIDOS: 0**  
+**FALLOS NUEVOS INTRODUCIDOS: 0**
 **ERRORES NUEVOS INTRODUCIDOS: 0**
 
 Rama B cloud reportaba 151 failed + 40 errors — **resueltos en integración central** (causa: ensayo sobre base sin Tramo 1; cherry-pick sobre `91cadf3` elimina conflictos).

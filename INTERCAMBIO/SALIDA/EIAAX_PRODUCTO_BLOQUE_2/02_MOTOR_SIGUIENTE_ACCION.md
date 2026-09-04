@@ -1,6 +1,6 @@
 # 02 — Motor de siguiente acción
 
-**Servicio:** `evaluacion_siguiente_accion_service.py`  
+**Servicio:** `evaluacion_siguiente_accion_service.py`
 **API:** `GET /api/evaluaciones/{id}/siguiente-accion`
 
 ## Principio

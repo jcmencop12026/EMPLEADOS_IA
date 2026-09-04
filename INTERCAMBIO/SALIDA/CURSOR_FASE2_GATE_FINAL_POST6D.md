@@ -1,8 +1,8 @@
 # EMPLEADOS IA — GATE FINAL POST-6D
 
-**Rama:** `cursor/gate-final-post6d-85e4`  
-**Base obligatoria:** `cursor/fase2-central-integracion`  
-**HEAD inicial verificado:** `7ce2f343e35ebc75850570af7a1fa071f089bb7a`  
+**Rama:** `cursor/gate-final-post6d-85e4`
+**Base obligatoria:** `cursor/fase2-central-integracion`
+**HEAD inicial verificado:** `7ce2f343e35ebc75850570af7a1fa071f089bb7a`
 **Fecha:** 2026-08-30
 
 ---

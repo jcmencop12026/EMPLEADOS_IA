@@ -474,6 +474,42 @@ body {
 
 .table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ops-table-panel {
+  max-width: 100%;
+}
+
+.ops-hub-table {
+  min-width: 960px;
+}
+
+.ops-hub-table th:last-child,
+.ops-hub-table td:last-child {
+  position: sticky;
+  right: 0;
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  z-index: 1;
+}
+
+.demo-banner {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
+.demo-banner-inline {
+  color: #b45309;
+}
+
+.cc-interpretacion-strip {
+  margin-bottom: 12px;
 }
 
 .cell-truncate {
@@ -2752,6 +2788,41 @@ tr.row-selected {
   flex-shrink: 0;
   font-size: 10px;
   padding: 2px 5px;
+}
+
+.cc-ciclo-chip--link {
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.cc-ciclo-chip--link:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+.cc-compact-chart-strip {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.valor-chart--compact .cc-subtitle {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.valor-chart--compact .impacto-bar-row {
+  font-size: 11px;
+}
+
+.cc-tablero-empresa .cc-tablero-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
 }
 
 .cc-first-viewport {

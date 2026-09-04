@@ -1,7 +1,7 @@
 # EMPLEADOS_IA — INTEGRACIÓN FINAL V1 (A+B+C+D+E)
 
-**Rama:** `cursor/v1-integracion-final`  
-**Fecha:** 2026-08-28  
+**Rama:** `cursor/v1-integracion-final`
+**Fecha:** 2026-08-28
 **Agente:** Cloud Agent Cursor
 
 ---

@@ -8,9 +8,10 @@ type Props = {
   title: string;
   puntos: Punto[];
   unidad?: string;
+  compact?: boolean;
 };
 
-export function ValorComparacionChart({ title, puntos, unidad }: Props) {
+export function ValorComparacionChart({ title, puntos, unidad, compact = false }: Props) {
   const numeric = puntos.filter((p) => p.valor != null).map((p) => Math.abs(p.valor as number));
   const max = Math.max(...numeric, 1);
 
@@ -24,8 +25,8 @@ export function ValorComparacionChart({ title, puntos, unidad }: Props) {
   }
 
   return (
-    <div className="valor-chart" role="img" aria-label={title}>
-      <h3 className="cc-subtitle">{title}{unidad ? ` (${unidad})` : ""}</h3>
+    <div className={`valor-chart ${compact ? "valor-chart--compact" : ""}`} role="img" aria-label={title}>
+      <h3 className="cc-subtitle">{title}{unidad && !compact ? ` (${unidad})` : ""}</h3>
       <div className="impacto-bars">
         {puntos.map((p) => (
           <div key={p.label} className="impacto-bar-row">

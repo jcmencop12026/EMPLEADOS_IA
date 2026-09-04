@@ -1,6 +1,6 @@
 # 03 — Riesgos de convergencia V1 + V2
 
-**Fecha:** 2026-08-31  
+**Fecha:** 2026-08-31
 **Alcance:** Pre-integración (sin ejecución funcional)
 
 ---

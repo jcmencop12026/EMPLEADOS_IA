@@ -56,18 +56,18 @@ Comparación: capacidades del flujo objetivo vs lo que aportan A+B+C+D sobre cen
 
 **Huecos funcionales V1 reales (12):**
 
-1. P0-1 Publicación triple  
-2. P0-2 Migraciones colisionantes  
-3. P0-3 Control center dual  
-4. P1-1 Suficiencia evidencias  
-5. P1-2 Economía filtración prospecto  
-6. P1-3 Prospecto→cliente dossier  
-7. P1-4 Cuatro audiencias unificadas  
-8. P1-5 Contrato→implementación→EIA  
-9. P2-1 Expansión/renovación  
-10. P2-2 Soporte portal externo  
-11. P2-3 Correlation_id uniforme  
-12. P2-4 Scheduler informes paralelo  
+1. P0-1 Publicación triple
+2. P0-2 Migraciones colisionantes
+3. P0-3 Control center dual
+4. P1-1 Suficiencia evidencias
+5. P1-2 Economía filtración prospecto
+6. P1-3 Prospecto→cliente dossier
+7. P1-4 Cuatro audiencias unificadas
+8. P1-5 Contrato→implementación→EIA
+9. P2-1 Expansión/renovación
+10. P2-2 Soporte portal externo
+11. P2-3 Correlation_id uniforme
+12. P2-4 Scheduler informes paralelo
 
 ---
 

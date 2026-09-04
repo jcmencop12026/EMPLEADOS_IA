@@ -1,6 +1,6 @@
 # EIAAX 482ff6f — Puesta en marcha Windows (convergencia comercial V1)
 
-**Estado:** CORRECCION WINDOWS LISTA PARA VALIDACION LOCAL  
+**Estado:** CORRECCION WINDOWS LISTA PARA VALIDACION LOCAL
 **Agente remoto:** no ejecuto Windows real; procedimiento unico certificado abajo.
 
 ---

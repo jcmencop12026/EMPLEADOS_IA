@@ -1,6 +1,6 @@
 # 03 — Pruebas Bloque C1
 
-**Fecha UTC:** 2026-08-31  
+**Fecha UTC:** 2026-08-31
 **Entorno:** agente cloud (SQLite test DB; sin PostgreSQL CERT)
 
 ---

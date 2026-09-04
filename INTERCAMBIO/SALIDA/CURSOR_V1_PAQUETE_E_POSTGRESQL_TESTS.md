@@ -1,7 +1,7 @@
 # CURSOR — V1 PAQUETE E — AISLAMIENTO DE PRUEBAS POSTGRESQL
 
-**Fecha/hora UTC:** 2026-08-28 16:15:00 UTC  
-**Proyecto:** EMPLEADOS_IA  
+**Fecha/hora UTC:** 2026-08-28 16:15:00 UTC
+**Proyecto:** EMPLEADOS_IA
 **Paquete:** V1 Paquete E — Aislamiento tests PostgreSQL
 
 ---

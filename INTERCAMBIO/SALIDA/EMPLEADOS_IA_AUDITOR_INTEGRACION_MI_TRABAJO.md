@@ -1,7 +1,7 @@
 # EMPLEADOS IA — Auditor integrado con Mi Trabajo
 
-**Rama:** `cursor/auditor-integracion-mi-trabajo`  
-**Base:** `3d066ae` (Auditor MVP determinístico)  
+**Rama:** `cursor/auditor-integracion-mi-trabajo`
+**Base:** `3d066ae` (Auditor MVP determinístico)
 **Tipo:** integración funcional real — sin nueva bandeja ni migración
 
 ---

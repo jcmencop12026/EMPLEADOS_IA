@@ -1,8 +1,8 @@
 # BASE WINDOWS REAL OPERATIVA — REFERENCIA CONGELADA
 
-**SHA:** `0014a4b`  
-**Rama:** `cursor/convergencia-comercial-v1-85e4`  
-**Worktree:** `D:\EMPLEADOS_IA_CONVERGENCIA`  
+**SHA:** `0014a4b`
+**Rama:** `cursor/convergencia-comercial-v1-85e4`
+**Worktree:** `D:\EMPLEADOS_IA_CONVERGENCIA`
 **Estado:** Validado en Windows real — WINDOWS REAL OPERATIVO
 
 ## Pipeline congelado (NO modificar en misión de producto)

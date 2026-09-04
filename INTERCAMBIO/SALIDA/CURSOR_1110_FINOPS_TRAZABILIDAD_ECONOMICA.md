@@ -1,10 +1,10 @@
 # CURSOR 1110 — FinOps y trazabilidad económica
 
-**Fecha:** 2026-08-29  
-**Rama:** `cursor/1110-finops-trazabilidad-economica`  
-**Base:** `4c03cbe`  
-**HEAD:** _(ver sección final tras push)_  
-**Estado:** **BLOQUE 1110 TERMINADO**  
+**Fecha:** 2026-08-29
+**Rama:** `cursor/1110-finops-trazabilidad-economica`
+**Base:** `4c03cbe`
+**HEAD:** _(ver sección final tras push)_
+**Estado:** **BLOQUE 1110 TERMINADO**
 **NO MERGE**
 
 ---

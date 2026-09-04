@@ -41,12 +41,12 @@ Integrar en **un solo lote controlado** sobre base `75fc689`:
 
 ### Duplicidades críticas (7)
 
-1. Publicación (A / D / C UI)  
-2. Economía (B pricing vs central motor)  
-3. Control center service (B vs C)  
-4. Evaluación visibility (A 1430 vs C strategic)  
-5. Oportunidades (B flujo vs C strategic)  
-6. Presentación ejecutiva vs publicación empresa  
+1. Publicación (A / D / C UI)
+2. Economía (B pricing vs central motor)
+3. Control center service (B vs C)
+4. Evaluación visibility (A 1430 vs C strategic)
+5. Oportunidades (B flujo vs C strategic)
+6. Presentación ejecutiva vs publicación empresa
 7. Gobierno aprobaciones (central vs C extensión — fusionar, no duplicar)
 
 ### Conflictos ALTO (6)
@@ -112,11 +112,11 @@ Detalle y pruebas acumulativas: `07_ORDEN_PORTADO.md`.
 
 ## Restricciones recordatorio
 
-- NO merge desde este análisis  
-- NO cherry-pick  
-- NO modificar ramas candidatas  
-- NO tocar Windows / GENERAL exclusivo  
-- Tip documental posterior ≠ autoridad funcional central  
+- NO merge desde este análisis
+- NO cherry-pick
+- NO modificar ramas candidatas
+- NO tocar Windows / GENERAL exclusivo
+- Tip documental posterior ≠ autoridad funcional central
 
 ---
 

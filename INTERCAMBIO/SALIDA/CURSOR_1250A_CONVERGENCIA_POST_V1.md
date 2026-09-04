@@ -1,9 +1,9 @@
 # EMPLEADOS_IA — BLOQUE 1250A — CONVERGENCIA POST-V1 FASE 1
 
-**Agente:** C  
-**Rama:** `cursor/1250a-convergencia-post-v1`  
-**Base:** `4c03cbe`  
-**Fecha:** 2026-08-29  
+**Agente:** C
+**Rama:** `cursor/1250a-convergencia-post-v1`
+**Base:** `4c03cbe`
+**Fecha:** 2026-08-29
 
 ---
 
@@ -66,7 +66,7 @@ Cherry-pick de commits funcionales (sin docs-only duplicados), respetando ancest
 
 **Head final:** `1250a1b2c3d4e`
 
-**Ledger actualizado:** `backend/alembic/migration_ledger.json`  
+**Ledger actualizado:** `backend/alembic/migration_ledger.json`
 **HEAD_REVISION:** `backend/scripts/schema_repair.py` → `1250a1b2c3d4e`
 
 ---

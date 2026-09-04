@@ -158,6 +158,7 @@ export default function App() {
           </Route>
           <Route element={<RequirePermission anyOf={["resultados.view"]} />}>
             <Route path="resultados" element={<ResultadosInteligenciaPage />} />
+            <Route path="resultados-inteligencia" element={<ResultadosInteligenciaPage />} />
             <Route path="resultados/informes/:informeId" element={<InformeImpactoPage />} />
           </Route>
           <Route path="comercial/segmentacion" element={<SegmentacionPage />} />
@@ -180,6 +181,7 @@ export default function App() {
             <Route path="evaluaciones/:evaluacionId" element={<EvaluacionConsolePage />} />
             <Route path="empresas" element={<EmpresasProspectosPage />} />
             <Route path="ayuda/guia" element={<GuiaRapidaPage />} />
+            <Route path="instructivo" element={<GuiaRapidaPage />} />
             <Route path="empresa/:evaluacionId" element={<EvaluacionConsolePage />} />
           </Route>
           <Route element={<RequirePermission anyOf={["gobierno.confianza.view"]} />}>

@@ -1,6 +1,6 @@
 # Entrega — Arranque atómico Windows: Git stderr + ruta autoritativa
 
-**Fecha:** 2026-09-02  
+**Fecha:** 2026-09-02
 **Rama:** `cursor/convergencia-comercial-v1-85e4`
 
 ---

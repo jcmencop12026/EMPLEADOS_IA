@@ -37,6 +37,7 @@ export function OperationsHubPage() {
       if (vencimientoFiltro) params.set("vencimiento_filtro", vencimientoFiltro);
       if (orden) params.set("orden", orden);
       if (activeBucket) params.set("bucket", activeBucket);
+      if (expedienteFilter) params.set("expediente", expedienteFilter);
       const [items, stats] = await Promise.all([
         fetchOperationsCenter(params.toString()),
         fetchOperationsSummary(),
@@ -52,7 +53,7 @@ export function OperationsHubPage() {
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [expedienteFilter]);
 
   const filtered = useMemo(() => rows, [rows]);
 
@@ -155,8 +156,8 @@ export function OperationsHubPage() {
         <p className="muted">No hay operaciones para los filtros seleccionados.</p>
       )}
 
-      <div className="panel table-wrap">
-        <table className="data-table">
+      <div className="panel table-wrap ops-table-panel">
+        <table className="data-table ops-hub-table">
           <thead>
             <tr>
               <th>Trabajo</th>

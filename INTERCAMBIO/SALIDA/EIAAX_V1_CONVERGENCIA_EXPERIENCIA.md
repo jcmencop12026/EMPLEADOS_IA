@@ -1,7 +1,7 @@
 # EIAAX V1 — Convergencia experiencia (macrobloque)
 
-**Rama:** `cursor/experiencia-v1-convergencia-85e4`  
-**Base autoritativa:** `104f7850d7196d08d80fff9b4e7a8a83a5a1fa9a`  
+**Rama:** `cursor/experiencia-v1-convergencia-85e4`
+**Base autoritativa:** `104f7850d7196d08d80fff9b4e7a8a83a5a1fa9a`
 **Auditoría punto de partida:** `INTERCAMBIO/SALIDA/EIAAX_V1_AUDITORIA_TRANSVERSAL_POST_104f785.md`
 
 ---
@@ -74,7 +74,7 @@ python backend/scripts/seed_demo_horizonte.py
 # Centro de Control: /?expediente=<expediente_id>
 ```
 
-Caso: reprocesos y demoras en facturación/radicación/auditoría documental.  
+Caso: reprocesos y demoras en facturación/radicación/auditoría documental.
 Etiqueta visible: **DEMO — DATOS SIMULADOS**.
 
 ---

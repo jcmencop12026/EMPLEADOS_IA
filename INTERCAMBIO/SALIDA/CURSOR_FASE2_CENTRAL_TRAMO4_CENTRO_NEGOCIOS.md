@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — FASE 2 CENTRAL TRAMO 4 (CENTRO DE NEGOCIOS + VALOR + COMERCIAL + IMPLEMENTACIÓN)
 
-**Tipo:** Integración selectiva acumulativa — MB-09 Centro de Negocios  
-**Fecha:** 2026-08-29  
-**Agente:** GENERAL  
+**Tipo:** Integración selectiva acumulativa — MB-09 Centro de Negocios
+**Fecha:** 2026-08-29
+**Agente:** GENERAL
 **Rama:** `cursor/fase2-central-integracion`
 
 ---
@@ -143,7 +143,7 @@ Cadena lineal Tramo 4:
 | failed | 0 | **0** | 0 |
 | errors | 0 | **0** | 0 |
 
-**FALLOS NUEVOS: 0**  
+**FALLOS NUEVOS: 0**
 **ERRORES NUEVOS: 0**
 
 ### Focales ejecutados

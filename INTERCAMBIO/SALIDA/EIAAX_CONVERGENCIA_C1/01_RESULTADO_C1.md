@@ -1,8 +1,8 @@
 # 01 — Resultado Bloque C1
 
-**Proyecto:** EIAAX / EMPLEADOS_IA  
-**Rama:** `cursor/eiaax-convergencia-v1-v2`  
-**Fecha UTC:** 2026-08-31  
+**Proyecto:** EIAAX / EMPLEADOS_IA
+**Rama:** `cursor/eiaax-convergencia-v1-v2`
+**Fecha UTC:** 2026-08-31
 **Tipo:** Integración controlada — Base segura convergencia
 
 ---
@@ -21,7 +21,7 @@
 
 ## Hotfix de acceso — integración SELECTIVA
 
-**Referencia hotfix:** `1a855325d67921b5d53c015605741d94a3eab32b`  
+**Referencia hotfix:** `1a855325d67921b5d53c015605741d94a3eab32b`
 **Método:** integración manual selectiva (NO cherry-pick completo del commit)
 
 | Componente | Acción | Motivo |

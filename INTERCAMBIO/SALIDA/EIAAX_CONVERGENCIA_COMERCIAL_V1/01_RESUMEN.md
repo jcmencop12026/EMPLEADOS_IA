@@ -1,8 +1,8 @@
 # EIAAX — Convergencia Comercial V1 (candidato integrado)
 
-**Agente:** GENERAL  
-**Rama:** `cursor/convergencia-comercial-v1-85e4`  
-**Fecha:** 2026-09-01  
+**Agente:** GENERAL
+**Rama:** `cursor/convergencia-comercial-v1-85e4`
+**Fecha:** 2026-09-01
 **Estado:** Candidato integrado — **NO declarar V1 terminada**
 
 ---

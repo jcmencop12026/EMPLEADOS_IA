@@ -704,7 +704,19 @@ def get_executive_summary(
     permissions = user_permissions(user, db)
     period_start = _period_start(periodo)
 
-    employees = None  # sustituido por bloque operacional.fuerza_laboral
+    employees = None
+    if _has(permissions, "employee.view"):
+        activos = (
+            db.query(func.count(AIEmployee.id))
+            .filter(
+                AIEmployee.organization_id == org_id,
+                AIEmployee.is_template.is_(False),
+                AIEmployee.lifecycle_status == "ACTIVE",
+            )
+            .scalar()
+            or 0
+        )
+        employees = {"activos": activos}
     ops_summary = operations_center.get_summary(db, org_id) if _has(permissions, "operations.view") else None
 
     automations_active = None

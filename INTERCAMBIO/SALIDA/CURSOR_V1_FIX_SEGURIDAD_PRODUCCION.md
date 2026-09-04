@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — CORRECCIÓN PRE-RELEASE DE SEGURIDAD
 
-**Agente:** B  
-**Rama:** `cursor/v1-fix-seguridad-produccion`  
-**Base:** `4c03cbe0ba0ff8537452ec58f7aaca7ce18bede4` (`4c03cbe`)  
+**Agente:** B
+**Rama:** `cursor/v1-fix-seguridad-produccion`
+**Base:** `4c03cbe0ba0ff8537452ec58f7aaca7ce18bede4` (`4c03cbe`)
 **PR #32 / `cursor/v1-integracion-final`:** no tocados
 
 ---

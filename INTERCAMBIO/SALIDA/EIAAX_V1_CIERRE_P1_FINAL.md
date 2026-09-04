@@ -1,6 +1,6 @@
 # EIAAX — Cierre P1 V1 — Informe final
 
-**Fecha:** 2026-09-02  
+**Fecha:** 2026-09-02
 **Estado:** **LISTO PARA REVISIÓN HUMANA FINAL** (certificación arranque Windows real en worktree `D:\EMPLEADOS_IA_CONVERGENCIA` recomendada como paso final del usuario)
 
 ---
@@ -28,7 +28,7 @@
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/windows/ejecutar_tests_desarrollo_windows.ps1
 ```
 
-**Resultado en VM Linux con pwsh:** **PASS — exit 0**  
+**Resultado en VM Linux con pwsh:** **PASS — exit 0**
 (Incluye parser, service startup, git sync, python discovery, alembic, preparador productivo)
 
 **BASE DE ARRANQUE WINDOWS 0014a4b PRESERVADA**

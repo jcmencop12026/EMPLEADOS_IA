@@ -1,7 +1,7 @@
 # EMPLEADOS_IA — BASE PUENTE V1 + POST-V1 CERTIFICADA
 
-**Rama:** `cursor/base-puente-v1-post-v1`  
-**Fecha:** 2026-08-29  
+**Rama:** `cursor/base-puente-v1-post-v1`
+**Fecha:** 2026-08-29
 **Tipo:** Ejecución controlada — puente de bases
 
 ---
@@ -111,7 +111,7 @@ Sin integración de 1260–1380.
 
 ### PostgreSQL
 
-**NO EJECUTADO** — sin instancia PostgreSQL ni Docker en entorno de certificación.  
+**NO EJECUTADO** — sin instancia PostgreSQL ni Docker en entorno de certificación.
 Clasificado **P2** (validación pendiente en entorno con PG real).
 
 ### Frontend

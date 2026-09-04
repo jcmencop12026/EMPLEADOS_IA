@@ -1,7 +1,7 @@
 # 03 — SHA Candidato C1-R1
 
-**Proyecto:** EIAAX / EMPLEADOS_IA  
-**Rama:** `cursor/eiaax-convergencia-v1-v2`  
+**Proyecto:** EIAAX / EMPLEADOS_IA
+**Rama:** `cursor/eiaax-convergencia-v1-v2`
 **Fecha UTC:** 2026-08-31
 
 ---

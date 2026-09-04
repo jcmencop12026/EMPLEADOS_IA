@@ -19,5 +19,5 @@
 
 ## ¿Listo para prueba humana integrada?
 
-**SÍ** — con semilla demo y guía `COMO_PROBAR_EIAAX_INTEGRADO.md`.  
+**SÍ** — con semilla demo y guía `COMO_PROBAR_EIAAX_INTEGRADO.md`.
 PostgreSQL real y tema oscuro quedan como validación posterior (P2).

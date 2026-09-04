@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — FASE 2 CENTRAL TRAMO 6D (MB-11 COMUNICACIONES + MI TRABAJO)
 
-**Tipo:** Integración selectiva MB-11 Centro de Información y Comunicaciones + delta Mi Trabajo  
-**Fecha:** 2026-08-30  
-**Agente:** GENERAL  
+**Tipo:** Integración selectiva MB-11 Centro de Información y Comunicaciones + delta Mi Trabajo
+**Fecha:** 2026-08-30
+**Agente:** GENERAL
 **Rama:** `cursor/fase2-central-integracion`
 
 ---

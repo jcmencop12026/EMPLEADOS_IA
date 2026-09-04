@@ -1,7 +1,7 @@
 # EIAAX V1 — Cierre macrobloque experiencia (continuación c0f28b1)
 
-**SHA candidato:** ver `git rev-parse HEAD` en rama `cursor/experiencia-v1-convergencia-85e4`  
-**Base:** `cursor/convergencia-comercial-v1-85e4`  
+**SHA candidato:** ver `git rev-parse HEAD` en rama `cursor/experiencia-v1-convergencia-85e4`
+**Base:** `cursor/convergencia-comercial-v1-85e4`
 **PR:** #168
 
 ---

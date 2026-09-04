@@ -1,7 +1,7 @@
 # 02 — Matriz maestra de trazabilidad EIAAX
 
-**Producto evaluado:** SHA `b19b04dd438f5b13b422e9a760f54fa074fb52ed`  
-**Fecha UTC:** 2026-08-31  
+**Producto evaluado:** SHA `b19b04dd438f5b13b422e9a760f54fa074fb52ed`
+**Fecha UTC:** 2026-08-31
 **Filas evaluadas:** **136** capacidades/requerimientos
 
 ---
@@ -36,8 +36,8 @@
 | ROJO | 24 | 17,6% |
 | X | 2 | 1,5% |
 
-**Operativo (VERDE+AMARILLO+MORADO):** 98/136 = **72,1%**  
-**Completo según decisión vigente (VERDE):** 58/136 = **42,6%**  
+**Operativo (VERDE+AMARILLO+MORADO):** 98/136 = **72,1%**
+**Completo según decisión vigente (VERDE):** 58/136 = **42,6%**
 **Brecha material (ROJO+NEGRO):** 27/136 = **19,9%**
 
 ---

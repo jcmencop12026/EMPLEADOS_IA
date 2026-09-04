@@ -1,6 +1,6 @@
 # 04 — SHA candidato Bloque C1
 
-**Rama:** `cursor/eiaax-convergencia-v1-v2`  
+**Rama:** `cursor/eiaax-convergencia-v1-v2`
 **Fecha UTC:** 2026-08-31
 
 ---

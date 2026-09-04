@@ -1,7 +1,7 @@
 # Incidente PYTHON NOT FOUND — causa raiz y correccion
 
-**Fecha:** 2026-09-01  
-**Worktree afectado:** `D:\EMPLEADOS_IA_CONVERGENCIA`  
+**Fecha:** 2026-09-01
+**Worktree afectado:** `D:\EMPLEADOS_IA_CONVERGENCIA`
 **SHA candidato:** `f13c58d` (y posteriores)
 
 ---
@@ -18,7 +18,7 @@ Tras exit code 1 del preparador, un bloque externo reporto Backend/Frontend True
 
 ## Causa raiz (Python)
 
-El detector en `d034566` y `f13c58d` era **identico** en logica base (`Get-Command`, rutas estaticas, AppData).  
+El detector en `d034566` y `f13c58d` era **identico** en logica base (`Get-Command`, rutas estaticas, AppData).
 No hubo regresion de codigo entre esos commits para Python.
 
 La falla en el worktree nuevo se explica por:

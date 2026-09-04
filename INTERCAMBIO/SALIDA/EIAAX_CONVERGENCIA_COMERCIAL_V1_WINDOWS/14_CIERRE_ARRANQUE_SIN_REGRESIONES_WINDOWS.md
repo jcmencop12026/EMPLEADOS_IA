@@ -1,6 +1,6 @@
 # Cierre arranque Windows sin regresiones — backend congelado + frontend npm.cmd
 
-**Rama:** `cursor/convergencia-comercial-v1-85e4`  
+**Rama:** `cursor/convergencia-comercial-v1-85e4`
 **Worktree:** `D:\EMPLEADOS_IA_CONVERGENCIA`
 
 ---

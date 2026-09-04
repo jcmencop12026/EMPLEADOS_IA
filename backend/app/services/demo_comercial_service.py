@@ -20,6 +20,7 @@ from app.demo_comercial_constants import (
 from app.evaluacion_models import EvaluacionExpediente
 from app.resultados_models import ResultadoInformeImpacto
 from app.services import baseline_service as baseline_svc
+from app.services import demo_economico_horizonte as demo_econ_svc
 from app.services import evaluacion_service as ev_svc
 from app.services import resultados_service as res_svc
 
@@ -58,6 +59,8 @@ def seed_demo_comercial(db: Session, organization_id: str, user_id: str) -> dict
             .order_by(ResultadoInformeImpacto.created_at.desc())
             .first()
         )
+        demo_econ_svc.ensure_horizonte_economico(db, organization_id, user_id, existing.id)
+        db.commit()
         return _manifest_from_expediente(existing, informe.id if informe else None, reused=True)
 
     now = _utcnow()
@@ -179,6 +182,7 @@ def seed_demo_comercial(db: Session, organization_id: str, user_id: str) -> dict
     )
 
     _seed_demo_operaciones(db, organization_id, user_id, exp.id, exp.correlation_id)
+    demo_econ_svc.ensure_horizonte_economico(db, organization_id, user_id, exp.id)
 
     db.commit()
     db.refresh(exp)

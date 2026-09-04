@@ -20,6 +20,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/centro-negocios": ["negocio.view"],
   "/arquitecto-transformacion": ["transformacion.view"],
   "/resultados": ["resultados.view"],
+  "/resultados-inteligencia": ["resultados.view"],
   "/tco": ["tco.view"],
   "/implementacion": ["implementacion.view"],
   "/comercial/segmentacion": ["segmentacion.view"],

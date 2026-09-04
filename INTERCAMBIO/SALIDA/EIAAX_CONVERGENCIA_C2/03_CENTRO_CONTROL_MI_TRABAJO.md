@@ -1,6 +1,6 @@
 # 03 — Centro de Control y Mi Trabajo (C2)
 
-**Proyecto:** EIAAX / EMPLEADOS_IA  
+**Proyecto:** EIAAX / EMPLEADOS_IA
 **Fecha UTC:** 2026-08-31
 
 ---

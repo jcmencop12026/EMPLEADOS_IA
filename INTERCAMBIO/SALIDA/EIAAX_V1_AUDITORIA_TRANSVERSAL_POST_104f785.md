@@ -1,8 +1,8 @@
 # EIAAX — Auditoría transversal post-104f785 (solo lectura)
 
-**Fecha:** 2026-09-02  
-**Rama autoritativa:** `cursor/convergencia-comercial-v1-85e4`  
-**SHA auditado:** `104f7850d7196d08d80fff9b4e7a8a83a5a1fa9a`  
+**Fecha:** 2026-09-02
+**Rama autoritativa:** `cursor/convergencia-comercial-v1-85e4`
+**SHA auditado:** `104f7850d7196d08d80fff9b4e7a8a83a5a1fa9a`
 **Estado respaldo Agente A:** **PENDIENTE — NO PASS**
 
 ---
@@ -31,7 +31,7 @@
 
 ### Centro de Control (`CentroControlPage.tsx`)
 
-**Tabs reales (6):** Resumen · Valor · Operación · IA y costos · Implementación · Salud  
+**Tabs reales (6):** Resumen · Valor · Operación · IA y costos · Implementación · Salud
 *(Difieren de la lista humana de 8 tabs; no existen tabs separados «Empleados IA», «Ejecuciones», «Requiere atención», «Aprobaciones» como pestañas propias — están embebidos en Resumen/Operación.)*
 
 | Tab | Contenido | Clasificación demo vacío |
@@ -72,17 +72,17 @@
 
 ### Configuración (`AdminConfigPage.tsx`)
 
-8 tabs implementados (General, Identidad, Servicios, IA, Integraciones, Seguridad, Notificaciones, Experiencia).  
+8 tabs implementados (General, Identidad, Servicios, IA, Integraciones, Seguridad, Notificaciones, Experiencia).
 Identidad: `BrandMark level="corporativo"` sin CSS de contención + `EnterpriseLogoField` con límite 180 KB.
 
 ### Presentación (`PresentacionRealPage.tsx`)
 
-Ruta `/presentacion/:expedienteId` — audiencias, PDF, `PresentacionView`.  
+Ruta `/presentacion/:expedienteId` — audiencias, PDF, `PresentacionView`.
 **No diferencia visualmente** «Presentar en reunión» vs «Publicar para consulta posterior» en la misma pantalla (publicación vive en Vista Empresa / espacio externo).
 
 ### Guía / instructivo
 
-`GuiaRapidaPage` + `guiaRapidaHelp.ts` — 15 pasos con enlaces.  
+`GuiaRapidaPage` + `guiaRapidaHelp.ts` — 15 pasos con enlaces.
 **No existe** instructivo operativo V1 de 10 partes solicitado.
 
 ### Demo end-to-end
@@ -211,8 +211,8 @@ Ruta `/presentacion/:expedienteId` — audiencias, PDF, `PresentacionView`.
 | Conocimiento global | `/conocimiento`, `KnowledgePage` |
 | Información adaptativa | Texto en tab Diagnóstico |
 
-**Gap UX:** Operador interno necesita flujo  
-`Empresa → Evaluación → Información y documentos / Evidencias recibidas`  
+**Gap UX:** Operador interno necesita flujo
+`Empresa → Evaluación → Información y documentos / Evidencias recibidas`
 con upload, categoría, confidencialidad, asociación expediente — **no expuesto**.
 
 ### M. Centro Control (M)

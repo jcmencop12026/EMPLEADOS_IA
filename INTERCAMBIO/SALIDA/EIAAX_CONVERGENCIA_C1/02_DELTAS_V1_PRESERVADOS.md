@@ -1,6 +1,6 @@
 # 02 — Deltas V1 preservados en C1
 
-**Base C1:** V2 certificado `dc1e6cd` + integración selectiva hotfix acceso  
+**Base C1:** V2 certificado `dc1e6cd` + integración selectiva hotfix acceso
 **Auditoría:** comparación estática `e8cb853` ↔ rama C1
 
 ---

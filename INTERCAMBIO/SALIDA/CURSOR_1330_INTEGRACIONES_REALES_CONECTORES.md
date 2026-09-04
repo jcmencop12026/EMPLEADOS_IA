@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — BLOQUE 1330
 ## Integraciones reales + conectores empresariales
 
-**Rama:** `cursor/1330-integraciones-reales-conectores`  
-**Base:** `origin/cursor/1120-senales-reales-deteccion` @ `5eaad7e4e605465a6ba4145b03c7ec043a5f62b4`  
+**Rama:** `cursor/1330-integraciones-reales-conectores`
+**Base:** `origin/cursor/1120-senales-reales-deteccion` @ `5eaad7e4e605465a6ba4145b03c7ec043a5f62b4`
 **Justificación base:** Rama POST-V1 estable con motor 1120 (`ProactiveSignal`, `ingest_real_signal`) y orquestación/automatizaciones, sin arrastrar convergencias de bloques prohibidos (1250–1320, 1280, 1310).
 
 ---
@@ -133,9 +133,9 @@ frontend npm run build — PASS
 | ALEMBIC HEAD | `1330a1b2c3d4e` |
 | FRONTEND | PASS |
 
-**P0:** 0  
-**P1:** 0  
-**P2:** 0  
+**P0:** 0
+**P1:** 0
+**P2:** 0
 
 **VEREDICTO:** APTO
 

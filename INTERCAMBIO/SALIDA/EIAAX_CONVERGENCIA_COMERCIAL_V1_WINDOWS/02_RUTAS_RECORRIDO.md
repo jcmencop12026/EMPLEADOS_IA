@@ -1,6 +1,6 @@
 # Rutas para segundo recorrido humano
 
-Acceso directo por URL tras login como `org_a_admin`.  
+Acceso directo por URL tras login como `org_a_admin`.
 No redisenadas — solo localizacion de rutas existentes.
 
 Base: http://127.0.0.1:5180

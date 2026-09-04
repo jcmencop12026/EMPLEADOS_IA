@@ -1,8 +1,8 @@
 # EIAAX — Preconvergencia Comercial V1 (A+B+C+D)
 
-**Agente:** A (análisis exclusivo)  
-**Base central funcional:** `75fc689` (`docs: SHA final puesta en marcha da81af7`)  
-**Fecha análisis:** 2026-09-01  
+**Agente:** A (análisis exclusivo)
+**Base central funcional:** `75fc689` (`docs: SHA final puesta en marcha da81af7`)
+**Fecha análisis:** 2026-09-01
 **Alcance:** candidatos A/B/C/D vs central — **sin merge, sin modificar ramas**
 
 ---

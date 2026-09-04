@@ -78,7 +78,10 @@ export function EspacioExternoAdminPanel({ expedienteId }: Props) {
 
   return (
     <section className="panel compact-panel">
-      <h2>Espacio externo controlado</h2>
+      <h2>Espacio externo — publicar y visibilidad</h2>
+      <p className="muted small">
+        Publicar para consulta posterior, ver como empresa y controlar qué información ve el cliente.
+      </p>
       {msg && <p className="success-banner">{msg}</p>}
       {error && <p className="error-banner">{error}</p>}
 

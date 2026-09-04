@@ -1,6 +1,6 @@
 # Autoridad SHA — Candidato Windows convergencia
 
-**Rama:** `cursor/convergencia-comercial-v1-85e4`  
+**Rama:** `cursor/convergencia-comercial-v1-85e4`
 **Worktree:** `D:\EMPLEADOS_IA_CONVERGENCIA`
 
 ---

@@ -1,6 +1,6 @@
 # Corrección sincronización Git — stderr informativo ≠ fallo
 
-**Fecha:** 2026-09-02  
+**Fecha:** 2026-09-02
 **Rama:** `cursor/convergencia-comercial-v1-85e4`
 
 ---

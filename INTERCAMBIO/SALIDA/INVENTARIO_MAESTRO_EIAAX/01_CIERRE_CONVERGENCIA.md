@@ -1,7 +1,7 @@
 # 01 — Cierre de convergencia técnica V1 + V2
 
-**Proyecto:** EIAAX / EMPLEADOS_IA  
-**Fecha UTC:** 2026-08-31  
+**Proyecto:** EIAAX / EMPLEADOS_IA
+**Fecha UTC:** 2026-08-31
 **Rama convergencia:** `cursor/eiaax-convergencia-v1-v2`
 
 ---

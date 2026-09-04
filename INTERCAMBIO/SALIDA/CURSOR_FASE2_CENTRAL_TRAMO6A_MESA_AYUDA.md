@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — FASE 2 CENTRAL TRAMO 6A (MESA DE AYUDA + INTEGRACIÓN MI TRABAJO)
 
-**Tipo:** Integración selectiva MB-12 + delta soporte en Mi Trabajo  
-**Fecha:** 2026-08-29  
-**Agente:** GENERAL  
+**Tipo:** Integración selectiva MB-12 + delta soporte en Mi Trabajo
+**Fecha:** 2026-08-29
+**Agente:** GENERAL
 **Rama:** `cursor/fase2-central-integracion`
 
 ---
@@ -102,12 +102,12 @@
 
 ### Estados accionables en bandeja
 
-Incluidos: `NUEVO`, `ASIGNADO`, `EN_PROCESO`, `PENDIENTE_USUARIO`, `PENDIENTE_TERCERO`  
+Incluidos: `NUEVO`, `ASIGNADO`, `EN_PROCESO`, `PENDIENTE_USUARIO`, `PENDIENTE_TERCERO`
 Excluidos: `RESUELTO`, `CERRADO`, `CANCELADO`
 
 ### 1290 preservado
 
-Extensión `PENDIENTE_EJECUCION_HUMANA` (optimización 1290) intacta en `trabajo_service.py`.  
+Extensión `PENDIENTE_EJECUCION_HUMANA` (optimización 1290) intacta en `trabajo_service.py`.
 Tests: `test_optimizacion_1290.py` + `test_bandeja_trabajo_humano.py` — **PASS**
 
 ### Resumen y filtros
@@ -166,7 +166,7 @@ Desde `/trabajo`, ítems soporte navegan a `/soporte/casos/:id` vía `enlace` (s
 | Fallos nuevos | — | **0** |
 | Errores nuevos | — | **0** |
 
-Tests nuevos: +34 (14 MB-12 + 20 integración).  
+Tests nuevos: +34 (14 MB-12 + 20 integración).
 `test_migration_control.py`: 7/7 PASS.
 
 ---

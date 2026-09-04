@@ -1,6 +1,6 @@
 # EIAAX V1 — Certificación visual y funcional
 
-**Fecha:** 2026-09-02  
+**Fecha:** 2026-09-02
 **Rama autoritativa:** `cursor/convergencia-comercial-v1-85e4`
 
 ---
@@ -61,8 +61,8 @@ git diff 0014a4b -- scripts/windows/
 | 34 | Navegación principal | PASS | Secciones Inicio/Trabajo/Empresas/… |
 | 35 | Asistente EIAAX | PASS | Compacto cerrado, usable abierto |
 
-**Herramienta:** `node scripts/cert_visual_audit.mjs` (Playwright headless, 1440×900)  
-**Credenciales audit:** `org_a_admin` / `DemoA2026!`  
+**Herramienta:** `node scripts/cert_visual_audit.mjs` (Playwright headless, 1440×900)
+**Credenciales audit:** `org_a_admin` / `DemoA2026!`
 **Resultado:** 36 PASS · 0 FAIL · 0 SKIP
 
 ## F. Defectos encontrados
@@ -112,7 +112,7 @@ Recorrido automatizado: login → CC global/empresa/salud → empresas → opera
 
 ## L. Credenciales Windows demo
 
-**Autoritativas:** `org_a_admin` / `DemoA2026!`  
+**Autoritativas:** `org_a_admin` / `DemoA2026!`
 Bootstrap fresco: `admin` / `Admin2026*`
 
 ## M. Comando único Windows

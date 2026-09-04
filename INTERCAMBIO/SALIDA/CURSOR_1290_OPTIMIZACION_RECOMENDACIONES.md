@@ -1,9 +1,9 @@
 # EMPLEADOS_IA — BLOQUE 1290 OPTIMIZACIÓN Y RECOMENDACIONES
 
-**Agente:** A  
-**Rama:** `cursor/1290-optimizacion-recomendaciones`  
-**Base:** `6a6cfbcfaf64fde501e0586700d8e6639498f644` (Bloque 1260)  
-**Alembic HEAD:** `1290a1b2c3d4e`  
+**Agente:** A
+**Rama:** `cursor/1290-optimizacion-recomendaciones`
+**Base:** `6a6cfbcfaf64fde501e0586700d8e6639498f644` (Bloque 1260)
+**Alembic HEAD:** `1290a1b2c3d4e`
 **Modo:** POST-V1 — sin V1, Docker, 1250, 1270, 1280
 
 ---

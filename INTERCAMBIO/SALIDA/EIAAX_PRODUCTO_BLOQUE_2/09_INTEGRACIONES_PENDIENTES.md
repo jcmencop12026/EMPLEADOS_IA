@@ -9,8 +9,8 @@
 
 ## P0 / P1 / P2
 
-- **P0:** 0  
-- **P1:** 0  
+- **P0:** 0
+- **P1:** 0
 - **P2:** Contrato PIIAX definitivo, webhooks estado, auto-ejecución agente condicionada, ingesta REAL automática, integración merge A/B
 
 ## Brechas comerciales cerradas en BP2

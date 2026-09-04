@@ -1,8 +1,8 @@
 # Arranque Windows atómico — pyvenv.cfg y Python base
 
-**Fecha:** 2026-09-01  
-**Rama:** `cursor/convergencia-comercial-v1-85e4`  
-**Worktree destino:** `D:\EMPLEADOS_IA_CONVERGENCIA`  
+**Fecha:** 2026-09-01
+**Rama:** `cursor/convergencia-comercial-v1-85e4`
+**Worktree destino:** `D:\EMPLEADOS_IA_CONVERGENCIA`
 **Referencia funcional:** `D:\EMPLEADOS_IA_INTEGRADO\.venv-eiaax-demo`
 
 ---
@@ -66,7 +66,7 @@ Destino: `D:\EMPLEADOS_IA_CONVERGENCIA\.venv-eiaax-demo`
 - validación PID/comando → worktree CONVERGENCIA
 - `/health` con `git_sha`, `alembic_current`, `demo_profile`, `demo_db_name`
 
-Salida éxito: `EIAAX <sha> — WINDOWS REAL OPERATIVO`  
+Salida éxito: `EIAAX <sha> — WINDOWS REAL OPERATIVO`
 Salida fallo: `EIAAX — WINDOWS NO CERTIFICADO` + `CAUSA: ...` + exit 1
 
 ---

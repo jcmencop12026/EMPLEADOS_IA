@@ -1,9 +1,9 @@
 # EMPLEADOS_IA — Corrección PostgreSQL Final R2
 
-**Rama:** `cursor/v1-integracion-final`  
-**PR:** #32 (DRAFT — NO MERGE)  
-**SHA anterior:** `f5011b19f36f502635fa3728f02c97b4a0627582`  
-**SHA nuevo:** `5dc6757a8c2f8f3e8c8e8f3e8c8e8f3e8c8e8f3`  
+**Rama:** `cursor/v1-integracion-final`
+**PR:** #32 (DRAFT — NO MERGE)
+**SHA anterior:** `f5011b19f36f502635fa3728f02c97b4a0627582`
+**SHA nuevo:** `5dc6757a8c2f8f3e8c8e8f3e8c8e8f3e8c8e8f3`
 **Alembic:** `d1e2f3a4b5c6` (único head)
 
 ---

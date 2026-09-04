@@ -1,8 +1,8 @@
 # 01 — Respaldo pre-integración EIAAX
 
-**Proyecto:** EIAAX / EMPLEADOS_IA  
-**Fecha UTC:** 2026-08-31  
-**Agente:** General  
+**Proyecto:** EIAAX / EMPLEADOS_IA
+**Fecha UTC:** 2026-08-31
+**Agente:** General
 **Estado:** RESPALDO COMPLETADO — integración funcional **NO iniciada**
 
 ---

@@ -1,7 +1,7 @@
 # EIAAX — Inteligencia Empresarial Adaptativa (Macrobloque Evolución C)
 
-**Rama:** `cursor/inteligencia-empresarial-evolucion-dec7`  
-**Base:** `cursor/arquitecto-transformacion-dec7` @ `3b4397f`  
+**Rama:** `cursor/inteligencia-empresarial-evolucion-dec7`
+**Base:** `cursor/arquitecto-transformacion-dec7` @ `3b4397f`
 **Sin integrar a GENERAL. Sin tocar V1 estable ni scripts/windows.**
 
 ## Entrega

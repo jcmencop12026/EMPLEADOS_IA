@@ -1,8 +1,8 @@
 # EMPLEADOS_IA — CORRECCIÓN P1 DOCKER TERMINADA
 
-**Agente:** B — Corrección quirúrgica pre-lanzamiento  
-**Base:** `831d0c2` (`831d0c2eba38c67d36428bd539fbb1f64bc432a9`)  
-**Rama:** `cursor/v1-fix-docker-p1-3581`  
+**Agente:** B — Corrección quirúrgica pre-lanzamiento
+**Base:** `831d0c2` (`831d0c2eba38c67d36428bd539fbb1f64bc432a9`)
+**Rama:** `cursor/v1-fix-docker-p1-3581`
 **NO merge · NO tocar PR #32 · NO main**
 
 ---

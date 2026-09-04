@@ -14,7 +14,7 @@ Ubicación: `INTERCAMBIO/SALIDA/EIAAX_PUESTA_EN_MARCHA_INTEGRADA/capturas/`
 | 08_soporte.png | Mesa de Ayuda |
 | 09_sidebar_expandido.png | Navegación completa |
 
-Usuario: `org_a_admin` / Empresa Demo A  
+Usuario: `org_a_admin` / Empresa Demo A
 Fecha: 2026-09-01
 
 **Pendiente P2:** captura tema oscuro (CSS `[data-theme="dark"]` no implementado).
