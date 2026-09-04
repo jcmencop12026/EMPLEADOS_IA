@@ -5,7 +5,8 @@
 **PR:** [#169](https://github.com/jcmencop12026/EMPLEADOS_IA/pull/169)
 **Rama:** `cursor/revision-integral-completa-85e4`
 **HEAD funcional CI certificado:** `cbb526c` (run `33808582309` — 4/4 PASS)
-**HEAD reconciliación:** `4f727cb`
+**HEAD reconciliación:** `770c817`
+**CI reconciliación:** run `33821913137` — Backend/Git/Windows PASS; Frontend audit npm transitorio
 **Alembic head:** `1831a1b2c3d4e`
 **NO merge · NO promoción Windows · NO comando al usuario**
 
