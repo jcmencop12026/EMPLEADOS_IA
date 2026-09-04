@@ -56,7 +56,7 @@ const V1_ROUTE_PATTERNS: Array<{ test: RegExp; module: string }> = [
   { test: /^\/centro-estrategico/, module: "centro_estrategico" },
   { test: /^\/centro-confianza/, module: "centro_confianza" },
   { test: /^\/costos-valor/, module: "valor_finops" },
-  { test: /^\/resultados/, module: "resultados" },
+  { test: /^\/resultados(-inteligencia)?/, module: "resultados" },
 ];
 
 function resolveModule(pathname: string): string | null {

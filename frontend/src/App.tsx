@@ -158,6 +158,7 @@ export default function App() {
           </Route>
           <Route element={<RequirePermission anyOf={["resultados.view"]} />}>
             <Route path="resultados" element={<ResultadosInteligenciaPage />} />
+            <Route path="resultados-inteligencia" element={<ResultadosInteligenciaPage />} />
             <Route path="resultados/informes/:informeId" element={<InformeImpactoPage />} />
           </Route>
           <Route path="comercial/segmentacion" element={<SegmentacionPage />} />
