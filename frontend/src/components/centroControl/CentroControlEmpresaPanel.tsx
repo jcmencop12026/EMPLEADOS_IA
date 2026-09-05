@@ -8,7 +8,7 @@ import {
 import { SiguienteAccionPanel } from "../evaluacion/SiguienteAccionPanel";
 import { CadenaAnaliticaPanel } from "../evaluacion/CadenaAnaliticaPanel";
 import { ImpactoGrafico } from "../evaluacion/ImpactoGrafico";
-import { CONFIANZA, ESTADO_EXPEDIENTE, label } from "../../lib/evaluacionLabels";
+import { CONFIANZA, ESTADO_EXPEDIENTE, label, labelNivelEvaluacion } from "../../lib/evaluacionLabels";
 import { cabinaTabPath, mapSiguienteAccionToCabinaTab } from "../../lib/siguienteAccionTabMap";
 import { narrativaCampo } from "../../lib/informeNarrativa";
 
@@ -90,22 +90,23 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
           </div>
           <div className="cc-empresa-actions">
             <Link to={`/evaluaciones/${evaluacionId}`} className="btn primary small">Abrir cabina</Link>
-            <Link
-              to={exp.entidad_nombre?.startsWith("[DEMO]") ? `/demo/presentacion/${evaluacionId}` : `/presentacion/${evaluacionId}`}
-              className="btn secondary small"
-            >
-              Presentación
-            </Link>
-            <Link to={`/evaluaciones/${evaluacionId}?tab=vista-empresa`} className="btn secondary small">Ver como empresa</Link>
           </div>
         </div>
         <div className="executive-kpi-strip">
-          <div className="executive-kpi"><span>Información</span><strong>{exp.porcentaje_informacion}%</strong></div>
+          <div className="executive-kpi"><span>Información requerida completada</span><strong>{exp.porcentaje_informacion}%</strong></div>
           <div className="executive-kpi"><span>Confianza</span><strong>{label(CONFIANZA, exp.confianza_global)}</strong></div>
           <div className="executive-kpi"><span>Oportunidades</span><strong>{oportunidades}</strong></div>
-          <div className="executive-kpi"><span>Valor potencial</span><strong>{exp.valor_potencial ?? "—"}</strong></div>
+          <div className="executive-kpi kpi-valor-potencial">
+            <span>Valor potencial</span>
+            <strong className={exp.entidad_nombre?.startsWith("[DEMO]") ? "potential-excluded" : ""}>
+              {exp.valor_potencial ?? "—"}
+            </strong>
+            {exp.entidad_nombre?.startsWith("[DEMO]") && (
+              <em className="demo-banner-inline small">DEMO — datos simulados</em>
+            )}
+          </div>
           <div className="executive-kpi"><span>Hallazgos</span><strong>{exp.hallazgos.length}</strong></div>
-          <div className="executive-kpi"><span>Nivel</span><strong>{exp.nivel}</strong></div>
+          <div className="executive-kpi"><span>Nivel</span><strong>{labelNivelEvaluacion(exp.nivel)}</strong></div>
         </div>
       </section>
 

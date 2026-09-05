@@ -189,6 +189,7 @@ export function CentroControlPage() {
                 isDemoExpediente={Boolean(
                   evaluaciones.find((e) => e.id === expedienteContext)?.entidad_nombre?.startsWith("[DEMO]"),
                 )}
+                expedienteEstado={evaluaciones.find((e) => e.id === expedienteContext)?.estado}
               />
             </>
           )}

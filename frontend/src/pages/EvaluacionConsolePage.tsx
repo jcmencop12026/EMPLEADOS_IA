@@ -207,7 +207,7 @@ export function EvaluacionConsolePage() {
         <div className="executive-kpi-strip eval-metrics">
           <div className="executive-kpi"><span>Entidad</span><strong>{exp.entidad_nombre}</strong></div>
           <div className="executive-kpi"><span>Estado</span><strong>{label(ESTADO_EXPEDIENTE, exp.estado)}</strong></div>
-          <div className="executive-kpi"><span>Información</span><strong>{exp.porcentaje_informacion}%</strong></div>
+          <div className="executive-kpi"><span>Información requerida completada</span><strong>{exp.porcentaje_informacion}%</strong></div>
           <div className="executive-kpi"><span>Confianza</span><strong>{label(CONFIANZA, exp.confianza_global)}</strong></div>
           <div className="executive-kpi"><span>Oportunidades</span><strong>{oportunidadesCount}</strong></div>
           <div className="executive-kpi"><span>Valor potencial</span><strong>{exp.valor_potencial ?? "—"}</strong></div>
@@ -319,7 +319,7 @@ export function EvaluacionConsolePage() {
           <SolucionIaProyectadaPanel expedienteId={evaluacionId} canGenerate={has("evaluacion.evaluate")} />
         )}
 
-        {tab === "operacion" && <EmpresaOperacionPanel />}
+        {tab === "operacion" && <EmpresaOperacionPanel expedienteId={evaluacionId} />}
 
         {tab === "consumo" && (
           <section className="panel compact-panel">

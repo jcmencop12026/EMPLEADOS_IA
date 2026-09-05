@@ -26,6 +26,24 @@ import {
 import { usePermissions } from "../hooks/usePermissions";
 import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 import { formatCalcLabel } from "../lib/uiTerms";
+import { label as labelExec } from "../lib/labels";
+import { EXECUTION_STATUS } from "../lib/labels";
+import {
+  formatConfianza,
+  formatPrioridad,
+  formatValorConCertidumbre,
+  formatTraceDetalle,
+  labelEstadoOportunidad,
+  labelMomento,
+  labelPertinencia,
+  labelTipoOportunidad,
+  labelTraceEtapa,
+  RESULTADO_OPORTUNIDAD,
+  labelOportunidad,
+  SCENARIO_TYPE,
+} from "../lib/oportunidadLabels";
+import { StructuredEvidenceView } from "../components/StructuredEvidenceView";
+import { ValuationFormsPanel } from "../components/oportunidad/ValuationFormsPanel";
 
 type Tab = "resumen" | "evidencia" | "seguimiento" | "resultado" | "ejecucion" | "trazabilidad" | "finops" | "valoracion";
 
@@ -51,26 +69,6 @@ const VALUE_TYPES = [
   "OTRO",
 ];
 
-const ESTADO_LABELS: Record<string, string> = {
-  DETECTADA: "Detectada",
-  EN_EVALUACION: "En evaluación",
-  PRIORIZADA: "Priorizada",
-  PROPUESTA: "Propuesta",
-  PENDIENTE_APROBACION: "Pendiente aprobación",
-  APROBADA: "Aprobada",
-  EN_EJECUCION: "En ejecución",
-  EN_SEGUIMIENTO: "En seguimiento",
-  MATERIALIZADA: "Materializada",
-  CERRADA: "Cerrada",
-  DESCARTADA: "Descartada",
-  CANCELADA: "Cancelada",
-  FALLIDA: "Fallida",
-  DATOS_INSUFICIENTES: "Datos insuficientes",
-  NO_PERTINENTE: "No pertinente",
-  SIN_CAPACIDAD: "Sin capacidad",
-  POSPUESTA: "Pospuesta",
-};
-
 function formatMoney(v: number | null | undefined): string {
   if (v == null) return "—";
   return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(v);
@@ -79,16 +77,6 @@ function formatMoney(v: number | null | undefined): string {
 function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
   return new Date(value).toLocaleString("es-CO");
-}
-
-function estadoLabel(estado: string): string {
-  return ESTADO_LABELS[estado] ?? estado;
-}
-
-function JsonBlock({ value }: { value: unknown }) {
-  if (value == null) return <p className="muted">Sin datos</p>;
-  if (typeof value === "string") return <p>{value}</p>;
-  return <pre className="json-block">{JSON.stringify(value, null, 2)}</pre>;
 }
 
 export function OportunidadDetailPage() {
@@ -302,18 +290,15 @@ export function OportunidadDetailPage() {
     }
   }
 
-  async function onGuardarEsperado() {
+  async function onGuardarEsperado(data: { gross_value: string; probability: string; assumptions: string }) {
     if (!opportunityId) return;
-    const gross = prompt("Valor bruto esperado:");
-    const prob = prompt("Probabilidad (0-1):");
-    if (!gross || !prob) return;
     try {
       await updateValuationExpected(opportunityId, {
-        gross_value: gross,
-        probability: prob,
+        gross_value: data.gross_value,
+        probability: data.probability,
         period_days: 90,
         value_nature: "ESTIMADA",
-        assumptions: "Estimación inicial",
+        assumptions: data.assumptions || "Estimación inicial",
         source: "Usuario",
       });
       setMsg("Valor esperado actualizado");
@@ -323,16 +308,13 @@ export function OportunidadDetailPage() {
     }
   }
 
-  async function onGuardarEscenario(tipo: string) {
+  async function onGuardarEscenario(tipo: string, data: { value_amount: string; probability: string; assumptions: string }) {
     if (!opportunityId) return;
-    const valor = prompt(`Valor escenario ${tipo}:`);
-    const prob = prompt("Probabilidad (0-1):");
-    if (!valor || !prob) return;
     try {
       await updateValuationScenario(opportunityId, tipo, {
-        value_amount: valor,
-        probability: prob,
-        assumptions: `Escenario ${tipo}`,
+        value_amount: data.value_amount,
+        probability: data.probability,
+        assumptions: data.assumptions || `Escenario ${tipo}`,
       });
       setMsg(`Escenario ${tipo} actualizado`);
       await reload();
@@ -341,17 +323,15 @@ export function OportunidadDetailPage() {
     }
   }
 
-  async function onRegistrarReal() {
+  async function onRegistrarReal(data: { materialized_value: string; evidence: string }) {
     if (!opportunityId) return;
-    const valor = prompt("Valor materializado:");
-    if (!valor) return;
     try {
       await registerValuationReal(opportunityId, {
-        materialized_value: valor,
+        materialized_value: data.materialized_value,
         value_nature: "VERIFICADO",
         attribution_level: "ATRIBUIBLE",
         source: "Medición interna",
-        evidence: "Registro manual",
+        evidence: data.evidence,
       });
       setMsg("Valor real registrado");
       await reload();
@@ -360,16 +340,14 @@ export function OportunidadDetailPage() {
     }
   }
 
-  async function onRegistrarCosto() {
+  async function onRegistrarCosto(data: { amount: string; description: string }) {
     if (!opportunityId) return;
-    const monto = prompt("Monto del costo:");
-    if (!monto) return;
     try {
       await registerValuationCost(opportunityId, {
         cost_type: "HORAS HUMANAS",
-        amount: monto,
+        amount: data.amount,
         currency: "USD",
-        description: "Costo de ejecución",
+        description: data.description || "Costo de ejecución",
       });
       setMsg("Costo registrado");
       await reload();
@@ -414,7 +392,7 @@ export function OportunidadDetailPage() {
         <p><Link to="/oportunidades">← Centro de oportunidades</Link></p>
         <h1>{opp.titulo}</h1>
         <p className="muted">
-          {opp.codigo} · <span className={`estado-badge estado-${opp.estado.toLowerCase()}`}>{estadoLabel(opp.estado)}</span>
+          {opp.codigo} · <span className={`estado-badge estado-${opp.estado.toLowerCase()}`}>{labelEstadoOportunidad(opp.estado)}</span>
           {" · "}{opp.dominio}
         </p>
       </header>
@@ -475,15 +453,15 @@ export function OportunidadDetailPage() {
       <div className="panel compact-panel">
         {tab === "resumen" && (
           <dl className="detail-grid">
-            <dt>Tipo</dt><dd>{opp.tipo}</dd>
+            <dt>Tipo</dt><dd>{labelTipoOportunidad(opp.tipo)}</dd>
             <dt>Responsable IA</dt>
-            <dd>{liderId ? <Link to={`/empleados/${liderId}`}>{String((equipo?.lider as Record<string, unknown>)?.name ?? liderId)}</Link> : "—"}</dd>
-            <dt>Pertinencia</dt><dd>{opp.pertinencia ?? "—"}</dd>
-            <dt>Momento</dt><dd>{opp.momento ?? "—"}</dd>
-            <dt>Prioridad</dt><dd>{opp.prioridad_score != null ? Number(opp.prioridad_score).toFixed(2) : "—"}</dd>
-            <dt>Valor esperado</dt><dd>{formatMoney(opp.valor_potencial)} ({opp.valor_potencial_certidumbre})</dd>
+            <dd>{liderId ? <Link to={`/empleados/${liderId}`}>{String((equipo?.lider as Record<string, unknown>)?.name ?? "Responsable asignado")}</Link> : "Sin responsable asignado"}</dd>
+            <dt>Pertinencia</dt><dd>{labelPertinencia(opp.pertinencia)}</dd>
+            <dt>Momento</dt><dd>{labelMomento(opp.momento)}</dd>
+            <dt>Prioridad</dt><dd>{formatPrioridad(opp.prioridad_score != null ? Number(opp.prioridad_score) : null)}</dd>
+            <dt>Valor esperado</dt><dd>{formatValorConCertidumbre(opp.valor_potencial, opp.valor_potencial_certidumbre, formatMoney)}</dd>
             <dt>Valor materializado</dt><dd>{formatMoney(opp.valor_materializado)}</dd>
-            <dt>Confianza</dt><dd>{Number(opp.confianza).toFixed(2)}</dd>
+            <dt>Confianza</dt><dd>{formatConfianza(Number(opp.confianza))}</dd>
             <dt>Descripción</dt><dd>{opp.descripcion ?? "—"}</dd>
             {accion && (
               <>
@@ -494,7 +472,7 @@ export function OportunidadDetailPage() {
           </dl>
         )}
 
-        {tab === "evidencia" && <JsonBlock value={opp.evidencia} />}
+        {tab === "evidencia" && <StructuredEvidenceView value={opp.evidencia} title="Evidencia de la oportunidad" />}
 
         {tab === "seguimiento" && (
           <div className="stack-gap">
@@ -542,11 +520,11 @@ export function OportunidadDetailPage() {
           <div className="stack-gap">
             {opp.resultado ? (
               <dl className="detail-grid">
-                <dt>Estado</dt><dd>{String(opp.resultado.estado ?? "—")}</dd>
+                <dt>Estado</dt><dd>{labelOportunidad(RESULTADO_OPORTUNIDAD, String(opp.resultado.estado ?? ""))}</dd>
                 <dt>Valor real</dt><dd>{formatMoney(opp.resultado.valor_real as number | null)}</dd>
                 <dt>Valor esperado</dt><dd>{formatMoney(opp.resultado.valor_esperado as number | null)}</dd>
                 <dt>Fecha</dt><dd>{formatDate(opp.resultado.fecha as string)}</dd>
-                <dt>Evidencia</dt><dd><JsonBlock value={opp.resultado.evidencia} /></dd>
+                <dt>Evidencia</dt><dd><StructuredEvidenceView value={opp.resultado.evidencia} /></dd>
               </dl>
             ) : (
               <p className="muted">Aún no hay resultado registrado.</p>
@@ -583,7 +561,10 @@ export function OportunidadDetailPage() {
         {tab === "ejecucion" && (
           <div className="stack-gap">
             {!opp.work_plan_id ? (
-              <p className="muted">La oportunidad aún no tiene plan de trabajo. Actívela cuando esté aprobada.</p>
+              <div className="empty-state-panel">
+                <p><strong>Sin plan de trabajo asociado</strong></p>
+                <p className="muted">La oportunidad debe estar aprobada y activada. Un responsable de operaciones puede crear el plan y asignar ejecución.</p>
+              </div>
             ) : (
               <>
                 <dl className="detail-grid">
@@ -591,7 +572,7 @@ export function OportunidadDetailPage() {
                   <dd><Link to={`/operaciones/${opp.work_plan_id}`}>{opp.work_plan_id}</Link></dd>
                   <dt>Ejecución</dt>
                   <dd><Link to={`/ejecuciones/${opp.work_plan_id}`}>Ver ejecución</Link></dd>
-                  <dt>Estado del plan</dt><dd>{planStatus ?? "—"}</dd>
+                  <dt>Estado del plan</dt><dd>{labelExec(EXECUTION_STATUS, planStatus)}</dd>
                   <dt>Correlación</dt><dd>{opp.correlation_id ?? "—"}</dd>
                 </dl>
                 {pendingApprovals.length > 0 && (
@@ -618,29 +599,35 @@ export function OportunidadDetailPage() {
 
         {tab === "trazabilidad" && (
           <div className="stack-gap">
-            <h3 className="section-title">Transiciones de estado</h3>
+            <h3 className="section-title">Historial empresarial</h3>
             <table className="data-table compact-table">
-              <thead><tr><th>Fecha</th><th>De</th><th>A</th><th>Motivo</th></tr></thead>
+              <thead><tr><th>Fecha</th><th>Evento</th><th>Cambio</th><th>Motivo</th></tr></thead>
               <tbody>
+                {(trace?.transiciones ?? []).length === 0 && (
+                  <tr><td colSpan={4} className="muted">Sin transiciones registradas</td></tr>
+                )}
                 {(trace?.transiciones ?? []).map((t, i) => (
                   <tr key={i}>
                     <td>{formatDate(t.fecha)}</td>
-                    <td>{estadoLabel(t.de)}</td>
-                    <td>{estadoLabel(t.a)}</td>
+                    <td>{labelEstadoOportunidad(t.a)}</td>
+                    <td>{labelEstadoOportunidad(t.de)} → {labelEstadoOportunidad(t.a)}</td>
                     <td>{t.motivo ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <h3 className="section-title">Trazas del motor</h3>
+            <h3 className="section-title">Eventos del motor</h3>
             <table className="data-table compact-table">
-              <thead><tr><th>Fecha</th><th>Etapa</th><th>Detalle</th></tr></thead>
+              <thead><tr><th>Fecha</th><th>Evento</th><th>Detalle</th></tr></thead>
               <tbody>
+                {(trace?.trazas ?? []).length === 0 && (
+                  <tr><td colSpan={3} className="muted">Sin eventos adicionales</td></tr>
+                )}
                 {(trace?.trazas ?? []).map((t, i) => (
                   <tr key={i}>
                     <td>{formatDate(t.fecha)}</td>
-                    <td>{t.etapa}</td>
-                    <td><JsonBlock value={t.detalle} /></td>
+                    <td>{labelTraceEtapa(t.etapa)}</td>
+                    <td>{formatTraceDetalle(t.detalle)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -686,101 +673,60 @@ export function OportunidadDetailPage() {
         )}
 
         {tab === "valoracion" && (
-          <div>
-            {!valuation?.has_valuation ? (
-              <div>
-                <p className="muted">Sin valoración económica registrada.</p>
-                {canValManage && (
-                  <button type="button" onClick={onCrearValoracion}>Crear valoración</button>
-                )}
-              </div>
-            ) : (
+          <div className="stack-gap">
+            <ValuationFormsPanel
+              valuation={valuation}
+              canManage={canValManage}
+              canValidate={canValValidate}
+              onCreate={onCrearValoracion}
+              onExpected={onGuardarEsperado}
+              onScenario={onGuardarEscenario}
+              onReal={onRegistrarReal}
+              onCost={onRegistrarCosto}
+              onValidate={onValidar}
+            />
+            {valuation?.has_valuation && (
               <>
-                {canValManage && (
-                  <div className="toolbar compact-toolbar" style={{ marginBottom: "1rem" }}>
-                    <button type="button" onClick={onGuardarEsperado}>Valor esperado</button>
-                    <button type="button" onClick={() => onGuardarEscenario("CONSERVADOR")}>Esc. conservador</button>
-                    <button type="button" onClick={() => onGuardarEscenario("BASE")}>Esc. base</button>
-                    <button type="button" onClick={() => onGuardarEscenario("OPTIMISTA")}>Esc. optimista</button>
-                    <button type="button" onClick={onRegistrarReal}>Valor real</button>
-                    <button type="button" onClick={onRegistrarCosto}>Costo ejecución</button>
-                    {canValValidate && (
-                      <button type="button" onClick={onValidar}>Validar</button>
-                    )}
-                  </div>
-                )}
-
                 <dl className="detail-grid">
-                  <dt>Tipo de valor</dt>
-                  <dd>{valuation.valuation?.value_type} ({valuation.valuation?.scope})</dd>
-                  <dt>Estado</dt><dd>{valuation.valuation?.status} · v{valuation.valuation?.version}</dd>
-                  <dt className="highlight-esperado">Valor esperado ajustado</dt>
-                  <dd>{valuation.adjusted_expected ?? "—"} <span className="badge">ESPERADO</span></dd>
-                  <dt>Valor bruto esperado</dt><dd>{valuation.gross_expected ?? "—"}</dd>
-                  <dt className="highlight-real">Valor materializado</dt>
-                  <dd>{valuation.materialized_value ?? "—"} <span className="badge">REAL</span></dd>
-                  <dt>Valor atribuible</dt>
-                  <dd>
-                    {valuation.attributable_value ?? "—"}
-                    {valuation.real?.value_nature && (
-                      <span className="badge"> {valuation.real.value_nature}</span>
-                    )}
-                  </dd>
-                  <dt>Costo total ejecución</dt><dd>{valuation.total_execution_cost ?? "—"} (IA: {valuation.finops_ia_cost_label})</dd>
                   <dt>Beneficio neto</dt><dd>{valuation.net_benefit ?? "—"}</dd>
                   <dt>Retorno</dt><dd>{formatCalcLabel(valuation.return_label)}</dd>
                   <dt>Periodo recuperación</dt><dd>{formatCalcLabel(valuation.payback_label)}</dd>
                   <dt>Atribución</dt>
                   <dd>{valuation.real?.attribution_level ?? "—"}</dd>
                 </dl>
-
                 {valuation.missing_for_calculation && valuation.missing_for_calculation.length > 0 && (
-                  <p className="muted" style={{ marginTop: "0.5rem" }}>
-                    Datos faltantes: {valuation.missing_for_calculation.join("; ")}
-                  </p>
+                  <p className="muted">Datos faltantes para cálculo: {valuation.missing_for_calculation.join("; ")}</p>
                 )}
-
                 {valuation.scenarios && valuation.scenarios.length > 0 && (
-                  <table className="data-table compact-table" style={{ marginTop: "1rem" }}>
+                  <table className="data-table compact-table">
                     <thead>
-                      <tr>
-                        <th>Escenario</th>
-                        <th>Valor</th>
-                        <th>Prob.</th>
-                        <th>Ajustado</th>
-                        <th>Costo</th>
-                      </tr>
+                      <tr><th>Escenario</th><th>Valor</th><th>Prob.</th><th>Ajustado</th><th>Costo</th></tr>
                     </thead>
                     <tbody>
                       {valuation.scenarios.map((s) => (
                         <tr key={s.scenario_type}>
-                          <td>{s.scenario_type}</td>
-                          <td>{s.value_amount ?? "—"}</td>
-                          <td>{s.probability ?? "—"}</td>
-                          <td>{s.adjusted_value ?? "—"}</td>
-                          <td>{s.cost ?? "—"}</td>
+                          <td>{labelOportunidad(SCENARIO_TYPE, s.scenario_type)}</td>
+                          <td className="num">{s.value_amount ?? "—"}</td>
+                          <td className="num">{s.probability ?? "—"}</td>
+                          <td className="num">{s.adjusted_value ?? "—"}</td>
+                          <td className="num">{s.cost ?? "—"}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 )}
-
                 {valuation.history && valuation.history.length > 0 && (
-                  <details style={{ marginTop: "1rem" }}>
-                    <summary>Histórico ({valuation.history.length})</summary>
-                    <ul>
+                  <details>
+                    <summary>Histórico de valoración ({valuation.history.length})</summary>
+                    <ul className="cc-list-compact">
                       {valuation.history.map((h, i) => (
-                        <li key={i} className="mono">
+                        <li key={i}>
                           v{h.version} · {h.action} · {h.change_summary ?? ""} · {h.changed_at?.slice(0, 19)}
                         </li>
                       ))}
                     </ul>
                   </details>
                 )}
-
-                <p className="muted" style={{ marginTop: "0.75rem", fontSize: "0.85rem" }}>
-                  Tipos disponibles: {VALUE_TYPES.join(", ")}
-                </p>
               </>
             )}
           </div>

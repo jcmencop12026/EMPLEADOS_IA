@@ -4,6 +4,14 @@ import type { OpportunityItem, OpportunitySummary } from "../api";
 import { fetchOpportunities, fetchOpportunitySummary, prioritizeOpportunities } from "../api";
 import { EiaaxTable, type EiaaxColumn } from "../components/EiaaxTable";
 import { usePermissions } from "../hooks/usePermissions";
+import {
+  formatConfianza,
+  formatPrioridad,
+  labelEstadoOportunidad,
+  labelMomento,
+  labelPertinencia,
+  labelTipoOportunidad,
+} from "../lib/oportunidadLabels";
 
 const ESTADOS_FILTRO = [
   "", "DETECTADA", "EN_EVALUACION", "PRIORIZADA", "PROPUESTA", "PENDIENTE_APROBACION",
@@ -11,21 +19,7 @@ const ESTADOS_FILTRO = [
   "DATOS_INSUFICIENTES", "FALLIDA",
 ] as const;
 
-const ESTADO_LABELS: Record<string, string> = {
-  DETECTADA: "Detectada",
-  EN_EVALUACION: "En evaluación",
-  PRIORIZADA: "Priorizada",
-  PROPUESTA: "Propuesta",
-  PENDIENTE_APROBACION: "Pend. aprobación",
-  APROBADA: "Aprobada",
-  EN_EJECUCION: "En ejecución",
-  EN_SEGUIMIENTO: "En seguimiento",
-  MATERIALIZADA: "Materializada",
-  CERRADA: "Cerrada",
-  DESCARTADA: "Descartada",
-  DATOS_INSUFICIENTES: "Datos insuficientes",
-  FALLIDA: "Fallida",
-};
+function estadoLabel(e: string) { return labelEstadoOportunidad(e); }
 
 function formatMoney(v: number | null): string {
   if (v == null) return "—";
@@ -70,22 +64,26 @@ export function OportunidadesPage() {
   }
 
   const columns = useMemo<EiaaxColumn<OpportunityItem>[]>(() => [
-    { key: "codigo", label: "Código", sortable: true, getValue: (i) => i.codigo },
-    { key: "titulo", label: "Oportunidad", sortable: true, getValue: (i) => i.titulo },
-    { key: "tipo", label: "Tipo", sortable: true, getValue: (i) => i.tipo ?? "" },
+    { key: "titulo", label: "Oportunidad", sortable: true, getValue: (i) => i.titulo, render: (i) => (
+      <span>
+        <strong>{i.titulo}</strong>
+        <span className="muted small"> · {i.codigo}</span>
+      </span>
+    ) },
+    { key: "tipo", label: "Tipo", sortable: true, getValue: (i) => i.tipo ?? "", render: (i) => labelTipoOportunidad(i.tipo) },
     { key: "dominio", label: "Dominio", sortable: true, getValue: (i) => i.dominio ?? "" },
-    { key: "estado", label: "Estado", sortable: true, getValue: (i) => i.estado, render: (i) => ESTADO_LABELS[i.estado] ?? i.estado },
-    { key: "prioridad_score", label: "Prioridad", sortable: true, getValue: (i) => i.prioridad_score ?? 0, render: (i) => (i.prioridad_score != null ? Number(i.prioridad_score).toFixed(2) : "—") },
+    { key: "estado", label: "Estado", sortable: true, getValue: (i) => i.estado, render: (i) => estadoLabel(i.estado) },
+    { key: "prioridad_score", label: "Prioridad", sortable: true, getValue: (i) => i.prioridad_score ?? 0, render: (i) => formatPrioridad(i.prioridad_score != null ? Number(i.prioridad_score) : null) },
     { key: "valor_potencial", label: "Valor potencial", sortable: true, getValue: (i) => i.valor_potencial ?? 0, render: (i) => formatMoney(i.valor_potencial) },
     { key: "valor_materializado", label: "Valor materializado", sortable: true, getValue: (i) => i.valor_materializado ?? 0, render: (i) => formatMoney(i.valor_materializado) },
-    { key: "confianza", label: "Confianza", sortable: true, getValue: (i) => i.confianza ?? "", render: (i) => (i.confianza != null ? Number(i.confianza).toFixed(2) : "—") },
-    { key: "pertinencia", label: "Pertinencia", sortable: true, getValue: (i) => i.pertinencia ?? "" },
-    { key: "momento", label: "Momento", getValue: (i) => i.momento ?? "" },
+    { key: "confianza", label: "Confianza", sortable: true, getValue: (i) => i.confianza ?? "", render: (i) => formatConfianza(i.confianza != null ? Number(i.confianza) : null) },
+    { key: "pertinencia", label: "Pertinencia", sortable: true, getValue: (i) => i.pertinencia ?? "", render: (i) => labelPertinencia(i.pertinencia) },
+    { key: "momento", label: "Momento", getValue: (i) => i.momento ?? "", render: (i) => labelMomento(i.momento) },
     { key: "fecha_deteccion", label: "Fecha", sortable: true, getValue: (i) => i.fecha_deteccion ?? "", render: (i) => (i.fecha_deteccion ? new Date(i.fecha_deteccion).toLocaleDateString("es-CO") : "—") },
     {
       key: "actions",
       label: "Acciones",
-      render: (i) => <Link to={`/oportunidades/${i.id}`} onClick={(e) => e.stopPropagation()}>Detalle</Link>,
+      render: (i) => <Link to={`/oportunidades/${i.id}`} onClick={(e) => e.stopPropagation()}>Abrir oportunidad</Link>,
     },
   ], []);
 
@@ -94,7 +92,7 @@ export function OportunidadesPage() {
       <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} title="Filtrar por estado">
         <option value="">Todos los estados</option>
         {ESTADOS_FILTRO.filter(Boolean).map((e) => (
-          <option key={e} value={e}>{ESTADO_LABELS[e] ?? e}</option>
+          <option key={e} value={e}>{estadoLabel(e)}</option>
         ))}
       </select>
       <select value={filtroDominio} onChange={(e) => setFiltroDominio(e.target.value)} title="Filtrar por dominio">

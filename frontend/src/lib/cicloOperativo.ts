@@ -76,3 +76,27 @@ export function cicloEtapaRuta(etapa: CicloEtapa, opts: CicloNavOpts = {}): stri
 export function cicloRegresoCC(expedienteId?: string): string {
   return expedienteId ? `/?expediente=${expedienteId}` : "/";
 }
+
+/** Índice de etapa actual según estado del expediente (0-based). */
+export function cicloEtapaIndexFromEstado(estado?: string | null): number {
+  const map: Record<string, number> = {
+    BORRADOR: 0,
+    EN_CURSO: 1,
+    PRELIMINAR: 2,
+    DIAGNOSTICA: 3,
+    PROFUNDA: 5,
+    CERRADO: 12,
+    ARCHIVADO: 14,
+  };
+  if (!estado) return 0;
+  return map[estado] ?? 2;
+}
+
+export type CicloChipState = "done" | "current" | "next" | "pending";
+
+export function cicloChipState(etapaIndex: number, currentIndex: number): CicloChipState {
+  if (etapaIndex < currentIndex) return "done";
+  if (etapaIndex === currentIndex) return "current";
+  if (etapaIndex === currentIndex + 1) return "next";
+  return "pending";
+}

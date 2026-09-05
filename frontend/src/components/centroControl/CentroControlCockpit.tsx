@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import type { CentroControlResumen } from "../../api";
 import { ValorComparacionChart } from "../charts/ValorComparacionChart";
-import { CICLO_ETAPAS, cicloEtapaRuta } from "../../lib/cicloOperativo";
+import { CICLO_ETAPAS, cicloChipState, cicloEtapaIndexFromEstado, cicloEtapaRuta } from "../../lib/cicloOperativo";
 import { CentroControlMasterAccess } from "./CentroControlMasterAccess";
 
 type Props = {
@@ -11,6 +11,7 @@ type Props = {
   /** Vista compacta cuando hay empresa en contexto (evita scroll duplicado). */
   compact?: boolean;
   isDemoExpediente?: boolean;
+  expedienteEstado?: string | null;
 };
 
 function fmtNum(v: unknown): string {
@@ -34,10 +35,11 @@ const KPI_PRIORITY = new Set([
   "failed_executions",
 ]);
 
-export function CentroControlCockpit({ data, periodo, expedienteId, compact = false, isDemoExpediente = false }: Props) {
+export function CentroControlCockpit({ data, periodo, expedienteId, compact = false, isDemoExpediente = false, expedienteEstado }: Props) {
   const indicadores = data.resumen_ejecutivo.indicadores;
   const kpis = indicadores.filter((i) => KPI_PRIORITY.has(i.id)).slice(0, 6);
   const fallbackKpis = kpis.length > 0 ? kpis : indicadores.slice(0, 6);
+  const etapaActualIdx = expedienteId ? cicloEtapaIndexFromEstado(expedienteEstado) : -1;
 
   const finops = data.finops;
   const comercial = data.comercial;
@@ -55,16 +57,20 @@ export function CentroControlCockpit({ data, periodo, expedienteId, compact = fa
       <section className="cc-ciclo-strip panel compact-panel" aria-label="Ciclo operativo">
         <span className="muted small cc-ciclo-label">Ciclo</span>
         <div className="cc-ciclo-scroll">
-          {CICLO_ETAPAS.map((etapa, idx) => (
+          {CICLO_ETAPAS.map((etapa, idx) => {
+            const state = etapaActualIdx >= 0 ? cicloChipState(idx, etapaActualIdx) : "pending";
+            return (
             <Link
               key={etapa}
               to={cicloEtapaRuta(etapa, { expedienteId, isDemo: isDemoExpediente })}
-              className="cc-ciclo-chip cc-ciclo-chip--link"
+              className={`cc-ciclo-chip cc-ciclo-chip--link cc-ciclo-chip--${state}`}
               title={`Etapa ${idx + 1}: ${etapa}`}
+              aria-current={state === "current" ? "step" : undefined}
             >
               {etapa}
             </Link>
-          ))}
+            );
+          })}
         </div>
         {expedienteId && (
           <Link to={`/evaluaciones/${expedienteId}`} className="btn small secondary cc-ciclo-action">

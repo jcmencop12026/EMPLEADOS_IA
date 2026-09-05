@@ -31,7 +31,7 @@ const CABINA_TABS = [
 
 const OPP_TABS = [
   { id: "resumen", label: "Resumen", expectText: /Tipo|Responsable|Pertinencia/i },
-  { id: "evidencia", label: "Evidencia", expectText: /evidencia|\{|"tipo"/i },
+  { id: "evidencia", label: "Evidencia", expectText: /Evidencia|Hallazgo|Referencia|Sin evidencia/i },
   { id: "seguimiento", label: "Seguimiento", expectText: /Seguimiento|Acción|seguimiento/i },
   { id: "resultado", label: "Resultado", expectText: /Resultado|materializ|Valor real/i },
   { id: "ejecucion", label: "Ejecución", expectText: /Ejecución|plan|operación/i },

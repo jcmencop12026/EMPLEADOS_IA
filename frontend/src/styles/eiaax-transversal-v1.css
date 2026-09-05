@@ -558,7 +558,119 @@
   overflow-x: hidden;
 }
 
-.eiaax-v1-transversal .table-wrap,
-.eiaax-v1-transversal .notification-grid-wrap {
-  overflow-x: auto;
+/* ── Equilibrio legibilidad (post revisión humana) ─────────── */
+
+.eiaax-v1-transversal {
+  font-size: 0.84rem;
+}
+
+.eiaax-v1-transversal .page-header h1,
+.eiaax-v1-transversal .page-header.compact h1 {
+  font-size: 1.2rem;
+}
+
+.eiaax-v1-transversal .section-title {
+  font-size: 0.98rem;
+}
+
+.eiaax-v1-transversal .tab-bar button,
+.eiaax-v1-transversal .tab-nav button,
+.eiaax-v1-transversal .tab-btn {
+  padding: 7px 14px 8px;
+  font-size: 0.82rem;
+}
+
+.eiaax-v1-transversal .btn {
+  min-height: 30px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+}
+
+.eiaax-v1-transversal .data-table {
+  font-size: 0.82rem;
+}
+
+.eiaax-v1-transversal .data-table th,
+.eiaax-v1-transversal .data-table td {
+  padding: 6px 10px;
+}
+
+.eiaax-v1-transversal .executive-kpi strong,
+.eiaax-v1-transversal .cc-kpi-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.eiaax-v1-transversal .executive-kpi span,
+.eiaax-v1-transversal .cc-kpi-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+}
+
+.eiaax-v1-transversal .kpi-valor-potencial strong {
+  font-size: 1.15rem;
+}
+
+.eiaax-v1-transversal .evidencia-grid .evidencia-row {
+  display: contents;
+}
+
+.eiaax-v1-transversal .form-actions-row {
+  display: flex;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
+.eiaax-v1-transversal .scope-note {
+  margin-bottom: 8px;
+}
+
+.eiaax-v1-transversal .empty-state-panel {
+  padding: 12px;
+  background: var(--eiaax-surface-muted);
+  border-radius: var(--eiaax-radius);
+  border: 1px dashed var(--eiaax-border);
+}
+
+.eiaax-v1-transversal .technical-only {
+  font-size: 0.72rem;
+  max-height: 160px;
+  overflow: auto;
+}
+
+.eiaax-v1-transversal .cc-ciclo-chip--done {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #166534;
+  font-weight: 600;
+}
+
+.eiaax-v1-transversal .cc-ciclo-chip--current {
+  background: var(--eiaax-primary-soft);
+  border-color: var(--eiaax-tab-active-border);
+  color: #1e40af;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px #bfdbfe;
+}
+
+.eiaax-v1-transversal .cc-ciclo-chip--next {
+  border-style: dashed;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.eiaax-v1-transversal .cc-ciclo-chip--pending {
+  color: var(--eiaax-text-muted);
+  opacity: 0.85;
+}
+
+.eiaax-v1-transversal .siguiente-accion-principal {
+  padding: 10px 12px;
+  border-left: 3px solid var(--eiaax-primary);
+  background: var(--eiaax-surface-muted);
+  border-radius: var(--eiaax-radius);
+}
+
+.eiaax-v1-transversal .oportunidades-list .data-table td {
+  line-height: 1.35;
 }

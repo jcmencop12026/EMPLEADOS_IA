@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchSiguienteAccion } from "../../api";
 import { EmptyState, ErrorState, LoadingState } from "../AsyncState";
-import { INTENCION_AGENTE, label } from "../../lib/evaluacionLabels";
+import { INTENCION_AGENTE, label, labelEstadoCapacidad } from "../../lib/evaluacionLabels";
 import { labelCabinaTab } from "../../lib/siguienteAccionTabMap";
 
 type AccionSugerida = {
@@ -70,7 +70,7 @@ export function SiguienteAccionPanel({ expedienteId, onNavigateTab, onRefresh }:
           </button>
         )}
         {principal.estado_es && (
-          <span className="estado-capacidad-badge">{principal.estado_es}</span>
+          <span className="estado-capacidad-badge">{labelEstadoCapacidad(principal.estado_es)}</span>
         )}
       </div>
       {alternativas.length > 0 && (

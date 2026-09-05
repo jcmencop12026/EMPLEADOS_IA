@@ -92,7 +92,7 @@ export function CabinaValorPanel({ expedienteId, impacto, canManageIndicadores, 
         </dl>
         {finops && (
           <p className="muted small" role="note">
-            FinOps: datos consolidados a nivel organización{finops.atribucion_nivel ? ` (${finops.atribucion_nivel})` : ""}, no atribuidos exclusivamente a este expediente.
+            Costos y consumo consolidados a nivel organización{finops.atribucion_nivel ? ` (${finops.atribucion_nivel})` : ""}, no atribuidos exclusivamente a este expediente.
           </p>
         )}
         {interpretacion && (
@@ -102,7 +102,7 @@ export function CabinaValorPanel({ expedienteId, impacto, canManageIndicadores, 
             <dt>Recomendación EIAAX</dt><dd>{String(interpretacion.recomendacion ?? "—")}</dd>
           </dl>
         )}
-        <p><Link to="/costos-valor">Consola FinOps completa</Link></p>
+        <p><Link to="/costos-valor">Consola de costos y valor</Link></p>
       </section>
 
       <section className="panel compact-panel">
