@@ -1,11 +1,11 @@
 # EIAAX — Macrobloque V1 Experiencia Integral
 
-**PR:** #171 — `cursor/ajuste-transversal-1-85e4`  
-**Repositorio:** jcmencop12026/EMPLEADOS_IA  
-**SHA inicial (base certificada):** `0760365f042a98f81c7d45d6f5305849a3765d08`  
-**SHA final (HEAD PR):** `2a96616806130f6010af680258080f15de193e12`  
-**SHA feature (código):** `d85aa85e71e0edae3f8816cc90f77360d0a14e9c`  
-**Fecha entrega:** 2026-09-05  
+**PR:** #171 — `cursor/ajuste-transversal-1-85e4`
+**Repositorio:** jcmencop12026/EMPLEADOS_IA
+**SHA inicial (base certificada):** `0760365f042a98f81c7d45d6f5305849a3765d08`
+**SHA final (HEAD PR):** `2a96616806130f6010af680258080f15de193e12`
+**SHA feature (código):** `d85aa85e71e0edae3f8816cc90f77360d0a14e9c`
+**Fecha entrega:** 2026-09-05
 
 ---
 
