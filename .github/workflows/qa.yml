@@ -196,7 +196,9 @@ jobs:
       - name: Instalar dependencias
         run: |
           pip install -r backend/requirements.txt
-          cd frontend && npm ci && npm install --no-save playwright@1.58.2
+          cd frontend && npm ci
+          cd ..
+          npm install --no-save playwright@1.58.2
           npx playwright install chromium --with-deps
 
       - name: Arrancar backend y frontend
