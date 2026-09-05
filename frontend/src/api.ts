@@ -4101,8 +4101,16 @@ export async function fetchEvaluacionTrazabilidad(expedienteId: string): Promise
   return api(`/api/evaluaciones/${expedienteId}/trazabilidad`);
 }
 
-export async function fetchEvaluacionImpacto(expedienteId: string): Promise<Record<string, unknown>> {
-  return api(`/api/evaluaciones/${expedienteId}/impacto`);
+export async function fetchEvaluacionImpacto(
+  expedienteId: string,
+  opts?: { vistaEntidad?: boolean },
+): Promise<Record<string, unknown>> {
+  const q = opts?.vistaEntidad ? "?vista_entidad=true" : "";
+  return api(`/api/evaluaciones/${expedienteId}/impacto${q}`);
+}
+
+export async function fetchInformePublicableCliente(expedienteId: string): Promise<Record<string, unknown>> {
+  return api(`/api/evaluaciones/${expedienteId}/informe-publicable-cliente`);
 }
 
 export async function crearOportunidadDesdeHallazgo(

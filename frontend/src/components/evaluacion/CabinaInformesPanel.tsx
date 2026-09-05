@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   fetchCommCentroResumen,
   fetchEvaluacionImpacto,
+  fetchInformePublicableCliente,
   fetchInformesComercialesConfig,
   fetchInformesImpacto,
   fetchInformesPeriodicosPlantillas,
@@ -48,6 +49,7 @@ export function CabinaInformesPanel({ expedienteId, entidadNombre, areaProceso, 
   const [plantillas, setPlantillas] = useState<Array<Record<string, unknown>>>([]);
   const [comm, setComm] = useState<CommCentroResumen | null>(null);
   const [impacto, setImpacto] = useState<Record<string, unknown> | null>(null);
+  const [publicableCliente, setPublicableCliente] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,6 +60,7 @@ export function CabinaInformesPanel({ expedienteId, entidadNombre, areaProceso, 
       fetchInformesPeriodicosPlantillas().then((r) => setPlantillas(r.plantillas)).catch(() => undefined),
       fetchCommCentroResumen().then(setComm).catch(() => undefined),
       fetchEvaluacionImpacto(expedienteId).then(setImpacto).catch(() => undefined),
+      fetchInformePublicableCliente(expedienteId).then(setPublicableCliente).catch(() => undefined),
     ]).finally(() => setLoading(false));
   }, [expedienteId]);
 
@@ -209,25 +212,32 @@ export function CabinaInformesPanel({ expedienteId, entidadNombre, areaProceso, 
       {!loading && vista === "cliente" && (
         <section className="panel compact-panel informe-vista-cliente">
           <h3 className="section-title">Vista publicable para cliente</h3>
-          <p className="muted small"><strong>Destinatario:</strong> empresa cliente · solo contenido autorizado.</p>
+          <p className="muted small"><strong>Destinatario:</strong> empresa cliente · solo contenido autorizado (filtrado en backend).</p>
           {esDemo && <p className="demo-banner">{demoTag}</p>}
+          {publicableCliente?.aviso && (
+            <p className="muted small" role="status">{String(publicableCliente.aviso)}</p>
+          )}
           <dl className="detail-grid compact">
             <dt>Hallazgos publicables</dt>
             <dd>
-              {indicadores.length > 0 || narrativa.que !== INFORMACION_INSUFICIENTE
-                ? narrativa.que
+              {((publicableCliente?.hallazgos as Array<Record<string, unknown>>) ?? []).length > 0
+                ? (publicableCliente?.hallazgos as Array<Record<string, unknown>>)
+                    .map((h) => String(h.titulo ?? ""))
+                    .filter(Boolean)
+                    .join(" · ")
                 : INFORMACION_INSUFICIENTE}
             </dd>
             <dt>Indicadores autorizados</dt>
-            <dd>{indicadores.length} indicador(es) antes/proyectado/real visibles según permisos.</dd>
+            <dd>{((publicableCliente?.indicadores as unknown[]) ?? []).length} indicador(es) visibles para cliente.</dd>
             <dt>Valor publicable</dt>
             <dd>
               {esDemo
-                ? `${demoMonto(resumen?.estimado)} · ${demoMonto(resumen?.potencial)} (simulado)`
-                : fmt(resumen?.estimado)}
+                ? demoMonto((publicableCliente?.valor_publicable as Record<string, unknown>)?.estimado_publicable
+                  ?? resumen?.estimado)
+                : fmt((publicableCliente?.valor_publicable as Record<string, unknown>)?.estimado)}
             </dd>
             <dt>Recomendación</dt>
-            <dd>{narrativa.recomendacion}</dd>
+            <dd>{String((publicableCliente?.narrativa as Record<string, unknown>)?.recomendacion ?? narrativa.recomendacion)}</dd>
           </dl>
           <p className="muted small"><strong>Omite explícitamente:</strong> costos internos, margen, precio sugerido, prompts, reglas privadas, scoring interno.</p>
           <div className="ops-actions">

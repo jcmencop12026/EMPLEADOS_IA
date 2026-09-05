@@ -6,6 +6,7 @@
 import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
+import { assertReportSha, resolveCertSha, writeShaManifest } from "./lib/cert_sha.mjs";
 
 const BASE = process.env.EIAAX_BASE || "http://127.0.0.1:5180";
 const USER = process.env.EIAAX_USER || "org_a_admin";
@@ -284,7 +285,10 @@ async function runOppTabFunctional(browser, results, oppId) {
 }
 
 async function main() {
+  const certSha = resolveCertSha();
   fs.mkdirSync(ARTIFACTS, { recursive: true });
+  writeShaManifest(ARTIFACTS, certSha, { suite: "transversal-visual" });
+
   const browser = await chromium.launch({ headless: true });
   const results = [];
   const page = await browser.newPage();
@@ -306,7 +310,10 @@ async function main() {
   const funcFail = results.filter((r) => r.kind.startsWith("func") && !r.pass).length;
 
   const report = {
-    sha: process.env.EIAAX_SHA || "local",
+    sha: certSha,
+    git_head: certSha,
+    github_sha: process.env.GITHUB_SHA || null,
+    eiaax_sha: process.env.EIAAX_SHA || null,
     viewsTotal: 22,
     resolutions: VIEWPORTS.map((v) => v.name),
     visualChecksExpected: 44,
@@ -318,8 +325,9 @@ async function main() {
     results,
   };
   fs.writeFileSync(path.join(ARTIFACTS, "report.json"), JSON.stringify(report, null, 2));
+  assertReportSha(path.join(ARTIFACTS, "report.json"), certSha);
 
-  console.log("\n=== TRANSVERSAL VISUAL (22 vistas × 2 resoluciones) ===\n");
+  console.log(`SHA certificado: ${certSha}`);
   for (const r of visual) {
     console.log(r.pass ? "PASS" : "FAIL", `[${r.viewport}]`, r.view, r.defects?.length ? `— ${r.defects.join("; ")}` : "");
   }
