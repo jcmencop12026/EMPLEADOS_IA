@@ -7,6 +7,7 @@ import {
 } from "../../api";
 import { SiguienteAccionPanel } from "../evaluacion/SiguienteAccionPanel";
 import { CadenaAnaliticaPanel } from "../evaluacion/CadenaAnaliticaPanel";
+import { ExecutiveCard, KpiStrip, StatusBadge } from "../v1";
 import { ImpactoGrafico } from "../evaluacion/ImpactoGrafico";
 import { CONFIANZA, ESTADO_EXPEDIENTE, label, labelNivelEvaluacion } from "../../lib/evaluacionLabels";
 import { cabinaTabPath, mapSiguienteAccionToCabinaTab } from "../../lib/siguienteAccionTabMap";
@@ -81,34 +82,33 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
 
   return (
     <div className="cc-empresa-panel">
-      <section className="panel compact-panel cc-empresa-header-panel">
-        <div className="cc-empresa-header">
-          <div>
-            <p className="eyebrow">Puesto de mando — empresa seleccionada</p>
-            <h2>{exp.entidad_nombre}</h2>
-            <p className="muted">{exp.codigo} · {exp.titulo} · {label(ESTADO_EXPEDIENTE, exp.estado)}</p>
-          </div>
-          <div className="cc-empresa-actions">
-            <Link to={`/evaluaciones/${evaluacionId}`} className="btn primary small">Abrir cabina</Link>
-          </div>
+      <ExecutiveCard
+        title={exp.entidad_nombre}
+        subtitle={`${exp.codigo} · ${exp.titulo}`}
+        demo={exp.entidad_nombre?.startsWith("[DEMO]")}
+        actions={<Link to={`/evaluaciones/${evaluacionId}`} className="btn primary small">Abrir cabina</Link>}
+      >
+        <div className="v1-empresa-meta">
+          <StatusBadge label={label(ESTADO_EXPEDIENTE, exp.estado)} tone="info" />
+          <span className="muted small">Puesto de mando — empresa seleccionada</span>
         </div>
-        <div className="executive-kpi-strip">
-          <div className="executive-kpi"><span>Información requerida completada</span><strong>{exp.porcentaje_informacion}%</strong></div>
-          <div className="executive-kpi"><span>Confianza</span><strong>{label(CONFIANZA, exp.confianza_global)}</strong></div>
-          <div className="executive-kpi"><span>Oportunidades</span><strong>{oportunidades}</strong></div>
-          <div className="executive-kpi kpi-valor-potencial">
-            <span>Valor potencial</span>
-            <strong className={exp.entidad_nombre?.startsWith("[DEMO]") ? "potential-excluded" : ""}>
-              {exp.valor_potencial ?? "—"}
-            </strong>
-            {exp.entidad_nombre?.startsWith("[DEMO]") && (
-              <em className="demo-banner-inline small">DEMO — datos simulados</em>
-            )}
-          </div>
-          <div className="executive-kpi"><span>Hallazgos</span><strong>{exp.hallazgos.length}</strong></div>
-          <div className="executive-kpi"><span>Nivel</span><strong>{labelNivelEvaluacion(exp.nivel)}</strong></div>
-        </div>
-      </section>
+        <KpiStrip
+          className="v1-empresa-kpis"
+          items={[
+            { id: "info", label: "Información completada", value: `${exp.porcentaje_informacion}%` },
+            { id: "conf", label: "Confianza", value: label(CONFIANZA, exp.confianza_global) },
+            { id: "opp", label: "Oportunidades", value: oportunidades },
+            { id: "hall", label: "Hallazgos", value: exp.hallazgos.length },
+            {
+              id: "valor",
+              label: "Valor potencial",
+              value: exp.valor_potencial ?? "—",
+              tone: exp.entidad_nombre?.startsWith("[DEMO]") ? undefined : "value",
+            },
+            { id: "nivel", label: "Nivel", value: labelNivelEvaluacion(exp.nivel) },
+          ]}
+        />
+      </ExecutiveCard>
 
       {entidadesRelacionadas.length > 0 && (
         <section className="panel compact-panel cc-entidades-relacionadas">

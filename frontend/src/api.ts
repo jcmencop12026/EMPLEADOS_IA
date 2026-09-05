@@ -945,6 +945,18 @@ export async function updateAdminOrganization(data: Record<string, unknown>): Pr
   return api<Organization>("/api/admin/organization", { method: "PUT", body: JSON.stringify(data) });
 }
 
+export type LoginIdentity = {
+  display_name: string;
+  logo_url?: string | null;
+  logo_compact_url?: string | null;
+  accent_color?: string | null;
+  platform_name: string;
+};
+
+export async function fetchLoginIdentity(): Promise<LoginIdentity> {
+  return api<LoginIdentity>("/api/public/login-identity");
+}
+
 export async function fetchOrgConfig(): Promise<OrgConfig> {
   return api<OrgConfig>("/api/admin/config");
 }

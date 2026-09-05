@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { fetchFinOpsDashboard, type FinOpsDashboard } from "../../api";
 import { ImpactoGrafico } from "./ImpactoGrafico";
 import { ImpactoIndicadorForm } from "./ImpactoIndicadorForm";
+import { EmptyState, FormSection, KpiStrip } from "../v1";
 
 type Props = {
   expedienteId: string;
@@ -37,8 +38,7 @@ export function CabinaValorPanel({ expedienteId, impacto, canManageIndicadores, 
 
   return (
     <div className="cabina-valor-panel">
-      <section className="panel compact-panel">
-        <h2>Valor económico ejecutivo</h2>
+      <FormSection title="Valor económico ejecutivo" description="Potencial, verificado, estimado y realizado — sin sumar potencial al realizado.">
         {esDemo && (
           <p className="demo-banner" role="status">
             <strong>DEMO — DATOS SIMULADOS</strong> — ninguna cifra equivale a verificación real.
@@ -47,43 +47,21 @@ export function CabinaValorPanel({ expedienteId, impacto, canManageIndicadores, 
         <p className="muted small potential-excluded">
           El valor potencial no se suma al valor realizado. Precio sugerido y margen son información privada.
         </p>
-        <div className="value-nature-grid compact">
-          {esDemo ? (
-            <>
-              <div className="value-nature-card estimated">
-                <span className="value-nature-head">Simulación verificado</span>
-                <span className="value-nature-amount">{demoAmount("simulacion_verificado")}</span>
-              </div>
-              <div className="value-nature-card estimated">
-                <span className="value-nature-head">Estimado</span>
-                <span className="value-nature-amount">{demoAmount("estimado")}</span>
-              </div>
-              <div className="value-nature-card potential">
-                <span className="value-nature-head">Potencial</span>
-                <span className="value-nature-amount">{demoAmount("potencial")}</span>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="value-nature-card verified">
-                <span className="value-nature-head">Verificado</span>
-                <span className="value-nature-amount">{fmt(resumen?.verificado)}</span>
-              </div>
-              <div className="value-nature-card estimated">
-                <span className="value-nature-head">Estimado</span>
-                <span className="value-nature-amount">{fmt(resumen?.estimado)}</span>
-              </div>
-              <div className="value-nature-card potential">
-                <span className="value-nature-head">Potencial</span>
-                <span className="value-nature-amount">{fmt(resumen?.potencial)}</span>
-              </div>
-            </>
-          )}
-          <div className="value-nature-card price-base">
-            <span className="value-nature-head">Realizado</span>
-            <span className="value-nature-amount">{fmt(resumen?.realizado ?? finops?.total_value)}</span>
-          </div>
-        </div>
+        <KpiStrip
+          items={esDemo
+            ? [
+                { id: "sim", label: "Simulación verificado", value: demoAmount("simulacion_verificado"), tone: "value" },
+                { id: "est", label: "Estimado", value: demoAmount("estimado"), tone: "value" },
+                { id: "pot", label: "Potencial", value: demoAmount("potencial"), tone: "value" },
+                { id: "real", label: "Realizado", value: fmt(resumen?.realizado ?? finops?.total_value) },
+              ]
+            : [
+                { id: "ver", label: "Verificado", value: fmt(resumen?.verificado), tone: "success" },
+                { id: "est", label: "Estimado", value: fmt(resumen?.estimado), tone: "value" },
+                { id: "pot", label: "Potencial", value: fmt(resumen?.potencial), tone: "value" },
+                { id: "real", label: "Realizado", value: fmt(resumen?.realizado ?? finops?.total_value) },
+              ]}
+        />
         <dl className="detail-grid compact">
           <dt>Consumo IA periodo</dt><dd>{finops?.total_cost_label ?? "—"}</dd>
           <dt>Valor generado</dt><dd>{finops?.total_value_label ?? "—"}</dd>
@@ -92,7 +70,8 @@ export function CabinaValorPanel({ expedienteId, impacto, canManageIndicadores, 
         </dl>
         {finops && (
           <p className="muted small" role="note">
-            Costos y consumo consolidados a nivel organización{finops.atribucion_nivel ? ` (${finops.atribucion_nivel})` : ""}, no atribuidos exclusivamente a este expediente.
+            Costos y consumo consolidados a nivel organización
+            {finops.atribucion_nivel ? " (atribución organizacional)" : ""}, no atribuidos exclusivamente a este expediente.
           </p>
         )}
         {interpretacion && (
@@ -103,17 +82,24 @@ export function CabinaValorPanel({ expedienteId, impacto, canManageIndicadores, 
           </dl>
         )}
         <p><Link to="/costos-valor">Consola de costos y valor</Link></p>
-      </section>
+      </FormSection>
 
-      <section className="panel compact-panel">
-        <h2>Indicadores Antes / Proyectado / Real</h2>
+      <FormSection title="Indicadores Antes / Proyectado / Real" description="Evolución medible del valor generado">
         {canManageIndicadores && (
           <ImpactoIndicadorForm expedienteId={expedienteId} onCreated={onImpactoRefresh} />
         )}
         {indicadores.length === 0 ? (
-          <p className="muted">
-            Sin indicadores registrados. Complete información y diagnóstico; EIAAX puede proponer indicadores desde hallazgos.
-          </p>
+          <EmptyState
+            title="Sin indicadores registrados"
+            description="Complete información y diagnóstico; EIAAX puede proponer indicadores desde hallazgos para medir antes, proyectado y real."
+            action={
+              canManageIndicadores ? undefined : (
+                <Link to={`/evaluaciones/${expedienteId}?tab=diagnostico`} className="btn secondary small">
+                  Ir a Diagnóstico
+                </Link>
+              )
+            }
+          />
         ) : (
           <table className="data-table compact-table impacto-indicadores-table">
             <thead>
@@ -137,7 +123,7 @@ export function CabinaValorPanel({ expedienteId, impacto, canManageIndicadores, 
         <p className="muted small">
           <Link to={`/resultados-inteligencia?expediente_id=${expedienteId}`}>Tablero completo de resultados</Link>
         </p>
-      </section>
+      </FormSection>
     </div>
   );
 }

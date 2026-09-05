@@ -12,6 +12,7 @@ import {
   type InformeImpacto,
 } from "../../api";
 import { buildNarrativaFromInterpretacion, INFORMACION_INSUFICIENTE } from "../../lib/informeNarrativa";
+import { EmptyState, KpiStrip } from "../v1";
 
 type Props = {
   expedienteId: string;
@@ -117,10 +118,24 @@ export function CabinaInformesPanel({ expedienteId, entidadNombre, areaProceso, 
           <h3 className="section-title">Vista ejecutiva</h3>
           {esDemo && <p className="demo-banner" role="status">{demoTag}</p>}
           <div className="executive-kpi-strip">
-            <div className="executive-kpi"><span>Informes</span><strong>{informes.length}</strong></div>
-            <div className="executive-kpi"><span>Indicadores</span><strong>{indicadores.length}</strong></div>
-            <div className="executive-kpi"><span>Alertas</span><strong>{indicadores.some((i) => i.real != null && i.antes != null && Number(i.real) > Number(i.antes) * 1.1) ? "1+" : "0"}</strong></div>
-            <div className="executive-kpi"><span>Valor {esDemo ? "simulado" : "estimado"}</span><strong>{esDemo ? demoMonto(resumen?.estimado) : fmt(resumen?.estimado)}</strong></div>
+            <KpiStrip
+              items={[
+                { id: "inf", label: "Informes", value: informes.length },
+                { id: "ind", label: "Indicadores", value: indicadores.length },
+                {
+                  id: "alert",
+                  label: "Alertas",
+                  value: indicadores.some((i) => i.real != null && i.antes != null && Number(i.real) > Number(i.antes) * 1.1) ? "1+" : "0",
+                  tone: indicadores.some((i) => i.real != null && i.antes != null && Number(i.real) > Number(i.antes) * 1.1) ? "attention" : "default",
+                },
+                {
+                  id: "val",
+                  label: `Valor ${esDemo ? "simulado" : "estimado"}`,
+                  value: esDemo ? demoMonto(resumen?.estimado) : fmt(resumen?.estimado),
+                  tone: "value",
+                },
+              ]}
+            />
           </div>
           <dl className="detail-grid compact">
             <dt>Qué ocurrió</dt><dd>{narrativa.que}</dd>
@@ -147,7 +162,11 @@ export function CabinaInformesPanel({ expedienteId, entidadNombre, areaProceso, 
           <p className="muted small"><strong>Muestra:</strong> indicadores, desviaciones, evolución antes/proyectado/real.</p>
           <p className="muted small"><strong>Omite:</strong> economía privada del operador y scoring interno.</p>
           {indicadores.length === 0 ? (
-            <p className="muted">Sin indicadores operativos registrados.</p>
+            <EmptyState
+              title="Sin indicadores operativos"
+              description="Defina indicadores en Valor o complete el diagnóstico para generar métricas operativas comparables."
+              action={<Link to={`/evaluaciones/${expedienteId}?tab=valor`} className="btn secondary small">Ir a Valor</Link>}
+            />
           ) : (
             <table className="data-table compact-table">
               <thead>

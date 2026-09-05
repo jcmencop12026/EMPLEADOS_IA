@@ -1,14 +1,14 @@
 import { Link } from "react-router-dom";
 import type { CentroControlResumen } from "../../api";
 import { ValorComparacionChart } from "../charts/ValorComparacionChart";
-import { CICLO_ETAPAS, cicloChipState, cicloEtapaIndexFromEstado, cicloEtapaRuta } from "../../lib/cicloOperativo";
+import { cicloEtapaIndexFromEstado } from "../../lib/cicloOperativo";
 import { CentroControlMasterAccess } from "./CentroControlMasterAccess";
+import { AttentionPanel, CycleStepper, KpiStrip } from "../v1";
 
 type Props = {
   data: CentroControlResumen;
   periodo: string;
   expedienteId?: string;
-  /** Vista compacta cuando hay empresa en contexto (evita scroll duplicado). */
   compact?: boolean;
   isDemoExpediente?: boolean;
   expedienteEstado?: string | null;
@@ -18,12 +18,6 @@ function fmtNum(v: unknown): string {
   if (v === null || v === undefined) return "—";
   if (typeof v === "number") return v.toLocaleString("es-CO");
   return String(v);
-}
-
-function ValorIndicador({ valor, disponible, estado }: { valor: unknown; disponible: boolean; estado?: string | null }) {
-  if (!disponible) return <span className="muted cc-kpi-empty">{estado ?? "Pendiente"}</span>;
-  if (valor === null || valor === undefined) return <span className="muted cc-kpi-empty">Pendiente</span>;
-  return <strong className="cc-kpi-value">{String(valor)}</strong>;
 }
 
 const KPI_PRIORITY = new Set([
@@ -41,8 +35,6 @@ export function CentroControlCockpit({ data, periodo, expedienteId, compact = fa
   const fallbackKpis = kpis.length > 0 ? kpis : indicadores.slice(0, 6);
   const etapaActualIdx = expedienteId ? cicloEtapaIndexFromEstado(expedienteEstado) : -1;
 
-  const finops = data.finops;
-  const comercial = data.comercial;
   const oportunidades = data.oportunidades;
   const atencionTop = data.atencion_requerida.slice(0, compact ? 3 : 6);
 
@@ -52,37 +44,38 @@ export function CentroControlCockpit({ data, periodo, expedienteId, compact = fa
     { label: "Potencial", valor: typeof data.valor_consolidado?.potencial === "number" ? data.valor_consolidado.potencial : null, proyectado: true },
   ];
 
+  const kpiItems = fallbackKpis.map((ind) => ({
+    id: ind.id,
+    label: ind.label,
+    value: ind.disponible ? (ind.valor ?? "—") : (ind.estado ?? "Pendiente"),
+    tone: ind.id === "failed_executions" && ind.valor ? "attention" as const : ind.id === "realized_value" ? "value" as const : "default" as const,
+    to: ind.enlace,
+  }));
+
   return (
     <div className={`cc-cockpit ${compact ? "cc-cockpit--compact" : ""}`}>
-      <section className="cc-ciclo-strip panel compact-panel" aria-label="Ciclo operativo">
-        <span className="muted small cc-ciclo-label">Ciclo</span>
-        <div className="cc-ciclo-scroll">
-          {CICLO_ETAPAS.map((etapa, idx) => {
-            const state = etapaActualIdx >= 0 ? cicloChipState(idx, etapaActualIdx) : "pending";
-            return (
-            <Link
-              key={etapa}
-              to={cicloEtapaRuta(etapa, { expedienteId, isDemo: isDemoExpediente })}
-              className={`cc-ciclo-chip cc-ciclo-chip--link cc-ciclo-chip--${state}`}
-              title={`Etapa ${idx + 1}: ${etapa}`}
-              aria-current={state === "current" ? "step" : undefined}
-            >
-              {etapa}
-            </Link>
-            );
-          })}
+      <section className="panel compact-panel v1-cc-command" aria-label="Ciclo operativo">
+        <div className="v1-cc-command__head">
+          <div>
+            <h2 className="section-title">Ciclo operativo EIAAX</h2>
+            <p className="muted small">De conocer a mejorar — navegue por etapa con contexto conservado</p>
+          </div>
+          {expedienteId && (
+            <Link to={`/evaluaciones/${expedienteId}`} className="btn small secondary">Abrir cabina</Link>
+          )}
         </div>
-        {expedienteId && (
-          <Link to={`/evaluaciones/${expedienteId}`} className="btn small secondary cc-ciclo-action">
-            Cabina
-          </Link>
-        )}
+        <CycleStepper
+          currentIndex={etapaActualIdx}
+          expedienteId={expedienteId}
+          isDemo={isDemoExpediente}
+          compact={compact}
+        />
       </section>
 
       <section className="cc-first-viewport panel compact-panel">
         <div className="cc-first-head">
           <div>
-            <h2 className="section-title">Situación operativa</h2>
+            <h2 className="section-title">Resumen de mando</h2>
             <p className="muted small">Periodo: {periodo === "mtd" ? "mes actual" : periodo}</p>
           </div>
           <div className="cc-first-actions">
@@ -90,51 +83,45 @@ export function CentroControlCockpit({ data, periodo, expedienteId, compact = fa
             <Link to="/operaciones" className="btn small secondary">Operaciones</Link>
           </div>
         </div>
-        <div className="cc-kpi-strip">
-          {fallbackKpis.map((ind) => (
-            <Link key={ind.id} to={ind.enlace} className="cc-kpi-item" title={ind.label}>
-              <span className="cc-kpi-label">{ind.label}</span>
-              <ValorIndicador valor={ind.valor} disponible={ind.disponible} estado={ind.estado} />
-            </Link>
-          ))}
-        </div>
+
+        <KpiStrip items={kpiItems.map((k) => ({ ...k, href: k.to }))} />
+
         <div className="cc-first-grid">
-          <div className="cc-zone-attention">
-            <h3 className="cc-subtitle">Requiere atención</h3>
-            {atencionTop.length === 0 ? (
-              <p className="muted small">Sin asuntos críticos pendientes.</p>
-            ) : (
-              <ul className="cc-list-compact">
-                {atencionTop.map((item) => (
-                  <li key={`${item.tipo}-${item.prioridad}-${item.titulo}`}>
-                    <Link to={item.enlace}>{item.titulo}</Link>
-                    <span className="muted small"> · {item.tipo}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          <div className="cc-zone-next">
-            <h3 className="cc-subtitle">Oportunidades y valor</h3>
-            <dl className="detail-grid compact">
-              <dt>Detectadas</dt>
-              <dd>{oportunidades?.resumen?.oportunidades_detectadas ?? "—"}</dd>
-              <dt>Valor realizado</dt>
-              <dd>{fmtNum(data.valor_consolidado?.realizado ?? data.resumen_ejecutivo?.valor?.realizado)}</dd>
-              <dt>Pend. aprobación</dt>
-              <dd>{data.mi_trabajo?.requieren_aprobacion ?? oportunidades?.resumen?.pendientes_aprobacion ?? "—"}</dd>
-            </dl>
-            <p className="cc-inline-links">
-              <Link to="/oportunidades">Oportunidades</Link>
-              {" · "}
-              <Link to="/costos-valor">Valoración</Link>
-              {expedienteId && (
-                <>
-                  {" · "}
-                  <Link to={isDemoExpediente ? `/demo/presentacion/${expedienteId}` : `/presentacion/${expedienteId}`}>Presentar</Link>
-                </>
-              )}
-            </p>
+          <AttentionPanel
+            items={atencionTop.map((item, i) => ({
+              id: `${item.tipo}-${i}`,
+              title: item.titulo,
+              detail: item.tipo,
+              href: item.enlace,
+              priority: item.prioridad === "alta" ? "alta" : "media",
+            }))}
+            emptyMessage="Sin asuntos críticos pendientes. El tablero está al día."
+          />
+          <div className="cc-zone-next v1-executive-card">
+            <div className="v1-executive-card__head">
+              <h3>Oportunidades y valor</h3>
+            </div>
+            <div className="v1-executive-card__body">
+              <dl className="detail-grid compact">
+                <dt>Detectadas</dt>
+                <dd>{oportunidades?.resumen?.oportunidades_detectadas ?? "—"}</dd>
+                <dt>Aprobables</dt>
+                <dd>{oportunidades?.resumen?.pendientes_aprobacion ?? "—"}</dd>
+                <dt>Activas</dt>
+                <dd>{oportunidades?.resumen?.activas ?? "—"}</dd>
+                <dt>Materializadas</dt>
+                <dd>{oportunidades?.resumen?.materializadas ?? "—"}</dd>
+                <dt>Valor realizado</dt>
+                <dd>{fmtNum(data.valor_consolidado?.realizado ?? data.resumen_ejecutivo?.valor?.realizado)}</dd>
+                <dt>Valor potencial</dt>
+                <dd>{fmtNum(data.valor_consolidado?.potencial)}</dd>
+              </dl>
+              <p className="cc-inline-links">
+                <Link to="/oportunidades">Centro de oportunidades</Link>
+                {" · "}
+                <Link to="/costos-valor">Valoración</Link>
+              </p>
+            </div>
           </div>
         </div>
         {compact && valorChartPuntos.some((p) => p.valor != null) && (
@@ -154,11 +141,8 @@ export function CentroControlCockpit({ data, periodo, expedienteId, compact = fa
               <h2 className="section-title">Valor y resultados</h2>
               <dl className="detail-grid compact">
                 <dt>Verificado</dt><dd>{fmtNum(data.valor_consolidado?.verificado)}</dd>
-                <dt>Costo periodo</dt><dd>{finops?.dashboard?.total_cost_label ?? "—"}</dd>
-                <dt>ROI</dt><dd>{finops?.dashboard?.roi_label ?? "—"}</dd>
-                {comercial?.margen_promedio_pct != null && (
-                  <><dt>Margen</dt><dd>{comercial.margen_promedio_pct}%</dd></>
-                )}
+                <dt>Costo periodo</dt><dd>{data.finops?.dashboard?.total_cost_label ?? "—"}</dd>
+                <dt>ROI</dt><dd>{data.finops?.dashboard?.roi_label ?? "—"}</dd>
               </dl>
             </section>
           </div>

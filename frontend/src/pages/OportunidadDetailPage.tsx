@@ -44,6 +44,7 @@ import {
 } from "../lib/oportunidadLabels";
 import { StructuredEvidenceView } from "../components/StructuredEvidenceView";
 import { ValuationFormsPanel } from "../components/oportunidad/ValuationFormsPanel";
+import { OpportunityProgress, opportunityStepFromEstado, PageHeader, StatusBadge, EmptyState, FormSection, TechnicalDetails } from "../components/v1";
 
 type Tab = "resumen" | "evidencia" | "seguimiento" | "resultado" | "ejecucion" | "trazabilidad" | "finops" | "valoracion";
 
@@ -68,6 +69,19 @@ const VALUE_TYPES = [
   "RIESGO MITIGADO",
   "OTRO",
 ];
+
+const VALUATION_ACTION_LABELS: Record<string, string> = {
+  CREATE: "Creación",
+  UPDATE_EXPECTED: "Actualización valor esperado",
+  UPDATE_SCENARIO: "Actualización escenario",
+  REGISTER_REAL: "Registro valor real",
+  REGISTER_COST: "Registro costo",
+  VALIDATE: "Validación",
+};
+
+function labelValuationAction(action: string): string {
+  return VALUATION_ACTION_LABELS[action] ?? action.replace(/_/g, " ").toLowerCase();
+}
 
 function formatMoney(v: number | null | undefined): string {
   if (v == null) return "—";
@@ -388,36 +402,28 @@ export function OportunidadDetailPage() {
 
   return (
     <div className="ops-page">
-      <header className="page-header compact">
-        <p><Link to="/oportunidades">← Centro de oportunidades</Link></p>
-        <h1>{opp.titulo}</h1>
-        <p className="muted">
-          {opp.codigo} · <span className={`estado-badge estado-${opp.estado.toLowerCase()}`}>{labelEstadoOportunidad(opp.estado)}</span>
-          {" · "}{opp.dominio}
-        </p>
-      </header>
+      <p className="muted small"><Link to="/oportunidades">← Centro de oportunidades</Link></p>
+      <PageHeader
+        title={opp.titulo}
+        subtitle={`${opp.codigo} · ${opp.dominio}`}
+        actions={<StatusBadge label={labelEstadoOportunidad(opp.estado)} tone="info" />}
+      />
 
       {error && <p className="error" role="alert">{error}</p>}
       {msg && <p className="success" role="status">{msg}</p>}
 
-      <section className="panel compact-panel chain-panel">
-        <h2 className="section-title">Cadena operativa</h2>
-        <ol className="chain-list">
-          {chainSteps.map((step) => (
-            <li key={step.label} className={step.done ? "done" : "pending"}>
-              {step.link ? <Link to={step.link}>{step.label}</Link> : step.label}
-            </li>
-          ))}
-        </ol>
+      <section className="panel compact-panel">
+        <h2 className="section-title">Progreso de la oportunidad</h2>
+        <OpportunityProgress currentStep={opportunityStepFromEstado(opp.estado)} />
       </section>
 
-      <div className="toolbar compact-toolbar">
+      <div className="toolbar compact-toolbar v1-opp-actions">
         {canEvaluate && (
-          <button type="button" onClick={onEvaluar} title="Re-evaluar pertinencia y prioridad">Evaluar</button>
+          <button type="button" className="btn secondary" onClick={onEvaluar} title="Re-evaluar pertinencia y prioridad">Evaluar</button>
         )}
         {canApprove && opp.estado === "PENDIENTE_APROBACION" && (
           <>
-            <button type="button" onClick={onAprobar} title="Aprobar oportunidad">Aprobar</button>
+            <button type="button" className="btn primary" onClick={onAprobar} title="Aprobar oportunidad">Aprobar</button>
             <input
               type="text"
               placeholder="Motivo de rechazo (opcional)"
@@ -425,7 +431,7 @@ export function OportunidadDetailPage() {
               onChange={(e) => setRejectMotivo(e.target.value)}
               className="inline-input"
             />
-            <button type="button" className="btn-secondary" onClick={onRechazar} title="Rechazar oportunidad">Rechazar</button>
+            <button type="button" className="btn secondary" onClick={onRechazar} title="Rechazar oportunidad">Rechazar</button>
           </>
         )}
         {canActivate && !opp.work_plan_id && !["DESCARTADA", "CANCELADA", "MATERIALIZADA"].includes(opp.estado) && (
@@ -434,11 +440,11 @@ export function OportunidadDetailPage() {
               <input type="checkbox" checked={autoExecute} onChange={(e) => setAutoExecute(e.target.checked)} />
               Ejecutar al activar
             </label>
-            <button type="button" onClick={onActivar} title="Activar y crear plan de trabajo">Activar</button>
+            <button type="button" className="btn primary" onClick={onActivar} title="Activar y crear plan de trabajo">Activar</button>
           </>
         )}
         {canRunOps && opp.work_plan_id && planStatus === "READY" && (
-          <button type="button" onClick={onRunPlan} title="Ejecutar plan de trabajo">Ejecutar plan</button>
+          <button type="button" className="btn primary" onClick={onRunPlan} title="Ejecutar plan de trabajo">Ejecutar plan</button>
         )}
       </div>
 
@@ -477,42 +483,52 @@ export function OportunidadDetailPage() {
         {tab === "seguimiento" && (
           <div className="stack-gap">
             {canManage && (
-              <form className="compact-form" onSubmit={onAddTracking}>
-                <h3 className="section-title">Registrar seguimiento</h3>
-                <label>
-                  Acción
-                  <input value={trackAccion} onChange={(e) => setTrackAccion(e.target.value)} required maxLength={200} />
-                </label>
-                <label>
-                  Observación / bloqueo
-                  <textarea value={trackObs} onChange={(e) => setTrackObs(e.target.value)} rows={2} />
-                </label>
-                <button type="submit">Guardar seguimiento</button>
-              </form>
+              <FormSection title="Registrar seguimiento" description="Acciones, bloqueos y resultados intermedios">
+                <form className="compact-form" onSubmit={onAddTracking}>
+                  <label>
+                    Acción
+                    <input value={trackAccion} onChange={(e) => setTrackAccion(e.target.value)} required maxLength={200} />
+                  </label>
+                  <label>
+                    Observación / bloqueo
+                    <textarea value={trackObs} onChange={(e) => setTrackObs(e.target.value)} rows={2} />
+                  </label>
+                  <button type="submit" className="btn primary">Guardar seguimiento</button>
+                </form>
+              </FormSection>
             )}
-            <table className="data-table compact-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Acción</th>
-                  <th>Observación</th>
-                  <th>Resultado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(trace?.seguimiento ?? []).length === 0 && (
-                  <tr><td colSpan={4} className="muted">Sin registros de seguimiento</td></tr>
-                )}
-                {(trace?.seguimiento ?? []).map((row, idx) => (
-                  <tr key={row.id ?? idx}>
-                    <td>{formatDate(row.fecha)}</td>
-                    <td>{row.accion}</td>
-                    <td>{row.bloqueo ?? "—"}</td>
-                    <td>{row.resultado ?? "—"}</td>
+            {(trace?.seguimiento ?? []).length === 0 ? (
+              <EmptyState
+                title="Sin registros de seguimiento"
+                description="Aún no hay seguimientos registrados. Documente acciones y bloqueos para mantener trazabilidad operativa."
+                action={
+                  canManage ? undefined : (
+                    <p className="muted small">Solicite a un responsable con permisos de gestión que registre el primer seguimiento.</p>
+                  )
+                }
+              />
+            ) : (
+              <table className="data-table compact-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Acción</th>
+                    <th>Observación</th>
+                    <th>Resultado</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {(trace?.seguimiento ?? []).map((row, idx) => (
+                    <tr key={row.id ?? idx}>
+                      <td>{formatDate(row.fecha)}</td>
+                      <td>{row.accion}</td>
+                      <td>{row.bloqueo ?? "—"}</td>
+                      <td>{row.resultado ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
@@ -527,7 +543,10 @@ export function OportunidadDetailPage() {
                 <dt>Evidencia</dt><dd><StructuredEvidenceView value={opp.resultado.evidencia} /></dd>
               </dl>
             ) : (
-              <p className="muted">Aún no hay resultado registrado.</p>
+              <EmptyState
+                title="Aún no hay resultado registrado"
+                description="Registre el valor real materializado, la evidencia y el estado cuando la oportunidad haya generado impacto medible."
+              />
             )}
             {canManage && opp.estado !== "MATERIALIZADA" && opp.estado !== "DESCARTADA" && (
               <form className="compact-form" onSubmit={onRegisterResult}>
@@ -561,20 +580,34 @@ export function OportunidadDetailPage() {
         {tab === "ejecucion" && (
           <div className="stack-gap">
             {!opp.work_plan_id ? (
-              <div className="empty-state-panel">
-                <p><strong>Sin plan de trabajo asociado</strong></p>
-                <p className="muted">La oportunidad debe estar aprobada y activada. Un responsable de operaciones puede crear el plan y asignar ejecución.</p>
-              </div>
+              <EmptyState
+                title="Ejecución pendiente de plan de trabajo"
+                description={
+                  opp.estado === "PENDIENTE_APROBACION" || opp.estado === "DETECTADA"
+                    ? "La oportunidad debe evaluarse, aprobarse y activarse antes de crear un plan de trabajo."
+                    : "Un responsable de operaciones debe crear el plan y asignar la ejecución tras la activación."
+                }
+                action={
+                  canApprove && opp.estado === "PENDIENTE_APROBACION" ? (
+                    <button type="button" className="btn primary" onClick={() => void onAprobar()}>Aprobar oportunidad</button>
+                  ) : canActivate && opp.estado === "APROBADA" ? (
+                    <button type="button" className="btn primary" onClick={() => void onActivar()}>Activar oportunidad</button>
+                  ) : undefined
+                }
+              />
             ) : (
               <>
                 <dl className="detail-grid">
                   <dt>Operación / Plan</dt>
-                  <dd><Link to={`/operaciones/${opp.work_plan_id}`}>{opp.work_plan_id}</Link></dd>
+                  <dd><Link to={`/operaciones/${opp.work_plan_id}`}>Ver plan de trabajo</Link></dd>
                   <dt>Ejecución</dt>
                   <dd><Link to={`/ejecuciones/${opp.work_plan_id}`}>Ver ejecución</Link></dd>
                   <dt>Estado del plan</dt><dd>{labelExec(EXECUTION_STATUS, planStatus)}</dd>
-                  <dt>Correlación</dt><dd>{opp.correlation_id ?? "—"}</dd>
                 </dl>
+                <TechnicalDetails title="Ver detalle técnico">
+                  <p className="mono small">Plan ID: {opp.work_plan_id}</p>
+                  <p className="mono small">Correlación: {opp.correlation_id ?? "—"}</p>
+                </TechnicalDetails>
                 {pendingApprovals.length > 0 && (
                   <div>
                     <h3 className="section-title">Aprobaciones pendientes</h3>
@@ -638,15 +671,23 @@ export function OportunidadDetailPage() {
         {tab === "finops" && (
           <div>
             <dl className="detail-grid">
-              <dt>Referencia de costos</dt><dd>{opp.finops_reference ?? "—"}</dd>
-              <dt>Plan de trabajo</dt>
-              <dd>{opp.work_plan_id ? <Link to={`/operaciones/${opp.work_plan_id}`}>{opp.work_plan_id}</Link> : "—"}</dd>
-              <dt>Atribución</dt><dd>{opp.atribucion_nivel ?? "—"}</dd>
               <dt>Valor potencial</dt><dd>{formatMoney(opp.valor_potencial)}</dd>
               <dt>Valor materializado</dt><dd>{formatMoney(opp.valor_materializado)}</dd>
               <dt>Costo IA acumulado</dt><dd>{economics?.total_cost_label ?? "—"}</dd>
               <dt>Consumos vinculados</dt><dd>{economics?.consumption_count ?? 0}</dd>
             </dl>
+            {!economics?.total_cost_label && (
+              <p className="muted small">
+                El costo de ejecución puede no estar disponible hasta que existan consumos IA atribuibles a esta oportunidad.
+              </p>
+            )}
+            <TechnicalDetails title="Ver detalle técnico">
+              <dl className="detail-grid compact">
+                <dt>Referencia de costos</dt><dd className="mono">{opp.finops_reference ?? "—"}</dd>
+                <dt>Plan de trabajo</dt><dd className="mono">{opp.work_plan_id ?? "—"}</dd>
+                <dt>Atribución</dt><dd>{opp.atribucion_nivel ?? "—"}</dd>
+              </dl>
+            </TechnicalDetails>
             {economics && economics.consumptions.length > 0 && (
               <table className="data-table compact-table" style={{ marginTop: "1rem" }}>
                 <thead>
@@ -695,7 +736,7 @@ export function OportunidadDetailPage() {
                   <dd>{valuation.real?.attribution_level ?? "—"}</dd>
                 </dl>
                 {valuation.missing_for_calculation && valuation.missing_for_calculation.length > 0 && (
-                  <p className="muted">Datos faltantes para cálculo: {valuation.missing_for_calculation.join("; ")}</p>
+                  <p className="muted">Para completar el cálculo faltan: {valuation.missing_for_calculation.join("; ")}</p>
                 )}
                 {valuation.scenarios && valuation.scenarios.length > 0 && (
                   <table className="data-table compact-table">
@@ -721,7 +762,7 @@ export function OportunidadDetailPage() {
                     <ul className="cc-list-compact">
                       {valuation.history.map((h, i) => (
                         <li key={i}>
-                          v{h.version} · {h.action} · {h.change_summary ?? ""} · {h.changed_at?.slice(0, 19)}
+                          v{h.version} · {labelValuationAction(String(h.action))} · {h.change_summary ?? ""} · {h.changed_at?.slice(0, 19)}
                         </li>
                       ))}
                     </ul>

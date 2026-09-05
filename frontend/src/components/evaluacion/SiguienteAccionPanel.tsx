@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { fetchSiguienteAccion } from "../../api";
-import { EmptyState, ErrorState, LoadingState } from "../AsyncState";
+import { ErrorState, LoadingState } from "../AsyncState";
 import { INTENCION_AGENTE, label, labelEstadoCapacidad } from "../../lib/evaluacionLabels";
 import { labelCabinaTab } from "../../lib/siguienteAccionTabMap";
+import { EmptyState, NextActionHero, StatusBadge } from "../v1";
 
 type AccionSugerida = {
   codigo: string;
@@ -38,40 +39,50 @@ export function SiguienteAccionPanel({ expedienteId, onNavigateTab, onRefresh }:
 
   if (loading) return <LoadingState message="Determinando siguiente acción…" />;
   if (error) return <ErrorState message={error} onRetry={load} />;
-  if (!data) return <EmptyState title="Sin sugerencias" />;
+  if (!data) {
+    return (
+      <EmptyState
+        title="Sin sugerencias disponibles"
+        description="Complete información del expediente o ejecute la evaluación para que EIAAX proponga la siguiente acción."
+        action={
+          <button type="button" className="btn secondary small" onClick={() => { load(); onRefresh?.(); }}>
+            Actualizar
+          </button>
+        }
+      />
+    );
+  }
 
   const principal = data.principal as AccionSugerida;
   const alternativas = (data.alternativas as AccionSugerida[]) ?? [];
 
+  const meta = (
+    <>
+      {principal.intencion && (
+        <StatusBadge tone="info" label={label(INTENCION_AGENTE, principal.intencion)} />
+      )}
+      {principal.estado_es && (
+        <StatusBadge
+          tone={principal.disponible === false ? "warning" : "neutral"}
+          label={labelEstadoCapacidad(principal.estado_es)}
+        />
+      )}
+    </>
+  );
+
   return (
-    <section className="siguiente-accion-panel card">
-      <header className="siguiente-accion-header">
-        <h3>Siguiente acción sugerida</h3>
-        <button type="button" className="btn small" onClick={() => { load(); onRefresh?.(); }}>
-          Actualizar
+    <section className="siguiente-accion-panel">
+      <NextActionHero
+        title={principal.titulo}
+        description={principal.descripcion}
+        actionLabel={principal.pestaña && principal.disponible !== false ? `Ir a ${labelCabinaTab(principal.pestaña)}` : undefined}
+        onAction={principal.pestaña && onNavigateTab && principal.disponible !== false ? () => onNavigateTab(principal.pestaña!) : undefined}
+        meta={meta}
+      />
+      <div className="siguiente-accion-toolbar">
+        <button type="button" className="btn small secondary" onClick={() => { load(); onRefresh?.(); }}>
+          Actualizar recomendación
         </button>
-      </header>
-      <div className={`siguiente-accion-principal ${principal.disponible === false ? "disabled" : ""}`}>
-        {principal.intencion && (
-          <span className="intencion-badge" title={label(INTENCION_AGENTE, principal.intencion)}>
-            {label(INTENCION_AGENTE, principal.intencion)}
-          </span>
-        )}
-        <strong>{principal.titulo}</strong>
-        <p className="muted small">{principal.descripcion}</p>
-        {principal.pestaña && onNavigateTab && (
-          <button
-            type="button"
-            className="btn small primary"
-            disabled={principal.disponible === false}
-            onClick={() => onNavigateTab(principal.pestaña!)}
-          >
-            Ir a {labelCabinaTab(principal.pestaña!)}
-          </button>
-        )}
-        {principal.estado_es && (
-          <span className="estado-capacidad-badge">{labelEstadoCapacidad(principal.estado_es)}</span>
-        )}
       </div>
       {alternativas.length > 0 && (
         <div className="siguiente-accion-alternativas">
@@ -79,9 +90,11 @@ export function SiguienteAccionPanel({ expedienteId, onNavigateTab, onRefresh }:
           <ul className="compact-list">
             {alternativas.map((a) => (
               <li key={a.codigo}>
-                <span className="intencion-badge tiny">
-                  {a.intencion ? label(INTENCION_AGENTE, a.intencion) : "—"}
-                </span>
+                <StatusBadge
+                  tone="neutral"
+                  className="tiny"
+                  label={a.intencion ? label(INTENCION_AGENTE, a.intencion) : "Acción"}
+                />
                 {a.titulo}
                 {a.pestaña && onNavigateTab && (
                   <button type="button" className="btn-link" onClick={() => onNavigateTab(a.pestaña!)}>

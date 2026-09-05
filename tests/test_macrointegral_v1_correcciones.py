@@ -28,8 +28,10 @@ def test_oportunidad_labels_traduce_codigos():
 
 def test_login_usa_brand_corporativo_no_hero():
     text = (FRONTEND / "pages/LoginPage.tsx").read_text(encoding="utf-8")
-    assert 'level="corporativo"' in text
-    assert 'level="hero"' not in text
+    assert "EnterpriseMark" in text
+    assert "useLoginIdentity" in text
+    assert 'level="ex08"' not in text
+    assert "eiaax-v1-experience" in text
 
 
 def test_espacio_externo_no_crear_entidad_si_existe():

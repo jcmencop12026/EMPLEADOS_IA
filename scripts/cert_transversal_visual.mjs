@@ -186,6 +186,30 @@ async function auditViewport(page) {
   });
 }
 
+async function captureLoginVisual(browser, results) {
+  for (const vp of VIEWPORTS) {
+    const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
+    await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(800);
+    const defects = [];
+    const hasLogo = await page.locator(".enterprise-mark__img, .brand-mark img, .brand-mark--hero").count();
+    if (!hasLogo) defects.push("login sin logo/identidad visible");
+    if (!await page.locator(".login-page.eiaax-v1-experience").count()) defects.push("login fuera de sistema experiencia V1");
+    const screenshot = `${vp.name}_00-login.png`;
+    await page.screenshot({ path: path.join(ARTIFACTS, screenshot), fullPage: false });
+    results.push({
+      kind: "visual",
+      viewport: vp.name,
+      viewId: "00",
+      view: "Login",
+      pass: defects.length === 0,
+      defects,
+      screenshot,
+    });
+    await page.close();
+  }
+}
+
 async function runVisualChecks(browser, views, results) {
   for (const vp of VIEWPORTS) {
     const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
@@ -298,6 +322,10 @@ async function main() {
   const views = buildViews(expId, oppId);
   if (views.length !== 22) throw new Error(`Se esperaban 22 vistas, hay ${views.length}`);
 
+  const loginResults = [];
+  await captureLoginVisual(browser, loginResults);
+  results.push(...loginResults);
+
   await runVisualChecks(browser, views, results);
   await runCabinaTabFunctional(browser, results, expId);
   await runOppTabFunctional(browser, results, oppId);
@@ -316,7 +344,7 @@ async function main() {
     eiaax_cert_sha: process.env.EIAAX_CERT_SHA || process.env.EIAAX_SHA || null,
     viewsTotal: 22,
     resolutions: VIEWPORTS.map((v) => v.name),
-    visualChecksExpected: 44,
+    visualChecksExpected: 46,
     visualPass,
     visualFail,
     functionalPass: funcPass,
