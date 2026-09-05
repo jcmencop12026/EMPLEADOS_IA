@@ -5,7 +5,7 @@
 **Rama:** `cursor/ajuste-transversal-1-85e4`
 **SHA inicial (backup):** `3e6d2c3d825983280e640f70849e76e78abcbb6b`
 **SHA referencia ChatGPT:** `72978e4d1b3753a53064e8a2e29b72f974294bfc`
-**SHA final:** *(completar tras push)*
+**SHA final:** `8821a78`
 **NO merge · NO promoción · NO POST-V1 · NO cambios Windows arranque**
 
 ---
