@@ -243,8 +243,7 @@ jobs:
           EIAAX_BASE: http://127.0.0.1:5180
           EIAAX_USER: admin
           EIAAX_PASS: Admin2026!
-          EIAAX_SHA: ${{ env.CERT_SHA }}
-          GITHUB_SHA: ${{ env.CERT_SHA }}
+          EIAAX_CERT_SHA: ${{ env.CERT_SHA }}
           EIAAX_ARTIFACTS: data/evidence/transversal-visual
         run: node scripts/cert_transversal_visual.mjs
 
@@ -253,15 +252,13 @@ jobs:
           EIAAX_BASE: http://127.0.0.1:5180
           EIAAX_USER: admin
           EIAAX_PASS: Admin2026!
-          EIAAX_SHA: ${{ env.CERT_SHA }}
-          GITHUB_SHA: ${{ env.CERT_SHA }}
+          EIAAX_CERT_SHA: ${{ env.CERT_SHA }}
           EIAAX_ARTIFACTS: data/evidence/vista-empresa-flow
         run: node scripts/cert_vista_empresa_flow.mjs
 
       - name: Verificar coherencia SHA evidencia
         env:
-          EIAAX_SHA: ${{ env.CERT_SHA }}
-          GITHUB_SHA: ${{ env.CERT_SHA }}
+          EIAAX_CERT_SHA: ${{ env.CERT_SHA }}
           EIAAX_ARTIFACT_NAME: eiaax-visual-pr171-${{ env.CERT_SHA }}
         run: node scripts/verify_cert_sha_coherence.mjs
 

@@ -13,31 +13,21 @@ export function gitHeadSha() {
 
 /**
  * Resuelve el SHA de certificación y falla si hay divergencia entre
- * git HEAD, EIAAX_SHA y GITHUB_SHA.
+ * git HEAD y EIAAX_CERT_SHA / EIAAX_SHA.
+ * Nota: no usar process.env.GITHUB_SHA — en PRs GitHub Actions lo inyecta
+ * con el merge commit sintético y no coincide con el checkout probado.
  */
 export function resolveCertSha() {
   const head = gitHeadSha();
-  const envSha = (process.env.EIAAX_SHA || "").trim();
-  const ghSha = (process.env.GITHUB_SHA || "").trim();
-  const candidates = [head, envSha, ghSha].filter(Boolean);
+  const certSha = (process.env.EIAAX_CERT_SHA || process.env.EIAAX_SHA || "").trim();
 
   if (!head) {
     throw new Error("No se pudo obtener git rev-parse HEAD para certificación");
   }
-  if (envSha && envSha !== head) {
-    throw new Error(`EIAAX_SHA (${envSha}) ≠ git HEAD (${head})`);
-  }
-  if (ghSha && ghSha !== head) {
-    throw new Error(`GITHUB_SHA (${ghSha}) ≠ git HEAD (${head})`);
-  }
-  if (envSha && ghSha && envSha !== ghSha) {
-    throw new Error(`EIAAX_SHA (${envSha}) ≠ GITHUB_SHA (${ghSha})`);
+  if (certSha && certSha !== head) {
+    throw new Error(`EIAAX_CERT_SHA (${certSha}) ≠ git HEAD (${head})`);
   }
 
-  const unique = [...new Set(candidates)];
-  if (unique.length > 1) {
-    throw new Error(`SHA incoherentes: ${unique.join(", ")}`);
-  }
   return head;
 }
 
@@ -60,8 +50,8 @@ export function writeShaManifest(artifactsDir, sha, extra = {}) {
   const manifest = {
     sha,
     git_head: gitHeadSha(),
-    eiaax_sha: process.env.EIAAX_SHA || null,
-    github_sha: process.env.GITHUB_SHA || null,
+    eiaax_cert_sha: process.env.EIAAX_CERT_SHA || process.env.EIAAX_SHA || null,
+    github_actions_sha: process.env.GITHUB_SHA || null,
     generated_at: new Date().toISOString(),
     ...extra,
   };

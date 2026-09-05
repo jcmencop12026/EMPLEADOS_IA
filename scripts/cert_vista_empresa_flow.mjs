@@ -86,8 +86,8 @@ async function main() {
   const report = {
     sha: certSha,
     git_head: certSha,
-    github_sha: process.env.GITHUB_SHA || null,
-    eiaax_sha: process.env.EIAAX_SHA || null,
+    eiaax_cert_sha: process.env.EIAAX_CERT_SHA || process.env.EIAAX_SHA || null,
+    github_sha: certSha,
     expId,
     defects,
     pass: defects.length === 0,

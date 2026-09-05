@@ -312,8 +312,8 @@ async function main() {
   const report = {
     sha: certSha,
     git_head: certSha,
-    github_sha: process.env.GITHUB_SHA || null,
-    eiaax_sha: process.env.EIAAX_SHA || null,
+    github_sha: certSha,
+    eiaax_cert_sha: process.env.EIAAX_CERT_SHA || process.env.EIAAX_SHA || null,
     viewsTotal: 22,
     resolutions: VIEWPORTS.map((v) => v.name),
     visualChecksExpected: 44,
