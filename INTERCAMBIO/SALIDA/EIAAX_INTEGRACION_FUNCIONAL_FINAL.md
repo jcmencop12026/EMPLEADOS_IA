@@ -4,7 +4,7 @@
 **Ruta:** `D:\EMPLEADOS_IA_CONVERGENCIA`  
 **Rama:** `cursor/integracion-funcional-final-85e4`  
 **SHA anterior auditado:** `a3f794a59874498f413c172f7db0300349ee5688`  
-**SHA nuevo:** *(ver commit final tras push)*  
+**SHA nuevo:** `cc4cd5a596eccc78b9a83d23b8c93379b85cf5d2`  
 **NO merge · NO promoción Windows · NO POST-V1 · NO nueva auditoría general**
 
 ---
@@ -55,7 +55,7 @@
 
 ---
 
-## 4. Evidencia E2E y build (HEAD local pre-push)
+## 4. Evidencia E2E y build — SHA `cc4cd5a596eccc78b9a83d23b8c93379b85cf5d2`
 
 | Comando | Suite | Cantidad | Resultado |
 |---|---|---|---|
