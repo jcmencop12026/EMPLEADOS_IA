@@ -176,23 +176,25 @@ jobs:
     name: Certificación visual PR171
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    env:
+      CERT_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Registrar SHA de certificación
         run: |
           set -euo pipefail
           HEAD_SHA="$(git rev-parse HEAD)"
-          echo "HEAD_SHA=$HEAD_SHA" >> "$GITHUB_ENV"
-          echo "GITHUB_SHA=$GITHUB_SHA" >> "$GITHUB_ENV"
-          if [ "$HEAD_SHA" != "$GITHUB_SHA" ]; then
-            echo "ERROR: git HEAD ($HEAD_SHA) ≠ github.sha ($GITHUB_SHA)"
+          echo "EIAAX_CERT_SHA=$CERT_SHA" >> "$GITHUB_ENV"
+          if [ "$HEAD_SHA" != "$CERT_SHA" ]; then
+            echo "ERROR: git HEAD ($HEAD_SHA) ≠ PR head ($CERT_SHA)"
             exit 1
           fi
-          echo "SHA certificación: $HEAD_SHA"
+          echo "SHA certificación (PR head): $CERT_SHA"
 
       - name: Configurar Node.js
         uses: actions/setup-node@v4
@@ -241,8 +243,8 @@ jobs:
           EIAAX_BASE: http://127.0.0.1:5180
           EIAAX_USER: admin
           EIAAX_PASS: Admin2026!
-          EIAAX_SHA: ${{ github.sha }}
-          GITHUB_SHA: ${{ github.sha }}
+          EIAAX_SHA: ${{ env.CERT_SHA }}
+          GITHUB_SHA: ${{ env.CERT_SHA }}
           EIAAX_ARTIFACTS: data/evidence/transversal-visual
         run: node scripts/cert_transversal_visual.mjs
 
@@ -251,24 +253,24 @@ jobs:
           EIAAX_BASE: http://127.0.0.1:5180
           EIAAX_USER: admin
           EIAAX_PASS: Admin2026!
-          EIAAX_SHA: ${{ github.sha }}
-          GITHUB_SHA: ${{ github.sha }}
+          EIAAX_SHA: ${{ env.CERT_SHA }}
+          GITHUB_SHA: ${{ env.CERT_SHA }}
           EIAAX_ARTIFACTS: data/evidence/vista-empresa-flow
         run: node scripts/cert_vista_empresa_flow.mjs
 
       - name: Verificar coherencia SHA evidencia
         env:
-          EIAAX_SHA: ${{ github.sha }}
-          GITHUB_SHA: ${{ github.sha }}
-          EIAAX_ARTIFACT_NAME: eiaax-visual-pr171-${{ github.sha }}
+          EIAAX_SHA: ${{ env.CERT_SHA }}
+          GITHUB_SHA: ${{ env.CERT_SHA }}
+          EIAAX_ARTIFACT_NAME: eiaax-visual-pr171-${{ env.CERT_SHA }}
         run: node scripts/verify_cert_sha_coherence.mjs
 
       - name: Confirmar HEAD inmutable tras certificación
         run: |
           set -euo pipefail
           HEAD_AFTER="$(git rev-parse HEAD)"
-          if [ "$HEAD_AFTER" != "${{ github.sha }}" ]; then
-            echo "ERROR: HEAD cambió tras certificación ($HEAD_AFTER ≠ ${{ github.sha }})"
+          if [ "$HEAD_AFTER" != "$CERT_SHA" ]; then
+            echo "ERROR: HEAD cambió tras certificación ($HEAD_AFTER ≠ $CERT_SHA)"
             exit 1
           fi
           echo "HEAD estable: $HEAD_AFTER"
@@ -277,7 +279,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: eiaax-visual-pr171-${{ github.sha }}
+          name: eiaax-visual-pr171-${{ env.CERT_SHA }}
           path: |
             data/evidence/transversal-visual/
             data/evidence/vista-empresa-flow/
