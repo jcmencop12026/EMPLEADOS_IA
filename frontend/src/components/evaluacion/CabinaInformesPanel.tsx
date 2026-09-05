@@ -10,10 +10,12 @@ import {
   type InformeComercialConfig,
   type InformeImpacto,
 } from "../../api";
+import { buildNarrativaFromInterpretacion, INFORMACION_INSUFICIENTE } from "../../lib/informeNarrativa";
 
 type Props = {
   expedienteId: string;
   entidadNombre?: string;
+  areaProceso?: string | null;
   isDemo?: boolean;
 };
 
@@ -39,7 +41,7 @@ function demoMonto(block: unknown): string {
   return `${b.etiqueta ?? ""}: $${Number(b.monto).toLocaleString("es-CO")} COP`.trim();
 }
 
-export function CabinaInformesPanel({ expedienteId, entidadNombre, isDemo }: Props) {
+export function CabinaInformesPanel({ expedienteId, entidadNombre, areaProceso, isDemo }: Props) {
   const [vista, setVista] = useState<VistaInforme>("ejecutiva");
   const [informes, setInformes] = useState<InformeImpacto[]>([]);
   const [comerciales, setComerciales] = useState<InformeComercialConfig[]>([]);
@@ -67,19 +69,13 @@ export function CabinaInformesPanel({ expedienteId, entidadNombre, isDemo }: Pro
   const demoTag = esDemo ? "DEMO — DATOS SIMULADOS" : null;
 
   const narrativa = useMemo(
-    () => ({
-      que: String(interpretacion?.que_ocurrio ?? "Glosas recurrentes y reprocesos manuales en facturación y cartera."),
-      porQue: String(interpretacion?.por_que ?? "Codificación inconsistente y validación documental lenta."),
-      significa: String(interpretacion?.que_significa ?? "Pérdida de ingresos recuperables y sobrecarga operativa."),
-      atencion: String(interpretacion?.requiere_atencion ?? "Aprobación pendiente del piloto y documentación incompleta."),
-      oportunidad: String(interpretacion?.oportunidad ?? "Automatización codificación + auditoría documental asistida."),
-      valor: esDemo
-        ? `${demoMonto(resumen?.estimado)} · ${demoMonto(resumen?.potencial)}`
-        : fmt((resumen as Record<string, unknown>)?.estimado ?? (resumen as Record<string, unknown>)?.potencial),
-      recomendacion: String(interpretacion?.recomendacion ?? "Capacitar equipo, desplegar reglas IA y medir trimestralmente."),
-    }),
+    () => buildNarrativaFromInterpretacion(interpretacion, resumen, esDemo),
     [interpretacion, resumen, esDemo],
   );
+
+  const procesoLabel = areaProceso?.trim()
+    ? `Proceso / área: ${areaProceso.trim()}`
+    : "Proceso / área: no definido en el expediente";
 
   const vistaMeta = VISTAS.find((v) => v.id === vista);
 
@@ -120,7 +116,7 @@ export function CabinaInformesPanel({ expedienteId, entidadNombre, isDemo }: Pro
           <div className="executive-kpi-strip">
             <div className="executive-kpi"><span>Informes</span><strong>{informes.length}</strong></div>
             <div className="executive-kpi"><span>Indicadores</span><strong>{indicadores.length}</strong></div>
-            <div className="executive-kpi"><span>Alertas</span><strong>1</strong></div>
+            <div className="executive-kpi"><span>Alertas</span><strong>{indicadores.some((i) => i.real != null && i.antes != null && Number(i.real) > Number(i.antes) * 1.1) ? "1+" : "0"}</strong></div>
             <div className="executive-kpi"><span>Valor {esDemo ? "simulado" : "estimado"}</span><strong>{esDemo ? demoMonto(resumen?.estimado) : fmt(resumen?.estimado)}</strong></div>
           </div>
           <dl className="detail-grid compact">
@@ -144,7 +140,7 @@ export function CabinaInformesPanel({ expedienteId, entidadNombre, isDemo }: Pro
       {!loading && vista === "operativa" && (
         <section className="panel compact-panel informe-vista-operativa">
           <h3 className="section-title">Vista operativa</h3>
-          <p className="muted small">Proceso: Facturación / cartera · {entidadNombre ?? "Empresa"}</p>
+          <p className="muted small">{procesoLabel}</p>
           <p className="muted small"><strong>Muestra:</strong> indicadores, desviaciones, evolución antes/proyectado/real.</p>
           <p className="muted small"><strong>Omite:</strong> economía privada del operador y scoring interno.</p>
           {indicadores.length === 0 ? (
@@ -217,7 +213,11 @@ export function CabinaInformesPanel({ expedienteId, entidadNombre, isDemo }: Pro
           {esDemo && <p className="demo-banner">{demoTag}</p>}
           <dl className="detail-grid compact">
             <dt>Hallazgos publicables</dt>
-            <dd>Glosas recurrentes, reprocesos manuales y oportunidad de automatización (según visibilidad).</dd>
+            <dd>
+              {indicadores.length > 0 || narrativa.que !== INFORMACION_INSUFICIENTE
+                ? narrativa.que
+                : INFORMACION_INSUFICIENTE}
+            </dd>
             <dt>Indicadores autorizados</dt>
             <dd>{indicadores.length} indicador(es) antes/proyectado/real visibles según permisos.</dd>
             <dt>Valor publicable</dt>

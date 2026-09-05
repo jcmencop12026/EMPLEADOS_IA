@@ -137,6 +137,7 @@ jobs:
             PYTHONPATH=backend:. python -m pytest \
               tests/test_cierre_brechas_horizonte.py \
               tests/test_db_startup_805e.py \
+              tests/test_integracion_funcional_final_v1.py \
               -v
           else
             PYTHONPATH=backend:. python -m pytest -m "not certification_intensive" -v

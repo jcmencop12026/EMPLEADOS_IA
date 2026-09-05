@@ -947,7 +947,7 @@ def get_impacto_resumen(
         "tiene_graficos": any(i.get("grafico") for i in indicadores),
         "nota": "PROYECTADO identifica estimaciones; REAL solo con evidencia verificada.",
         "resumen": _impacto_resumen_economico(db, exp, organization_id, vista_entidad=vista_entidad),
-        "interpretacion": _impacto_interpretacion(exp, indicadores, vista_entidad=vista_entidad),
+        "interpretacion": _impacto_interpretacion(exp, indicadores, hallazgos, vista_entidad=vista_entidad),
     }
 
 
@@ -963,28 +963,127 @@ def _impacto_resumen_economico(
     return expediente_economic_resumen(db, organization_id, exp.id, vista_entidad=vista_entidad)
 
 
+_INSUFICIENTE_INTERPRETACION = "Información insuficiente para determinar esta conclusión."
+
+
 def _impacto_interpretacion(
     exp: EvaluacionExpediente,
     indicadores: list[dict[str, Any]],
+    hallazgos: list[EvaluacionHallazgo],
     *,
     vista_entidad: bool = False,
 ) -> dict[str, Any]:
     is_demo = _is_demo_expediente(exp)
     banner = "DEMO — DATOS SIMULADOS" if is_demo else None
+    titulos = [h.titulo for h in hallazgos if h.titulo]
+
+    def _field(*candidates: str | None) -> str:
+        for c in candidates:
+            if c and str(c).strip():
+                return str(c).strip()
+        return _INSUFICIENTE_INTERPRETACION
+
+    presentacion = f"/demo/presentacion/{exp.id}" if is_demo else f"/presentacion/{exp.id}"
+    acciones = [
+        {"label": "Abrir cabina", "ruta": f"/evaluaciones/{exp.id}"},
+        {"label": "Oportunidades", "ruta": "/oportunidades"},
+        {"label": "Presentar", "ruta": presentacion},
+    ]
+
+    if is_demo:
+        from app.demo_comercial_constants import DEMO_NECESIDAD_RESUMEN
+
+        que_demo = "; ".join(titulos[:3]) if titulos else (exp.necesidad or DEMO_NECESIDAD_RESUMEN.split(".")[0])
+        return {
+            "banner": banner,
+            "que_ocurrio": f"[DEMO] {que_demo}",
+            "por_que": _field(exp.area_proceso, "Escenario simulado de salud/facturación para demostración comercial."),
+            "que_significa": _field(exp.objetivo, "Ilustra oportunidades de automatización — no es verificación real."),
+            "requiere_atencion": _field(
+                "Completar documentación demo y decidir piloto" if exp.porcentaje_informacion < 100 else None,
+                "Revisar decisión de piloto en escenario demo.",
+            ),
+            "oportunidad": _field(
+                titulos[0] if titulos else None,
+                "Automatización de procesos críticos del escenario demo.",
+            ),
+            "valor": "Ver pestaña Valor — cifras etiquetadas; en demo son simulaciones, no verificación real.",
+            "recomendacion": _field(
+                exp.objetivo,
+                "Capacitar equipo, desplegar reglas IA y medir antes/proyectado/real trimestral (demo).",
+            ),
+            "acciones": acciones,
+            "indicadores_clave": len(indicadores),
+            "vista_entidad": vista_entidad,
+        }
+
+    if not titulos and not indicadores and not (exp.necesidad or "").strip():
+        return {
+            "banner": banner,
+            "que_ocurrio": _INSUFICIENTE_INTERPRETACION,
+            "por_que": _INSUFICIENTE_INTERPRETACION,
+            "que_significa": _INSUFICIENTE_INTERPRETACION,
+            "requiere_atencion": _INSUFICIENTE_INTERPRETACION,
+            "oportunidad": _INSUFICIENTE_INTERPRETACION,
+            "valor": _INSUFICIENTE_INTERPRETACION,
+            "recomendacion": _INSUFICIENTE_INTERPRETACION,
+            "acciones": acciones,
+            "indicadores_clave": 0,
+            "vista_entidad": vista_entidad,
+        }
+
+    hechos = [h for h in hallazgos if h.tipo_contenido == "HECHO"]
+    inferencias = [h for h in hallazgos if h.tipo_contenido == "INFERENCIA"]
+    recomendaciones = [h for h in hallazgos if h.tipo_contenido == "RECOMENDACION"]
+    impactos = [h.impacto_resumen for h in hallazgos if h.impacto_resumen and str(h.impacto_resumen).strip()]
+    oportunidad_hallazgos = [h for h in hallazgos if h.opportunity_id or h.tipo_contenido == "RECOMENDACION"]
+
+    if hechos:
+        que_ocurrio = "; ".join(h.titulo for h in hechos[:3] if h.titulo)
+    elif (exp.necesidad or "").strip():
+        que_ocurrio = str(exp.necesidad).strip()
+    else:
+        que_ocurrio = _INSUFICIENTE_INTERPRETACION
+
+    if inferencias:
+        inf = inferencias[0]
+        por_que = (inf.descripcion or inf.evidencia or inf.titulo or "").strip() or _INSUFICIENTE_INTERPRETACION
+    else:
+        por_que = _INSUFICIENTE_INTERPRETACION
+
+    if impactos:
+        que_significa = str(impactos[0]).strip()
+    else:
+        que_significa = _INSUFICIENTE_INTERPRETACION
+
+    if oportunidad_hallazgos:
+        oportunidad = oportunidad_hallazgos[0].titulo
+    else:
+        oportunidad = _INSUFICIENTE_INTERPRETACION
+
+    if (exp.porcentaje_informacion or 0) < 80:
+        requiere_atencion = (
+            f"Completar información del expediente ({exp.porcentaje_informacion or 0}% registrado)."
+        )
+    else:
+        requiere_atencion = _INSUFICIENTE_INTERPRETACION
+
+    if recomendaciones:
+        rec = recomendaciones[0]
+        recomendacion = (rec.descripcion or rec.titulo or "").strip() or _INSUFICIENTE_INTERPRETACION
+    else:
+        recomendacion = _INSUFICIENTE_INTERPRETACION
+
     return {
         "banner": banner,
-        "que_ocurrio": "Glosas recurrentes y reprocesos en facturación/cartera detectados en el expediente.",
-        "por_que": "Codificación inconsistente y validación documental lenta en procesos críticos.",
-        "que_significa": "Pérdida de ingresos recuperables y sobrecarga operativa del equipo.",
-        "requiere_atencion": "Completar documentación pendiente y decidir piloto de automatización.",
-        "oportunidad": "Automatizar codificación y auditoría documental asistida por Empleado IA.",
-        "valor": "Ver pestaña Valor — cifras etiquetadas; en demo son simulaciones, no verificación real.",
-        "recomendacion": "Capacitar equipo, desplegar reglas IA y medir antes/proyectado/real trimestral.",
-        "acciones": [
-            {"label": "Abrir cabina", "ruta": f"/evaluaciones/{exp.id}"},
-            {"label": "Oportunidades", "ruta": "/oportunidades"},
-            {"label": "Presentar", "ruta": f"/demo/presentacion/{exp.id}" if is_demo else f"/presentacion/{exp.id}"},
-        ],
+        "que_ocurrio": que_ocurrio,
+        "por_que": por_que,
+        "que_significa": que_significa,
+        "requiere_atencion": requiere_atencion,
+        "oportunidad": oportunidad,
+        "valor": "Ver pestaña Valor — cifras etiquetadas según naturaleza (verificado/estimado/potencial).",
+        "recomendacion": recomendacion,
+        "acciones": acciones,
         "indicadores_clave": len(indicadores),
         "vista_entidad": vista_entidad,
     }

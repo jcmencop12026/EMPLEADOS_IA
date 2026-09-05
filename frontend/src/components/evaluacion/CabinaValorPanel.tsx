@@ -90,6 +90,11 @@ export function CabinaValorPanel({ expedienteId, impacto, canManageIndicadores, 
           <dt>ROI</dt><dd>{finops?.roi_label ?? "—"}</dd>
           <dt>Ahorro estimado</dt><dd>{finops?.estimated_savings ?? "—"}</dd>
         </dl>
+        {finops && (
+          <p className="muted small" role="note">
+            FinOps: datos consolidados a nivel organización{finops.atribucion_nivel ? ` (${finops.atribucion_nivel})` : ""}, no atribuidos exclusivamente a este expediente.
+          </p>
+        )}
         {interpretacion && (
           <dl className="detail-grid compact cc-interpretacion">
             <dt>Qué significa</dt><dd>{String(interpretacion.que_significa ?? "—")}</dd>

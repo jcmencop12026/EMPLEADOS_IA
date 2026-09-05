@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchSiguienteAccion } from "../../api";
 import { EmptyState, ErrorState, LoadingState } from "../AsyncState";
 import { INTENCION_AGENTE, label } from "../../lib/evaluacionLabels";
+import { labelCabinaTab } from "../../lib/siguienteAccionTabMap";
 
 type AccionSugerida = {
   codigo: string;
@@ -53,7 +54,7 @@ export function SiguienteAccionPanel({ expedienteId, onNavigateTab, onRefresh }:
       <div className={`siguiente-accion-principal ${principal.disponible === false ? "disabled" : ""}`}>
         {principal.intencion && (
           <span className="intencion-badge" title={label(INTENCION_AGENTE, principal.intencion)}>
-            {principal.intencion}
+            {label(INTENCION_AGENTE, principal.intencion)}
           </span>
         )}
         <strong>{principal.titulo}</strong>
@@ -65,7 +66,7 @@ export function SiguienteAccionPanel({ expedienteId, onNavigateTab, onRefresh }:
             disabled={principal.disponible === false}
             onClick={() => onNavigateTab(principal.pestaña!)}
           >
-            Ir a {principal.pestaña}
+            Ir a {labelCabinaTab(principal.pestaña!)}
           </button>
         )}
         {principal.estado_es && (
@@ -78,7 +79,9 @@ export function SiguienteAccionPanel({ expedienteId, onNavigateTab, onRefresh }:
           <ul className="compact-list">
             {alternativas.map((a) => (
               <li key={a.codigo}>
-                <span className="intencion-badge tiny">{a.intencion ?? "—"}</span>
+                <span className="intencion-badge tiny">
+                  {a.intencion ? label(INTENCION_AGENTE, a.intencion) : "—"}
+                </span>
                 {a.titulo}
                 {a.pestaña && onNavigateTab && (
                   <button type="button" className="btn-link" onClick={() => onNavigateTab(a.pestaña!)}>
