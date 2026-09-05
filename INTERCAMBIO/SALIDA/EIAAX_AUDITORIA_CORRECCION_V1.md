@@ -45,11 +45,9 @@
 | Campo | Valor |
 |-------|-------|
 | SHA inicial (auditoría) | `36d173957b6a876e106d18a33898af5281ebc8b8` |
-| SHA final | `24408b919ffda3362adae28cda1e5e9cdcfd78dd` |
+| SHA final | `fcfa21b813cee1c9f6619401beb5fabb8a25a50e` |
 
-## Certificación local (SHA final `943eca8`)
-
-Validación local ejecutada sobre commit intermedio `2bc2238` (misma base de código); CI certifica `943eca8`.
+## Certificación local (SHA final `24408b9`)
 
 | Prueba | Resultado |
 |--------|-----------|
@@ -63,9 +61,9 @@ Validación local ejecutada sobre commit intermedio `2bc2238` (misma base de có
 
 ## Artefacto CI
 
-Nombre exacto: `eiaax-visual-pr171-943eca839c4f4f8896797249918384cc943e77d8`
+Nombre exacto: `eiaax-visual-pr171-24408b919ffda3362adae28cda1e5e9cdcfd78dd`
 
-`report.json` debe declarar `"sha": "943eca839c4f4f8896797249918384cc943e77d8"`.
+`report.json` debe declarar `"sha": "24408b919ffda3362adae28cda1e5e9cdcfd78dd"`.
 
 ## Pendientes reales
 
