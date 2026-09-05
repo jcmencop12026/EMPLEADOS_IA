@@ -204,11 +204,10 @@ jobs:
       - name: Arrancar backend y frontend
         run: |
           set -euo pipefail
-          export DATABASE_URL=sqlite:///./eiaax_visual_ci.db
+          export DATABASE_URL=sqlite:///./backend/eiaax_visual_ci.db
           export JWT_SECRET=ci-visual-test-secret-min-32-chars-long
           export ALLOW_INSECURE_DEV_DEFAULTS=true
-          cd backend && PYTHONPATH=. alembic upgrade head
-          cd ..
+          PYTHONPATH=backend:. python backend/scripts/seed_demo_horizonte.py
           PYTHONPATH=backend:. uvicorn app.main:app --host 127.0.0.1 --port 8000 &
           cd frontend && npm run dev -- --host 127.0.0.1 --port 5180 &
           for i in $(seq 1 30); do
@@ -220,6 +219,8 @@ jobs:
       - name: Certificación visual transversal
         env:
           EIAAX_BASE: http://127.0.0.1:5180
+          EIAAX_USER: admin
+          EIAAX_PASS: Admin2026!
           EIAAX_SHA: ${{ github.sha }}
           EIAAX_ARTIFACTS: data/evidence/transversal-visual
         run: node scripts/cert_transversal_visual.mjs
@@ -227,6 +228,8 @@ jobs:
       - name: Certificación flujo Vista Empresa
         env:
           EIAAX_BASE: http://127.0.0.1:5180
+          EIAAX_USER: admin
+          EIAAX_PASS: Admin2026!
           EIAAX_SHA: ${{ github.sha }}
           EIAAX_ARTIFACTS: data/evidence/vista-empresa-flow
         run: node scripts/cert_vista_empresa_flow.mjs
