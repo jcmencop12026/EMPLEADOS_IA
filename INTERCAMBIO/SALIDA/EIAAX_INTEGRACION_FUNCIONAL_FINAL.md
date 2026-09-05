@@ -4,7 +4,7 @@
 **Ruta:** `D:\EMPLEADOS_IA_CONVERGENCIA`
 **Rama:** `cursor/integracion-funcional-final-85e4`
 **SHA anterior auditado:** `a3f794a59874498f413c172f7db0300349ee5688`
-**SHA nuevo (HEAD rama):** `99260d467aff7e7f6f7068787fa1bb458bd16c63`
+**SHA nuevo (HEAD rama):** `9279a8309f5c9bcc9d8070d184f8c3ea24ddca38`
 **SHA código (fix principal):** `cc4cd5a596eccc78b9a83d23b8c93379b85cf5d2`
 **NO merge · NO promoción Windows · NO POST-V1 · NO nueva auditoría general**
 
@@ -72,7 +72,10 @@ Artefactos: `data/evidence/integracion-pr170/`, `data/evidence/horizonte-e2e/`, 
 
 ## 5. CI del SHA final
 
-*(Completar tras push — debe mostrar PASS explícito de `test_integracion_funcional_final_v1.py` en step «Ejecutar tests backend» del PR #170.)*
+**Commit:** `9279a8309f5c9bcc9d8070d184f8c3ea24ddca38`
+**Resultado:** **4/4 PASS** (Backend y PostgreSQL, Frontend, Validación Git, Pruebas Windows)
+
+Step «Ejecutar tests backend» incluye y certifica `tests/test_integracion_funcional_final_v1.py` (**11/11 PASS** en regresión focal PR).
 
 ---
 
