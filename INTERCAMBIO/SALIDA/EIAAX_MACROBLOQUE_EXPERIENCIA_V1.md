@@ -3,7 +3,8 @@
 **PR:** #171 — `cursor/ajuste-transversal-1-85e4`  
 **Repositorio:** jcmencop12026/EMPLEADOS_IA  
 **SHA inicial (base certificada):** `0760365f042a98f81c7d45d6f5305849a3765d08`  
-**SHA final (HEAD PR):** `d85aa85e71e0edae3f8816cc90f77360d0a14e9c`  
+**SHA final (HEAD PR):** `2a96616806130f6010af680258080f15de193e12`  
+**SHA feature (código):** `d85aa85e71e0edae3f8816cc90f77360d0a14e9c`  
 **Fecha entrega:** 2026-09-05  
 
 ---
@@ -101,7 +102,7 @@ Segunda revisión humana sobre `0760365` confirmó que el ajuste transversal ant
 | `test_publicable_cliente_v1.py` | PASS (8/8) |
 | `cert_transversal_visual.mjs` | **46/46** visual + **18/18** tabs |
 | `cert_vista_empresa_flow.mjs` | PASS |
-| `verify_cert_sha_coherence.mjs` | PASS — SHA `d85aa85…` |
+| `verify_cert_sha_coherence.mjs` | PASS — SHA `2a96616…` |
 | Cabina tabs | 10/10 funcional |
 | Oportunidad tabs | 8/8 funcional |
 
@@ -113,7 +114,7 @@ Segunda revisión humana sobre `0760365` confirmó que el ajuste transversal ant
 
 - **46 capturas** en `data/evidence/transversal-visual/` (incluye **login** 1366 + 1920)
 - Flujo Vista Empresa: `data/evidence/vista-empresa-flow/`
-- Artefacto CI esperado: `eiaax-visual-pr171-d85aa85e71e0edae3f8816cc90f77360d0a14e9c`
+- Artefacto CI esperado: `eiaax-visual-pr171-2a96616806130f6010af680258080f15de193e12`
 
 ### Matriz visual agente (muestra)
 
@@ -169,4 +170,4 @@ Segunda revisión humana sobre `0760365` confirmó que el ajuste transversal ant
 
 **MACROBLOQUE V1 EXPERIENCIA INTEGRAL — ENTREGA COMPLETA PARA AUDITORÍA**
 
-SHA `0760365` → `d85aa85` · Cert visual 46/46 · Tabs 18/18 · Detener para revisión ChatGPT.
+SHA `0760365` → `2a96616` (feature `d85aa85`) · Cert visual 46/46 · Tabs 18/18 · Detener para revisión ChatGPT.
