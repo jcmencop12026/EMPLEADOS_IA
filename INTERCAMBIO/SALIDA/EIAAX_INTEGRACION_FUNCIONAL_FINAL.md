@@ -4,7 +4,8 @@
 **Ruta:** `D:\EMPLEADOS_IA_CONVERGENCIA`  
 **Rama:** `cursor/integracion-funcional-final-85e4`  
 **SHA anterior auditado:** `a3f794a59874498f413c172f7db0300349ee5688`  
-**SHA nuevo:** `cc4cd5a596eccc78b9a83d23b8c93379b85cf5d2`  
+**SHA nuevo (HEAD rama):** `fac567c523f5a3e6d416580a0f388c1520ef8fb9`  
+**SHA código (fix principal):** `cc4cd5a596eccc78b9a83d23b8c93379b85cf5d2`  
 **NO merge · NO promoción Windows · NO POST-V1 · NO nueva auditoría general**
 
 ---
