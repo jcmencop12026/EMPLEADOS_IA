@@ -1,11 +1,11 @@
 # EIAAX — Integración funcional final V1 (corrección consolidada ChatGPT PR #170)
 
-**Fecha:** 2026-09-05  
-**Ruta:** `D:\EMPLEADOS_IA_CONVERGENCIA`  
-**Rama:** `cursor/integracion-funcional-final-85e4`  
-**SHA anterior auditado:** `a3f794a59874498f413c172f7db0300349ee5688`  
-**SHA nuevo (HEAD rama):** `bb9749de3e469b5837e6d5d767031fcb3dfeaa7d`  
-**SHA código (fix principal):** `cc4cd5a596eccc78b9a83d23b8c93379b85cf5d2`  
+**Fecha:** 2026-09-05
+**Ruta:** `D:\EMPLEADOS_IA_CONVERGENCIA`
+**Rama:** `cursor/integracion-funcional-final-85e4`
+**SHA anterior auditado:** `a3f794a59874498f413c172f7db0300349ee5688`
+**SHA nuevo (HEAD rama):** `99260d467aff7e7f6f7068787fa1bb458bd16c63`
+**SHA código (fix principal):** `cc4cd5a596eccc78b9a83d23b8c93379b85cf5d2`
 **NO merge · NO promoción Windows · NO POST-V1 · NO nueva auditoría general**
 
 ---
