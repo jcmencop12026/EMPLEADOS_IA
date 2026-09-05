@@ -385,6 +385,7 @@ export function EvaluacionConsolePage() {
           <CabinaInformesPanel
             expedienteId={evaluacionId}
             entidadNombre={exp.entidad_nombre}
+            areaProceso={exp.area_proceso}
             isDemo={exp.entidad_nombre?.startsWith("[DEMO]")}
           />
         )}

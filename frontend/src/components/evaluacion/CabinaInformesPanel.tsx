@@ -15,6 +15,7 @@ import { buildNarrativaFromInterpretacion, INFORMACION_INSUFICIENTE } from "../.
 type Props = {
   expedienteId: string;
   entidadNombre?: string;
+  areaProceso?: string | null;
   isDemo?: boolean;
 };
 
@@ -40,7 +41,7 @@ function demoMonto(block: unknown): string {
   return `${b.etiqueta ?? ""}: $${Number(b.monto).toLocaleString("es-CO")} COP`.trim();
 }
 
-export function CabinaInformesPanel({ expedienteId, entidadNombre, isDemo }: Props) {
+export function CabinaInformesPanel({ expedienteId, entidadNombre, areaProceso, isDemo }: Props) {
   const [vista, setVista] = useState<VistaInforme>("ejecutiva");
   const [informes, setInformes] = useState<InformeImpacto[]>([]);
   const [comerciales, setComerciales] = useState<InformeComercialConfig[]>([]);
@@ -72,9 +73,9 @@ export function CabinaInformesPanel({ expedienteId, entidadNombre, isDemo }: Pro
     [interpretacion, resumen, esDemo],
   );
 
-  const procesoLabel = entidadNombre?.trim()
-    ? `Proceso / área: ${entidadNombre}`
-    : "Proceso: sin área definida en el expediente";
+  const procesoLabel = areaProceso?.trim()
+    ? `Proceso / área: ${areaProceso.trim()}`
+    : "Proceso / área: no definido en el expediente";
 
   const vistaMeta = VISTAS.find((v) => v.id === vista);
 

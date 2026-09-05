@@ -465,7 +465,13 @@ def set_publicacion_estado(
         pub.publicado_at = _utcnow()
         pub.version += 1 if prev == "PUBLICADO_EMPRESA" else 0
     pub.estado = estado
-    if destinatario:
+    actor = db.query(User).filter(User.id == user_id).first()
+    actor_contact = None
+    if actor:
+        actor_contact = (actor.email or actor.username or "").strip() or None
+    if actor_contact:
+        pub.destinatario = actor_contact
+    elif destinatario:
         pub.destinatario = destinatario
     if audiencia is not None:
         pub.audiencia = audiencia

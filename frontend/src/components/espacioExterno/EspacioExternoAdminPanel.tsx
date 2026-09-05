@@ -2,7 +2,6 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
   createEntidadExterna,
   fetchEntidadExterna,
-  fetchMe,
   inviteAccesoExterno,
   listEntidadesExternas,
   promoverEntidadCliente,
@@ -15,17 +14,10 @@ type Props = { expedienteId: string };
 export function EspacioExternoAdminPanel({ expedienteId }: Props) {
   const [entidadId, setEntidadId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
-  const [publisherEmail, setPublisherEmail] = useState<string>("");
   const [publicacionObs, setPublicacionObs] = useState("");
   const [contratoRef, setContratoRef] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchMe()
-      .then((me) => setPublisherEmail(me.email ?? me.username))
-      .catch(() => undefined);
-  }, []);
 
   const load = useCallback(() => {
     if (!entidadId) return;
@@ -89,17 +81,8 @@ export function EspacioExternoAdminPanel({ expedienteId }: Props) {
   }
 
   async function onPublicar(pubId: string, estado: string) {
-    if (!publisherEmail.trim()) {
-      setError("No se pudo determinar el usuario publicador autenticado.");
-      return;
-    }
     try {
-      await setPublicacionEstado(
-        pubId,
-        estado,
-        publisherEmail.trim(),
-        publicacionObs.trim() || undefined,
-      );
+      await setPublicacionEstado(pubId, estado, undefined, publicacionObs.trim() || undefined);
       setMsg(`Estado → ${labelEstadoPublicacion(estado)}`);
       setError(null);
       load();

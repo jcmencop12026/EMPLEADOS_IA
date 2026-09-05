@@ -1032,23 +1032,57 @@ def _impacto_interpretacion(
             "vista_entidad": vista_entidad,
         }
 
+    hechos = [h for h in hallazgos if h.tipo_contenido == "HECHO"]
+    inferencias = [h for h in hallazgos if h.tipo_contenido == "INFERENCIA"]
+    recomendaciones = [h for h in hallazgos if h.tipo_contenido == "RECOMENDACION"]
+    impactos = [h.impacto_resumen for h in hallazgos if h.impacto_resumen and str(h.impacto_resumen).strip()]
+    oportunidad_hallazgos = [h for h in hallazgos if h.opportunity_id or h.tipo_contenido == "RECOMENDACION"]
+
+    if hechos:
+        que_ocurrio = "; ".join(h.titulo for h in hechos[:3] if h.titulo)
+    elif (exp.necesidad or "").strip():
+        que_ocurrio = str(exp.necesidad).strip()
+    else:
+        que_ocurrio = _INSUFICIENTE_INTERPRETACION
+
+    if inferencias:
+        inf = inferencias[0]
+        por_que = (inf.descripcion or inf.evidencia or inf.titulo or "").strip() or _INSUFICIENTE_INTERPRETACION
+    else:
+        por_que = _INSUFICIENTE_INTERPRETACION
+
+    if impactos:
+        que_significa = str(impactos[0]).strip()
+    else:
+        que_significa = _INSUFICIENTE_INTERPRETACION
+
+    if oportunidad_hallazgos:
+        oportunidad = oportunidad_hallazgos[0].titulo
+    else:
+        oportunidad = _INSUFICIENTE_INTERPRETACION
+
+    if (exp.porcentaje_informacion or 0) < 80:
+        requiere_atencion = (
+            f"Completar información del expediente ({exp.porcentaje_informacion or 0}% registrado)."
+        )
+    else:
+        requiere_atencion = _INSUFICIENTE_INTERPRETACION
+
+    if recomendaciones:
+        rec = recomendaciones[0]
+        recomendacion = (rec.descripcion or rec.titulo or "").strip() or _INSUFICIENTE_INTERPRETACION
+    else:
+        recomendacion = _INSUFICIENTE_INTERPRETACION
+
     return {
         "banner": banner,
-        "que_ocurrio": _field("; ".join(titulos[:3]) if titulos else None, exp.necesidad),
-        "por_que": _field(exp.area_proceso, exp.objetivo),
-        "que_significa": _field(exp.objetivo, exp.necesidad),
-        "requiere_atencion": _field(
-            "Completar información pendiente del expediente" if (exp.porcentaje_informacion or 0) < 80 else None,
-            exp.estado if exp.estado not in ("CERRADO", "ARCHIVADO") else None,
-        ),
-        "oportunidad": _field(titulos[0] if titulos else None),
+        "que_ocurrio": que_ocurrio,
+        "por_que": por_que,
+        "que_significa": que_significa,
+        "requiere_atencion": requiere_atencion,
+        "oportunidad": oportunidad,
         "valor": "Ver pestaña Valor — cifras etiquetadas según naturaleza (verificado/estimado/potencial).",
-        "recomendacion": _field(
-            "Completar evaluación y documentación antes de proyectar valor."
-            if (exp.porcentaje_informacion or 0) < 50
-            else None,
-            exp.objetivo,
-        ),
+        "recomendacion": recomendacion,
         "acciones": acciones,
         "indicadores_clave": len(indicadores),
         "vista_entidad": vista_entidad,
