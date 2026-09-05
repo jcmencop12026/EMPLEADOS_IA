@@ -9,7 +9,7 @@
 - Nuevo módulo `scripts/lib/cert_sha.mjs`: `resolveCertSha()` exige `git HEAD` = `EIAAX_SHA` = `GITHUB_SHA`.
 - Certificaciones escriben `sha` en `report.json` y `sha-manifest.json`; `assertReportSha()` antes de salir.
 - `scripts/verify_cert_sha_coherence.mjs` valida ambos reportes + nombre de artefacto CI.
-- CI (`certificacion-visual-pr171`): checkout `fetch-depth: 0`, registro SHA, limpieza de evidencia previa, verificación post-cert, upload solo si `success()`, paths acotados.
+- CI usa `github.event.pull_request.head.sha` (no merge `github.sha` ni `GITHUB_SHA` del runner).
 - Eliminados `report.json` versionados (causa del mismatch `e242eb5` vs `36d1739`).
 
 ### 2. Backend Publicable cliente (fail-closed)
@@ -45,27 +45,24 @@
 | Campo | Valor |
 |-------|-------|
 | SHA inicial (auditoría) | `36d173957b6a876e106d18a33898af5281ebc8b8` |
-| SHA final | `fcfa21b813cee1c9f6619401beb5fabb8a25a50e` |
+| SHA final | `88b90c3cae0e300048d437c2fa761d1bbbd6c915` |
 
-## Certificación local (SHA final `24408b9`)
+## Certificación CI (SHA final `88b90c3`)
 
 | Prueba | Resultado |
 |--------|-----------|
-| `npm run build` | PASS |
-| `test_macrointegral_v1_correcciones.py` | 6/6 |
-| `test_integracion_funcional_final_v1.py` | 11/11 |
-| `test_publicable_cliente_v1.py` | 8/8 |
-| Visual 44/44 + tabs 18/18 | PASS |
+| Run ID | `33977698792` |
+| Jobs | 5/5 PASS |
+| Visual 44/44 + tabs 18/18 | PASS (job Certificación visual PR171) |
 | Vista Empresa E2E | PASS |
-| Coherencia SHA local | PASS (`verify_cert_sha_coherence.mjs`) |
+| Coherencia SHA | HEAD = artefacto = report.json = `88b90c3cae0e300048d437c2fa761d1bbbd6c915` |
 
 ## Artefacto CI
 
-Nombre exacto: `eiaax-visual-pr171-24408b919ffda3362adae28cda1e5e9cdcfd78dd`
+Nombre exacto: `eiaax-visual-pr171-88b90c3cae0e300048d437c2fa761d1bbbd6c915`
 
-`report.json` debe declarar `"sha": "24408b919ffda3362adae28cda1e5e9cdcfd78dd"`.
+`report.json` → `"sha": "88b90c3cae0e300048d437c2fa761d1bbbd6c915"`
 
 ## Pendientes reales
 
-- Confirmar run CI 5/5 y artefacto con SHA coherente tras push.
 - Auditoría independiente ChatGPT (no declarar APTO desde este agente).
