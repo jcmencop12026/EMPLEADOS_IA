@@ -1,0 +1,551 @@
+/**
+ * EIAAX V1 — Sistema transversal visual (Macrobloque 1)
+ * Densidad, ancho útil, pestañas, botones, formularios, tablas, KPI y cadenas.
+ * No altera lógica funcional; solo presentación coherente.
+ */
+
+:root {
+  --eiaax-content-pad-x: 14px;
+  --eiaax-content-pad-y: 10px;
+  --eiaax-page-gap: 10px;
+  --eiaax-panel-pad: 10px 12px;
+  --eiaax-panel-gap: 8px;
+  --eiaax-radius: 6px;
+  --eiaax-border: #e2e8f0;
+  --eiaax-surface: #ffffff;
+  --eiaax-surface-muted: #f8fafc;
+  --eiaax-text-muted: #64748b;
+  --eiaax-primary: #2563eb;
+  --eiaax-primary-hover: #1d4ed8;
+  --eiaax-primary-soft: #eff6ff;
+  --eiaax-danger: #b91c1c;
+  --eiaax-danger-soft: #fef2f2;
+  --eiaax-tab-rail: #f1f5f9;
+  --eiaax-tab-active-bg: #ffffff;
+  --eiaax-tab-active-border: #2563eb;
+  --eiaax-focus-ring: 0 0 0 2px #bfdbfe;
+  --eiaax-assistant-clearance: 76px;
+}
+
+/* ── Ancho útil ───────────────────────────────────────────── */
+
+.eiaax-v1-transversal .content {
+  padding: var(--eiaax-content-pad-y) var(--eiaax-content-pad-x);
+  padding-bottom: calc(var(--eiaax-content-pad-y) + var(--eiaax-assistant-clearance));
+}
+
+.eiaax-v1-transversal .ops-page,
+.eiaax-v1-transversal .trabajo-page,
+.eiaax-v1-transversal .eval-console,
+.eiaax-v1-transversal .salud-page,
+.eiaax-v1-transversal .presentacion-ejecutiva-page,
+.eiaax-v1-transversal .guia-rapida-page,
+.eiaax-v1-transversal .config-page {
+  max-width: none;
+  width: 100%;
+  gap: var(--eiaax-page-gap);
+}
+
+.eiaax-v1-transversal .eval-console-main {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+/* ── Densidad vertical ────────────────────────────────────── */
+
+.eiaax-v1-transversal .page-header {
+  margin-bottom: var(--eiaax-panel-gap);
+}
+
+.eiaax-v1-transversal .page-header h1,
+.eiaax-v1-transversal .page-header.compact h1 {
+  font-size: 1.05rem;
+  margin: 0 0 2px;
+  line-height: 1.25;
+}
+
+.eiaax-v1-transversal .page-header .muted,
+.eiaax-v1-transversal .page-header.compact .muted {
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.eiaax-v1-transversal .panel,
+.eiaax-v1-transversal .compact-panel {
+  padding: var(--eiaax-panel-pad);
+  margin-bottom: var(--eiaax-panel-gap);
+}
+
+.eiaax-v1-transversal .panel h2,
+.eiaax-v1-transversal .panel h3,
+.eiaax-v1-transversal .section-title {
+  font-size: 0.92rem;
+  margin: 0 0 6px;
+}
+
+.eiaax-v1-transversal .stack-gap {
+  gap: var(--eiaax-page-gap);
+}
+
+.eiaax-v1-transversal .cc-cockpit {
+  gap: var(--eiaax-page-gap);
+}
+
+.eiaax-v1-transversal .cc-cockpit-grid,
+.eiaax-v1-transversal .cc-mini-grid,
+.eiaax-v1-transversal .trust-layout {
+  gap: var(--eiaax-page-gap);
+}
+
+.eiaax-v1-transversal .eval-console-header,
+.eiaax-v1-transversal .cabina-empresa-header {
+  margin-bottom: var(--eiaax-panel-gap);
+}
+
+.eiaax-v1-transversal .eval-metrics,
+.eiaax-v1-transversal .executive-kpi-strip {
+  margin-bottom: var(--eiaax-panel-gap);
+}
+
+/* ── Sistema de pestañas transversal ─────────────────────── */
+
+.eiaax-v1-transversal .tab-bar,
+.eiaax-v1-transversal .tab-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 2px;
+  padding: 3px;
+  margin-bottom: var(--eiaax-page-gap);
+  background: var(--eiaax-tab-rail);
+  border: 1px solid var(--eiaax-border);
+  border-radius: var(--eiaax-radius);
+}
+
+.eiaax-v1-transversal .tab-bar button,
+.eiaax-v1-transversal .tab-nav button,
+.eiaax-v1-transversal .tab-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #334155;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.eiaax-v1-transversal .tab-bar button:hover,
+.eiaax-v1-transversal .tab-nav button:hover,
+.eiaax-v1-transversal .tab-btn:hover {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: #cbd5e1;
+}
+
+.eiaax-v1-transversal .tab-bar button:focus-visible,
+.eiaax-v1-transversal .tab-nav button:focus-visible,
+.eiaax-v1-transversal .tab-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--eiaax-focus-ring);
+}
+
+.eiaax-v1-transversal .tab-bar button.tab-active,
+.eiaax-v1-transversal .tab-nav button.active,
+.eiaax-v1-transversal .tab-btn.active {
+  background: var(--eiaax-tab-active-bg);
+  border-color: var(--eiaax-tab-active-border);
+  color: #1e3a8a;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.eiaax-v1-transversal .salud-tabs {
+  margin-bottom: var(--eiaax-page-gap);
+}
+
+/* ── Sistema de botones ───────────────────────────────────── */
+
+.eiaax-v1-transversal .btn {
+  min-height: 28px;
+  padding: 5px 11px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.2;
+  border-radius: 4px;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, opacity 0.12s ease;
+}
+
+.eiaax-v1-transversal .btn:focus-visible {
+  outline: none;
+  box-shadow: var(--eiaax-focus-ring);
+}
+
+.eiaax-v1-transversal .btn.primary {
+  background: var(--eiaax-primary);
+  border-color: var(--eiaax-primary);
+  color: #fff;
+}
+
+.eiaax-v1-transversal .btn.primary:hover:not(:disabled) {
+  background: var(--eiaax-primary-hover);
+  border-color: var(--eiaax-primary-hover);
+}
+
+.eiaax-v1-transversal .btn.secondary,
+.eiaax-v1-transversal .btn.small.secondary {
+  background: var(--eiaax-surface);
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.eiaax-v1-transversal .btn.secondary:hover:not(:disabled) {
+  background: var(--eiaax-surface-muted);
+  border-color: #94a3b8;
+}
+
+.eiaax-v1-transversal .btn.tertiary,
+.eiaax-v1-transversal .btn.link {
+  background: transparent;
+  border-color: transparent;
+  color: var(--eiaax-primary);
+  padding-left: 0;
+  padding-right: 0;
+  min-height: auto;
+}
+
+.eiaax-v1-transversal .btn.tertiary:hover:not(:disabled),
+.eiaax-v1-transversal .btn.link:hover:not(:disabled) {
+  color: var(--eiaax-primary-hover);
+  text-decoration: underline;
+}
+
+.eiaax-v1-transversal .btn.danger {
+  background: var(--eiaax-danger-soft);
+  border-color: #fecaca;
+  color: var(--eiaax-danger);
+}
+
+.eiaax-v1-transversal .btn.danger:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.eiaax-v1-transversal .btn:disabled,
+.eiaax-v1-transversal .btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.eiaax-v1-transversal .btn.small,
+.eiaax-v1-transversal .btn-sm {
+  min-height: 24px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+}
+
+.eiaax-v1-transversal .ops-actions,
+.eiaax-v1-transversal .cabina-empresa-header__actions,
+.eiaax-v1-transversal .cc-empresa-actions,
+.eiaax-v1-transversal .compact-actions,
+.eiaax-v1-transversal .cc-publish-actions {
+  gap: 6px;
+}
+
+/* Botones sueltos en paneles → aspecto secundario coherente */
+.eiaax-v1-transversal .panel > button:not(.btn),
+.eiaax-v1-transversal .compact-form > button:not(.btn) {
+  min-height: 28px;
+  padding: 5px 11px;
+  font-size: 0.78rem;
+  border: 1px solid var(--eiaax-primary);
+  border-radius: 4px;
+  background: var(--eiaax-primary);
+  color: #fff;
+  cursor: pointer;
+}
+
+.eiaax-v1-transversal .panel > button:not(.btn):hover {
+  background: var(--eiaax-primary-hover);
+}
+
+/* ── Formularios compactos en grid ────────────────────────── */
+
+.eiaax-v1-transversal .compact-form {
+  max-width: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px 12px;
+  align-items: end;
+  margin-bottom: var(--eiaax-panel-gap);
+}
+
+.eiaax-v1-transversal .compact-form h3,
+.eiaax-v1-transversal .compact-form .section-title {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
+.eiaax-v1-transversal .compact-form label {
+  margin-bottom: 0;
+}
+
+.eiaax-v1-transversal .compact-form label:has(textarea) {
+  grid-column: span 2;
+}
+
+.eiaax-v1-transversal .compact-form > button,
+.eiaax-v1-transversal .compact-form > .btn {
+  grid-column: 1 / -1;
+  justify-self: start;
+  width: auto;
+}
+
+.eiaax-v1-transversal .form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px 12px;
+  align-items: end;
+}
+
+.eiaax-v1-transversal .form-grid label {
+  margin-bottom: 0;
+}
+
+.eiaax-v1-transversal .detail-grid,
+.eiaax-v1-transversal .detail-dl {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0 0 var(--eiaax-panel-gap);
+  font-size: 0.82rem;
+}
+
+.eiaax-v1-transversal .detail-grid dt,
+.eiaax-v1-transversal .detail-dl dt {
+  color: var(--eiaax-text-muted);
+  font-weight: 500;
+}
+
+.eiaax-v1-transversal .detail-grid dd,
+.eiaax-v1-transversal .detail-dl dd {
+  margin: 0;
+}
+
+@media (min-width: 1100px) {
+  .eiaax-v1-transversal .detail-grid,
+  .eiaax-v1-transversal .detail-dl {
+    grid-template-columns: repeat(2, minmax(120px, 160px) minmax(0, 1fr));
+  }
+}
+
+/* ── Tablas ───────────────────────────────────────────────── */
+
+.eiaax-v1-transversal .data-table {
+  font-size: 0.78rem;
+}
+
+.eiaax-v1-transversal .data-table th,
+.eiaax-v1-transversal .data-table td {
+  padding: 5px 8px;
+  vertical-align: top;
+}
+
+.eiaax-v1-transversal .data-table th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #475569;
+}
+
+.eiaax-v1-transversal .data-table tbody tr:hover td {
+  background: #f8fafc;
+}
+
+.eiaax-v1-transversal .data-table td.num,
+.eiaax-v1-transversal .data-table th.num,
+.eiaax-v1-transversal .data-table .cell-money {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.eiaax-v1-transversal .table-wrap {
+  width: 100%;
+}
+
+/* ── KPI / tarjetas ───────────────────────────────────────── */
+
+.eiaax-v1-transversal .executive-kpi,
+.eiaax-v1-transversal .cc-kpi-item,
+.eiaax-v1-transversal .dashboard-card,
+.eiaax-v1-transversal .salud-kpi-card,
+.eiaax-v1-transversal .value-nature-card {
+  padding: 6px 9px;
+  min-height: 0;
+}
+
+.eiaax-v1-transversal .executive-kpi {
+  flex: 1 1 100px;
+  min-width: 96px;
+}
+
+.eiaax-v1-transversal .executive-kpi span,
+.eiaax-v1-transversal .cc-kpi-label,
+.eiaax-v1-transversal .dashboard-card-label,
+.eiaax-v1-transversal .salud-kpi-mini span {
+  font-size: 0.68rem;
+}
+
+.eiaax-v1-transversal .executive-kpi strong,
+.eiaax-v1-transversal .cc-kpi-value,
+.eiaax-v1-transversal .dashboard-card-value {
+  font-size: 0.9rem;
+}
+
+.eiaax-v1-transversal .cc-kpi-strip,
+.eiaax-v1-transversal .salud-kpi-bar,
+.eiaax-v1-transversal .dashboard-grid,
+.eiaax-v1-transversal .value-nature-grid {
+  gap: 6px;
+}
+
+.eiaax-v1-transversal .cc-kpi-strip {
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+}
+
+/* ── Cadenas y etapas de proceso ──────────────────────────── */
+
+.eiaax-v1-transversal .chain-list {
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.eiaax-v1-transversal .chain-list li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  border: 1px solid var(--eiaax-border);
+  background: var(--eiaax-surface-muted);
+  list-style: none;
+}
+
+.eiaax-v1-transversal .chain-list li.done {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.eiaax-v1-transversal .chain-list li.pending {
+  color: var(--eiaax-text-muted);
+  border-style: dashed;
+}
+
+.eiaax-v1-transversal .wizard-step {
+  border: 1px solid var(--eiaax-border);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+.eiaax-v1-transversal .wizard-step.active {
+  border-color: var(--eiaax-tab-active-border);
+  background: var(--eiaax-primary-soft);
+}
+
+.eiaax-v1-transversal .impl-cycle-bar {
+  gap: 4px;
+}
+
+.eiaax-v1-transversal .impl-cycle-step {
+  min-width: 64px;
+}
+
+.eiaax-v1-transversal .cc-ciclo-strip {
+  padding: 8px 10px;
+}
+
+.eiaax-v1-transversal .cc-ciclo-chip {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--eiaax-border);
+  background: var(--eiaax-surface);
+}
+
+.eiaax-v1-transversal .cc-ciclo-chip--link:hover {
+  border-color: #93c5fd;
+  background: var(--eiaax-primary-soft);
+}
+
+.eiaax-v1-transversal .topbar {
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.eiaax-v1-transversal .topbar-actions {
+  flex-shrink: 0;
+  padding-right: 6px;
+}
+
+.eiaax-v1-transversal .notification-badge {
+  right: 0;
+}
+
+.eiaax-v1-transversal .sidebar {
+  padding: 10px;
+}
+
+.eiaax-v1-transversal .sidebar a,
+.eiaax-v1-transversal .nav-section-title {
+  padding: 5px 7px;
+}
+
+/* ── Asistente contextual ─────────────────────────────────── */
+
+.eiaax-v1-transversal .contextual-assistant-rail {
+  right: 10px;
+  bottom: 10px;
+  width: min(360px, calc(100vw - 220px));
+}
+
+.eiaax-v1-transversal .eiaax-assistant--compact:not(.eiaax-assistant--open) {
+  max-width: 320px;
+}
+
+/* ── Responsive escritorio menor ──────────────────────────── */
+
+@media (max-width: 1100px) {
+  .eiaax-v1-transversal .compact-form label:has(textarea) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  .eiaax-v1-transversal .content {
+    padding: 10px;
+    padding-bottom: calc(10px + var(--eiaax-assistant-clearance));
+  }
+
+  .eiaax-v1-transversal .tab-bar button,
+  .eiaax-v1-transversal .tab-nav button {
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+/* Sin scroll horizontal global de la app */
+.eiaax-v1-transversal .layout,
+.eiaax-v1-transversal .main,
+.eiaax-v1-transversal .content {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.eiaax-v1-transversal .table-wrap,
+.eiaax-v1-transversal .notification-grid-wrap {
+  overflow-x: auto;
+}

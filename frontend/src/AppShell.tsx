@@ -139,7 +139,7 @@ function AppShellInner() {
   }
 
   return (
-    <div className={`layout ${collapsed ? "sidebar-collapsed" : ""}`}>
+    <div className={`layout eiaax-v1-transversal ${collapsed ? "sidebar-collapsed" : ""}`}>
       <aside className="sidebar" title="Navegación principal">
         <div className="brand-row">
           <div className="brand">
