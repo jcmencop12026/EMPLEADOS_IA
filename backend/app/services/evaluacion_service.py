@@ -947,7 +947,7 @@ def get_impacto_resumen(
         "tiene_graficos": any(i.get("grafico") for i in indicadores),
         "nota": "PROYECTADO identifica estimaciones; REAL solo con evidencia verificada.",
         "resumen": _impacto_resumen_economico(db, exp, organization_id, vista_entidad=vista_entidad),
-        "interpretacion": _impacto_interpretacion(exp, indicadores, vista_entidad=vista_entidad),
+        "interpretacion": _impacto_interpretacion(exp, indicadores, hallazgos, vista_entidad=vista_entidad),
     }
 
 
@@ -963,28 +963,93 @@ def _impacto_resumen_economico(
     return expediente_economic_resumen(db, organization_id, exp.id, vista_entidad=vista_entidad)
 
 
+_INSUFICIENTE_INTERPRETACION = "Información insuficiente para determinar esta conclusión."
+
+
 def _impacto_interpretacion(
     exp: EvaluacionExpediente,
     indicadores: list[dict[str, Any]],
+    hallazgos: list[EvaluacionHallazgo],
     *,
     vista_entidad: bool = False,
 ) -> dict[str, Any]:
     is_demo = _is_demo_expediente(exp)
     banner = "DEMO — DATOS SIMULADOS" if is_demo else None
+    titulos = [h.titulo for h in hallazgos if h.titulo]
+
+    def _field(*candidates: str | None) -> str:
+        for c in candidates:
+            if c and str(c).strip():
+                return str(c).strip()
+        return _INSUFICIENTE_INTERPRETACION
+
+    presentacion = f"/demo/presentacion/{exp.id}" if is_demo else f"/presentacion/{exp.id}"
+    acciones = [
+        {"label": "Abrir cabina", "ruta": f"/evaluaciones/{exp.id}"},
+        {"label": "Oportunidades", "ruta": "/oportunidades"},
+        {"label": "Presentar", "ruta": presentacion},
+    ]
+
+    if is_demo:
+        from app.demo_comercial_constants import DEMO_NECESIDAD_RESUMEN
+
+        que_demo = "; ".join(titulos[:3]) if titulos else (exp.necesidad or DEMO_NECESIDAD_RESUMEN.split(".")[0])
+        return {
+            "banner": banner,
+            "que_ocurrio": f"[DEMO] {que_demo}",
+            "por_que": _field(exp.area_proceso, "Escenario simulado de salud/facturación para demostración comercial."),
+            "que_significa": _field(exp.objetivo, "Ilustra oportunidades de automatización — no es verificación real."),
+            "requiere_atencion": _field(
+                "Completar documentación demo y decidir piloto" if exp.porcentaje_informacion < 100 else None,
+                "Revisar decisión de piloto en escenario demo.",
+            ),
+            "oportunidad": _field(
+                titulos[0] if titulos else None,
+                "Automatización de procesos críticos del escenario demo.",
+            ),
+            "valor": "Ver pestaña Valor — cifras etiquetadas; en demo son simulaciones, no verificación real.",
+            "recomendacion": _field(
+                exp.objetivo,
+                "Capacitar equipo, desplegar reglas IA y medir antes/proyectado/real trimestral (demo).",
+            ),
+            "acciones": acciones,
+            "indicadores_clave": len(indicadores),
+            "vista_entidad": vista_entidad,
+        }
+
+    if not titulos and not indicadores and not (exp.necesidad or "").strip():
+        return {
+            "banner": banner,
+            "que_ocurrio": _INSUFICIENTE_INTERPRETACION,
+            "por_que": _INSUFICIENTE_INTERPRETACION,
+            "que_significa": _INSUFICIENTE_INTERPRETACION,
+            "requiere_atencion": _INSUFICIENTE_INTERPRETACION,
+            "oportunidad": _INSUFICIENTE_INTERPRETACION,
+            "valor": _INSUFICIENTE_INTERPRETACION,
+            "recomendacion": _INSUFICIENTE_INTERPRETACION,
+            "acciones": acciones,
+            "indicadores_clave": 0,
+            "vista_entidad": vista_entidad,
+        }
+
     return {
         "banner": banner,
-        "que_ocurrio": "Glosas recurrentes y reprocesos en facturación/cartera detectados en el expediente.",
-        "por_que": "Codificación inconsistente y validación documental lenta en procesos críticos.",
-        "que_significa": "Pérdida de ingresos recuperables y sobrecarga operativa del equipo.",
-        "requiere_atencion": "Completar documentación pendiente y decidir piloto de automatización.",
-        "oportunidad": "Automatizar codificación y auditoría documental asistida por Empleado IA.",
-        "valor": "Ver pestaña Valor — cifras etiquetadas; en demo son simulaciones, no verificación real.",
-        "recomendacion": "Capacitar equipo, desplegar reglas IA y medir antes/proyectado/real trimestral.",
-        "acciones": [
-            {"label": "Abrir cabina", "ruta": f"/evaluaciones/{exp.id}"},
-            {"label": "Oportunidades", "ruta": "/oportunidades"},
-            {"label": "Presentar", "ruta": f"/demo/presentacion/{exp.id}" if is_demo else f"/presentacion/{exp.id}"},
-        ],
+        "que_ocurrio": _field("; ".join(titulos[:3]) if titulos else None, exp.necesidad),
+        "por_que": _field(exp.area_proceso, exp.objetivo),
+        "que_significa": _field(exp.objetivo, exp.necesidad),
+        "requiere_atencion": _field(
+            "Completar información pendiente del expediente" if (exp.porcentaje_informacion or 0) < 80 else None,
+            exp.estado if exp.estado not in ("CERRADO", "ARCHIVADO") else None,
+        ),
+        "oportunidad": _field(titulos[0] if titulos else None),
+        "valor": "Ver pestaña Valor — cifras etiquetadas según naturaleza (verificado/estimado/potencial).",
+        "recomendacion": _field(
+            "Completar evaluación y documentación antes de proyectar valor."
+            if (exp.porcentaje_informacion or 0) < 50
+            else None,
+            exp.objetivo,
+        ),
+        "acciones": acciones,
         "indicadores_clave": len(indicadores),
         "vista_entidad": vista_entidad,
     }

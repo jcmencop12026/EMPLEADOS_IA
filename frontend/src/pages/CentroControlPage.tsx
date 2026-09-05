@@ -51,7 +51,19 @@ export function CentroControlPage() {
   const [seccion, setSeccion] = useState<SeccionId>("resumen");
   const expedienteContext = searchParams.get("expediente") ?? "";
 
-  usePageAssistantContext({ periodo, seccion, expediente_id: expedienteContext || undefined });
+  const contextoLabel = useMemo(() => {
+    if (!expedienteContext) return "Todas las empresas";
+    const match = evaluaciones.find((e) => e.id === expedienteContext);
+    return match ? `${match.entidad_nombre} · ${match.codigo}` : "Empresa seleccionada";
+  }, [expedienteContext, evaluaciones]);
+
+  usePageAssistantContext({
+    periodo,
+    seccion,
+    expediente_id: expedienteContext || undefined,
+    empresa: contextoLabel !== "Todas las empresas" ? contextoLabel : undefined,
+    modulo: "centro_control",
+  });
 
   useEffect(() => {
     if (!has("evaluacion.view")) return;
@@ -59,12 +71,6 @@ export function CentroControlPage() {
       .then((r) => setEvaluaciones(r.items))
       .catch(() => undefined);
   }, [has]);
-
-  const contextoLabel = useMemo(() => {
-    if (!expedienteContext) return "Todas las empresas";
-    const match = evaluaciones.find((e) => e.id === expedienteContext);
-    return match ? `${match.entidad_nombre} · ${match.codigo}` : "Empresa seleccionada";
-  }, [expedienteContext, evaluaciones]);
 
   const presentacionPath = useMemo(() => {
     if (!expedienteContext) return null;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   fetchEvaluacion,
   fetchEvaluacionImpacto,
@@ -9,12 +9,15 @@ import { SiguienteAccionPanel } from "../evaluacion/SiguienteAccionPanel";
 import { CadenaAnaliticaPanel } from "../evaluacion/CadenaAnaliticaPanel";
 import { ImpactoGrafico } from "../evaluacion/ImpactoGrafico";
 import { CONFIANZA, ESTADO_EXPEDIENTE, label } from "../../lib/evaluacionLabels";
+import { cabinaTabPath, mapSiguienteAccionToCabinaTab } from "../../lib/siguienteAccionTabMap";
+import { narrativaCampo } from "../../lib/informeNarrativa";
 
 type Props = {
   evaluacionId: string;
 };
 
 export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
+  const navigate = useNavigate();
   const [exp, setExp] = useState<EvaluacionExpedienteDetail | null>(null);
   const [impacto, setImpacto] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -145,11 +148,11 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
             <p className="demo-banner" role="status">DEMO — DATOS SIMULADOS — proyecciones no equivalen a verificación real.</p>
           )}
           <dl className="detail-grid compact cc-interpretacion-strip">
-            <dt>Qué ocurrió</dt><dd>{String((impacto?.interpretacion as Record<string, unknown> | undefined)?.que_ocurrio ?? "—")}</dd>
-            <dt>Por qué</dt><dd>{String((impacto?.interpretacion as Record<string, unknown> | undefined)?.por_que ?? "—")}</dd>
-            <dt>Requiere atención</dt><dd>{String((impacto?.interpretacion as Record<string, unknown> | undefined)?.requiere_atencion ?? "—")}</dd>
-            <dt>Oportunidad</dt><dd>{String((impacto?.interpretacion as Record<string, unknown> | undefined)?.oportunidad ?? "—")}</dd>
-            <dt>Recomendación EIAAX</dt><dd>{String((impacto?.interpretacion as Record<string, unknown> | undefined)?.recomendacion ?? "—")}</dd>
+            <dt>Qué ocurrió</dt><dd>{narrativaCampo((impacto?.interpretacion as Record<string, unknown> | undefined)?.que_ocurrio)}</dd>
+            <dt>Por qué</dt><dd>{narrativaCampo((impacto?.interpretacion as Record<string, unknown> | undefined)?.por_que)}</dd>
+            <dt>Requiere atención</dt><dd>{narrativaCampo((impacto?.interpretacion as Record<string, unknown> | undefined)?.requiere_atencion)}</dd>
+            <dt>Oportunidad</dt><dd>{narrativaCampo((impacto?.interpretacion as Record<string, unknown> | undefined)?.oportunidad)}</dd>
+            <dt>Recomendación EIAAX</dt><dd>{narrativaCampo((impacto?.interpretacion as Record<string, unknown> | undefined)?.recomendacion)}</dd>
           </dl>
           <p className="muted small">
             Qué ocurrió → por qué importa → qué requiere atención. Proyectado nunca se presenta como real.
@@ -187,7 +190,10 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
           <SiguienteAccionPanel
             expedienteId={evaluacionId}
             onRefresh={load}
-            onNavigateTab={() => undefined}
+            onNavigateTab={(p) => {
+              const tab = mapSiguienteAccionToCabinaTab(p);
+              if (tab) navigate(cabinaTabPath(evaluacionId, tab));
+            }}
           />
         </section>
         <section className="panel compact-panel">
@@ -203,7 +209,7 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
           <p>
             <Link to={`/evaluaciones/${evaluacionId}`}>Ir a cabina completa</Link>
             {" · "}
-            <Link to={`/oportunidades`}>Oportunidades</Link>
+            <Link to={`/evaluaciones/${evaluacionId}?tab=resultados`}>Oportunidades y resultados</Link>
           </p>
         </section>
       </div>

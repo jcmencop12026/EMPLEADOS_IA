@@ -31,6 +31,7 @@ import { VistaEntidadView } from "../components/evaluacion/VistaEntidadView";
 import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { CONFIANZA, ESTADO_EXPEDIENTE, label, TIPO_CONTENIDO } from "../lib/evaluacionLabels";
+import { mapSiguienteAccionToCabinaTab } from "../lib/siguienteAccionTabMap";
 
 type Tab =
   | "empresa"
@@ -66,7 +67,7 @@ const ESTADO_INFO_LABELS: Record<string, string> = {
 
 export function EvaluacionConsolePage() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { has } = usePermissions();
   const tabParam = searchParams.get("tab");
   const initialTab = (TABS.some((t) => t.id === tabParam) ? tabParam : "empresa") as Tab;
@@ -84,6 +85,21 @@ export function EvaluacionConsolePage() {
   useEffect(() => {
     if (tabParam && TABS.some((t) => t.id === tabParam)) setTab(tabParam as Tab);
   }, [tabParam]);
+
+  const selectTab = useCallback(
+    (next: Tab) => {
+      setTab(next);
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          params.set("tab", next);
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   usePageAssistantContext(
     {
@@ -133,7 +149,7 @@ export function EvaluacionConsolePage() {
       const r = await evaluarExpediente(evaluacionId);
       setExp(r.expediente);
       setMsg(`Evaluación ejecutada — ${r.hallazgos_creados} hallazgo(s) generado(s)`);
-      setTab("diagnostico");
+      selectTab("diagnostico");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al evaluar");
     }
@@ -202,7 +218,7 @@ export function EvaluacionConsolePage() {
 
         <nav className="tab-nav compact-tabs">
           {TABS.map((t) => (
-            <button key={t.id} type="button" className={tab === t.id ? "active" : ""} onClick={() => setTab(t.id)}>
+            <button key={t.id} type="button" className={tab === t.id ? "active" : ""} onClick={() => selectTab(t.id)}>
               {t.label}
             </button>
           ))}
@@ -213,18 +229,8 @@ export function EvaluacionConsolePage() {
             <SiguienteAccionPanel
               expedienteId={evaluacionId}
               onNavigateTab={(p) => {
-                const map: Record<string, Tab> = {
-                  resumen: "empresa",
-                  empresa: "empresa",
-                  informacion: "diagnostico",
-                  diagnostico: "diagnostico",
-                  analisis: "diagnostico",
-                  impacto: "valor",
-                  valor: "valor",
-                  oportunidades: "resultados",
-                  solucion: "solucion",
-                };
-                if (map[p]) setTab(map[p]);
+                const mapped = mapSiguienteAccionToCabinaTab(p);
+                if (mapped && TABS.some((t) => t.id === mapped)) selectTab(mapped as Tab);
               }}
               onRefresh={load}
             />

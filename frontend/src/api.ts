@@ -4950,6 +4950,11 @@ export async function createEntidadExterna(expedienteId: string, contactoEmail?:
   });
 }
 
+export async function listEntidadesExternas(expedienteId?: string): Promise<Record<string, unknown>[]> {
+  const qs = expedienteId ? `?expediente_id=${encodeURIComponent(expedienteId)}` : "";
+  return api(`/api/espacio-externo/entidades${qs}`);
+}
+
 export async function fetchEntidadExterna(entidadId: string): Promise<Record<string, unknown>> {
   return api(`/api/espacio-externo/entidades/${entidadId}`);
 }
