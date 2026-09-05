@@ -1,12 +1,12 @@
 # EIAAX — Macrobloque Integral de Corrección V1
 ## Informe único de entrega — PR #171
 
-**Repositorio:** jcmencop12026/EMPLEADOS_IA  
-**Rama:** `cursor/ajuste-transversal-1-85e4`  
-**PR:** #171 — feat(ui): Macrobloque Transversal 1 — normalización visual V1  
-**Revisión humana base:** `7c1314554ee59f9b7e5cd6961108f2faccd49fbf`  
-**SHA inicial real (HEAD pre-macrointegral):** `f684e096e83610f1f8bc26dc095e716de6e09762`  
-**SHA final:** `13d6c8b` (commit macrobloque integral)  
+**Repositorio:** jcmencop12026/EMPLEADOS_IA
+**Rama:** `cursor/ajuste-transversal-1-85e4`
+**PR:** #171 — feat(ui): Macrobloque Transversal 1 — normalización visual V1
+**Revisión humana base:** `7c1314554ee59f9b7e5cd6961108f2faccd49fbf`
+**SHA inicial real (HEAD pre-macrointegral):** `f684e096e83610f1f8bc26dc095e716de6e09762`
+**SHA final:** `13d6c8b` (commit macrobloque integral)
 
 **Confirmación:** NO MERGE · NO PROMOCIÓN · NO POST-V1
 
