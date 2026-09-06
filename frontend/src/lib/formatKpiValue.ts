@@ -36,7 +36,17 @@ export function formatValorPotencialKpi(raw: unknown): KpiValueParts {
       unit: "COP / año",
     };
   }
-  const parts = splitKpiValueParts(raw);
+
+  const s = String(raw).trim();
+  if (!s || s === "—") return { main: "—" };
+
+  const moneyInDemo = s.match(/\$\s*[\d.,]+[KMB]?(?:\s*COP)?(?:\s*\/\s*año)?/i);
+  if (moneyInDemo) {
+    const main = moneyInDemo[0].replace(/\s*COP.*$/i, "").trim();
+    return { main, unit: "COP / año" };
+  }
+
+  const parts = splitKpiValueParts(s);
   if (!parts.unit && /^\$|^\d/.test(parts.main)) {
     return { ...parts, unit: "COP / año" };
   }

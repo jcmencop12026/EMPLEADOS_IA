@@ -22,46 +22,48 @@ export const CERT_LOGO_COMPACT_DATA_URL =
     "utf-8",
   ).toString("base64");
 
-export async function seedCertBranding(page) {
-  await page.goto(`${process.env.EIAAX_BASE || "http://127.0.0.1:5180"}/login`, { waitUntil: "domcontentloaded" });
-  await page.fill('input[autocomplete="username"]', process.env.EIAAX_USER || "admin");
-  await page.fill('input[type="password"]', process.env.EIAAX_PASS || "Admin2026!");
-  await page.click("button.login-submit");
-  await page.waitForFunction(() => !window.location.pathname.includes("/login"), { timeout: 20000 });
-  const ok = await page.evaluate(async ({ logo, compact }) => {
+async function putBranding(page, config) {
+  const ok = await page.evaluate(async (payload) => {
     const token = localStorage.getItem("eaios_token");
+    if (!token) return false;
     const res = await fetch("/api/admin/config", {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        enterprise_display_name: "EIAAX Operador Demo",
-        enterprise_logo_url: logo,
-        enterprise_logo_compact_url: compact,
-        enterprise_accent_color: "#0c4a6e",
-      }),
+      body: JSON.stringify(payload),
     });
+    return res.ok;
+  }, config);
+  if (!ok) throw new Error("No se pudo actualizar branding de certificación");
+}
+
+async function verifyIdentity(page, expectConfigured) {
+  return page.evaluate(async (expected) => {
     const verify = await fetch("/api/public/login-identity");
     const identity = await verify.json();
-    return res.ok && identity.has_configured_logo === true && Boolean(identity.logo_url);
-  }, { logo: CERT_LOGO_DATA_URL, compact: CERT_LOGO_COMPACT_DATA_URL });
+    if (expected) {
+      return identity.has_configured_logo === true && Boolean(identity.logo_url);
+    }
+    return identity.has_configured_logo === false;
+  }, expectConfigured);
+}
+
+export async function seedCertBranding(page) {
+  await putBranding(page, {
+    enterprise_display_name: "EIAAX Operador Demo",
+    enterprise_logo_url: CERT_LOGO_DATA_URL,
+    enterprise_logo_compact_url: CERT_LOGO_COMPACT_DATA_URL,
+    enterprise_accent_color: "#0c4a6e",
+  });
+  const ok = await verifyIdentity(page, true);
   if (!ok) throw new Error("No se pudo sembrar branding de certificación");
 }
 
 export async function clearCertBranding(page) {
-  const ok = await page.evaluate(async () => {
-    const token = localStorage.getItem("eaios_token");
-    const res = await fetch("/api/admin/config", {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        enterprise_logo_url: null,
-        enterprise_logo_compact_url: null,
-      }),
-    });
-    localStorage.removeItem("eiaax_login_identity_v1");
-    const verify = await fetch("/api/public/login-identity");
-    const identity = await verify.json();
-    return res.ok && identity.has_configured_logo === false;
+  await putBranding(page, {
+    enterprise_logo_url: null,
+    enterprise_logo_compact_url: null,
   });
+  await page.evaluate(() => localStorage.removeItem("eiaax_login_identity_v1"));
+  const ok = await verifyIdentity(page, false);
   if (!ok) throw new Error("No se pudo limpiar branding de certificación");
 }

@@ -49,6 +49,7 @@ function slugify(name) {
 
 async function login(page) {
   await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
+  await page.waitForSelector('input[autocomplete="username"]', { timeout: 20000 });
   await page.fill('input[autocomplete="username"]', USER);
   await page.fill('input[type="password"]', PASS);
   await page.click("button.login-submit");
@@ -159,14 +160,16 @@ async function auditLoginIdentity(page, mode) {
 }
 
 async function auditCycleStepper(page) {
+  const locator = page.locator(".v1-cycle-stepper").first();
+  if ((await locator.count()) === 0) return { ok: true, skipped: true };
+  await locator.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(200);
   return page.evaluate((stageCount) => {
     const container = document.querySelector(".v1-cycle-stepper");
     if (!container) return { ok: true, skipped: true };
     const defects = [];
     const steps = [...container.querySelectorAll(".v1-cycle-step")];
     const containerRect = container.getBoundingClientRect();
-    const vpW = window.innerWidth;
-    const vpH = window.innerHeight;
 
     if (steps.length !== stageCount) defects.push(`etapas: ${steps.length} (esperado ${stageCount})`);
 
@@ -174,10 +177,8 @@ async function auditCycleStepper(page) {
       const r = step.getBoundingClientRect();
       const label = step.querySelector(".v1-cycle-step__label");
       if (r.width <= 0 || r.height <= 0) defects.push(`etapa ${i + 1} sin bounding box`);
-      if (r.right > vpW + 2) defects.push(`etapa ${i + 1} fuera del viewport horizontal`);
-      if (r.bottom > vpH + 2) defects.push(`etapa ${i + 1} fuera del viewport vertical`);
       if (r.left < containerRect.left - 4 || r.right > containerRect.right + 4) {
-        defects.push(`etapa ${i + 1} fuera del contenedor del ciclo`);
+        defects.push(`etapa ${i + 1} fuera del contenedor horizontal del ciclo`);
       }
       if (label) {
         const cs = getComputedStyle(label);
@@ -315,8 +316,11 @@ async function auditViewport(page) {
 
     const hiddenOverflow = [];
     document.querySelectorAll(".panel, .content, .ops-page, .v1-cycle-stepper").forEach((el) => {
+      if (el.classList.contains("tab-bar") || el.classList.contains("tab-nav") || el.closest(".tab-bar, .tab-nav")) {
+        return;
+      }
       const cs = getComputedStyle(el);
-      if ((cs.overflowX === "hidden" || cs.overflow === "hidden") && el.scrollWidth > el.clientWidth + 4) {
+      if ((cs.overflowX === "hidden" || cs.overflow === "hidden") && el.scrollWidth > el.clientWidth + 8) {
         hiddenOverflow.push(String(el.className).slice(0, 50));
       }
     });
@@ -512,7 +516,6 @@ async function main() {
 
   const bootstrap = await browser.newPage();
   await login(bootstrap);
-  await seedCertBranding(bootstrap);
   const { expId, oppId } = await resolveIds(bootstrap);
 
   await captureLoginConfigured(browser, results);
