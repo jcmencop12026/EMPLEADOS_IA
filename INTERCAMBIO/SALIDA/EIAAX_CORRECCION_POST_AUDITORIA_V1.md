@@ -3,7 +3,7 @@
 **PR:** #171 — `cursor/ajuste-transversal-1-85e4`
 **Repositorio:** jcmencop12026/EMPLEADOS_IA
 **SHA inicial (auditado):** `2f5c6551a93cafedb1e42769e2c389de3077064d`
-**SHA final (HEAD PR):** `13ed3b8cf40343a11c08984b41f2d20c6a4526e9`
+**SHA final (HEAD PR):** `515a95e` (código certificable: `13ed3b8cf40343a11c08984b41f2d20c6a4526e9`)
 **Fecha entrega:** 2026-09-06
 
 ---
@@ -30,7 +30,7 @@ Corrección de defectos residuales comprobados por auditoría independiente. **N
 
 ---
 
-## Resultados certificación local (HEAD `13ed3b8`)
+## Resultados certificación local (código `13ed3b8`, docs HEAD `515a95e`)
 
 | Criterio | Resultado |
 |---|---|
