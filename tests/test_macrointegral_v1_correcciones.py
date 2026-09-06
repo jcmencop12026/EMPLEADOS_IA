@@ -39,7 +39,7 @@ def test_login_usa_brand_corporativo_no_hero():
 
 
 def test_login_identity_endpoint_expone_logo_configurado(client):
-    from app.models import Organization
+    from app.models import Organization, User
     from conftest import TestingSessionLocal
     from app.services import admin_service as admin_svc
     from app.cert_branding import CERT_BRANDING_CONFIG
@@ -48,7 +48,9 @@ def test_login_identity_endpoint_expone_logo_configurado(client):
     try:
         org = db.query(Organization).first()
         assert org is not None
-        admin_svc.update_org_config(db, org=org, actor_id="test", config=CERT_BRANDING_CONFIG)
+        actor = db.query(User).filter(User.organization_id == org.id).first()
+        assert actor is not None
+        admin_svc.update_org_config(db, org=org, actor_id=actor.id, config=CERT_BRANDING_CONFIG)
         r = client.get("/api/public/login-identity")
         assert r.status_code == 200
         body = r.json()
