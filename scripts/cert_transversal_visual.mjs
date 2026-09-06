@@ -47,6 +47,28 @@ function slugify(name) {
   return name.replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 }
 
+async function resetScrollForCapture(page) {
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    document.querySelectorAll(".content, .ops-page, .eval-console, .eval-console-main, .centro-control-page, .panel").forEach((el) => {
+      if (el instanceof HTMLElement) el.scrollTop = 0;
+    });
+  });
+  await page.waitForTimeout(150);
+}
+
+async function getScrollMetrics(page) {
+  return page.evaluate(() => ({
+    pageScrollY: window.scrollY,
+    documentScrollTop: document.documentElement.scrollTop,
+    bodyScrollTop: document.body.scrollTop,
+    contentScrollTop: document.querySelector(".content")?.scrollTop ?? 0,
+    evalScrollTop: document.querySelector(".eval-console-main")?.scrollTop ?? 0,
+  }));
+}
+
 async function login(page) {
   await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
   await page.waitForSelector('input[autocomplete="username"]', { timeout: 20000 });
@@ -69,7 +91,12 @@ async function resolveIds(page) {
     const items = evData.items || evData;
     const opps = oppData.items || oppData;
     const h = items.find((e) => (e.entidad_nombre || "").includes("Horizonte"));
-    return { expId: h?.id || items[0]?.id, oppId: opps[0]?.id };
+    return {
+      expId: h?.id || items[0]?.id,
+      oppId: opps[0]?.id,
+      entidadNombre: h?.entidad_nombre || items[0]?.entidad_nombre || "",
+      valorPotencial: h?.valor_potencial || items[0]?.valor_potencial || "",
+    };
   });
 }
 
@@ -85,6 +112,7 @@ function buildViews(expId, oppId) {
       path: `/evaluaciones/${expId}?tab=${t.id}`,
       tabs: { container: ".tab-nav", activeClass: "active", label: t.label },
       expectText: t.expectText,
+      auditCabinaKpi: t.id === "empresa",
     })),
     { id: "14", name: "Centro de oportunidades", path: "/oportunidades", tabs: null, expectSelector: ".ops-page", auditControls: true },
     ...OPP_TABS.map((t, i) => ({
@@ -209,21 +237,33 @@ async function auditCycleStepper(page) {
 async function auditKpiStrip(page, requireValorPotencial = false) {
   return page.evaluate((requireValor) => {
     const defects = [];
+    const isIllegibleTruncation = (el) => {
+      const cs = getComputedStyle(el);
+      const clipped = el.scrollWidth > el.clientWidth + 2 || el.scrollHeight > el.clientHeight + 2;
+      if (!clipped) return false;
+      const ellipsis = cs.textOverflow === "ellipsis";
+      const nowrap = cs.whiteSpace === "nowrap" || cs.whiteSpace === "pre";
+      const hidden = cs.overflow === "hidden" || cs.overflowX === "hidden" || cs.overflowY === "hidden";
+      const lineClamp = Number(cs.webkitLineClamp) > 0;
+      return ellipsis || lineClamp || (hidden && nowrap);
+    };
+
     document.querySelectorAll(".v1-kpi-strip").forEach((strip) => {
       strip.querySelectorAll(".v1-kpi-card").forEach((card) => {
         const label = card.querySelector(".v1-kpi-card__label");
         const value = card.querySelector(".v1-kpi-card__value");
         const unit = card.querySelector(".v1-kpi-card__unit");
+        const hint = card.querySelector(".v1-kpi-card__hint");
         const labelText = label?.textContent?.trim() ?? "";
 
         if (!label || label.getBoundingClientRect().width < 8) defects.push(`KPI sin título: ${labelText || "?"}`);
         if (!value || value.getBoundingClientRect().width < 8) defects.push(`KPI sin valor: ${labelText || "?"}`);
 
-        if (value) {
-          const cs = getComputedStyle(value);
-          const lineHeight = parseFloat(cs.lineHeight) || 16;
-          const height = value.getBoundingClientRect().height;
-          if (height > lineHeight * 2.2) defects.push(`KPI valor multi-línea: ${labelText}`);
+        for (const el of [label, value, unit, hint]) {
+          if (!el) continue;
+          if (isIllegibleTruncation(el)) {
+            defects.push(`KPI truncado (${labelText}): "${el.textContent?.trim().slice(0, 48)}"`);
+          }
         }
 
         if (labelText.toLowerCase().includes("valor potencial")) {
@@ -233,14 +273,98 @@ async function auditKpiStrip(page, requireValorPotencial = false) {
           if (requireValor && (!unit || !/COP/i.test(unit.textContent ?? ""))) {
             defects.push("Valor potencial sin unidad COP / año");
           }
-          if (unit && unit.getBoundingClientRect().width < 8) {
-            defects.push("Valor potencial unidad no visible");
-          }
         }
       });
     });
     return { ok: defects.length === 0, defects };
   }, requireValorPotencial);
+}
+
+async function auditCriticalTextTruncation(page) {
+  return page.evaluate(() => {
+    const defects = [];
+    const isIllegibleTruncation = (el) => {
+      const cs = getComputedStyle(el);
+      const clipped = el.scrollWidth > el.clientWidth + 2 || el.scrollHeight > el.clientHeight + 2;
+      if (!clipped) return false;
+      const ellipsis = cs.textOverflow === "ellipsis";
+      const nowrap = cs.whiteSpace === "nowrap" || cs.whiteSpace === "pre";
+      const hidden = cs.overflow === "hidden" || cs.overflowX === "hidden" || cs.overflowY === "hidden";
+      const lineClamp = Number(cs.webkitLineClamp) > 0;
+      return ellipsis || lineClamp || (hidden && nowrap);
+    };
+
+    const selectors = [
+      ".v1-context-bar",
+      ".v1-page-header h1",
+      ".v1-page-header__subtitle",
+      ".v1-next-action__title",
+      ".v1-next-action__desc",
+      ".v1-status-badge",
+      ".btn.primary",
+    ];
+
+    for (const sel of selectors) {
+      document.querySelectorAll(sel).forEach((el) => {
+        if (isIllegibleTruncation(el)) {
+          defects.push(`texto crítico truncado (${sel}): "${el.textContent?.trim().slice(0, 48)}"`);
+        }
+      });
+    }
+
+    return { ok: defects.length === 0, defects: defects.slice(0, 10) };
+  });
+}
+
+async function auditCabinaEmpresaKpis(page, expected) {
+  return page.evaluate((exp) => {
+    const defects = [];
+    const isIllegibleTruncation = (el) => {
+      const cs = getComputedStyle(el);
+      const clipped = el.scrollWidth > el.clientWidth + 2 || el.scrollHeight > el.clientHeight + 2;
+      if (!clipped) return false;
+      const ellipsis = cs.textOverflow === "ellipsis";
+      const nowrap = cs.whiteSpace === "nowrap" || cs.whiteSpace === "pre";
+      const hidden = cs.overflow === "hidden" || cs.overflowX === "hidden" || cs.overflowY === "hidden";
+      const lineClamp = Number(cs.webkitLineClamp) > 0;
+      return ellipsis || lineClamp || (hidden && nowrap);
+    };
+
+    const empresaCard = document.querySelector('[data-kpi-id="entidad"]');
+    const valorCard = document.querySelector('[data-kpi-id="valor"]');
+    if (!empresaCard) defects.push("KPI Empresa ausente");
+    if (!valorCard) defects.push("KPI Valor potencial ausente");
+
+    const empresaValue = empresaCard?.querySelector(".v1-kpi-card__value");
+    const valorValue = valorCard?.querySelector(".v1-kpi-card__value");
+    const valorUnit = valorCard?.querySelector(".v1-kpi-card__unit");
+    const valorHint = valorCard?.querySelector(".v1-kpi-card__hint");
+
+    const empresaText = empresaValue?.textContent?.trim() ?? "";
+    const valorText = valorValue?.textContent?.trim() ?? "";
+
+    if (exp.entidadNombre && !empresaText.includes(exp.entidadNombre)) {
+      defects.push(`KPI Empresa incompleto: "${empresaText}"`);
+    }
+    if (empresaValue && isIllegibleTruncation(empresaValue)) {
+      defects.push("KPI Empresa truncado con ellipsis");
+    }
+
+    if (exp.valorMain && !valorText.includes(exp.valorMain)) {
+      defects.push(`KPI Valor potencial incompleto: "${valorText}"`);
+    }
+    if (valorValue && isIllegibleTruncation(valorValue)) {
+      defects.push("KPI Valor potencial truncado con ellipsis");
+    }
+    if (exp.valorUnit && (!valorUnit || !valorUnit.textContent?.includes(exp.valorUnit))) {
+      defects.push("KPI Valor potencial sin unidad visible");
+    }
+    if (exp.valorDemoHint && (!valorHint || !valorHint.textContent?.includes("DEMO"))) {
+      defects.push("KPI Valor potencial sin contexto DEMO visible");
+    }
+
+    return { ok: defects.length === 0, defects };
+  }, expected);
 }
 
 async function auditControls(page) {
@@ -343,8 +467,11 @@ async function captureLoginConfigured(browser, results) {
     const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
     await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
     await page.waitForTimeout(600);
+    await resetScrollForCapture(page);
+    const scrollMetrics = await getScrollMetrics(page);
     const loginCheck = await auditLoginIdentity(page, "configured");
     const defects = [...loginCheck.defects];
+    if (scrollMetrics.pageScrollY > 1) defects.push(`scroll inicial no en 0 (scrollY=${scrollMetrics.pageScrollY})`);
     if (!await page.locator(".login-page.eiaax-v1-experience").count()) defects.push("login fuera de sistema experiencia V1");
     const screenshot = `${vp.name}_00-login-configurado.png`;
     await page.screenshot({ path: path.join(ARTIFACTS, screenshot), fullPage: false });
@@ -356,6 +483,7 @@ async function captureLoginConfigured(browser, results) {
       pass: defects.length === 0,
       defects,
       loginCheck,
+      scrollMetrics,
       screenshot,
     });
     await page.close();
@@ -368,8 +496,11 @@ async function captureLoginFallback(browser, adminPage, results) {
     const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
     await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
     await page.waitForTimeout(600);
+    await resetScrollForCapture(page);
+    const scrollMetrics = await getScrollMetrics(page);
     const loginCheck = await auditLoginIdentity(page, "fallback");
     const defects = [...loginCheck.defects];
+    if (scrollMetrics.pageScrollY > 1) defects.push(`scroll inicial no en 0 (scrollY=${scrollMetrics.pageScrollY})`);
     if (!await page.locator(".login-page.eiaax-v1-experience").count()) defects.push("login fuera de sistema experiencia V1");
     const screenshot = `${vp.name}_00-login-fallback.png`;
     await page.screenshot({ path: path.join(ARTIFACTS, screenshot), fullPage: false });
@@ -381,6 +512,7 @@ async function captureLoginFallback(browser, adminPage, results) {
       pass: defects.length === 0,
       defects,
       loginCheck,
+      scrollMetrics,
       screenshot,
     });
     await page.close();
@@ -388,7 +520,17 @@ async function captureLoginFallback(browser, adminPage, results) {
   await seedCertBranding(adminPage);
 }
 
-async function runVisualChecks(browser, views, results) {
+function expectedCabinaKpi(entidadNombre, valorPotencial) {
+  const money = String(valorPotencial ?? "").match(/\$\s*[\d.,]+[KMB]?/i);
+  return {
+    entidadNombre,
+    valorMain: money ? money[0].replace(/\s/g, "") : "",
+    valorUnit: "COP",
+    valorDemoHint: String(valorPotencial ?? "").includes("DEMO"),
+  };
+}
+
+async function runVisualChecks(browser, views, results, demoMeta) {
   for (const vp of VIEWPORTS) {
     const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
     await login(page);
@@ -405,7 +547,15 @@ async function runVisualChecks(browser, views, results) {
         await page.locator(`.tab-bar button:has-text("${view.tabClick}")`).first().click();
         await page.waitForTimeout(500);
       }
+      await resetScrollForCapture(page);
+      const scrollMetrics = await getScrollMetrics(page);
       const defects = [];
+      if (scrollMetrics.pageScrollY > 1) {
+        defects.push(`scroll inicial no en 0 (scrollY=${scrollMetrics.pageScrollY})`);
+      }
+      if (view.id === "02" && scrollMetrics.pageScrollY > 1) {
+        defects.push("CC empresa no capturada desde encabezado (scrollY > 0)");
+      }
       if (view.expectSelector) {
         const ok = await page.locator(view.expectSelector).count();
         if (!ok) defects.push(`selector ausente: ${view.expectSelector}`);
@@ -424,6 +574,14 @@ async function runVisualChecks(browser, views, results) {
 
       const kpiCheck = await auditKpiStrip(page, Boolean(view.auditValorKpi));
       if (!kpiCheck.ok) defects.push(...kpiCheck.defects.map((d) => `KPI: ${d}`));
+
+      const truncCheck = await auditCriticalTextTruncation(page);
+      if (!truncCheck.ok) defects.push(...truncCheck.defects.map((d) => `trunc: ${d}`));
+
+      if (view.auditCabinaKpi && vp.name === "1366x768") {
+        const cabinaKpiCheck = await auditCabinaEmpresaKpis(page, demoMeta);
+        if (!cabinaKpiCheck.ok) defects.push(...cabinaKpiCheck.defects.map((d) => `cabina-kpi: ${d}`));
+      }
 
       if (view.auditControls || view.id === "01" || view.id === "02" || view.id === "14") {
         const ctrlCheck = await auditControls(page);
@@ -452,6 +610,7 @@ async function runVisualChecks(browser, views, results) {
         defects,
         metrics,
         tabCheck,
+        scrollMetrics,
         screenshot,
       });
     }
@@ -511,7 +670,8 @@ async function main() {
 
   const bootstrap = await browser.newPage();
   await login(bootstrap);
-  const { expId, oppId } = await resolveIds(bootstrap);
+  const { expId, oppId, entidadNombre, valorPotencial } = await resolveIds(bootstrap);
+  const demoMeta = expectedCabinaKpi(entidadNombre, valorPotencial);
 
   await captureLoginConfigured(browser, results);
   await captureLoginFallback(browser, bootstrap, results);
@@ -519,7 +679,7 @@ async function main() {
   const views = buildViews(expId, oppId);
   if (views.length !== 22) throw new Error(`Se esperaban 22 vistas, hay ${views.length}`);
 
-  await runVisualChecks(browser, views, results);
+  await runVisualChecks(browser, views, results, demoMeta);
   await runCabinaTabFunctional(browser, results, expId);
   await runOppTabFunctional(browser, results, oppId);
   await bootstrap.close();
@@ -535,6 +695,8 @@ async function main() {
   const loginFallback = visual.filter((r) => r.viewId === "00b");
   const cycle1366 = visual.filter((r) => r.viewport === "1366x768" && (r.viewId === "01" || r.viewId === "02"));
   const cycle1920 = visual.filter((r) => r.viewport === "1920x1080" && (r.viewId === "01" || r.viewId === "02"));
+  const ccEmpresaScroll = visual.filter((r) => r.viewId === "02" && r.viewport === "1366x768");
+  const cabinaEmpresa1366 = visual.filter((r) => r.viewId === "04" && r.viewport === "1366x768");
 
   const report = {
     sha: certSha,
@@ -552,6 +714,9 @@ async function main() {
     loginFallbackPass: loginFallback.every((r) => r.pass),
     cycle1366Pass: cycle1366.every((r) => r.pass),
     cycle1920Pass: cycle1920.every((r) => r.pass),
+    ccEmpresaScrollInitialPass: ccEmpresaScroll.every((r) => (r.scrollMetrics?.pageScrollY ?? 0) <= 1 && r.pass),
+    cabinaKpiEmpresaPass: cabinaEmpresa1366.every((r) => r.pass && !r.defects?.some((d) => d.includes("cabina-kpi") && d.includes("Empresa"))),
+    cabinaKpiValorPass: cabinaEmpresa1366.every((r) => r.pass && !r.defects?.some((d) => d.includes("cabina-kpi") && d.includes("Valor"))),
     screenshots: visual.map((r) => r.screenshot),
     results,
   };
@@ -567,6 +732,9 @@ async function main() {
   console.log(`Login fallback: ${report.loginFallbackPass ? "PASS" : "FAIL"}`);
   console.log(`Ciclo 1366: ${report.cycle1366Pass ? "PASS" : "FAIL"}`);
   console.log(`Ciclo 1920: ${report.cycle1920Pass ? "PASS" : "FAIL"}`);
+  console.log(`CC empresa scroll inicial 0: ${report.ccEmpresaScrollInitialPass ? "PASS" : "FAIL"}`);
+  console.log(`Cabina KPI Empresa completo: ${report.cabinaKpiEmpresaPass ? "PASS" : "FAIL"}`);
+  console.log(`Cabina KPI Valor potencial completo: ${report.cabinaKpiValorPass ? "PASS" : "FAIL"}`);
   console.log("\n=== FUNCIONAL TABS ===\n");
   for (const r of results.filter((x) => x.kind.startsWith("func"))) {
     console.log(r.pass ? "PASS" : "FAIL", r.kind, r.tab, r.defects?.length ? `— ${r.defects.join("; ")}` : "");

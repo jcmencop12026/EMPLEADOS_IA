@@ -107,7 +107,9 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
               label: "Valor potencial",
               value: valorKpi.main,
               unit: valorKpi.unit,
-              tone: exp.entidad_nombre?.startsWith("[DEMO]") ? undefined : "value",
+              hint: String(exp.valor_potencial ?? "").includes("DEMO") ? "DEMO — DATOS SIMULADOS" : undefined,
+              tone: "value",
+              wide: true,
             },
             { id: "nivel", label: "Nivel", value: labelNivelEvaluacion(exp.nivel) },
           ]}

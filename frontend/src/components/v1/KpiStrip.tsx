@@ -9,6 +9,7 @@ export type KpiItem = {
   hint?: string;
   tone?: "default" | "attention" | "success" | "value";
   href?: string;
+  wide?: boolean;
 };
 
 type Props = {
@@ -23,7 +24,7 @@ export function KpiStrip({ items, title, className = "" }: Props) {
       {title && <h3 className="v1-kpi-strip__title">{title}</h3>}
       <div className="v1-kpi-strip__grid">
         {items.map((item) => {
-          const cls = `v1-kpi-card v1-kpi-card--${item.tone ?? "default"}`;
+          const cls = `v1-kpi-card v1-kpi-card--${item.tone ?? "default"}${item.wide ? " v1-kpi-card--wide" : ""}`;
           const inner = (
             <>
               <span className="v1-kpi-card__label">{item.label}</span>
@@ -35,12 +36,12 @@ export function KpiStrip({ items, title, className = "" }: Props) {
             </>
           );
           if (item.href?.startsWith("/")) {
-            return <Link key={item.id} to={item.href} className={cls}>{inner}</Link>;
+            return <Link key={item.id} to={item.href} className={cls} data-kpi-id={item.id}>{inner}</Link>;
           }
           if (item.href) {
-            return <a key={item.id} href={item.href} className={cls}>{inner}</a>;
+            return <a key={item.id} href={item.href} className={cls} data-kpi-id={item.id}>{inner}</a>;
           }
-          return <div key={item.id} className={cls}>{inner}</div>;
+          return <div key={item.id} className={cls} data-kpi-id={item.id}>{inner}</div>;
         })}
       </div>
     </section>

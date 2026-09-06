@@ -33,6 +33,7 @@ import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { CONFIANZA, ESTADO_EXPEDIENTE, label, labelNivelEvaluacion, TIPO_CONTENIDO } from "../lib/evaluacionLabels";
 import { mapSiguienteAccionToCabinaTab } from "../lib/siguienteAccionTabMap";
+import { formatValorPotencialKpi } from "../lib/formatKpiValue";
 import { EmptyState, ExecutiveCard, KpiStrip, PageHeader, TechnicalDetails } from "../components/v1";
 
 type Tab =
@@ -181,6 +182,8 @@ export function EvaluacionConsolePage() {
   if (!exp) return <p className="error">{error ?? "Expediente no encontrado"}</p>;
 
   const oportunidadesCount = exp.hallazgos.filter((h) => h.opportunity_id).length;
+  const valorKpi = formatValorPotencialKpi(exp.valor_potencial);
+  const valorDemoHint = String(exp.valor_potencial ?? "").includes("DEMO") ? "DEMO — DATOS SIMULADOS" : undefined;
 
   return (
     <div className={`eval-console cabina-empresa-v1 ${askOpen ? "with-ask-panel" : ""}`}>
@@ -208,12 +211,20 @@ export function EvaluacionConsolePage() {
 
         <KpiStrip
           items={[
-            { id: "entidad", label: "Empresa", value: exp.entidad_nombre },
+            { id: "entidad", label: "Empresa", value: exp.entidad_nombre, wide: true },
             { id: "estado", label: "Estado", value: label(ESTADO_EXPEDIENTE, exp.estado) },
             { id: "info", label: "Información completada", value: `${exp.porcentaje_informacion}%` },
             { id: "conf", label: "Confianza", value: label(CONFIANZA, exp.confianza_global) },
             { id: "opp", label: "Oportunidades", value: oportunidadesCount, tone: oportunidadesCount > 0 ? "success" : "default" },
-            { id: "valor", label: "Valor potencial", value: exp.valor_potencial ?? "—", tone: "value" },
+            {
+              id: "valor",
+              label: "Valor potencial",
+              value: valorKpi.main,
+              unit: valorKpi.unit,
+              hint: valorDemoHint,
+              tone: "value",
+              wide: true,
+            },
           ]}
         />
 
