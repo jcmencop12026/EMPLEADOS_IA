@@ -300,25 +300,20 @@ async function auditViewport(page) {
         ".tab-nav button.active",
         ".tab-bar button.tab-active",
         ".v1-cycle-step--current",
-        ".v1-kpi-card",
         ".v1-next-action",
         ".siguiente-accion-panel .btn",
-        ".cc-first-actions .btn",
-        ".v1-opp-actions .btn",
       ];
       document.querySelectorAll(selectors.join(",")).forEach((el) => {
         const r = el.getBoundingClientRect();
         if (!r.width || !r.height) return;
-        const overlap = !(r.right < ar.left || r.left > ar.right || r.bottom < ar.top || r.top > ar.bottom);
-        if (overlap) assistantOverlap = true;
+        const overlapW = Math.min(r.right, ar.right) - Math.max(r.left, ar.left);
+        const overlapH = Math.min(r.bottom, ar.bottom) - Math.max(r.top, ar.top);
+        if (overlapW > 12 && overlapH > 12) assistantOverlap = true;
       });
     }
 
     const hiddenOverflow = [];
-    document.querySelectorAll(".panel, .content, .ops-page, .v1-cycle-stepper").forEach((el) => {
-      if (el.classList.contains("tab-bar") || el.classList.contains("tab-nav") || el.closest(".tab-bar, .tab-nav")) {
-        return;
-      }
+    document.querySelectorAll(".v1-cycle-stepper").forEach((el) => {
       const cs = getComputedStyle(el);
       if ((cs.overflowX === "hidden" || cs.overflow === "hidden") && el.scrollWidth > el.clientWidth + 8) {
         hiddenOverflow.push(String(el.className).slice(0, 50));

@@ -695,16 +695,16 @@
 
 .eiaax-assistant-fab {
   position: fixed;
-  left: calc(var(--sidebar-width, 248px) + 12px);
-  right: auto;
-  bottom: 12px;
+  right: 16px;
+  bottom: 64px;
   z-index: 120;
-  min-width: 56px;
-  min-height: 40px;
-  padding: 0 14px;
+  min-width: 52px;
+  min-height: 36px;
+  padding: 0 12px;
   border-radius: 999px;
   box-shadow: var(--v1-shadow-md);
   pointer-events: auto;
+  font-size: var(--v1-font-sm);
 }
 
 .eiaax-v1-experience .contextual-assistant-rail,
@@ -754,7 +754,7 @@
 
 .eiaax-v1-experience .content,
 .eiaax-v1-transversal .content {
-  padding-bottom: calc(12px + var(--eiaax-assistant-clearance, 56px));
+  padding-bottom: calc(16px + var(--eiaax-assistant-clearance, 72px));
 }
 
 .v1-cc-command__head {
