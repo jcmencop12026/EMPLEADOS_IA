@@ -2,7 +2,8 @@
 
 **PR:** #171 — `cursor/ajuste-transversal-1-85e4`
 **SHA inicial (auditado):** `bdbbb17c677cb55b9a8e9d4bffc357eaf21c215c`
-**SHA final (HEAD PR):** ver commit actual tras push
+**SHA final (HEAD PR):** `8d2a4c3c06bc6bcbe14f8a85be1211f1901b902e`
+**Run CI:** `34067833183`
 **Fecha:** 2026-09-06
 
 ---
