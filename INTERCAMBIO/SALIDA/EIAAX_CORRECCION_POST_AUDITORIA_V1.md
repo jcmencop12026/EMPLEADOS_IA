@@ -3,7 +3,8 @@
 **PR:** #171 — `cursor/ajuste-transversal-1-85e4`
 **Repositorio:** jcmencop12026/EMPLEADOS_IA
 **SHA inicial (auditado):** `2f5c6551a93cafedb1e42769e2c389de3077064d`
-**SHA final (HEAD PR):** `515a95e` (código certificable: `13ed3b8cf40343a11c08984b41f2d20c6a4526e9`)
+**SHA final (HEAD PR):** `bdbbb17` (`bdbbb17a` completo en git)
+**Run CI:** `34033769309` (5/5 verde)
 **Fecha entrega:** 2026-09-06
 
 ---
@@ -30,7 +31,7 @@ Corrección de defectos residuales comprobados por auditoría independiente. **N
 
 ---
 
-## Resultados certificación local (código `13ed3b8`, docs HEAD `515a95e`)
+## Resultados
 
 | Criterio | Resultado |
 |---|---|
@@ -41,15 +42,16 @@ Corrección de defectos residuales comprobados por auditoría independiente. **N
 | KPI Valor potencial | **PASS** |
 | Controles | **PASS** |
 | Asistente sin solapamiento | **PASS** |
-| Vista Empresa flow | **PASS** |
+| Vista Empresa | **PASS** |
 | Visual transversal | **48/48** |
 | Tabs Cabina | **10/10** |
 | Tabs Oportunidad | **8/8** |
-| Regresión Python | **26/26** (`test_macrointegral_v1_correcciones`, `test_integracion_funcional_final_v1`, `test_publicable_cliente_v1`) |
+| Regresión Python | **26/26** + test login-identity PostgreSQL |
 | Build frontend | **PASS** |
-| SHA evidencia | **PASS** (`verify_cert_sha_coherence.mjs`) |
+| CI GitHub Actions | **5/5** (run `34033769309`) |
+| Regresión | **PASS** |
 
-**Artefacto:** `eiaax-visual-pr171-13ed3b8cf40343a11c08984b41f2d20c6a4526e9`
+**Artefacto CI:** `eiaax-visual-pr171-bdbbb17a` (HEAD exacto en report.json y sha-manifest)
 
 ---
 
@@ -84,9 +86,3 @@ ContextBar, Centro Oportunidades inteligencia, Cabina siguiente acción, Valorac
 ## Pendientes reales
 
 Ninguno identificado en esta iteración. Re-auditoría independiente ChatGPT requerida antes de prueba humana.
-
----
-
-## CI
-
-Run CI pendiente de push — actualizar con ID tras ejecución GitHub Actions en HEAD `13ed3b8`.
