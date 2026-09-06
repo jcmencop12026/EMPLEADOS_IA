@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { OrganizationContextBar } from "./components/OrganizationContextBar";
 import { fetchTrabajoResumen, fetchUnreadCount } from "./api";
@@ -9,6 +9,7 @@ import { ContextualAssistantProvider } from "./context/ContextualAssistantContex
 import { useEnterpriseIdentity } from "./hooks/useEnterpriseIdentity";
 import { MENU } from "./navigation/menu";
 import { BrandMark } from "./components/identity/BrandMark";
+import { EnterpriseMark } from "./components/identity/EnterpriseMark";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { EIAAX_BRAND } from "./lib/brand";
 
@@ -138,12 +139,29 @@ function AppShellInner() {
     );
   }
 
+  const accentStyle = useMemo(
+    () => (identity.accentColor ? ({ "--v1-enterprise-accent": identity.accentColor } as CSSProperties) : undefined),
+    [identity.accentColor],
+  );
+
   return (
-    <div className={`layout ${collapsed ? "sidebar-collapsed" : ""}`}>
+    <div
+      className={`layout eiaax-v1-transversal eiaax-v1-experience ${collapsed ? "sidebar-collapsed" : ""}`}
+      style={accentStyle}
+    >
       <aside className="sidebar" title="Navegación principal">
         <div className="brand-row">
           <div className="brand">
-            <BrandMark level={collapsed ? "ex08" : "corporativo"} />
+            {identity.logoUrl || identity.logoCompactUrl ? (
+              <EnterpriseMark
+                variant={collapsed ? "compact" : "shell"}
+                displayName={identity.displayName}
+                logoUrl={identity.logoUrl}
+                logoCompactUrl={identity.logoCompactUrl}
+              />
+            ) : (
+              <BrandMark level={collapsed ? "corporativo" : "corporativo"} />
+            )}
           </div>
           <button
             type="button"

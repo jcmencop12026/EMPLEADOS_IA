@@ -64,6 +64,7 @@ from app.routers import (
     operations,
     organization,
     platform,
+    public_identity,
     salud,
     experience,
     linea_base,
@@ -181,6 +182,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(public_identity.router)
 app.include_router(security.router)
 app.include_router(identidad.router)
 app.include_router(scim.router)

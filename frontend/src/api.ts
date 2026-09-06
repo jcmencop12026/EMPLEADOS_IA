@@ -945,6 +945,19 @@ export async function updateAdminOrganization(data: Record<string, unknown>): Pr
   return api<Organization>("/api/admin/organization", { method: "PUT", body: JSON.stringify(data) });
 }
 
+export type LoginIdentity = {
+  display_name: string;
+  logo_url?: string | null;
+  logo_compact_url?: string | null;
+  accent_color?: string | null;
+  platform_name: string;
+  has_configured_logo?: boolean;
+};
+
+export async function fetchLoginIdentity(): Promise<LoginIdentity> {
+  return api<LoginIdentity>("/api/public/login-identity");
+}
+
 export async function fetchOrgConfig(): Promise<OrgConfig> {
   return api<OrgConfig>("/api/admin/config");
 }
@@ -4101,8 +4114,16 @@ export async function fetchEvaluacionTrazabilidad(expedienteId: string): Promise
   return api(`/api/evaluaciones/${expedienteId}/trazabilidad`);
 }
 
-export async function fetchEvaluacionImpacto(expedienteId: string): Promise<Record<string, unknown>> {
-  return api(`/api/evaluaciones/${expedienteId}/impacto`);
+export async function fetchEvaluacionImpacto(
+  expedienteId: string,
+  opts?: { vistaEntidad?: boolean },
+): Promise<Record<string, unknown>> {
+  const q = opts?.vistaEntidad ? "?vista_entidad=true" : "";
+  return api(`/api/evaluaciones/${expedienteId}/impacto${q}`);
+}
+
+export async function fetchInformePublicableCliente(expedienteId: string): Promise<Record<string, unknown>> {
+  return api(`/api/evaluaciones/${expedienteId}/informe-publicable-cliente`);
 }
 
 export async function crearOportunidadDesdeHallazgo(

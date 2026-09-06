@@ -9,6 +9,7 @@ DEMO_PROBLEMA = (
     "Reprocesos y demoras en facturación, radicación y auditoría documental; "
     "glosas elevadas y tiempos de respuesta lentos en cartera IPS."
 )
+DEMO_NECESIDAD_RESUMEN = DEMO_PROBLEMA
 DEMO_AREAS = (
     ("facturacion", "Facturación y glosas"),
     ("cartera", "Cartera y recuperación"),

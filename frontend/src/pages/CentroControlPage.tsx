@@ -4,6 +4,7 @@ import type { CentroControlResumen, EvaluacionExpedienteSummary } from "../api";
 import { fetchCentroControlResumen, fetchEvaluaciones } from "../api";
 import { CentroControlCockpit } from "../components/centroControl/CentroControlCockpit";
 import { CentroControlEmpresaPanel } from "../components/centroControl/CentroControlEmpresaPanel";
+import { ContextBar, PageHeader } from "../components/v1";
 import { useOrganizationContext } from "../hooks/useOrganizationContext";
 import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 import { usePermissions } from "../hooks/usePermissions";
@@ -41,7 +42,7 @@ function SemanticBadge({ tipo }: { tipo: string }) {
 
 export function CentroControlPage() {
   const { has } = usePermissions();
-  const { organizationQueryParam, effectiveOrganizationName, isViewingOtherOrganization } = useOrganizationContext();
+  const { organizationQueryParam, effectiveOrganizationName, isViewingOtherOrganization, homeOrganizationName } = useOrganizationContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<CentroControlResumen | null>(null);
   const [evaluaciones, setEvaluaciones] = useState<EvaluacionExpedienteSummary[]>([]);
@@ -114,17 +115,28 @@ export function CentroControlPage() {
 
   return (
     <div className="ops-page centro-control-page cc-page-header-compact">
-      <header className="page-header compact">
-        <h1>Centro de Control</h1>
-        <p className="muted cc-tagline">
-          Consola maestra — contexto, ciclo, atención y siguiente acción
-          {isViewingOtherOrganization && (
-            <> · <strong>Organización: {effectiveOrganizationName}</strong></>
-          )}
-        </p>
-        <div className="toolbar compact-toolbar cc-context-toolbar">
+      <PageHeader
+        title="Centro de Control"
+        subtitle="Consola maestra — contexto, ciclo, atención y siguiente acción"
+        eyebrow="EIAAX"
+      />
+
+      <ContextBar
+        sessionLabel="Organización de sesión"
+        sessionValue={homeOrganizationName || effectiveOrganizationName}
+        analysisLabel={expedienteContext ? "Empresa / prospecto en análisis" : "Ámbito de análisis"}
+        analysisValue={contextoLabel}
+        extra={isViewingOtherOrganization ? [{
+          label: "Vista multi-organización",
+          value: effectiveOrganizationName,
+          hint: "Operando sobre otra organización — el CC global no está limitado a una sola empresa",
+          emphasis: true,
+        }] : []}
+      />
+
+      <div className="toolbar compact-toolbar cc-context-toolbar">
           <label className="cc-context-select">
-            <span className="muted small">Contexto</span>
+            <span className="muted small">Seleccionar empresa</span>
             <select
               value={expedienteContext}
               onChange={(e) => setExpedienteContext(e.target.value)}
@@ -149,14 +161,13 @@ export function CentroControlPage() {
               <Link to={`/evaluaciones/${expedienteContext}?tab=vista-empresa`} className="btn secondary small">Ver como empresa</Link>
             </>
           )}
-          <button type="button" onClick={load} disabled={loading}>Actualizar</button>
+          <button type="button" className="btn secondary small" onClick={load} disabled={loading}>Actualizar</button>
         </div>
         {expedienteContext && (
           <p className="muted small cc-context-banner">
             Vista de empresa: <strong>{contextoLabel}</strong> — la consola global permanece disponible al volver a «Todas».
           </p>
         )}
-      </header>
 
       {loading && <p className="muted">Cargando centro de control…</p>}
       {error && <p className="error">{error}</p>}
@@ -189,6 +200,7 @@ export function CentroControlPage() {
                 isDemoExpediente={Boolean(
                   evaluaciones.find((e) => e.id === expedienteContext)?.entidad_nombre?.startsWith("[DEMO]"),
                 )}
+                expedienteEstado={evaluaciones.find((e) => e.id === expedienteContext)?.estado}
               />
             </>
           )}

@@ -1,6 +1,23 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createEmployeeFromRequerimiento, diagnosticarTransformacion } from "../../api";
+import { label, CONFIANZA } from "../../lib/evaluacionLabels";
+import { EmptyState, FormSection, KpiStrip } from "../v1";
+
+const ALT_TIPO_LABELS: Record<string, string> = {
+  AUTOMATIZAR: "Automatización",
+  INTEGRAR: "Integración",
+  CONTRATAR: "Contratación externa",
+  CAPACITAR: "Capacitación",
+  REORGANIZAR: "Reorganización",
+};
+
+const ESCENARIO_LABELS: Record<string, string> = {
+  CONSERVADOR: "Conservador",
+  BASE: "Base",
+  OPTIMISTA: "Optimista",
+  PESIMISTA: "Pesimista",
+};
 
 type Props = {
   expedienteId: string;
@@ -10,6 +27,16 @@ type Props = {
 type Alt = Record<string, unknown>;
 type Esc = Record<string, unknown>;
 type Req = Record<string, unknown>;
+
+function labelAltTipo(tipo: unknown): string {
+  const key = String(tipo ?? "");
+  return ALT_TIPO_LABELS[key] ?? key.replace(/_/g, " ").toLowerCase();
+}
+
+function labelEscenario(tipo: unknown): string {
+  const key = String(tipo ?? "");
+  return ESCENARIO_LABELS[key] ?? String(tipo ?? "Escenario");
+}
 
 export function SolucionIaProyectadaPanel({ expedienteId, canGenerate = true }: Props) {
   const [loading, setLoading] = useState(false);
@@ -53,14 +80,10 @@ export function SolucionIaProyectadaPanel({ expedienteId, canGenerate = true }: 
   }
 
   return (
-    <section className="panel compact-panel solucion-ia-panel">
-      <header className="cc-zone-head">
-        <h2 className="section-title">Solución IA proyectada</h2>
-        <p className="muted small">
-          Arquitectura inicial recomendada por EIAAX a partir del diagnóstico del expediente.
-        </p>
-      </header>
-
+    <FormSection
+      title="Solución IA proyectada"
+      description="Arquitectura recomendada por EIAAX: empleados IA, automatizaciones, alternativas evaluadas y escenarios de impacto."
+    >
       {canGenerate && (
         <div className="ops-actions">
           <button type="button" className="btn secondary" onClick={() => void load()} disabled={loading}>
@@ -74,106 +97,121 @@ export function SolucionIaProyectadaPanel({ expedienteId, canGenerate = true }: 
       {loading && !data && <p className="muted">Analizando expediente y proyectando arquitectura…</p>}
 
       {!loading && !data && !error && (
-        <p className="muted">Ejecute la generación para obtener empleados IA, automatizaciones y escenarios propuestos.</p>
+        <EmptyState
+          title="Solución IA pendiente de generación"
+          description="Ejecute la generación para obtener empleados IA especializados, automatizaciones priorizadas y escenarios comparables."
+          action={
+            canGenerate ? (
+              <button type="button" className="btn primary" onClick={() => void load()} disabled={loading}>
+                Generar solución proyectada
+              </button>
+            ) : undefined
+          }
+        />
       )}
 
       {data && (
         <>
           {siguiente && (
             <p className="login-notice" role="status">
-              <strong>Siguiente paso:</strong> {String(siguiente.mensaje ?? siguiente.accion ?? "Revisar propuesta")}
+              <strong>Decisión requerida:</strong> {String(siguiente.mensaje ?? siguiente.accion ?? "Revisar propuesta con el equipo")}
             </p>
           )}
 
-          <div className="cc-cockpit-grid">
-            <div>
-              <h3 className="cc-subtitle">Empleados IA especializados</h3>
-              {requerimientos.length === 0 ? (
-                <p className="muted">Sin requerimientos de empleados IA en esta proyección.</p>
-              ) : (
-                <table className="data-table compact-table cc-table-fill">
-                  <thead>
-                    <tr><th>Función</th><th>Objetivo</th><th>Confianza</th><th></th></tr>
-                  </thead>
-                  <tbody>
-                    {requerimientos.map((r) => (
-                      <tr key={String(r.id)}>
-                        <td>{String(r.titulo ?? r.nombre ?? "—")}</td>
-                        <td>{String(r.objetivo ?? r.descripcion ?? "—")}</td>
-                        <td>{String(r.confianza ?? r.nivel_confianza ?? "—")}</td>
-                        <td>
-                          {r.id && (
-                            <button type="button" className="btn small" onClick={() => void onCrearEmpleado(String(r.id))}>
-                              Crear empleado
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            <div>
-              <h3 className="cc-subtitle">Automatizaciones e iniciativas</h3>
-              {iniciativas.length === 0 && alternativas.length === 0 ? (
-                <p className="muted">Sin automatizaciones priorizadas.</p>
-              ) : (
-                <ul className="cc-list-compact">
-                  {iniciativas.slice(0, 8).map((i) => (
-                    <li key={String(i.id ?? i.titulo)}>
-                      {String(i.titulo ?? i.nombre ?? "Iniciativa")} — prioridad {String(i.prioridad ?? i.score ?? "—")}
-                    </li>
+          <FormSection title="Empleados IA especializados" description="Roles recomendados para cubrir el diagnóstico">
+            {requerimientos.length === 0 ? (
+              <EmptyState
+                title="Sin empleados IA propuestos"
+                description="Regenere la solución tras completar hallazgos o ajustar el diagnóstico."
+              />
+            ) : (
+              <table className="data-table compact-table cc-table-fill">
+                <thead>
+                  <tr><th>Función</th><th>Objetivo</th><th>Confianza</th><th></th></tr>
+                </thead>
+                <tbody>
+                  {requerimientos.map((r) => (
+                    <tr key={String(r.id)}>
+                      <td>{String(r.titulo ?? r.nombre ?? "—")}</td>
+                      <td>{String(r.objetivo ?? r.descripcion ?? "—")}</td>
+                      <td>{label(CONFIANZA, String(r.confianza ?? r.nivel_confianza ?? ""))}</td>
+                      <td>
+                        {r.id && (
+                          <button type="button" className="btn small" onClick={() => void onCrearEmpleado(String(r.id))}>
+                            Crear empleado
+                          </button>
+                        )}
+                      </td>
+                    </tr>
                   ))}
-                  {alternativas.filter((a) => a.tipo === "AUTOMATIZAR" || a.tipo === "INTEGRAR").slice(0, 5).map((a) => (
-                    <li key={String(a.id)}>
-                      {String(a.titulo ?? a.nombre)} ({String(a.tipo)})
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
+                </tbody>
+              </table>
+            )}
+          </FormSection>
 
-          <h3 className="cc-subtitle">Alternativas evaluadas</h3>
-          {alternativas.length === 0 ? (
-            <p className="muted">Sin alternativas generadas.</p>
-          ) : (
-            <table className="data-table compact-table cc-table-fill">
-              <thead>
-                <tr><th>Alternativa</th><th>Tipo</th><th>Valor</th><th>Costo est.</th><th>Score</th></tr>
-              </thead>
-              <tbody>
-                {alternativas.map((a) => (
-                  <tr key={String(a.id)} className={a.recomendada ? "row-highlight" : ""}>
-                    <td>{String(a.titulo ?? a.nombre ?? "—")}{a.recomendada ? " ★" : ""}</td>
-                    <td>{String(a.tipo ?? "—")}</td>
-                    <td>{String(a.valor_esperado ?? a.beneficio ?? "—")}</td>
-                    <td>{String(a.costo_estimado ?? a.costo ?? "—")}</td>
-                    <td>{String(a.score_total ?? "—")}</td>
-                  </tr>
+          <FormSection title="Automatizaciones e iniciativas" description="Acciones operativas priorizadas por impacto">
+            {iniciativas.length === 0 && alternativas.length === 0 ? (
+              <EmptyState
+                title="Sin automatizaciones priorizadas"
+                description="Las iniciativas aparecerán cuando el diagnóstico identifique procesos automatizables."
+              />
+            ) : (
+              <ul className="cc-list-compact">
+                {iniciativas.slice(0, 8).map((i) => (
+                  <li key={String(i.id ?? i.titulo)}>
+                    <strong>{String(i.titulo ?? i.nombre ?? "Iniciativa")}</strong>
+                    {" — "}prioridad {String(i.prioridad ?? i.score ?? "—")}
+                  </li>
                 ))}
-              </tbody>
-            </table>
-          )}
+                {alternativas.filter((a) => a.tipo === "AUTOMATIZAR" || a.tipo === "INTEGRAR").slice(0, 5).map((a) => (
+                  <li key={String(a.id)}>
+                    {String(a.titulo ?? a.nombre)} ({labelAltTipo(a.tipo)})
+                  </li>
+                ))}
+              </ul>
+            )}
+          </FormSection>
 
-          <h3 className="cc-subtitle">Escenarios (antes / proyectado)</h3>
-          {escenarios.length === 0 ? (
-            <p className="muted">Sin escenarios proyectados.</p>
-          ) : (
-            <div className="cc-kpi-strip">
-              {escenarios.map((e) => (
-                <div key={String(e.id ?? e.tipo)} className="cc-kpi-item">
-                  <span className="cc-kpi-label">{String(e.tipo ?? e.nombre ?? "Escenario")}</span>
-                  <strong className="cc-kpi-value">{String(e.valor_neto ?? e.impacto ?? e.resumen ?? "—")}</strong>
-                  <span className="muted small">{String(e.descripcion ?? "")}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <FormSection title="Alternativas evaluadas" description="Opciones comparadas por valor, costo y prioridad">
+            {alternativas.length === 0 ? (
+              <EmptyState title="Sin alternativas generadas" description="Regenere la solución para evaluar opciones." />
+            ) : (
+              <table className="data-table compact-table cc-table-fill">
+                <thead>
+                  <tr><th>Alternativa</th><th>Tipo</th><th>Valor</th><th>Costo est.</th><th>Prioridad</th></tr>
+                </thead>
+                <tbody>
+                  {alternativas.map((a) => (
+                    <tr key={String(a.id)} className={a.recomendada ? "row-highlight" : ""}>
+                      <td>{String(a.titulo ?? a.nombre ?? "—")}{a.recomendada ? " ★ Recomendada" : ""}</td>
+                      <td>{labelAltTipo(a.tipo)}</td>
+                      <td>{String(a.valor_esperado ?? a.beneficio ?? "—")}</td>
+                      <td>{String(a.costo_estimado ?? a.costo ?? "—")}</td>
+                      <td>{String(a.score_total ?? "—")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </FormSection>
+
+          <FormSection title="Escenarios de impacto" description="Comparación antes / proyectado por escenario">
+            {escenarios.length === 0 ? (
+              <EmptyState title="Sin escenarios proyectados" description="Los escenarios se generan con la solución IA." />
+            ) : (
+              <KpiStrip
+                items={escenarios.map((e, idx) => ({
+                  id: String(e.id ?? idx),
+                  label: labelEscenario(e.tipo ?? e.nombre),
+                  value: String(e.valor_neto ?? e.impacto ?? e.resumen ?? "—"),
+                  hint: String(e.descripcion ?? ""),
+                  tone: "value" as const,
+                }))}
+              />
+            )}
+          </FormSection>
         </>
       )}
-    </section>
+    </FormSection>
   );
 }

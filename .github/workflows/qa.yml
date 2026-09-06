@@ -138,6 +138,8 @@ jobs:
               tests/test_cierre_brechas_horizonte.py \
               tests/test_db_startup_805e.py \
               tests/test_integracion_funcional_final_v1.py \
+              tests/test_macrointegral_v1_correcciones.py \
+              tests/test_publicable_cliente_v1.py \
               -v
           else
             PYTHONPATH=backend:. python -m pytest -m "not certification_intensive" -v
@@ -169,6 +171,116 @@ jobs:
       - name: Auditoría de dependencias
         continue-on-error: true
         run: npm audit --audit-level=moderate
+
+  certificacion-visual-pr171:
+    name: Certificación visual PR171
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    env:
+      CERT_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Registrar SHA de certificación
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          echo "EIAAX_CERT_SHA=$CERT_SHA" >> "$GITHUB_ENV"
+          if [ "$HEAD_SHA" != "$CERT_SHA" ]; then
+            echo "ERROR: git HEAD ($HEAD_SHA) ≠ PR head ($CERT_SHA)"
+            exit 1
+          fi
+          echo "SHA certificación (PR head): $CERT_SHA"
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Limpiar evidencia visual previa
+        run: |
+          rm -rf data/evidence/transversal-visual data/evidence/vista-empresa-flow
+          mkdir -p data/evidence/transversal-visual data/evidence/vista-empresa-flow
+
+      - name: Instalar dependencias
+        run: |
+          pip install -r backend/requirements.txt
+          cd frontend && npm ci
+          cd ..
+          npm install --no-save playwright@1.58.2
+          npx playwright install chromium --with-deps
+
+      - name: Arrancar backend y frontend
+        run: |
+          set -euo pipefail
+          export DATABASE_URL=sqlite:///./backend/eiaax_visual_ci.db
+          export JWT_SECRET=ci-visual-test-secret-min-32-chars-long
+          export ALLOW_INSECURE_DEV_DEFAULTS=true
+          PYTHONPATH=backend:. python backend/scripts/seed_demo_horizonte.py
+          PYTHONPATH=backend:. uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          cd frontend && npm run dev -- --host 127.0.0.1 --port 5180 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8000/health && break
+            sleep 2
+          done
+          curl -sf http://127.0.0.1:5180/ | head -c 200
+
+      - name: Certificación visual transversal
+        env:
+          EIAAX_BASE: http://127.0.0.1:5180
+          EIAAX_USER: admin
+          EIAAX_PASS: Admin2026!
+          EIAAX_CERT_SHA: ${{ env.CERT_SHA }}
+          EIAAX_ARTIFACTS: data/evidence/transversal-visual
+        run: node scripts/cert_transversal_visual.mjs
+
+      - name: Certificación flujo Vista Empresa
+        env:
+          EIAAX_BASE: http://127.0.0.1:5180
+          EIAAX_USER: admin
+          EIAAX_PASS: Admin2026!
+          EIAAX_CERT_SHA: ${{ env.CERT_SHA }}
+          EIAAX_ARTIFACTS: data/evidence/vista-empresa-flow
+        run: node scripts/cert_vista_empresa_flow.mjs
+
+      - name: Verificar coherencia SHA evidencia
+        env:
+          EIAAX_CERT_SHA: ${{ env.CERT_SHA }}
+          EIAAX_ARTIFACT_NAME: eiaax-visual-pr171-${{ env.CERT_SHA }}
+        run: node scripts/verify_cert_sha_coherence.mjs
+
+      - name: Confirmar HEAD inmutable tras certificación
+        run: |
+          set -euo pipefail
+          HEAD_AFTER="$(git rev-parse HEAD)"
+          if [ "$HEAD_AFTER" != "$CERT_SHA" ]; then
+            echo "ERROR: HEAD cambió tras certificación ($HEAD_AFTER ≠ $CERT_SHA)"
+            exit 1
+          fi
+          echo "HEAD estable: $HEAD_AFTER"
+
+      - name: Subir evidencia visual
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eiaax-visual-pr171-${{ env.CERT_SHA }}
+          path: |
+            data/evidence/transversal-visual/
+            data/evidence/vista-empresa-flow/
+          retention-days: 30
 
   validacion-git:
     name: Validación Git

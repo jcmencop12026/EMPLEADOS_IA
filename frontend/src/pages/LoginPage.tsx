@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, type CSSProperties } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   api,
@@ -12,12 +12,18 @@ import {
 } from "../api";
 import { saveUser } from "../auth/session";
 import { BrandMark } from "../components/identity/BrandMark";
+import { EnterpriseMark } from "../components/identity/EnterpriseMark";
+import { useLoginIdentity } from "../hooks/useLoginIdentity";
 import { EIAAX_BRAND } from "../lib/brand";
 
 const SESSION_EXPIRED_KEY = "eaios_session_expired";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { asEnterprise } = useLoginIdentity();
+  const accentStyle = asEnterprise.accentColor
+    ? ({ "--v1-enterprise-accent": asEnterprise.accentColor } as CSSProperties)
+    : undefined;
   const [searchParams, setSearchParams] = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -154,10 +160,15 @@ export function LoginPage() {
 
   if (mfaToken) {
     return (
-      <div className="login-page">
+      <div className="login-page eiaax-v1-experience" style={accentStyle}>
         <div className="login-layout">
           <aside className="login-brand-panel">
-            <BrandMark level="hero" />
+            <EnterpriseMark
+              variant="login"
+              displayName={asEnterprise.displayName}
+              logoUrl={asEnterprise.logoUrl}
+              logoCompactUrl={asEnterprise.logoCompactUrl}
+            />
             <p className="login-brand-copy">{EIAAX_BRAND.loginTagline}</p>
           </aside>
           <form className="login-card login-card-elevated" onSubmit={onMfaSubmit}>
@@ -187,10 +198,15 @@ export function LoginPage() {
   }
 
   return (
-    <div className="login-page">
+    <div className="login-page eiaax-v1-experience" style={accentStyle}>
       <div className="login-layout">
         <aside className="login-brand-panel">
-          <BrandMark level="hero" />
+          <EnterpriseMark
+            variant="login"
+            displayName={asEnterprise.displayName}
+            logoUrl={asEnterprise.logoUrl}
+            logoCompactUrl={asEnterprise.logoCompactUrl}
+          />
           <p className="login-brand-copy">{EIAAX_BRAND.loginTagline}</p>
         </aside>
 
