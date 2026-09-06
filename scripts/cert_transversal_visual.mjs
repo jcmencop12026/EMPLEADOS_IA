@@ -69,6 +69,31 @@ async function getScrollMetrics(page) {
   }));
 }
 
+async function assertViewportAnchors(page, viewId) {
+  return page.evaluate((id) => {
+    const defects = [];
+    if (id === "01" || id === "02") {
+      const header = document.querySelector(".centro-control-page .v1-page-header h1");
+      if (!header) {
+        defects.push("encabezado Centro de Control no encontrado");
+      } else {
+        const r = header.getBoundingClientRect();
+        if (r.top < 40 || r.top > 220) {
+          defects.push(`encabezado CC fuera de zona visible (top=${Math.round(r.top)})`);
+        }
+      }
+      const context = document.querySelector(".v1-context-bar");
+      if (context) {
+        const cr = context.getBoundingClientRect();
+        if (cr.top < 0 || cr.bottom > window.innerHeight) {
+          defects.push("ContextBar fuera de viewport inicial");
+        }
+      }
+    }
+    return defects;
+  }, viewId);
+}
+
 async function login(page) {
   await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
   await page.waitForSelector('input[autocomplete="username"]', { timeout: 20000 });
@@ -539,6 +564,10 @@ async function runVisualChecks(browser, views, results, demoMeta) {
       if (view.waitSelector) {
         await page.waitForSelector(view.waitSelector, { timeout: 15000 }).catch(() => undefined);
       }
+      if (view.id === "02") {
+        await page.waitForSelector(".cc-empresa-panel, .cc-cockpit", { timeout: 15000 }).catch(() => undefined);
+        await page.waitForTimeout(900);
+      }
       if (view.tabs) {
         await page.waitForSelector(view.tabs.container, { timeout: 15000 }).catch(() => undefined);
       }
@@ -598,6 +627,16 @@ async function runVisualChecks(browser, views, results, demoMeta) {
       if (metrics.hiddenOverflow.length) defects.push(`overflow oculto horizontal (${metrics.hiddenOverflow.length})`);
       if (metrics.bodyLen < 40) defects.push("pantalla vacía");
 
+      await resetScrollForCapture(page);
+      const finalScroll = await getScrollMetrics(page);
+      if (finalScroll.pageScrollY > 1) {
+        defects.push(`scroll final no en 0 (scrollY=${finalScroll.pageScrollY})`);
+      }
+      if (finalScroll.contentScrollTop > 1) {
+        defects.push(`content scroll final no en 0 (scrollTop=${finalScroll.contentScrollTop})`);
+      }
+      defects.push(...(await assertViewportAnchors(page, view.id)));
+
       const pass = defects.length === 0;
       const screenshot = `${vp.name}_${view.id}-${slugify(view.name)}.png`;
       await page.screenshot({ path: path.join(ARTIFACTS, screenshot), fullPage: false });
@@ -610,7 +649,7 @@ async function runVisualChecks(browser, views, results, demoMeta) {
         defects,
         metrics,
         tabCheck,
-        scrollMetrics,
+        scrollMetrics: { initial: scrollMetrics, final: finalScroll },
         screenshot,
       });
     }
@@ -714,7 +753,7 @@ async function main() {
     loginFallbackPass: loginFallback.every((r) => r.pass),
     cycle1366Pass: cycle1366.every((r) => r.pass),
     cycle1920Pass: cycle1920.every((r) => r.pass),
-    ccEmpresaScrollInitialPass: ccEmpresaScroll.every((r) => (r.scrollMetrics?.pageScrollY ?? 0) <= 1 && r.pass),
+    ccEmpresaScrollInitialPass: ccEmpresaScroll.every((r) => (r.scrollMetrics?.final?.pageScrollY ?? r.scrollMetrics?.pageScrollY ?? 0) <= 1 && (r.scrollMetrics?.final?.contentScrollTop ?? r.scrollMetrics?.contentScrollTop ?? 0) <= 1 && r.pass),
     cabinaKpiEmpresaPass: cabinaEmpresa1366.every((r) => r.pass && !r.defects?.some((d) => d.includes("cabina-kpi") && d.includes("Empresa"))),
     cabinaKpiValorPass: cabinaEmpresa1366.every((r) => r.pass && !r.defects?.some((d) => d.includes("cabina-kpi") && d.includes("Valor"))),
     screenshots: visual.map((r) => r.screenshot),
