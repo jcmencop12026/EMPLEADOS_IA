@@ -12,7 +12,7 @@ type Props = {
 export function CycleStepper({ currentIndex, expedienteId, isDemo, compact = false, className = "" }: Props) {
   return (
     <nav
-      className={`v1-cycle-stepper ${compact ? "v1-cycle-stepper--compact" : ""} ${className}`.trim()}
+      className={`v1-cycle-stepper v1-cycle-stepper--wrap ${compact ? "v1-cycle-stepper--compact" : ""} ${className}`.trim()}
       aria-label="Ciclo operativo EIAAX"
     >
       <div className="v1-cycle-stepper__track">

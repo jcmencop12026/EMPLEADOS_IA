@@ -92,6 +92,20 @@ export function EiaaxContextualAssistant({ compact = false, title = "Preguntar a
     setOpen(true);
   }
 
+  if (compact && !open) {
+    return (
+      <button
+        type="button"
+        className="eiaax-assistant-fab btn secondary"
+        onClick={() => setOpen(true)}
+        aria-label={title}
+        title={title}
+      >
+        EIAAX
+      </button>
+    );
+  }
+
   return (
     <section
       className={`eiaax-assistant ${compact ? "eiaax-assistant--compact" : ""} ${open ? "eiaax-assistant--open" : ""}`}
@@ -118,7 +132,7 @@ export function EiaaxContextualAssistant({ compact = false, title = "Preguntar a
                 type="button"
                 role="tab"
                 aria-selected={intent === key}
-                className={`btn small ${intent === key ? "primary" : ""}`}
+                className={`btn small ${intent === key ? "primary" : "secondary"}`}
                 onClick={() => setIntent(key)}
               >
                 {INTENT_LABELS[key]}
@@ -127,7 +141,7 @@ export function EiaaxContextualAssistant({ compact = false, title = "Preguntar a
           </div>
           <div className="eiaax-assistant-suggestions">
             {suggestions.map((s) => (
-              <button key={s} type="button" className="btn small" onClick={() => askSuggestion(s)} disabled={loading}>
+              <button key={s} type="button" className="btn small secondary" onClick={() => askSuggestion(s)} disabled={loading}>
                 {s}
               </button>
             ))}

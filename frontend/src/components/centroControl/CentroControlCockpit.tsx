@@ -49,7 +49,7 @@ export function CentroControlCockpit({ data, periodo, expedienteId, compact = fa
     label: ind.label,
     value: ind.disponible ? (ind.valor ?? "—") : (ind.estado ?? "Pendiente"),
     tone: ind.id === "failed_executions" && ind.valor ? "attention" as const : ind.id === "realized_value" ? "value" as const : "default" as const,
-    to: ind.enlace,
+    href: ind.enlace,
   }));
 
   return (
@@ -84,7 +84,7 @@ export function CentroControlCockpit({ data, periodo, expedienteId, compact = fa
           </div>
         </div>
 
-        <KpiStrip items={kpiItems.map((k) => ({ ...k, href: k.to }))} />
+        <KpiStrip items={kpiItems} />
 
         <div className="cc-first-grid">
           <AttentionPanel

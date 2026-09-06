@@ -5,6 +5,7 @@ export type KpiItem = {
   id: string;
   label: string;
   value: ReactNode;
+  unit?: string;
   hint?: string;
   tone?: "default" | "attention" | "success" | "value";
   href?: string;
@@ -26,7 +27,10 @@ export function KpiStrip({ items, title, className = "" }: Props) {
           const inner = (
             <>
               <span className="v1-kpi-card__label">{item.label}</span>
-              <span className="v1-kpi-card__value">{item.value}</span>
+              <span className="v1-kpi-card__value-row">
+                <span className="v1-kpi-card__value">{item.value}</span>
+                {item.unit && <span className="v1-kpi-card__unit">{item.unit}</span>}
+              </span>
               {item.hint && <span className="v1-kpi-card__hint">{item.hint}</span>}
             </>
           );

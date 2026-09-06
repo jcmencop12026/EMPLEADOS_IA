@@ -101,7 +101,9 @@ export function OportunidadesPage() {
   );
 
   const toolbarSlot = has("oportunidades.evaluate") ? (
-    <button type="button" onClick={onPriorizar} title="Recalcular priorización global">Priorizar</button>
+    <button type="button" className="btn secondary small" onClick={onPriorizar} title="Recalcular priorización global">
+      Priorizar
+    </button>
   ) : null;
 
   return (

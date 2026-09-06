@@ -8,6 +8,7 @@ import {
 import { SiguienteAccionPanel } from "../evaluacion/SiguienteAccionPanel";
 import { CadenaAnaliticaPanel } from "../evaluacion/CadenaAnaliticaPanel";
 import { ExecutiveCard, KpiStrip, StatusBadge } from "../v1";
+import { formatValorPotencialKpi } from "../../lib/formatKpiValue";
 import { ImpactoGrafico } from "../evaluacion/ImpactoGrafico";
 import { CONFIANZA, ESTADO_EXPEDIENTE, label, labelNivelEvaluacion } from "../../lib/evaluacionLabels";
 import { cabinaTabPath, mapSiguienteAccionToCabinaTab } from "../../lib/siguienteAccionTabMap";
@@ -80,6 +81,8 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
   const oportunidades = exp.hallazgos.filter((h) => h.opportunity_id).length;
   const indicadores = (impacto?.indicadores as Array<Record<string, unknown>> | undefined) ?? [];
 
+  const valorKpi = formatValorPotencialKpi(exp.valor_potencial);
+
   return (
     <div className="cc-empresa-panel">
       <ExecutiveCard
@@ -102,7 +105,8 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
             {
               id: "valor",
               label: "Valor potencial",
-              value: exp.valor_potencial ?? "—",
+              value: valorKpi.main,
+              unit: valorKpi.unit,
               tone: exp.entidad_nombre?.startsWith("[DEMO]") ? undefined : "value",
             },
             { id: "nivel", label: "Nivel", value: labelNivelEvaluacion(exp.nivel) },

@@ -22,8 +22,8 @@ function toCache(data: LoginIdentity) {
 }
 
 export function useLoginIdentity() {
-  const [identity, setIdentity] = useState<LoginIdentity | null>(fromCache);
-  const [loading, setLoading] = useState(!fromCache());
+  const [identity, setIdentity] = useState<LoginIdentity | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const reload = useCallback(() => {
     setLoading(true);
@@ -32,7 +32,10 @@ export function useLoginIdentity() {
         setIdentity(data);
         toCache(data);
       })
-      .catch(() => setIdentity(fromCache()))
+      .catch(() => {
+        const cached = fromCache();
+        setIdentity(cached);
+      })
       .finally(() => setLoading(false));
   }, []);
 

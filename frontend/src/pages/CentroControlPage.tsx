@@ -161,7 +161,7 @@ export function CentroControlPage() {
               <Link to={`/evaluaciones/${expedienteContext}?tab=vista-empresa`} className="btn secondary small">Ver como empresa</Link>
             </>
           )}
-          <button type="button" onClick={load} disabled={loading}>Actualizar</button>
+          <button type="button" className="btn secondary small" onClick={load} disabled={loading}>Actualizar</button>
         </div>
         {expedienteContext && (
           <p className="muted small cc-context-banner">

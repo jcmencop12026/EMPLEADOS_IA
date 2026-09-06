@@ -206,9 +206,31 @@
   font-weight: 600;
 }
 
+.v1-kpi-card__value-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.v1-kpi-card__value {
+  font-size: var(--v1-font-xl);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.v1-kpi-card__unit {
+  font-size: var(--v1-font-sm);
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
 .v1-kpi-strip__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 10px;
 }
 
@@ -234,9 +256,10 @@
   font-size: var(--v1-font-sm);
   font-weight: 500;
   color: #64748b;
+  line-height: 1.3;
 }
 
-.v1-kpi-card__value {
+.v1-kpi-card__value-legacy {
   font-size: var(--v1-font-xl);
   font-weight: 700;
   line-height: 1.1;
@@ -354,11 +377,19 @@
   margin-right: auto;
 }
 
-/* ── Cycle stepper (legible) ──────────────────────────────── */
+/* ── Cycle stepper (legible, multi-fila) ──────────────────── */
 
 .v1-cycle-stepper {
-  overflow-x: auto;
+  overflow: visible;
   padding-bottom: 4px;
+}
+
+.v1-cycle-stepper--wrap .v1-cycle-stepper__track {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
 }
 
 .v1-cycle-stepper__track {
@@ -372,9 +403,10 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  min-width: 88px;
-  max-width: 110px;
-  padding: 10px 8px;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+  padding: 10px 6px;
   text-decoration: none;
   color: #475569;
   border-radius: var(--v1-radius-sm);
@@ -382,6 +414,15 @@
   background: #fff;
   font-size: var(--v1-font-sm);
   transition: border-color 0.15s, background 0.15s;
+}
+
+.v1-cycle-step__label {
+  text-align: center;
+  font-weight: 600;
+  line-height: 1.25;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .v1-cycle-step__num {
@@ -394,12 +435,7 @@
   font-size: 0.75rem;
   font-weight: 700;
   background: #f1f5f9;
-}
-
-.v1-cycle-step__label {
-  text-align: center;
-  font-weight: 600;
-  line-height: 1.2;
+  flex-shrink: 0;
 }
 
 .v1-cycle-step--current {
@@ -620,6 +656,73 @@
   color: #f8fafc;
 }
 
+.enterprise-mark--text-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  max-width: 320px;
+}
+
+.enterprise-mark__wordmark {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #f8fafc;
+}
+
+.enterprise-mark__descriptor {
+  font-size: var(--v1-font-sm);
+  color: #cbd5e1;
+  line-height: 1.4;
+  max-width: 28ch;
+}
+
+.enterprise-mark--compact-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: var(--v1-enterprise-accent, #2563eb);
+  color: #fff;
+  font-size: var(--v1-font-sm);
+  font-weight: 700;
+}
+
+.eiaax-assistant-fab {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 120;
+  min-width: 56px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  box-shadow: var(--v1-shadow-md);
+  pointer-events: auto;
+}
+
+.eiaax-v1-experience .contextual-assistant-rail,
+.eiaax-v1-transversal .contextual-assistant-rail {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 120;
+  width: auto;
+  max-width: min(380px, calc(100vw - 24px));
+  pointer-events: none;
+}
+
+.eiaax-v1-experience .contextual-assistant-rail .eiaax-assistant--open,
+.eiaax-v1-transversal .contextual-assistant-rail .eiaax-assistant--open {
+  width: min(380px, calc(100vw - 24px));
+  pointer-events: auto;
+}
+
 .enterprise-mark--shell .enterprise-mark__img {
   max-height: 36px;
   max-width: 140px;
@@ -648,8 +751,9 @@
 
 /* ── Assistant no tapa controles ──────────────────────────── */
 
-.eiaax-v1-experience .contextual-assistant-rail {
-  opacity: 0.92;
+.eiaax-v1-experience .content,
+.eiaax-v1-transversal .content {
+  padding-bottom: calc(12px + var(--eiaax-assistant-clearance, 56px));
 }
 
 .v1-cc-command__head {
@@ -670,6 +774,14 @@
 
 .v1-empresa-kpis {
   margin-top: 8px;
+}
+
+.v1-empresa-kpis .v1-kpi-strip__grid {
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+}
+
+.v1-empresa-kpis .v1-kpi-card__value-row {
+  flex-wrap: nowrap;
 }
 
 .v1-opp-actions {

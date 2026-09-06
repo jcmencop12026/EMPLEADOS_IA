@@ -1,21 +1,23 @@
 #!/usr/bin/env node
 /**
- * Certificación visual Macrobloque Transversal 1 — 22 vistas × 2 resoluciones = 44 checks.
- * Incluye validación de pestaña activa, métricas de densidad y prueba funcional de tabs.
+ * Certificación visual Macrobloque Transversal 1 — 22 vistas × 2 resoluciones + login configurado/fallback.
+ * Incluye validación de pestaña activa, ciclo operativo, KPIs, controles V1 y asistente.
  */
 import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
 import { assertReportSha, resolveCertSha, writeShaManifest } from "./lib/cert_sha.mjs";
+import { clearCertBranding, seedCertBranding } from "./lib/cert_branding.mjs";
 
 const BASE = process.env.EIAAX_BASE || "http://127.0.0.1:5180";
-const USER = process.env.EIAAX_USER || "org_a_admin";
-const PASS = process.env.EIAAX_PASS || "DemoA2026!";
+const USER = process.env.EIAAX_USER || "admin";
+const PASS = process.env.EIAAX_PASS || "Admin2026!";
 const ARTIFACTS = process.env.EIAAX_ARTIFACTS || path.join(process.cwd(), "data", "evidence", "transversal-visual");
 const VIEWPORTS = [
   { name: "1366x768", width: 1366, height: 768 },
   { name: "1920x1080", width: 1920, height: 1080 },
 ];
+const CYCLE_STAGE_COUNT = 15;
 
 const CABINA_TABS = [
   { id: "empresa", label: "Empresa", expectText: /Resumen ejecutivo|Siguiente acción/i },
@@ -73,8 +75,8 @@ async function resolveIds(page) {
 function buildViews(expId, oppId) {
   if (!expId || !oppId) throw new Error("Sin expediente u oportunidad demo para certificación");
   const views = [
-    { id: "01", name: "Centro de Control global", path: "/", tabs: { container: ".tab-bar", activeClass: "active", label: "Resumen" } },
-    { id: "02", name: "Centro de Control empresa seleccionada", path: `/?expediente=${expId}`, tabs: { container: ".tab-bar", activeClass: "active", label: "Resumen" }, expectSelector: ".centro-control-page", waitSelector: ".cc-cockpit, .siguiente-accion-panel" },
+    { id: "01", name: "Centro de Control global", path: "/", tabs: { container: ".tab-bar", activeClass: "active", label: "Resumen" }, auditCycle: true },
+    { id: "02", name: "Centro de Control empresa seleccionada", path: `/?expediente=${expId}`, tabs: { container: ".tab-bar", activeClass: "active", label: "Resumen" }, expectSelector: ".centro-control-page", waitSelector: ".cc-cockpit, .siguiente-accion-panel", auditCycle: true, auditValorKpi: true },
     { id: "03", name: "Empresas y prospectos", path: "/empresas", tabs: null, expectSelector: ".empresas-page, .ops-page" },
     ...CABINA_TABS.map((t, i) => ({
       id: String(4 + i).padStart(2, "0"),
@@ -83,7 +85,7 @@ function buildViews(expId, oppId) {
       tabs: { container: ".tab-nav", activeClass: "active", label: t.label },
       expectText: t.expectText,
     })),
-    { id: "14", name: "Centro de oportunidades", path: "/oportunidades", tabs: null, expectSelector: ".ops-page" },
+    { id: "14", name: "Centro de oportunidades", path: "/oportunidades", tabs: null, expectSelector: ".ops-page", auditControls: true },
     ...OPP_TABS.map((t, i) => ({
       id: String(15 + i).padStart(2, "0"),
       name: `Oportunidad — ${t.label}`,
@@ -125,6 +127,147 @@ async function validateActiveTab(page, tabs) {
   }, tabs);
 }
 
+async function auditLoginIdentity(page, mode) {
+  return page.evaluate(async (expectedMode) => {
+    const defects = [];
+    const res = await fetch("/api/public/login-identity");
+    const identity = await res.json();
+    const panel = document.querySelector(".login-brand-panel");
+    const configuredMark = document.querySelector('[data-logo-configured="true"]');
+    const tenantImg = document.querySelector(".enterprise-mark__img");
+    const textFallback = document.querySelector('[data-brand="eiaax-text"]');
+    const legacyBrand = document.querySelector(".brand-mark, .brand-mark--hero");
+    const panelText = panel?.innerText ?? "";
+
+    if (legacyBrand) defects.push("marca legacy brand-mark visible");
+    if (/\bEX\b/.test(panelText) && !panelText.includes("EIAAX")) defects.push("fallback EX visible en panel de login");
+
+    if (expectedMode === "configured") {
+      if (!identity.has_configured_logo) defects.push("API sin has_configured_logo");
+      if (!identity.logo_url) defects.push("API sin logo_url");
+      if (!configuredMark) defects.push("sin data-logo-configured en DOM");
+      if (!tenantImg || tenantImg.getBoundingClientRect().width < 40) defects.push("imagen de logo tenant no visible");
+      if (textFallback && !configuredMark) defects.push("fallback tipográfico con logo configurado");
+    } else {
+      if (identity.has_configured_logo) defects.push("API aún reporta logo configurado");
+      if (configuredMark) defects.push("logo configurado visible en modo fallback");
+      if (!textFallback) defects.push("sin fallback tipográfico EIAAX");
+    }
+
+    return { ok: defects.length === 0, defects, identity: { has_configured_logo: identity.has_configured_logo } };
+  }, mode);
+}
+
+async function auditCycleStepper(page) {
+  return page.evaluate((stageCount) => {
+    const container = document.querySelector(".v1-cycle-stepper");
+    if (!container) return { ok: true, skipped: true };
+    const defects = [];
+    const steps = [...container.querySelectorAll(".v1-cycle-step")];
+    const containerRect = container.getBoundingClientRect();
+    const vpW = window.innerWidth;
+    const vpH = window.innerHeight;
+
+    if (steps.length !== stageCount) defects.push(`etapas: ${steps.length} (esperado ${stageCount})`);
+
+    steps.forEach((step, i) => {
+      const r = step.getBoundingClientRect();
+      const label = step.querySelector(".v1-cycle-step__label");
+      if (r.width <= 0 || r.height <= 0) defects.push(`etapa ${i + 1} sin bounding box`);
+      if (r.right > vpW + 2) defects.push(`etapa ${i + 1} fuera del viewport horizontal`);
+      if (r.bottom > vpH + 2) defects.push(`etapa ${i + 1} fuera del viewport vertical`);
+      if (r.left < containerRect.left - 4 || r.right > containerRect.right + 4) {
+        defects.push(`etapa ${i + 1} fuera del contenedor del ciclo`);
+      }
+      if (label) {
+        const cs = getComputedStyle(label);
+        const lr = label.getBoundingClientRect();
+        if (cs.visibility === "hidden" || cs.opacity === "0") defects.push(`etapa ${i + 1} label oculto`);
+        if (lr.width < 24) defects.push(`etapa ${i + 1} label comprimido`);
+        if (label.scrollWidth > label.clientWidth + 2 && cs.textOverflow === "ellipsis") {
+          defects.push(`etapa ${i + 1} texto truncado`);
+        }
+      }
+    });
+
+    const lastLabel = steps[steps.length - 1]?.querySelector(".v1-cycle-step__label")?.textContent?.trim();
+    if (lastLabel !== "Mejorar") defects.push(`última etapa no es Mejorar (${lastLabel ?? "?"})`);
+
+    const current = container.querySelector(".v1-cycle-step--current");
+    if (current) {
+      const cs = getComputedStyle(current);
+      if (cs.borderColor === "rgba(0, 0, 0, 0)" && cs.backgroundColor === "rgba(0, 0, 0, 0)") {
+        defects.push("etapa actual sin destacado visual");
+      }
+    }
+
+    return { ok: defects.length === 0, defects, stepCount: steps.length };
+  }, CYCLE_STAGE_COUNT);
+}
+
+async function auditKpiStrip(page, requireValorPotencial = false) {
+  return page.evaluate((requireValor) => {
+    const defects = [];
+    document.querySelectorAll(".v1-kpi-strip").forEach((strip) => {
+      strip.querySelectorAll(".v1-kpi-card").forEach((card) => {
+        const label = card.querySelector(".v1-kpi-card__label");
+        const value = card.querySelector(".v1-kpi-card__value");
+        const unit = card.querySelector(".v1-kpi-card__unit");
+        const labelText = label?.textContent?.trim() ?? "";
+
+        if (!label || label.getBoundingClientRect().width < 8) defects.push(`KPI sin título: ${labelText || "?"}`);
+        if (!value || value.getBoundingClientRect().width < 8) defects.push(`KPI sin valor: ${labelText || "?"}`);
+
+        if (value) {
+          const cs = getComputedStyle(value);
+          const lineHeight = parseFloat(cs.lineHeight) || 16;
+          const height = value.getBoundingClientRect().height;
+          if (height > lineHeight * 2.2) defects.push(`KPI valor multi-línea: ${labelText}`);
+        }
+
+        if (labelText.toLowerCase().includes("valor potencial")) {
+          if (!value?.textContent?.trim() || value.textContent.trim() === "—") {
+            defects.push("Valor potencial sin valor legible");
+          }
+          if (requireValor && (!unit || !/COP/i.test(unit.textContent ?? ""))) {
+            defects.push("Valor potencial sin unidad COP / año");
+          }
+          if (unit && unit.getBoundingClientRect().width < 8) {
+            defects.push("Valor potencial unidad no visible");
+          }
+        }
+      });
+    });
+    return { ok: defects.length === 0, defects };
+  }, requireValorPotencial);
+}
+
+async function auditControls(page) {
+  return page.evaluate(() => {
+    const defects = [];
+    const scopes = [".centro-control-page", ".ops-page", ".eval-console", ".cc-cockpit", ".cc-empresa-panel"];
+    for (const scope of scopes) {
+      const root = document.querySelector(scope);
+      if (!root) continue;
+      root.querySelectorAll("button").forEach((btn) => {
+        if (btn.closest(".tab-nav") || btn.closest(".tab-bar")) return;
+        if (btn.classList.contains("eiaax-assistant-fab")) return;
+        const cls = btn.className || "";
+        if (!cls.includes("btn") && !cls.includes("link-button")) {
+          defects.push(`botón sin clase V1: ${btn.textContent?.trim().slice(0, 40) || "?"}`);
+        }
+      });
+      root.querySelectorAll('a[role="button"], a.button, a.action').forEach((a) => {
+        const cls = a.className || "";
+        if (!cls.includes("btn") && !cls.includes("link-button")) {
+          defects.push(`acción enlace sin estilo V1: ${a.textContent?.trim().slice(0, 40) || "?"}`);
+        }
+      });
+    }
+    return { ok: defects.length === 0, defects: defects.slice(0, 8) };
+  });
+}
+
 async function auditViewport(page) {
   return page.evaluate(() => {
     const doc = document.documentElement;
@@ -147,23 +290,33 @@ async function auditViewport(page) {
       });
     }
 
-    const assistant = document.querySelector(".contextual-assistant-rail");
     let assistantOverlap = false;
-    if (assistant) {
-      const ar = assistant.getBoundingClientRect();
-      document.querySelectorAll(".btn.primary, .tab-nav button.active, .tab-bar button.tab-active").forEach((el) => {
+    const assistantEl = document.querySelector(".eiaax-assistant-fab, .contextual-assistant-rail .eiaax-assistant--open");
+    if (assistantEl) {
+      const ar = assistantEl.getBoundingClientRect();
+      const selectors = [
+        ".btn.primary",
+        ".tab-nav button.active",
+        ".tab-bar button.tab-active",
+        ".v1-cycle-step--current",
+        ".v1-kpi-card",
+        ".v1-next-action",
+        ".siguiente-accion-panel .btn",
+        ".cc-first-actions .btn",
+        ".v1-opp-actions .btn",
+      ];
+      document.querySelectorAll(selectors.join(",")).forEach((el) => {
         const r = el.getBoundingClientRect();
-        if (r.width && r.height) {
-          const overlap = !(r.right < ar.left || r.left > ar.right || r.bottom < ar.top || r.top > ar.bottom);
-          if (overlap) assistantOverlap = true;
-        }
+        if (!r.width || !r.height) return;
+        const overlap = !(r.right < ar.left || r.left > ar.right || r.bottom < ar.top || r.top > ar.bottom);
+        if (overlap) assistantOverlap = true;
       });
     }
 
     const hiddenOverflow = [];
-    document.querySelectorAll(".panel, .content, .ops-page").forEach((el) => {
+    document.querySelectorAll(".panel, .content, .ops-page, .v1-cycle-stepper").forEach((el) => {
       const cs = getComputedStyle(el);
-      if (cs.overflow === "hidden" && el.scrollHeight > el.clientHeight + 40) {
+      if ((cs.overflowX === "hidden" || cs.overflow === "hidden") && el.scrollWidth > el.clientWidth + 4) {
         hiddenOverflow.push(String(el.className).slice(0, 50));
       }
     });
@@ -186,28 +339,54 @@ async function auditViewport(page) {
   });
 }
 
-async function captureLoginVisual(browser, results) {
+async function captureLoginConfigured(browser, results) {
   for (const vp of VIEWPORTS) {
     const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
-    await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(800);
-    const defects = [];
-    const hasLogo = await page.locator(".enterprise-mark__img, .brand-mark img, .brand-mark--hero").count();
-    if (!hasLogo) defects.push("login sin logo/identidad visible");
+    await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+    await page.waitForTimeout(600);
+    const loginCheck = await auditLoginIdentity(page, "configured");
+    const defects = [...loginCheck.defects];
     if (!await page.locator(".login-page.eiaax-v1-experience").count()) defects.push("login fuera de sistema experiencia V1");
-    const screenshot = `${vp.name}_00-login.png`;
+    const screenshot = `${vp.name}_00-login-configurado.png`;
     await page.screenshot({ path: path.join(ARTIFACTS, screenshot), fullPage: false });
     results.push({
       kind: "visual",
       viewport: vp.name,
-      viewId: "00",
-      view: "Login",
+      viewId: "00a",
+      view: "Login — logo configurado",
       pass: defects.length === 0,
       defects,
+      loginCheck,
       screenshot,
     });
     await page.close();
   }
+}
+
+async function captureLoginFallback(browser, adminPage, results) {
+  await clearCertBranding(adminPage);
+  for (const vp of VIEWPORTS) {
+    const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
+    await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+    await page.waitForTimeout(600);
+    const loginCheck = await auditLoginIdentity(page, "fallback");
+    const defects = [...loginCheck.defects];
+    if (!await page.locator(".login-page.eiaax-v1-experience").count()) defects.push("login fuera de sistema experiencia V1");
+    const screenshot = `${vp.name}_00-login-fallback.png`;
+    await page.screenshot({ path: path.join(ARTIFACTS, screenshot), fullPage: false });
+    results.push({
+      kind: "visual",
+      viewport: vp.name,
+      viewId: "00b",
+      view: "Login — fallback sin logo",
+      pass: defects.length === 0,
+      defects,
+      loginCheck,
+      screenshot,
+    });
+    await page.close();
+  }
+  await seedCertBranding(adminPage);
 }
 
 async function runVisualChecks(browser, views, results) {
@@ -238,6 +417,20 @@ async function runVisualChecks(browser, views, results) {
       }
       const tabCheck = await validateActiveTab(page, view.tabs);
       if (!tabCheck.ok && !tabCheck.skipped) defects.push(`pestaña activa: ${tabCheck.reason}`);
+
+      if (view.auditCycle) {
+        const cycleCheck = await auditCycleStepper(page);
+        if (!cycleCheck.ok && !cycleCheck.skipped) defects.push(...cycleCheck.defects.map((d) => `ciclo: ${d}`));
+      }
+
+      const kpiCheck = await auditKpiStrip(page, Boolean(view.auditValorKpi));
+      if (!kpiCheck.ok) defects.push(...kpiCheck.defects.map((d) => `KPI: ${d}`));
+
+      if (view.auditControls || view.id === "01" || view.id === "02" || view.id === "14") {
+        const ctrlCheck = await auditControls(page);
+        if (!ctrlCheck.ok) defects.push(...ctrlCheck.defects.map((d) => `control: ${d}`));
+      }
+
       const metrics = await auditViewport(page);
       if (!metrics.hasTransversal) defects.push("sin clase eiaax-v1-transversal");
       if (metrics.horizontalOverflow) defects.push("scroll horizontal global");
@@ -245,8 +438,9 @@ async function runVisualChecks(browser, views, results) {
       if (metrics.panelUtilization > 0 && metrics.panelUtilization < 0.55) defects.push(`panel estrecho (${(metrics.panelUtilization * 100).toFixed(0)}%)`);
       if (metrics.assistantOverlap) defects.push("asistente tapa controles");
       if (metrics.viewportOffenders.length) defects.push(`controles fuera viewport (${metrics.viewportOffenders.length})`);
-      if (metrics.hiddenOverflow.length) defects.push(`overflow:hidden oculta contenido (${metrics.hiddenOverflow.length})`);
+      if (metrics.hiddenOverflow.length) defects.push(`overflow oculto horizontal (${metrics.hiddenOverflow.length})`);
       if (metrics.bodyLen < 40) defects.push("pantalla vacía");
+
       const pass = defects.length === 0;
       const screenshot = `${vp.name}_${view.id}-${slugify(view.name)}.png`;
       await page.screenshot({ path: path.join(ARTIFACTS, screenshot), fullPage: false });
@@ -315,20 +509,22 @@ async function main() {
 
   const browser = await chromium.launch({ headless: true });
   const results = [];
-  const page = await browser.newPage();
-  await login(page);
-  const { expId, oppId } = await resolveIds(page);
-  await page.close();
+
+  const bootstrap = await browser.newPage();
+  await login(bootstrap);
+  await seedCertBranding(bootstrap);
+  const { expId, oppId } = await resolveIds(bootstrap);
+
+  await captureLoginConfigured(browser, results);
+  await captureLoginFallback(browser, bootstrap, results);
+
   const views = buildViews(expId, oppId);
   if (views.length !== 22) throw new Error(`Se esperaban 22 vistas, hay ${views.length}`);
-
-  const loginResults = [];
-  await captureLoginVisual(browser, loginResults);
-  results.push(...loginResults);
 
   await runVisualChecks(browser, views, results);
   await runCabinaTabFunctional(browser, results, expId);
   await runOppTabFunctional(browser, results, oppId);
+  await bootstrap.close();
   await browser.close();
 
   const visual = results.filter((r) => r.kind === "visual");
@@ -337,6 +533,11 @@ async function main() {
   const funcPass = results.filter((r) => r.kind.startsWith("func") && r.pass).length;
   const funcFail = results.filter((r) => r.kind.startsWith("func") && !r.pass).length;
 
+  const loginConfigured = visual.filter((r) => r.viewId === "00a");
+  const loginFallback = visual.filter((r) => r.viewId === "00b");
+  const cycle1366 = visual.filter((r) => r.viewport === "1366x768" && (r.viewId === "01" || r.viewId === "02"));
+  const cycle1920 = visual.filter((r) => r.viewport === "1920x1080" && (r.viewId === "01" || r.viewId === "02"));
+
   const report = {
     sha: certSha,
     git_head: certSha,
@@ -344,11 +545,15 @@ async function main() {
     eiaax_cert_sha: process.env.EIAAX_CERT_SHA || process.env.EIAAX_SHA || null,
     viewsTotal: 22,
     resolutions: VIEWPORTS.map((v) => v.name),
-    visualChecksExpected: 46,
+    visualChecksExpected: 48,
     visualPass,
     visualFail,
     functionalPass: funcPass,
     functionalFail: funcFail,
+    loginConfiguredPass: loginConfigured.every((r) => r.pass),
+    loginFallbackPass: loginFallback.every((r) => r.pass),
+    cycle1366Pass: cycle1366.every((r) => r.pass),
+    cycle1920Pass: cycle1920.every((r) => r.pass),
     screenshots: visual.map((r) => r.screenshot),
     results,
   };
@@ -359,7 +564,11 @@ async function main() {
   for (const r of visual) {
     console.log(r.pass ? "PASS" : "FAIL", `[${r.viewport}]`, r.view, r.defects?.length ? `— ${r.defects.join("; ")}` : "");
   }
-  console.log(`\nVisual: ${visualPass}/${visual.length}`);
+  console.log(`\nVisual: ${visualPass}/${visual.length} (esperado ${report.visualChecksExpected})`);
+  console.log(`Login configurado: ${report.loginConfiguredPass ? "PASS" : "FAIL"}`);
+  console.log(`Login fallback: ${report.loginFallbackPass ? "PASS" : "FAIL"}`);
+  console.log(`Ciclo 1366: ${report.cycle1366Pass ? "PASS" : "FAIL"}`);
+  console.log(`Ciclo 1920: ${report.cycle1920Pass ? "PASS" : "FAIL"}`);
   console.log("\n=== FUNCIONAL TABS ===\n");
   for (const r of results.filter((x) => x.kind.startsWith("func"))) {
     console.log(r.pass ? "PASS" : "FAIL", r.kind, r.tab, r.defects?.length ? `— ${r.defects.join("; ")}` : "");

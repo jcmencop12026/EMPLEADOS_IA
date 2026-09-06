@@ -28,10 +28,34 @@ def test_oportunidad_labels_traduce_codigos():
 
 def test_login_usa_brand_corporativo_no_hero():
     text = (FRONTEND / "pages/LoginPage.tsx").read_text(encoding="utf-8")
+    mark = (FRONTEND / "components/identity/EnterpriseMark.tsx").read_text(encoding="utf-8")
     assert "EnterpriseMark" in text
     assert "useLoginIdentity" in text
     assert 'level="ex08"' not in text
     assert "eiaax-v1-experience" in text
+    assert "BrandMark" not in mark
+    assert "data-brand=\"tenant\"" in mark
+    assert "data-brand=\"eiaax-text\"" in mark
+
+
+def test_login_identity_endpoint_expone_logo_configurado(client):
+    from app.models import Organization
+    from conftest import TestingSessionLocal
+    from app.services import admin_service as admin_svc
+    from app.cert_branding import CERT_BRANDING_CONFIG
+
+    db = TestingSessionLocal()
+    try:
+        org = db.query(Organization).first()
+        assert org is not None
+        admin_svc.update_org_config(db, org=org, actor_id="test", config=CERT_BRANDING_CONFIG)
+        r = client.get("/api/public/login-identity")
+        assert r.status_code == 200
+        body = r.json()
+        assert body.get("has_configured_logo") is True
+        assert body.get("logo_url")
+    finally:
+        db.close()
 
 
 def test_espacio_externo_no_crear_entidad_si_existe():

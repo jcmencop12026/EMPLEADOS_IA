@@ -73,6 +73,8 @@ from app.seed_permissions import bootstrap_permissions  # noqa: E402
 from app.seed_salud import bootstrap_salud  # noqa: E402
 from app.services import demo_comercial_service as demo_svc  # noqa: E402
 from app.services import gobierno_operacional_service as gob_svc  # noqa: E402
+from app.services import admin_service as admin_svc  # noqa: E402
+from app.cert_branding import CERT_BRANDING_CONFIG  # noqa: E402
 from scripts.sqlite_lifecycle import database_url_to_path, safe_unlink_sqlite  # noqa: E402
 
 HORIZONTE_ORG = {
@@ -123,6 +125,13 @@ def main() -> int:
         db.add(admin)
         db.commit()
         db.refresh(admin)
+
+        admin_svc.update_org_config(
+            db,
+            org=org,
+            actor_id=admin.id,
+            config=CERT_BRANDING_CONFIG,
+        )
 
         manifest = demo_svc.seed_demo_comercial(db, org.id, admin.id)
 

@@ -951,6 +951,7 @@ export type LoginIdentity = {
   logo_compact_url?: string | null;
   accent_color?: string | null;
   platform_name: string;
+  has_configured_logo?: boolean;
 };
 
 export async function fetchLoginIdentity(): Promise<LoginIdentity> {
