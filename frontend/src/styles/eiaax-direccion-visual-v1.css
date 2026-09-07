@@ -23,6 +23,8 @@
 .layout.eiaax-v1-experience .brand { min-width: 0; flex: 1; }
 .layout.eiaax-v1-experience .brand .brand-mark--corporativo,
 .layout.eiaax-v1-experience .brand .eiaax-platform-mark { width: min(168px, 100%); max-height: 52px; object-fit: contain; object-position: left center; }
+/* La marca de plataforma manda en navegación; el tenant se expresa por nombre/contexto, no con un segundo logo que compita. */
+.layout.eiaax-v1-experience .brand > div[title^="Identidad de"] { display: none; }
 .layout.eiaax-v1-experience .nav-section-title,
 .layout.eiaax-v1-experience .sidebar a,
 .layout.eiaax-v1-experience .sidebar .nav-future,
@@ -81,8 +83,10 @@
 
 /* Empresa seleccionada: identidad + KPI + decisión antes del detalle. */
 .layout.eiaax-v1-experience .cc-empresa-panel { display: flex; flex-direction: column; gap: 8px; }
-.layout.eiaax-v1-experience .cc-empresa-panel .cc-resumen-ejecutivo-grid { order: 3; margin: 0; gap: 8px; grid-template-columns: repeat(4,minmax(0,1fr)); }
 .layout.eiaax-v1-experience .cc-empresa-panel .cc-empresa-hero { order: 1; margin: 0; border: 1px solid #cbd8e7; border-radius: 12px; overflow: hidden; }
+.layout.eiaax-v1-experience .cc-empresa-panel .cc-resumen-ejecutivo-grid { order: 2; margin: 0; gap: 8px; grid-template-columns: repeat(4,minmax(0,1fr)); }
+.layout.eiaax-v1-experience .cc-empresa-panel .cc-prioridad-operativa { order: 3; }
+.layout.eiaax-v1-experience .cc-empresa-panel .cc-secondary-detail { order: 4; }
 .layout.eiaax-v1-experience .cc-empresa-panel .cc-empresa-hero .v1-executive-card__head { padding: 9px 12px; background: linear-gradient(100deg,#f7fbff 0%,#fff 65%); }
 .layout.eiaax-v1-experience .cc-empresa-panel .cc-empresa-hero .v1-executive-card__head h3 { font-size: 1.18rem; }
 .layout.eiaax-v1-experience .cc-empresa-panel .cc-empresa-hero .v1-executive-card__body { padding: 7px 10px 9px; }
@@ -94,6 +98,26 @@
 .layout.eiaax-v1-experience .cc-resumen-card__title { font-size: .7rem; margin-bottom: 4px; }
 .layout.eiaax-v1-experience .cc-resumen-card__value { font-size: .96rem; }
 .layout.eiaax-v1-experience .cc-resumen-card__hint { margin-top: 4px; font-size: .76rem; line-height: 1.28; }
+.layout.eiaax-v1-experience .cc-prioridad-operativa > .panel { min-height: 0; }
+
+/* Detalles secundarios cerrados por defecto: información disponible sin consumir el primer viewport. */
+.layout.eiaax-v1-experience details.cc-secondary-detail { padding: 0; overflow: hidden; }
+.layout.eiaax-v1-experience details.cc-secondary-detail > summary {
+  cursor: pointer;
+  list-style: none;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 7px 11px;
+  font-size: .82rem;
+  font-weight: 700;
+  color: #334155;
+  background: #f8fafc;
+}
+.layout.eiaax-v1-experience details.cc-secondary-detail > summary::-webkit-details-marker { display: none; }
+.layout.eiaax-v1-experience details.cc-secondary-detail > summary::before { content: "▸"; margin-right: 7px; color: var(--dv-accent); }
+.layout.eiaax-v1-experience details.cc-secondary-detail[open] > summary::before { content: "▾"; }
+.layout.eiaax-v1-experience details.cc-secondary-detail[open] > :not(summary) { margin-left: 10px; margin-right: 10px; }
 
 /* Ciclo: una banda operativa, no 15 tarjetas gigantes. */
 .layout.eiaax-v1-experience .v1-cycle-stepper { max-height: 46px; margin: 0; }
@@ -117,13 +141,15 @@
 .login-page.eiaax-v1-experience button:focus-visible,
 .login-page.eiaax-v1-experience input:focus-visible { outline: 3px solid color-mix(in srgb, var(--dv-accent) 35%, transparent); outline-offset: 2px; }
 
-/* Login comercial: marca oficial protagonista + formulario limpio. */
+/* Login comercial: marca EIAAX protagonista + identidad tenant secundaria. */
 .login-page.eiaax-v1-experience { min-height: 100vh; display: grid; place-items: center; padding: 22px; background: radial-gradient(circle at 18% 18%, #173f6c 0%, var(--dv-navy) 42%, #071525 100%); }
 .login-page.eiaax-v1-experience .login-layout { width: min(980px, 96vw); min-height: 520px; display: grid; grid-template-columns: 1.05fr .95fr; gap: 0; overflow: hidden; border-radius: 18px; box-shadow: 0 24px 70px rgba(0,0,0,.30); background: #fff; }
-.login-page.eiaax-v1-experience .login-brand-panel { min-height: 100%; padding: 42px 38px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; border-radius: 0; box-shadow: none; background: linear-gradient(155deg,#0b2849 0%,#174a7c 100%); }
+.login-page.eiaax-v1-experience .login-brand-panel { min-height: 100%; padding: 42px 38px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; border-radius: 0; box-shadow: none; background: linear-gradient(155deg,#0b2849 0%,#174a7c 100%); }
 .login-page.eiaax-v1-experience .login-brand-panel .brand-mark--hero,
 .login-page.eiaax-v1-experience .login-brand-panel .eiaax-official-mark { width: min(330px,82%); max-height: 150px; object-fit: contain; filter: drop-shadow(0 8px 18px rgba(0,0,0,.18)); }
-.login-page.eiaax-v1-experience .login-brand-panel .enterprise-mark--login { max-width: 300px; text-align: center; }
+.login-page.eiaax-v1-experience .login-brand-panel .enterprise-mark--login { max-width: 220px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.login-page.eiaax-v1-experience .login-brand-panel .enterprise-mark--login .enterprise-mark__img { width: 42px; height: 42px; max-width: 42px; max-height: 42px; object-fit: contain; }
+.login-page.eiaax-v1-experience .login-brand-panel .enterprise-mark--login .enterprise-mark__name { margin: 0; font-size: .82rem; line-height: 1.2; color: #0f172a; }
 .login-page.eiaax-v1-experience .login-brand-copy { max-width: 34ch; margin: 0; font-size: 1rem; line-height: 1.5; color: #dbeafe; }
 .login-page.eiaax-v1-experience .login-forms { display: grid; place-items: center; padding: 30px; }
 .login-page.eiaax-v1-experience .login-card { width: min(390px,100%); box-shadow: none; border: 0; }
