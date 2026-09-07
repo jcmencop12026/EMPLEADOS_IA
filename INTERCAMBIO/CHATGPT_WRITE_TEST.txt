@@ -1,0 +1,3 @@
+Prueba controlada de escritura desde ChatGPT.
+Este archivo es temporal y debe eliminarse inmediatamente después de verificar la escritura.
+Fecha de prueba: 2026-09-07.
