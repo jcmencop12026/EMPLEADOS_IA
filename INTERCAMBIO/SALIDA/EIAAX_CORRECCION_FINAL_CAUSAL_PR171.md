@@ -69,4 +69,16 @@ Con 15 etapas y `flex-direction: column` en cada `.v1-cycle-step`, el resultado 
 
 ## CI
 
-Pendiente ejecución en push — workflow `qa.yml` (5 jobs).
+Run `34117716789` — **5/5 PASS** (último push `57b89c6`).
+
+## Prueba humana Windows
+
+Copia aislada: `D:\EIAAX_V1_PRUEBA`
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File "D:\EIAAX_V1_PRUEBA\scripts\windows\actualizar_prueba_humana_v1.ps1"
+```
+
+SHA por defecto: `57b89c6a04bff6452bab06e1b4e4c73a5f2647a3`
+
+**Nota:** los scripts `detener_demo_eiaax.ps1`, `preparar_demo_eiaax.ps1` e `iniciar_demo_eiaax.ps1` leen `$env:EIAAX_WORKTREE`; el actualizador la fija antes de invocarlos (no usar `-EIAAX_WORKTREE` como parámetro de script).
