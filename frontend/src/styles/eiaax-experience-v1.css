@@ -849,3 +849,269 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ── Centro de Control — cabecera unificada (2 filas máx.) ── */
+
+.layout.eiaax-v1-transversal.eiaax-v1-experience .centro-control-page .v1-page-header {
+  margin-bottom: 0;
+}
+
+.layout.eiaax-v1-transversal.eiaax-v1-experience .centro-control-page .v1-page-header h1 {
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.layout.eiaax-v1-transversal.eiaax-v1-experience .centro-control-page .v1-page-header__subtitle {
+  font-size: var(--v1-font-sm);
+  margin: 0;
+}
+
+.cc-unified-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #f8fafc 0%, #fff 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: var(--v1-radius);
+  box-shadow: var(--v1-shadow-sm);
+}
+
+.cc-unified-header__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cc-unified-header__global-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.cc-unified-header__context-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cc-unified-header__context-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cc-context-pill {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 12px;
+  border-radius: var(--v1-radius-sm);
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  min-width: 120px;
+}
+
+.cc-context-pill--emphasis {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.cc-context-pill--warn {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.cc-context-pill__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.cc-context-pill strong {
+  font-size: var(--v1-font-base);
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.cc-unified-header__selectors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.cc-unified-header__selectors .cc-context-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 200px;
+}
+
+/* ── Resumen ejecutivo empresa (cuadrícula 2×2) ── */
+
+.cc-resumen-ejecutivo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.cc-resumen-card {
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--v1-radius-sm);
+  background: #fff;
+  box-shadow: var(--v1-shadow-sm);
+  min-width: 0;
+}
+
+.cc-resumen-card--action {
+  border-color: #bfdbfe;
+  background: linear-gradient(180deg, #eff6ff 0%, #fff 70%);
+}
+
+.cc-resumen-card__title {
+  margin: 0 0 6px;
+  font-size: var(--v1-font-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #64748b;
+}
+
+.cc-resumen-card__value {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.cc-resumen-card__hint {
+  margin: 6px 0 0;
+  font-size: var(--v1-font-sm);
+  color: #475569;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+/* ── Sidebar — legibilidad e iconos ── */
+
+.layout.eiaax-v1-transversal.eiaax-v1-experience .sidebar {
+  width: 248px;
+  background: linear-gradient(180deg, #0f2744 0%, #1e3a5f 100%);
+}
+
+.layout.eiaax-v1-transversal.eiaax-v1-experience .sidebar a.active {
+  background: rgba(255, 255, 255, 0.12);
+  border-left: 3px solid var(--v1-enterprise-accent, #38bdf8);
+  font-weight: 600;
+}
+
+.layout.eiaax-v1-transversal.eiaax-v1-experience .nav-label {
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.layout.eiaax-v1-transversal.eiaax-v1-experience .nav-icon {
+  width: 20px;
+  font-size: 0.875rem;
+  opacity: 1;
+}
+
+/* ── Login — identidad visible ── */
+
+.login-page.eiaax-v1-experience {
+  background: #0f172a;
+}
+
+.login-page.eiaax-v1-experience .login-layout {
+  gap: 20px;
+}
+
+.login-page.eiaax-v1-experience .login-brand-panel {
+  background: linear-gradient(160deg, #0f2744 0%, #1e3a5f 55%, #0f2744 100%);
+  border-radius: var(--v1-radius);
+  box-shadow: var(--v1-shadow-md);
+  min-height: 420px;
+}
+
+.login-page.eiaax-v1-experience .login-brand-copy {
+  color: #cbd5e1;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.login-page.eiaax-v1-experience .password-toggle {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: var(--v1-font-sm);
+  font-weight: 500;
+  border-radius: var(--v1-radius-sm);
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  flex-shrink: 0;
+}
+
+.login-page.eiaax-v1-experience .link-button.login-forgot {
+  font-size: var(--v1-font-sm);
+  font-weight: 500;
+  color: #475569;
+  text-decoration: underline;
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+  align-self: flex-start;
+}
+
+.login-page.eiaax-v1-experience .link-button.login-forgot:hover {
+  color: var(--v1-enterprise-accent);
+}
+
+/* ── Ciclo compacto en empresa seleccionada ── */
+
+.eiaax-v1-experience .v1-cycle-stepper--compact .v1-cycle-step {
+  padding: 6px 4px;
+}
+
+.eiaax-v1-experience .v1-cycle-stepper--compact .v1-cycle-step__label {
+  font-size: 0.6875rem;
+}
+
+.eiaax-v1-experience .v1-cycle-stepper--compact .v1-cycle-step__num {
+  width: 22px;
+  height: 22px;
+  font-size: 0.6875rem;
+}
+
+@media (max-width: 1200px) {
+  .cc-resumen-ejecutivo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .cc-unified-header__context-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cc-resumen-ejecutivo-grid {
+    grid-template-columns: 1fr;
+  }
+}

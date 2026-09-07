@@ -12,6 +12,7 @@ import { BrandMark } from "./components/identity/BrandMark";
 import { EnterpriseMark } from "./components/identity/EnterpriseMark";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { EIAAX_BRAND } from "./lib/brand";
+import { navIconFor } from "./lib/navIcons";
 
 type NavSection = (typeof MENU)[number];
 const COLLAPSE_KEY = "eaios_menu_collapsed";
@@ -123,7 +124,7 @@ function AppShellInner() {
                   title={item.label}
                   className={section.id === "admin" ? "nav-sub" : undefined}
                 >
-                  <span className="nav-icon">{section.id === "admin" ? "○" : "●"}</span>
+                  <span className="nav-icon" aria-hidden="true">{navIconFor(item.to)}</span>
                   <span className="nav-label">
                     {item.label}
                     {item.to === "/trabajo" && trabajoPendientes > 0 && (

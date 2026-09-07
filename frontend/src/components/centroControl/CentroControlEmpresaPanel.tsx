@@ -82,14 +82,50 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
   const indicadores = (impacto?.indicadores as Array<Record<string, unknown>> | undefined) ?? [];
 
   const valorKpi = formatValorPotencialKpi(exp.valor_potencial);
+  const infoFaltante = Math.max(0, 100 - (exp.porcentaje_informacion ?? 0));
 
   return (
     <div className="cc-empresa-panel">
+      <section className="cc-resumen-ejecutivo-grid" aria-label="Resumen ejecutivo compacto">
+        <article className="cc-resumen-card">
+          <h3 className="cc-resumen-card__title">Qué sabemos</h3>
+          <p className="cc-resumen-card__value">{exp.porcentaje_informacion}% información</p>
+          <p className="cc-resumen-card__hint">{exp.hallazgos.length} hallazgos · confianza {label(CONFIANZA, exp.confianza_global)}</p>
+        </article>
+        <article className="cc-resumen-card">
+          <h3 className="cc-resumen-card__title">Qué falta</h3>
+          <p className="cc-resumen-card__value">{infoFaltante > 0 ? `${infoFaltante}% por completar` : "Completo"}</p>
+          <p className="cc-resumen-card__hint">{exp.necesidad ? String(exp.necesidad).slice(0, 72) : "Sin necesidad registrada"}</p>
+        </article>
+        <article className="cc-resumen-card">
+          <h3 className="cc-resumen-card__title">Lo que encontró EIAAX</h3>
+          <p className="cc-resumen-card__value">{exp.hallazgos.length} hallazgos</p>
+          <p className="cc-resumen-card__hint">{oportunidades} oportunidades vinculadas</p>
+        </article>
+        <article className="cc-resumen-card cc-resumen-card--action">
+          <h3 className="cc-resumen-card__title">Siguiente acción</h3>
+          <p className="cc-resumen-card__value">{label(ESTADO_EXPEDIENTE, exp.estado)}</p>
+          <p className="cc-resumen-card__hint">
+            <Link to={`/evaluaciones/${evaluacionId}`} title="Ir a la cabina para ejecutar la siguiente acción recomendada">
+              Abrir cabina →
+            </Link>
+          </p>
+        </article>
+      </section>
+
       <ExecutiveCard
         title={exp.entidad_nombre}
         subtitle={`${exp.codigo} · ${exp.titulo}`}
         demo={exp.entidad_nombre?.startsWith("[DEMO]")}
-        actions={<Link to={`/evaluaciones/${evaluacionId}`} className="btn primary small">Abrir cabina</Link>}
+        actions={(
+          <Link
+            to={`/evaluaciones/${evaluacionId}`}
+            className="btn primary small"
+            title="Abre la cabina completa de la empresa para operar diagnóstico, valor y acciones"
+          >
+            Abrir cabina
+          </Link>
+        )}
       >
         <div className="v1-empresa-meta">
           <StatusBadge label={label(ESTADO_EXPEDIENTE, exp.estado)} tone="info" />
