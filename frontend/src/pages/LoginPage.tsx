@@ -14,9 +14,73 @@ import { saveUser } from "../auth/session";
 import { BrandMark } from "../components/identity/BrandMark";
 import { EnterpriseMark } from "../components/identity/EnterpriseMark";
 import { useLoginIdentity } from "../hooks/useLoginIdentity";
-import { EIAAX_BRAND } from "../lib/brand";
+import { EIAAX_BRAND, type EnterpriseVisualIdentity } from "../lib/brand";
 
 const SESSION_EXPIRED_KEY = "eaios_session_expired";
+
+function LoginBrandPanel({ identity }: { identity: EnterpriseVisualIdentity }) {
+  const hasTenantLogo = Boolean(identity.logoUrl || identity.logoCompactUrl);
+
+  return (
+    <aside className="login-brand-panel">
+      <div
+        aria-label="Identidad oficial EIAAX"
+        style={{
+          width: "min(360px, 88%)",
+          padding: "18px 20px",
+          borderRadius: 16,
+          background: "rgba(255,255,255,0.98)",
+          boxShadow: "0 18px 45px rgba(2, 8, 23, 0.24)",
+        }}
+      >
+        <BrandMark
+          level="hero"
+          title={EIAAX_BRAND.title}
+          style={{ width: "100%", height: "auto", display: "block" }}
+        />
+      </div>
+
+      {hasTenantLogo ? (
+        <div
+          style={{
+            marginTop: 18,
+            padding: "10px 14px",
+            borderRadius: 12,
+            background: "rgba(255,255,255,0.94)",
+            maxWidth: "78%",
+          }}
+        >
+          <EnterpriseMark
+            variant="login"
+            displayName={identity.displayName}
+            logoUrl={identity.logoUrl}
+            logoCompactUrl={identity.logoCompactUrl}
+          />
+        </div>
+      ) : identity.displayName ? (
+        <div
+          style={{
+            marginTop: 18,
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+            textAlign: "center",
+            color: "#f8fafc",
+          }}
+        >
+          <span style={{ fontSize: 12, opacity: 0.78, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Organización
+          </span>
+          <strong style={{ fontSize: 17, lineHeight: 1.3 }}>{identity.displayName}</strong>
+        </div>
+      ) : null}
+
+      <p className="login-brand-copy" style={{ maxWidth: 360, marginTop: 20 }}>
+        {EIAAX_BRAND.loginTagline}
+      </p>
+    </aside>
+  );
+}
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -162,15 +226,7 @@ export function LoginPage() {
     return (
       <div className="login-page eiaax-v1-experience" style={accentStyle}>
         <div className="login-layout">
-          <aside className="login-brand-panel">
-            <EnterpriseMark
-              variant="login"
-              displayName={asEnterprise.displayName}
-              logoUrl={asEnterprise.logoUrl}
-              logoCompactUrl={asEnterprise.logoCompactUrl}
-            />
-            <p className="login-brand-copy">{EIAAX_BRAND.loginTagline}</p>
-          </aside>
+          <LoginBrandPanel identity={asEnterprise} />
           <form className="login-card login-card-elevated" onSubmit={onMfaSubmit}>
             <h1>Verificación en dos pasos</h1>
             <p className="muted">Ingrese el código de su aplicación de autenticación o un código de recuperación.</p>
@@ -188,7 +244,12 @@ export function LoginPage() {
             <button type="submit" className="btn primary login-submit" disabled={loading}>
               {loading ? "Verificando…" : "Verificar"}
             </button>
-            <button type="button" className="link-button" onClick={() => { setMfaToken(null); setMfaCode(""); }}>
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => { setMfaToken(null); setMfaCode(""); }}
+              title="Regresa al formulario principal de inicio de sesión"
+            >
               Volver al inicio de sesión
             </button>
           </form>
@@ -200,15 +261,7 @@ export function LoginPage() {
   return (
     <div className="login-page eiaax-v1-experience" style={accentStyle}>
       <div className="login-layout">
-        <aside className="login-brand-panel">
-          <EnterpriseMark
-            variant="login"
-            displayName={asEnterprise.displayName}
-            logoUrl={asEnterprise.logoUrl}
-            logoCompactUrl={asEnterprise.logoCompactUrl}
-          />
-          <p className="login-brand-copy">{EIAAX_BRAND.loginTagline}</p>
-        </aside>
+        <LoginBrandPanel identity={asEnterprise} />
 
         <div className="login-forms">
           <form className="login-card login-card-elevated" onSubmit={onSubmit}>
@@ -247,7 +300,7 @@ export function LoginPage() {
                   className="password-toggle"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  title={showPassword ? "Oculta la contraseña visible" : "Muestra temporalmente la contraseña escrita"}
                   disabled={loading}
                 >
                   {showPassword ? "Ocultar" : "Ver"}
@@ -255,7 +308,12 @@ export function LoginPage() {
               </span>
             </label>
             {error && <p className="error" role="alert">{error}</p>}
-            <button type="submit" className="btn primary login-submit" disabled={loading}>
+            <button
+              type="submit"
+              className="btn primary login-submit"
+              disabled={loading}
+              title="Valida sus credenciales y entra al ecosistema EIAAX"
+            >
               {loading ? "Entrando…" : "Entrar"}
             </button>
             <button
@@ -263,6 +321,7 @@ export function LoginPage() {
               className="link-button login-forgot"
               onClick={() => setShowForgot((v) => !v)}
               disabled={loading}
+              title="Muestra las opciones disponibles para recuperar el acceso"
             >
               ¿Olvidó su contraseña?
             </button>
@@ -293,14 +352,27 @@ export function LoginPage() {
                   disabled={loading}
                   aria-label="Código de organización"
                 />
-                <button type="button" className="btn secondary small" onClick={() => void onDiscoverSso()} disabled={loading}>
+                <button
+                  type="button"
+                  className="btn secondary small"
+                  onClick={() => void onDiscoverSso()}
+                  disabled={loading}
+                  title="Busca el método de inicio de sesión empresarial configurado para esta organización"
+                >
                   Continuar
                 </button>
               </div>
               {showSso && (
                 <div className="form-stack login-sso-providers">
                   {ssoProviders.map((p) => (
-                    <button key={p.id} type="button" className="btn secondary" onClick={() => void onSsoLogin(p.id)} disabled={loading}>
+                    <button
+                      key={p.id}
+                      type="button"
+                      className="btn secondary"
+                      onClick={() => void onSsoLogin(p.id)}
+                      disabled={loading}
+                      title={`Continúa el acceso empresarial mediante ${p.name}`}
+                    >
                       Continuar con {p.name}
                     </button>
                   ))}
