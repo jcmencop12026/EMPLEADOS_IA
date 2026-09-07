@@ -15,6 +15,7 @@ const PASS = process.env.EIAAX_PASS || "Admin2026!";
 const ARTIFACTS = process.env.EIAAX_ARTIFACTS || path.join(process.cwd(), "data", "evidence", "transversal-visual");
 const VIEWPORTS = [
   { name: "1366x768", width: 1366, height: 768 },
+  { name: "1440x900", width: 1440, height: 900 },
   { name: "1920x1080", width: 1920, height: 1080 },
 ];
 const CYCLE_STAGE_COUNT = 15;
@@ -223,16 +224,40 @@ async function auditCycleStepper(page) {
     const defects = [];
     const steps = [...container.querySelectorAll(".v1-cycle-step")];
     const containerRect = container.getBoundingClientRect();
+    const track = container.querySelector(".v1-cycle-stepper__track");
 
     if (steps.length !== stageCount) defects.push(`etapas: ${steps.length} (esperado ${stageCount})`);
+
+    if (containerRect.height > 80) {
+      defects.push(`ciclo demasiado alto (${Math.round(containerRect.height)}px, máx 80)`);
+    }
+
+    const rowTops = [...new Set(steps.map((s) => Math.round(s.getBoundingClientRect().top)))].sort((a, b) => a - b);
+    if (rowTops.length > 2) {
+      defects.push(`ciclo en ${rowTops.length} filas (máx 2; layout 5×3 rechazado)`);
+    }
+
+    if (track) {
+      const trackCs = getComputedStyle(track);
+      if (trackCs.display === "grid") {
+        const cols = trackCs.gridTemplateColumns || "";
+        if (/repeat\(\s*5/.test(cols)) {
+          defects.push("track en grid 5 columnas (causa 5×3)");
+        }
+      }
+    }
+
+    const avgHeight = steps.length
+      ? steps.reduce((sum, s) => sum + s.getBoundingClientRect().height, 0) / steps.length
+      : 0;
+    if (avgHeight > 52) {
+      defects.push(`etapas tipo tarjeta (${Math.round(avgHeight)}px alto promedio, máx 52)`);
+    }
 
     steps.forEach((step, i) => {
       const r = step.getBoundingClientRect();
       const label = step.querySelector(".v1-cycle-step__label");
       if (r.width <= 0 || r.height <= 0) defects.push(`etapa ${i + 1} sin bounding box`);
-      if (r.left < containerRect.left - 4 || r.right > containerRect.right + 4) {
-        defects.push(`etapa ${i + 1} fuera del contenedor horizontal del ciclo`);
-      }
       if (label) {
         const cs = getComputedStyle(label);
         const lr = label.getBoundingClientRect();
@@ -247,7 +272,19 @@ async function auditCycleStepper(page) {
     const lastLabel = steps[steps.length - 1]?.querySelector(".v1-cycle-step__label")?.textContent?.trim();
     if (lastLabel !== "Mejorar") defects.push(`última etapa no es Mejorar (${lastLabel ?? "?"})`);
 
+    const pathHasExpediente = window.location.search.includes("expediente=");
     const current = container.querySelector(".v1-cycle-step--current");
+    const done = container.querySelector(".v1-cycle-step--done");
+    const next = container.querySelector(".v1-cycle-step--next");
+    const pending = container.querySelector(".v1-cycle-step--pending");
+
+    if (pathHasExpediente) {
+      if (!current) defects.push("sin etapa actual con expediente seleccionado");
+      if (!done && !next && !pending) defects.push("sin estados de ciclo distinguibles");
+    } else if (!pending) {
+      defects.push("vista global sin etapas en estado futuro/pending");
+    }
+
     if (current) {
       const cs = getComputedStyle(current);
       if (cs.borderColor === "rgba(0, 0, 0, 0)" && cs.backgroundColor === "rgba(0, 0, 0, 0)") {
@@ -255,7 +292,14 @@ async function auditCycleStepper(page) {
       }
     }
 
-    return { ok: defects.length === 0, defects, stepCount: steps.length };
+    return {
+      ok: defects.length === 0,
+      defects,
+      stepCount: steps.length,
+      rowCount: rowTops.length,
+      containerHeight: Math.round(containerRect.height),
+      avgStepHeight: Math.round(avgHeight),
+    };
   }, CYCLE_STAGE_COUNT);
 }
 
@@ -733,6 +777,7 @@ async function main() {
   const loginConfigured = visual.filter((r) => r.viewId === "00a");
   const loginFallback = visual.filter((r) => r.viewId === "00b");
   const cycle1366 = visual.filter((r) => r.viewport === "1366x768" && (r.viewId === "01" || r.viewId === "02"));
+  const cycle1440 = visual.filter((r) => r.viewport === "1440x900" && (r.viewId === "01" || r.viewId === "02"));
   const cycle1920 = visual.filter((r) => r.viewport === "1920x1080" && (r.viewId === "01" || r.viewId === "02"));
   const ccEmpresaScroll = visual.filter((r) => r.viewId === "02" && r.viewport === "1366x768");
   const cabinaEmpresa1366 = visual.filter((r) => r.viewId === "04" && r.viewport === "1366x768");
@@ -744,7 +789,7 @@ async function main() {
     eiaax_cert_sha: process.env.EIAAX_CERT_SHA || process.env.EIAAX_SHA || null,
     viewsTotal: 22,
     resolutions: VIEWPORTS.map((v) => v.name),
-    visualChecksExpected: 48,
+    visualChecksExpected: 72,
     visualPass,
     visualFail,
     functionalPass: funcPass,
@@ -752,6 +797,7 @@ async function main() {
     loginConfiguredPass: loginConfigured.every((r) => r.pass),
     loginFallbackPass: loginFallback.every((r) => r.pass),
     cycle1366Pass: cycle1366.every((r) => r.pass),
+    cycle1440Pass: cycle1440.every((r) => r.pass),
     cycle1920Pass: cycle1920.every((r) => r.pass),
     ccEmpresaScrollInitialPass: ccEmpresaScroll.every((r) => (r.scrollMetrics?.final?.pageScrollY ?? r.scrollMetrics?.pageScrollY ?? 0) <= 1 && (r.scrollMetrics?.final?.contentScrollTop ?? r.scrollMetrics?.contentScrollTop ?? 0) <= 1 && r.pass),
     cabinaKpiEmpresaPass: cabinaEmpresa1366.every((r) => r.pass && !r.defects?.some((d) => d.includes("cabina-kpi") && d.includes("Empresa"))),
@@ -770,6 +816,7 @@ async function main() {
   console.log(`Login configurado: ${report.loginConfiguredPass ? "PASS" : "FAIL"}`);
   console.log(`Login fallback: ${report.loginFallbackPass ? "PASS" : "FAIL"}`);
   console.log(`Ciclo 1366: ${report.cycle1366Pass ? "PASS" : "FAIL"}`);
+  console.log(`Ciclo 1440: ${report.cycle1440Pass ? "PASS" : "FAIL"}`);
   console.log(`Ciclo 1920: ${report.cycle1920Pass ? "PASS" : "FAIL"}`);
   console.log(`CC empresa scroll inicial 0: ${report.ccEmpresaScrollInitialPass ? "PASS" : "FAIL"}`);
   console.log(`Cabina KPI Empresa completo: ${report.cabinaKpiEmpresaPass ? "PASS" : "FAIL"}`);

@@ -396,71 +396,113 @@
   margin-right: auto;
 }
 
-/* ── Cycle stepper (legible, multi-fila) ──────────────────── */
+/* ── Cycle stepper (compacto, horizontal) ─────────────────── */
 
 .v1-cycle-stepper {
   overflow: visible;
-  padding-bottom: 4px;
-}
-
-.v1-cycle-stepper--wrap .v1-cycle-stepper__track {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  min-width: 0;
-  width: 100%;
+  max-height: 56px;
+  padding-bottom: 2px;
 }
 
 .v1-cycle-stepper__track {
   display: flex;
-  gap: 6px;
-  min-width: min-content;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  padding: 2px 0 4px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .v1-cycle-step {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
+  flex-direction: row;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  flex: 0 0 auto;
   min-width: 0;
-  width: 100%;
+  width: auto;
   max-width: none;
-  padding: 10px 6px;
+  padding: 4px 8px 4px 5px;
+  margin-right: 0;
   text-decoration: none;
-  color: #475569;
-  border-radius: var(--v1-radius-sm);
+  color: #64748b;
+  border-radius: 999px;
   border: 1px solid #e2e8f0;
-  background: #fff;
+  background: #f8fafc;
   font-size: var(--v1-font-sm);
-  transition: border-color 0.15s, background 0.15s;
+  line-height: 1.2;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  position: relative;
+  scroll-snap-align: start;
+}
+
+.v1-cycle-step:not(:last-child) {
+  padding-right: 14px;
+}
+
+.v1-cycle-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 2px;
+  background: #cbd5e1;
+  pointer-events: none;
 }
 
 .v1-cycle-step__label {
-  text-align: center;
+  text-align: left;
   font-weight: 600;
-  line-height: 1.25;
+  font-size: 0.75rem;
+  line-height: 1.15;
+  white-space: nowrap;
   word-break: normal;
-  overflow-wrap: anywhere;
-  hyphens: auto;
+  overflow-wrap: normal;
+  hyphens: none;
 }
 
 .v1-cycle-step__num {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 700;
-  background: #f1f5f9;
+  background: #e2e8f0;
+  color: #475569;
   flex-shrink: 0;
+}
+
+.v1-cycle-step--done {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.v1-cycle-step--done .v1-cycle-step__num {
+  background: #22c55e;
+  color: #fff;
+}
+
+.v1-cycle-step--done:not(:last-child)::after {
+  background: #4ade80;
 }
 
 .v1-cycle-step--current {
   border-color: var(--v1-enterprise-accent);
   background: #eff6ff;
   color: #1e3a8a;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.15);
 }
 
 .v1-cycle-step--current .v1-cycle-step__num {
@@ -468,13 +510,26 @@
   color: #fff;
 }
 
-.v1-cycle-step--done {
-  border-color: #86efac;
-  background: #f0fdf4;
+.v1-cycle-step--next {
+  border-color: #fbbf24;
+  background: #fffbeb;
+  color: #92400e;
 }
 
-.v1-cycle-step--next {
-  border-color: #fde68a;
+.v1-cycle-step--next .v1-cycle-step__num {
+  background: #fde68a;
+  color: #b45309;
+}
+
+.v1-cycle-step--pending {
+  border-color: #e2e8f0;
+  background: #fff;
+  color: #94a3b8;
+}
+
+.v1-cycle-step--pending .v1-cycle-step__num {
+  background: #f1f5f9;
+  color: #94a3b8;
 }
 
 /* ── Commercial cycle ─────────────────────────────────────── */
@@ -781,27 +836,99 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+}
+
+.eiaax-v1-experience .v1-cc-command.panel.compact-panel {
+  padding: 10px 12px;
+}
+
+.eiaax-v1-experience .v1-cc-command .section-title {
+  margin-bottom: 2px;
+  font-size: 1rem;
+}
+
+.eiaax-v1-experience .v1-cc-command .muted.small {
+  font-size: 0.8125rem;
+  line-height: 1.3;
 }
 
 .v1-empresa-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cc-empresa-panel .cc-resumen-ejecutivo-grid {
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cc-empresa-panel .cc-resumen-card {
+  padding: 8px 10px;
+}
+
+.cc-empresa-panel .cc-resumen-card__title {
+  margin-bottom: 4px;
+}
+
+.cc-empresa-panel .cc-resumen-card__hint {
+  margin-top: 4px;
+}
+
+.cc-empresa-panel .v1-executive-card.cc-empresa-hero .v1-executive-card__head {
+  padding: 8px 12px;
+}
+
+.cc-empresa-panel .v1-executive-card.cc-empresa-hero .v1-executive-card__head h3 {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.25;
+}
+
+.cc-empresa-panel .v1-executive-card.cc-empresa-hero .v1-executive-card__head p {
+  margin: 2px 0 0;
+  font-size: var(--v1-font-sm);
+}
+
+.cc-empresa-panel .v1-executive-card.cc-empresa-hero .v1-executive-card__body {
+  padding: 8px 12px 10px;
+}
+
+.cc-empresa-panel .cc-empresa-hero-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+  margin-bottom: 6px;
+}
+
+.cc-empresa-panel .cc-empresa-hero-band .v1-empresa-meta {
+  margin-bottom: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .v1-empresa-kpis {
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .v1-empresa-kpis .v1-kpi-strip__grid {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 196px), 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .v1-empresa-kpis .v1-kpi-card__value-row {
   flex-wrap: wrap;
+}
+
+@media (max-width: 1100px) {
+  .v1-empresa-kpis .v1-kpi-strip__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 900px) {
@@ -1085,8 +1212,12 @@
 
 /* ── Ciclo compacto en empresa seleccionada ── */
 
+.eiaax-v1-experience .v1-cycle-stepper--compact {
+  max-height: 48px;
+}
+
 .eiaax-v1-experience .v1-cycle-stepper--compact .v1-cycle-step {
-  padding: 6px 4px;
+  padding: 3px 6px 3px 4px;
 }
 
 .eiaax-v1-experience .v1-cycle-stepper--compact .v1-cycle-step__label {
@@ -1094,9 +1225,9 @@
 }
 
 .eiaax-v1-experience .v1-cycle-stepper--compact .v1-cycle-step__num {
-  width: 22px;
-  height: 22px;
-  font-size: 0.6875rem;
+  width: 18px;
+  height: 18px;
+  font-size: 0.625rem;
 }
 
 @media (max-width: 1200px) {

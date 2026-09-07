@@ -114,6 +114,7 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
       </section>
 
       <ExecutiveCard
+        className="cc-empresa-hero"
         title={exp.entidad_nombre}
         subtitle={`${exp.codigo} · ${exp.titulo}`}
         demo={exp.entidad_nombre?.startsWith("[DEMO]")}
@@ -127,9 +128,11 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
           </Link>
         )}
       >
-        <div className="v1-empresa-meta">
-          <StatusBadge label={label(ESTADO_EXPEDIENTE, exp.estado)} tone="info" />
-          <span className="muted small">Puesto de mando — empresa seleccionada</span>
+        <div className="cc-empresa-hero-band">
+          <div className="v1-empresa-meta">
+            <StatusBadge label={label(ESTADO_EXPEDIENTE, exp.estado)} tone="info" />
+            <span className="muted small">Puesto de mando — empresa seleccionada</span>
+          </div>
         </div>
         <KpiStrip
           className="v1-empresa-kpis"
