@@ -6,6 +6,7 @@ import { ThemeProvider } from "./hooks/useTheme";
 import "./styles.css";
 import "./styles/eiaax-transversal-v1.css";
 import "./styles/eiaax-experience-v1.css";
+import "./styles/eiaax-direccion-visual-v1.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
