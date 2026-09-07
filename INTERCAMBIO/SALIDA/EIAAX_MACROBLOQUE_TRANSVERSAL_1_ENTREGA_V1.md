@@ -1,8 +1,8 @@
 # EIAAX — Macrobloque Transversal 1 — Entrega visual V1 (reorganización estructural)
 
-**Fecha:** 2026-09-07  
-**Rama:** `cursor/ajuste-transversal-1-85e4`  
-**PR:** #171 — feat(ui): Macrobloque Transversal 1 — normalización visual V1  
+**Fecha:** 2026-09-07
+**Rama:** `cursor/ajuste-transversal-1-85e4`
+**PR:** #171 — feat(ui): Macrobloque Transversal 1 — normalización visual V1
 **SHA certificado visual anterior:** `8d2a4c3c06bc6bcbe14f8a85be1211f1901b902e`
 
 ---
