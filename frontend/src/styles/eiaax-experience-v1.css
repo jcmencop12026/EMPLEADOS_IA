@@ -803,6 +803,25 @@
   max-width: 140px;
 }
 
+.eiaax-official-mark {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.eiaax-official-mark--hero {
+  max-height: 88px;
+}
+
+.eiaax-official-mark--corporativo {
+  max-height: 52px;
+}
+
+.login-brand-panel .eiaax-official-mark--hero {
+  max-height: 96px;
+}
+
 /* ── Tables legibles ──────────────────────────────────────── */
 
 .eiaax-v1-experience .data-table th,

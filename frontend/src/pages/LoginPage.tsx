@@ -11,7 +11,7 @@ import {
   type UserMe,
 } from "../api";
 import { saveUser } from "../auth/session";
-import { BrandMark } from "../components/identity/BrandMark";
+import { EiaaxOfficialMark } from "../components/identity/EiaaxOfficialMark";
 import { EnterpriseMark } from "../components/identity/EnterpriseMark";
 import { useLoginIdentity } from "../hooks/useLoginIdentity";
 import { EIAAX_BRAND, type EnterpriseVisualIdentity } from "../lib/brand";
@@ -33,7 +33,7 @@ function LoginBrandPanel({ identity }: { identity: EnterpriseVisualIdentity }) {
           boxShadow: "0 18px 45px rgba(2, 8, 23, 0.24)",
         }}
       >
-        <BrandMark
+        <EiaaxOfficialMark
           level="hero"
           title={EIAAX_BRAND.title}
           style={{ width: "100%", height: "auto", display: "block" }}

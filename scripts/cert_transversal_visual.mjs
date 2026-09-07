@@ -197,6 +197,8 @@ async function auditLoginIdentity(page, mode) {
     if (legacyBrand) defects.push("marca legacy brand-mark visible");
     if (/\bEX\b/.test(panelText) && !panelText.includes("EIAAX")) defects.push("fallback EX visible en panel de login");
 
+    const officialMark = document.querySelector('[data-brand="eiaax-official"]');
+
     if (expectedMode === "configured") {
       if (!identity.has_configured_logo) defects.push("API sin has_configured_logo");
       if (!identity.logo_url) defects.push("API sin logo_url");
@@ -206,7 +208,12 @@ async function auditLoginIdentity(page, mode) {
     } else {
       if (identity.has_configured_logo) defects.push("API aún reporta logo configurado");
       if (configuredMark) defects.push("logo configurado visible en modo fallback");
-      if (!textFallback) defects.push("sin fallback tipográfico EIAAX");
+      if (!textFallback && !officialMark) defects.push("sin marca EIAAX (tipográfica u oficial)");
+      const officialImg = document.querySelector(".eiaax-official-mark");
+      if (!textFallback && officialMark && officialImg) {
+        const w = officialImg.getBoundingClientRect().width;
+        if (w < 40) defects.push("marca oficial EIAAX no visible");
+      }
     }
 
     return { ok: defects.length === 0, defects, identity: { has_configured_logo: identity.has_configured_logo } };
