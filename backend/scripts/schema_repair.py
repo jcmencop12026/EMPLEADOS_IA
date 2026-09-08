@@ -315,3 +315,103 @@ def write_validation_report(path: Path, validation: SchemaValidationResult) -> N
         "issues": [issue.to_dict() for issue in validation.issues],
     }
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def verify_backup_file(backup_path: Path, source_path: Path | None = None) -> dict[str, Any]:
+    if not backup_path.exists():
+        raise SchemaRepairError(f"Backup no existe: {backup_path}")
+    size = backup_path.stat().st_size
+    if size <= 0:
+        raise SchemaRepairError(f"Backup vacío: {backup_path}")
+
+    conn = sqlite3.connect(backup_path)
+    try:
+        conn.execute("SELECT 1")
+        integrity = conn.execute("PRAGMA integrity_check").fetchone()[0]
+        if integrity != "ok":
+            raise SchemaRepairError(f"PRAGMA integrity_check falló: {integrity}")
+    finally:
+        conn.close()
+
+    digest = hashlib.sha256(backup_path.read_bytes()).hexdigest()
+    info: dict[str, Any] = {
+        "path": str(backup_path),
+        "size": size,
+        "sha256": digest,
+        "integrity": "ok",
+    }
+    if source_path and source_path.exists():
+        info["source_size"] = source_path.stat().st_size
+    return info
+
+
+def create_verified_backup(db_path: Path) -> Path:
+    if not db_path.exists():
+        raise SchemaRepairError(f"Base de datos no encontrada: {db_path}")
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = db_path.parent / f"{db_path.stem}_PRE_REPAIR_{ts}.db"
+    shutil.copy2(db_path, backup_path)
+    verify_backup_file(backup_path, db_path)
+    return backup_path
+
+
+def get_alembic_revision(db_path: Path) -> str | None:
+    conn = sqlite3.connect(db_path)
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='alembic_version'")
+        if not cur.fetchone():
+            return None
+        cur.execute("SELECT version_num FROM alembic_version LIMIT 1")
+        row = cur.fetchone()
+        return row[0] if row and row[0] else None
+    finally:
+        conn.close()
+
+
+def sync_alembic_revision(engine: Engine, database_url: str) -> str:
+    validation = validate_schema_strict(engine)
+    if not validation.is_valid:
+        raise SchemaRepairError(
+            "No se puede hacer stamp: esquema no válido",
+            validation=validation,
+        )
+
+    import os
+    from alembic.config import Config
+    from alembic import command
+
+    cfg = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    cfg.set_main_option("sqlalchemy.url", database_url)
+
+    db_path = Path(database_url.removeprefix("sqlite:///"))
+    current = get_alembic_revision(db_path)
+    if current == HEAD_REVISION:
+        return HEAD_REVISION
+
+    prev_env = os.environ.get("DATABASE_URL")
+    os.environ["DATABASE_URL"] = database_url
+    try:
+        command.stamp(cfg, HEAD_REVISION)
+    finally:
+        if prev_env is None:
+            os.environ.pop("DATABASE_URL", None)
+        else:
+            os.environ["DATABASE_URL"] = prev_env
+
+    stamped = get_alembic_revision(db_path)
+    if stamped != HEAD_REVISION:
+        raise SchemaRepairError(f"Stamp falló: esperado {HEAD_REVISION}, actual {stamped}")
+    return HEAD_REVISION
+
+
+def repair_database(database_url: str, *, skip_backup: bool = False) -> dict[str, Any]:
+    """Delega en preparación de BD (CURSOR-805D): preservar legacy o crear actual."""
+    from scripts.db_startup import prepare_database
+
+    _ = skip_backup
+    return prepare_database(database_url)
+
+
+def database_url_to_path(database_url: str) -> Path:
+    return Path(database_url.removeprefix("sqlite:///"))
