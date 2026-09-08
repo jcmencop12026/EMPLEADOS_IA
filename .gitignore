@@ -26,3 +26,8 @@ data/frontend.log
 data/knowledge/
 data/backups/
 data/backups/**
+# Evidencia generada por certificaciones (no versionar reportes/screenshots)
+data/evidence/**/report.json
+data/evidence/**/sha-manifest.json
+data/evidence/**/*.png
+!data/evidence/README.md

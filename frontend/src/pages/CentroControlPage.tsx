@@ -4,6 +4,7 @@ import type { CentroControlResumen, EvaluacionExpedienteSummary } from "../api";
 import { fetchCentroControlResumen, fetchEvaluaciones } from "../api";
 import { CentroControlCockpit } from "../components/centroControl/CentroControlCockpit";
 import { CentroControlEmpresaPanel } from "../components/centroControl/CentroControlEmpresaPanel";
+import { PageHeader } from "../components/v1";
 import { useOrganizationContext } from "../hooks/useOrganizationContext";
 import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
 import { usePermissions } from "../hooks/usePermissions";
@@ -41,7 +42,7 @@ function SemanticBadge({ tipo }: { tipo: string }) {
 
 export function CentroControlPage() {
   const { has } = usePermissions();
-  const { organizationQueryParam, effectiveOrganizationName, isViewingOtherOrganization } = useOrganizationContext();
+  const { organizationQueryParam, effectiveOrganizationName, isViewingOtherOrganization, homeOrganizationName } = useOrganizationContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<CentroControlResumen | null>(null);
   const [evaluaciones, setEvaluaciones] = useState<EvaluacionExpedienteSummary[]>([]);
@@ -114,48 +115,90 @@ export function CentroControlPage() {
 
   return (
     <div className="ops-page centro-control-page cc-page-header-compact">
-      <header className="page-header compact">
-        <h1>Centro de Control</h1>
-        <p className="muted cc-tagline">
-          Consola maestra — contexto, ciclo, atención y siguiente acción
-          {isViewingOtherOrganization && (
-            <> · <strong>Organización: {effectiveOrganizationName}</strong></>
-          )}
-        </p>
-        <div className="toolbar compact-toolbar cc-context-toolbar">
-          <label className="cc-context-select">
-            <span className="muted small">Contexto</span>
+      <header className="cc-unified-header" aria-label="Cabecera Centro de Control">
+        <div className="cc-unified-header__title-row">
+          <PageHeader
+            title="Centro de Control"
+            subtitle="Consola maestra — contexto, ciclo, atención y siguiente acción"
+            eyebrow="EIAAX"
+          />
+          <div className="cc-unified-header__global-actions">
             <select
-              value={expedienteContext}
-              onChange={(e) => setExpedienteContext(e.target.value)}
-              title="Contexto operativo"
+              value={periodo}
+              onChange={(e) => setPeriodo(e.target.value)}
+              title="Periodo de análisis del tablero global"
+              aria-label="Periodo"
             >
-              <option value="">Todas las empresas / prospectos</option>
-              {evaluaciones.map((ev) => (
-                <option key={ev.id} value={ev.id}>
-                  {ev.entidad_nombre} — {ev.codigo}
-                </option>
-              ))}
+              <option value="mtd">Mes actual</option>
+              <option value="7d">Últimos 7 días</option>
+              <option value="30d">Últimos 30 días</option>
             </select>
-          </label>
-          <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} title="Periodo">
-            <option value="mtd">Mes actual</option>
-            <option value="7d">Últimos 7 días</option>
-            <option value="30d">Últimos 30 días</option>
-          </select>
-          {expedienteContext && (
-            <>
-              <Link to={presentacionPath ?? `/presentacion/${expedienteContext}`} className="btn secondary small">Presentación</Link>
-              <Link to={`/evaluaciones/${expedienteContext}?tab=vista-empresa`} className="btn secondary small">Ver como empresa</Link>
-            </>
-          )}
-          <button type="button" onClick={load} disabled={loading}>Actualizar</button>
+            <button
+              type="button"
+              className="btn secondary small"
+              onClick={load}
+              disabled={loading}
+              title="Actualiza los datos visibles del Centro de Control sin cambiar el contexto seleccionado"
+            >
+              Actualizar
+            </button>
+          </div>
         </div>
-        {expedienteContext && (
-          <p className="muted small cc-context-banner">
-            Vista de empresa: <strong>{contextoLabel}</strong> — la consola global permanece disponible al volver a «Todas».
-          </p>
-        )}
+
+        <div className="cc-unified-header__context-row">
+          <div className="cc-unified-header__context-pills">
+            <span className="cc-context-pill" title="Organización de la sesión activa">
+              <span className="cc-context-pill__label">Sesión</span>
+              <strong>{homeOrganizationName || effectiveOrganizationName}</strong>
+            </span>
+            <span className="cc-context-pill cc-context-pill--emphasis" title="Empresa o prospecto en análisis operativo">
+              <span className="cc-context-pill__label">Análisis</span>
+              <strong>{contextoLabel}</strong>
+            </span>
+            {isViewingOtherOrganization && (
+              <span className="cc-context-pill cc-context-pill--warn" title="Vista multi-organización activa">
+                <span className="cc-context-pill__label">Vista</span>
+                <strong>{effectiveOrganizationName}</strong>
+              </span>
+            )}
+          </div>
+
+          <div className="cc-unified-header__selectors">
+            <label className="cc-context-select">
+              <span className="muted small">Empresa / prospecto</span>
+              <select
+                value={expedienteContext}
+                onChange={(e) => setExpedienteContext(e.target.value)}
+                title="Selecciona la empresa o prospecto para operar en contexto"
+              >
+                <option value="">Todas las empresas / prospectos</option>
+                {evaluaciones.map((ev) => (
+                  <option key={ev.id} value={ev.id}>
+                    {ev.entidad_nombre} — {ev.codigo}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {expedienteContext && (
+              <>
+                <Link
+                  to={presentacionPath ?? `/presentacion/${expedienteContext}`}
+                  className="btn secondary small"
+                  title="Abre la presentación ejecutiva autorizada para reunión con el cliente"
+                >
+                  Presentar
+                </Link>
+                <Link
+                  to={`/evaluaciones/${expedienteContext}?tab=vista-empresa`}
+                  className="btn secondary small"
+                  title="Vista de la empresa tal como la vería el cliente en portal autorizado"
+                >
+                  Ver empresa
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
       </header>
 
       {loading && <p className="muted">Cargando centro de control…</p>}
@@ -189,6 +232,7 @@ export function CentroControlPage() {
                 isDemoExpediente={Boolean(
                   evaluaciones.find((e) => e.id === expedienteContext)?.entidad_nombre?.startsWith("[DEMO]"),
                 )}
+                expedienteEstado={evaluaciones.find((e) => e.id === expedienteContext)?.estado}
               />
             </>
           )}

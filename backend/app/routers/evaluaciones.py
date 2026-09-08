@@ -17,6 +17,7 @@ from app.services import evaluacion_service as svc
 from app.services import evaluacion_accion_service as acc_svc
 from app.services import espacio_externo_service as esp_svc
 from app.services import evidencia_entrega_service as evid_svc
+from app.services import publicable_cliente_service as pub_svc
 from app.services.evaluacion_proveedor_externo_service import listar_proveedores
 from app.services.piiax_bridge_service import get_piiax_status, list_capacidades_catalog
 
@@ -345,6 +346,16 @@ def vista_entidad(
     return svc.get_vista_entidad(db, expediente_id, user.organization_id)
 
 
+@router.get("/{expediente_id}/informe-publicable-cliente")
+def informe_publicable_cliente(
+    expediente_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.vista_entidad")),
+):
+    """Contenido autorizado para audiencia Publicable cliente — filtro backend fail-closed."""
+    return pub_svc.build_informe_publicable_cliente(db, expediente_id, user.organization_id)
+
+
 @router.get("/{expediente_id}/trazabilidad")
 def trazabilidad(
     expediente_id: str,
@@ -357,10 +368,18 @@ def trazabilidad(
 @router.get("/{expediente_id}/impacto")
 def impacto(
     expediente_id: str,
+    vista_entidad: bool = Query(False, description="Filtrar para vista empresa/cliente"),
     db: Session = Depends(get_db),
     user: User = Depends(require_permission("evaluacion.view")),
 ):
-    return svc.get_impacto_resumen(db, expediente_id, user.organization_id)
+    if vista_entidad:
+        perms = user_permissions(user, db)
+        if "evaluacion.vista_entidad" not in perms:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=403, detail="Permiso evaluacion.vista_entidad requerido")
+    return svc.get_impacto_resumen(
+        db, expediente_id, user.organization_id, vista_entidad=vista_entidad
+    )
 
 
 @router.post("/{expediente_id}/oportunidades/vincular", status_code=201)

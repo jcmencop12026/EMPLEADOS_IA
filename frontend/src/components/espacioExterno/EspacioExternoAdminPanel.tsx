@@ -120,10 +120,12 @@ export function EspacioExternoAdminPanel({ expedienteId }: Props) {
       {msg && <p className="success-banner">{msg}</p>}
       {error && <p className="error-banner">{error}</p>}
 
-      {!entidadId && (
+      {!entidadId ? (
         <button type="button" className="btn primary" onClick={onCrearEntidad}>
-          Crear entidad empresa / prospecto
+          Vincular entidad externa al expediente
         </button>
+      ) : (
+        <p className="muted small">Entidad externa vinculada a este expediente. Use las acciones siguientes para invitar, publicar o promover.</p>
       )}
 
       {entidad && (

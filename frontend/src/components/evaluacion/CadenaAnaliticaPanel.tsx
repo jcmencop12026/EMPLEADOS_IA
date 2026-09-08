@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchCadenaAnalitica, type CadenaAnaliticaResponse } from "../../api";
+import { EmptyState, FormSection } from "../v1";
 
 const PASO_LABELS: Record<string, string> = {
   EVIDENCIA: "Evidencia",
@@ -27,9 +28,11 @@ const PASO_ORDER = [
 type Props = {
   expedienteId: string;
   compact?: boolean;
+  onSyncRequisitos?: () => void;
+  onEvaluar?: () => void;
 };
 
-export function CadenaAnaliticaPanel({ expedienteId, compact = false }: Props) {
+export function CadenaAnaliticaPanel({ expedienteId, compact = false, onSyncRequisitos, onEvaluar }: Props) {
   const [data, setData] = useState<CadenaAnaliticaResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,22 +65,38 @@ export function CadenaAnaliticaPanel({ expedienteId, compact = false }: Props) {
   if (error && !data) return <p className="error small">{error}</p>;
   if (!data || data.total === 0) {
     return (
-      <div className="cadena-analitica-panel empty">
-        <p className="muted small">
-          Sin nodos en la cadena. Complete información, importe diagnóstico o genere hallazgos y oportunidades.
-        </p>
-      </div>
+      <FormSection title="Cadena analítica" description="Hallazgo → impacto → oportunidad → recomendación → acción">
+        <EmptyState
+          title="Cadena analítica pendiente"
+          description="Complete información, sincronice requisitos o ejecute la evaluación para que EIAAX construya el flujo de evidencia a acción."
+          action={
+            <div className="ops-actions">
+              {onSyncRequisitos && (
+                <button type="button" className="btn secondary small" onClick={onSyncRequisitos}>
+                  Sincronizar requisitos
+                </button>
+              )}
+              {onEvaluar && (
+                <button type="button" className="btn primary small" onClick={onEvaluar}>
+                  Ejecutar evaluación
+                </button>
+              )}
+            </div>
+          }
+        />
+      </FormSection>
     );
   }
 
   return (
-    <div className={`cadena-analitica-panel${compact ? " compact" : ""}`}>
+    <FormSection
+      title="Cadena analítica"
+      description={`${data.total} elemento(s) — flujo de inteligencia del expediente`}
+    >
       <div className="cadena-head">
-        <h3 className="section-title">Cadena analítica</h3>
-        <span className="muted small">{data.total} elemento(s)</span>
         <button type="button" className="btn small secondary" onClick={load}>Actualizar</button>
       </div>
-      <div className="cadena-flow">
+      <div className={`cadena-analitica-panel cadena-flow${compact ? " compact" : ""}`}>
         {grouped.map(({ paso, nodos }, idx) => (
           <div key={paso} className="cadena-step">
             {idx > 0 && <span className="cadena-arrow" aria-hidden>→</span>}
@@ -102,6 +121,6 @@ export function CadenaAnaliticaPanel({ expedienteId, compact = false }: Props) {
           </div>
         ))}
       </div>
-    </div>
+    </FormSection>
   );
 }

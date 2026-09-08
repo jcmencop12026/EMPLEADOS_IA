@@ -7,11 +7,25 @@ import {
 } from "../../api";
 import { EspacioExternoAdminPanel } from "../espacioExterno/EspacioExternoAdminPanel";
 import { labelProposalStatus } from "../../lib/negocioLabels";
+import { CommercialCycle, EmptyState, FormSection } from "../v1";
 
 type Props = {
   expedienteId: string;
   entidadNombre?: string;
 };
+
+function stageFromEstado(estado: string): string {
+  const map: Record<string, string> = {
+    PROSPECTO: "prospecto",
+    EVALUACION: "evaluacion",
+    PROPUESTA: "propuesta",
+    NEGOCIACION: "contrato",
+    CONTRATO: "contrato",
+    CLIENTE: "cliente",
+    OPERACION: "operacion",
+  };
+  return map[estado] ?? "evaluacion";
+}
 
 export function CabinaContratoPanel({ expedienteId, entidadNombre }: Props) {
   const [propuesta, setPropuesta] = useState<CentroNegociosPipelineItem | null>(null);
@@ -48,31 +62,39 @@ export function CabinaContratoPanel({ expedienteId, entidadNombre }: Props) {
 
   return (
     <div className="cabina-contrato-panel">
-      <section className="panel compact-panel">
-        <h2>Comercial y contrato</h2>
-        <p className="muted small">
-          Ciclo DEMO → PROSPECTO → EVALUACIÓN → OPORTUNIDAD → PROPUESTA → CONTRATO → CLIENTE → OPERACIÓN.
-          Reutiliza el expediente existente sin duplicar entidades.
-        </p>
+      <FormSection
+        title="Comercial y contrato"
+        description="Ciclo prospecto → evaluación → oportunidad → propuesta → contrato → cliente → operación"
+      >
         {loading && <p className="muted">Cargando estado comercial…</p>}
         {error && <p className="error">{error}</p>}
         {msg && <p className="success">{msg}</p>}
+
+        <CommercialCycle
+          currentStage={propuesta ? stageFromEstado(propuesta.estado) : "evaluacion"}
+          nextStep={propuesta?.proximo_paso ?? "Generar propuesta desde expediente"}
+        />
+
         {!loading && !propuesta && (
-          <div className="empty-inline">
-            <p className="muted">No hay propuesta comercial vinculada a este expediente.</p>
-            <button type="button" className="btn primary small" onClick={() => void onGenerarPropuesta()}>
-              Generar propuesta desde expediente
-            </button>
-          </div>
+          <EmptyState
+            title="Sin propuesta comercial vinculada"
+            description="Este expediente aún no tiene propuesta comercial. Genere una desde la evaluación para avanzar hacia contrato y operación."
+            action={
+              <button type="button" className="btn primary" onClick={() => void onGenerarPropuesta()}>
+                Generar propuesta desde expediente
+              </button>
+            }
+          />
         )}
+
         {propuesta && (
           <>
             <dl className="detail-grid compact">
-              <dt>Etapa</dt><dd>{labelProposalStatus(propuesta.estado) || propuesta.estado}</dd>
-                <dt>Prospecto / entidad</dt><dd>{propuesta.titulo ?? entidadNombre ?? "—"}</dd>
+              <dt>Etapa actual</dt><dd>{labelProposalStatus(propuesta.estado) || propuesta.estado}</dd>
+              <dt>Prospecto / entidad</dt><dd>{propuesta.titulo ?? entidadNombre ?? "—"}</dd>
               <dt>Inversión</dt><dd>{propuesta.precio_final != null ? propuesta.precio_final.toLocaleString("es-CO") : "—"}</dd>
-              <dt>Próximo paso</dt><dd>{propuesta.proximo_paso ?? "Revisar propuesta"}</dd>
-              <dt>Oportunidad</dt><dd>{propuesta.opportunity_id ? <Link to={`/oportunidades/${propuesta.opportunity_id}`}>Ver</Link> : "—"}</dd>
+              <dt>Próximo paso</dt><dd>{propuesta.proximo_paso ?? "Revisar propuesta con el cliente"}</dd>
+              <dt>Oportunidad</dt><dd>{propuesta.opportunity_id ? <Link to={`/oportunidades/${propuesta.opportunity_id}`}>Ver oportunidad</Link> : "—"}</dd>
             </dl>
             <div className="ops-actions">
               <Link className="btn primary small" to={`/centro-negocios/${propuesta.id}`}>Gestionar propuesta</Link>
@@ -80,7 +102,7 @@ export function CabinaContratoPanel({ expedienteId, entidadNombre }: Props) {
             </div>
           </>
         )}
-      </section>
+      </FormSection>
       <EspacioExternoAdminPanel expedienteId={expedienteId} />
     </div>
   );
