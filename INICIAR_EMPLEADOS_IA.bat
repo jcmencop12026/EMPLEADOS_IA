@@ -25,7 +25,7 @@ if not exist "%VENV%\Scripts\python.exe" (
 set "PY=%VENV%\Scripts\python.exe"
 set "PIP=%VENV%\Scripts\pip.exe"
 
-"%PY%" -c "import fastapi" >nul 2>&1
+"%PY%" -c "import fastapi, uvicorn, sqlalchemy, pydantic_settings, jose, bcrypt, multipart, alembic, psycopg2, httpx, pyotp, qrcode" >nul 2>&1
 if errorlevel 1 (
   "%PIP%" install -q -r "%BACKEND%\requirements.txt"
   if errorlevel 1 exit /b 1

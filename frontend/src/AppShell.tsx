@@ -170,8 +170,8 @@ function AppShellInner() {
               style={{
                 padding: collapsed ? 5 : "8px 10px",
                 borderRadius: 10,
-                background: "rgba(255,255,255,0.96)",
-                boxShadow: "0 6px 18px rgba(2, 8, 23, 0.18)",
+                background: "transparent",
+                boxShadow: "none",
               }}
             >
               <BrandMark

@@ -1,4 +1,4 @@
-/** Ciclo operativo EIAAX — consola maestra (15 etapas). */
+/** Ciclo operativo EIAAX — consola maestra (14 etapas). */
 
 export const CICLO_ETAPAS = [
   "Conocer",
@@ -13,7 +13,6 @@ export const CICLO_ETAPAS = [
   "Operar",
   "Supervisar",
   "Medir",
-  "Informar",
   "Aprender",
   "Mejorar",
 ] as const;
@@ -45,7 +44,6 @@ export function cicloEtapaRuta(etapa: CicloEtapa, opts: CicloNavOpts = {}): stri
       Operar: "/operaciones",
       Supervisar: "/ejecuciones",
       Medir: "/resultados",
-      Informar: "/comunicaciones",
       Aprender: "/aprendizaje",
       Mejorar: "/optimizacion",
     };
@@ -65,7 +63,6 @@ export function cicloEtapaRuta(etapa: CicloEtapa, opts: CicloNavOpts = {}): stri
     Operar: `/operaciones?expediente=${exp}`,
     Supervisar: `/ejecuciones`,
     Medir: `/evaluaciones/${exp}?tab=resultados`,
-    Informar: `/evaluaciones/${exp}?tab=informes`,
     Aprender: `/aprendizaje`,
     Mejorar: `/optimizacion`,
   };
@@ -86,7 +83,7 @@ export function cicloEtapaIndexFromEstado(estado?: string | null): number {
     DIAGNOSTICA: 3,
     PROFUNDA: 5,
     CERRADO: 12,
-    ARCHIVADO: 14,
+    ARCHIVADO: 13,
   };
   if (!estado) return 0;
   return map[estado] ?? 2;

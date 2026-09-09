@@ -171,3 +171,43 @@
   .login-page.eiaax-v1-experience .login-brand-panel { min-height: 190px; padding: 24px; }
   .login-page.eiaax-v1-experience .login-brand-panel .brand-mark--hero { max-height: 86px; }
 }
+
+/* Ajuste de legibilidad y densidad — revisión visual humana 08/09/2026. */
+.layout.eiaax-v1-experience .nav-label { font-size: .96rem; line-height: 1.25; }
+.layout.eiaax-v1-experience .nav-section-title { font-size: .88rem; letter-spacing: .025em; }
+.layout.eiaax-v1-experience .sidebar a,
+.layout.eiaax-v1-experience .sidebar .nav-future,
+.layout.eiaax-v1-experience .sidebar .btn-link { min-height: 32px; padding-top: 5px; padding-bottom: 5px; }
+.layout.eiaax-v1-experience .cc-unified-header .v1-page-header__subtitle,
+.layout.eiaax-v1-experience .cc-context-pill__label { font-size: .78rem; }
+.layout.eiaax-v1-experience .cc-context-pill strong { font-size: .92rem; }
+.layout.eiaax-v1-experience .cc-kpi-item,
+.layout.eiaax-v1-experience .dashboard-card,
+.layout.eiaax-v1-experience .executive-kpi { min-height: 60px; padding: 7px 10px; }
+.layout.eiaax-v1-experience .cc-kpi-label,
+.layout.eiaax-v1-experience .dashboard-card-label,
+.layout.eiaax-v1-experience .executive-kpi span { font-size: .80rem; line-height: 1.2; }
+.layout.eiaax-v1-experience .cc-kpi-value,
+.layout.eiaax-v1-experience .dashboard-card-value,
+.layout.eiaax-v1-experience .executive-kpi strong { font-size: 1.08rem; line-height: 1.15; }
+.layout.eiaax-v1-experience .cc-resumen-card { min-height: 72px; padding: 8px 10px; }
+.layout.eiaax-v1-experience .cc-resumen-card__title { font-size: .80rem; }
+.layout.eiaax-v1-experience .cc-resumen-card__value { font-size: 1.02rem; }
+.layout.eiaax-v1-experience .cc-resumen-card__hint { font-size: .82rem; }
+.layout.eiaax-v1-experience .v1-cycle-step__label,
+.layout.eiaax-v1-experience .cc-ciclo-chip { font-size: .76rem; }
+
+/* Legibilidad transversal adicional: datos compactos sin cajas sobredimensionadas. */
+.layout.eiaax-v1-experience .muted,
+.layout.eiaax-v1-experience .small,
+.layout.eiaax-v1-experience label,
+.layout.eiaax-v1-experience .data-table,
+.layout.eiaax-v1-experience .detail-grid,
+.layout.eiaax-v1-experience .detail-dl { font-size: .84rem; }
+.layout.eiaax-v1-experience .data-table th { font-size: .78rem; }
+.layout.eiaax-v1-experience .data-table td { line-height: 1.3; }
+.layout.eiaax-v1-experience .async-state { min-height: 80px; padding: 18px 14px; }
+.layout.eiaax-v1-experience .panel,
+.layout.eiaax-v1-experience .compact-panel { padding-top: 9px; padding-bottom: 9px; }
+.layout.eiaax-v1-experience .topbar,
+.layout.eiaax-v1-experience .org-context-bar { font-size: .84rem; }
