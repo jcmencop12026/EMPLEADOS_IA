@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchOrgConfig, type OrgConfig } from "../api";
 import { getCachedUser } from "../auth/session";
+import { usePermissions } from "./usePermissions";
 import { DEFAULT_ENTERPRISE_IDENTITY, EIAAX_BRAND, ENTERPRISE_IDENTITY_EVENT, type EnterpriseVisualIdentity } from "../lib/brand";
 
 function mapConfigToIdentity(config: OrgConfig, orgName: string): EnterpriseVisualIdentity {
@@ -14,6 +15,8 @@ function mapConfigToIdentity(config: OrgConfig, orgName: string): EnterpriseVisu
 
 export function useEnterpriseIdentity() {
   const user = getCachedUser();
+  const { has } = usePermissions();
+  const externalOnly = has("espacio_externo.portal") && !has("control_center.view");
   const [identity, setIdentity] = useState<EnterpriseVisualIdentity>(() => ({
     ...DEFAULT_ENTERPRISE_IDENTITY,
     displayName: user?.organization_name ?? "",
@@ -23,12 +26,17 @@ export function useEnterpriseIdentity() {
   const reload = useCallback(() => {
     const cachedUser = getCachedUser();
     const orgName = cachedUser?.organization_name ?? "";
+    if (externalOnly) {
+      setIdentity({ ...DEFAULT_ENTERPRISE_IDENTITY, displayName: orgName });
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     fetchOrgConfig()
       .then((config) => setIdentity(mapConfigToIdentity(config, orgName)))
       .catch(() => setIdentity({ ...DEFAULT_ENTERPRISE_IDENTITY, displayName: orgName }))
       .finally(() => setLoading(false));
-  }, []);
+  }, [externalOnly]);
 
   useEffect(() => {
     reload();

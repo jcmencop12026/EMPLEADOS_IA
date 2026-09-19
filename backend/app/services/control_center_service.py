@@ -894,14 +894,17 @@ def get_executive_summary(
         operacional = {"error": "operacional_no_disponible"}
 
     secciones_operacionales = [
-        {"id": "resumen", "label": "Resumen operacional"},
+        {"id": "resumen", "label": "Resumen"},
+        {"id": "valor", "label": "Valor"},
+        {"id": "operacion", "label": "Operación"},
+        {"id": "ia_costos", "label": "IA y costos"},
+        {"id": "implementacion", "label": "Implementación"},
+        {"id": "salud", "label": "Salud"},
         {"id": "empleados_ia", "label": "Empleados IA"},
         {"id": "ejecuciones", "label": "Ejecuciones"},
         {"id": "atencion", "label": "Requiere atención"},
         {"id": "capacidad_consumo", "label": "Capacidad y consumo"},
         {"id": "aprobaciones", "label": "Aprobaciones"},
-        {"id": "salud", "label": "Salud de servicios"},
-        {"id": "valor", "label": "Valor"},
     ]
 
     return {

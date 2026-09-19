@@ -211,3 +211,837 @@
 .layout.eiaax-v1-experience .compact-panel { padding-top: 9px; padding-bottom: 9px; }
 .layout.eiaax-v1-experience .topbar,
 .layout.eiaax-v1-experience .org-context-bar { font-size: .84rem; }
+
+/* Ajuste final de legibilidad — login y contexto organizacional. */
+.login-page.eiaax-v1-experience .login-layout { width: min(1060px, 96vw); min-height: 540px; }
+.login-page.eiaax-v1-experience .login-card { width: min(430px, 100%); gap: 12px; }
+.login-page.eiaax-v1-experience .login-card h1 { font-size: 1.75rem; }
+.login-page.eiaax-v1-experience .login-card label,
+.login-page.eiaax-v1-experience .login-card .muted,
+.login-page.eiaax-v1-experience .login-card .small,
+.login-page.eiaax-v1-experience .link-button { font-size: .92rem; line-height: 1.35; }
+.login-page.eiaax-v1-experience .login-card input { min-height: 38px; font-size: .95rem; padding: 8px 10px; }
+.login-page.eiaax-v1-experience .login-card button { min-height: 36px; font-size: .92rem; }
+.login-page.eiaax-v1-experience .login-brand-copy { font-size: 1.08rem; max-width: 38ch; }
+.login-page.eiaax-v1-experience .login-organization-label { font-size: .78rem; }
+.login-page.eiaax-v1-experience .login-organization-name { font-size: 1rem; }
+.layout.eiaax-v1-experience .org-context-bar select { max-width: none; width: clamp(240px, 24vw, 360px); min-width: 240px; font-size: .88rem; }
+@media (max-width: 900px) {
+  .layout.eiaax-v1-experience .org-context-bar select { width: min(72vw, 360px); min-width: 0; }
+}
+
+/* Cierre visual Centro de Control + ayuda contextual visible. */
+.layout.eiaax-v1-experience .cc-first-viewport { padding: 8px 10px; }
+.layout.eiaax-v1-experience .cc-first-head { align-items: center; margin-bottom: 6px; }
+.layout.eiaax-v1-experience .cc-first-head .section-title { font-size: 1.02rem; }
+.layout.eiaax-v1-experience .cc-first-head .muted { margin: 1px 0 0; }
+.layout.eiaax-v1-experience .cc-first-grid { gap: 8px; margin-top: 6px; }
+.layout.eiaax-v1-experience .cc-first-actions .btn { min-height: 30px; padding: 4px 9px; }
+.layout.eiaax-v1-experience .context-help {
+  position: relative; margin-left: auto; flex: 0 0 18px; width: 18px; height: 18px;
+  display: inline-grid; place-items: center; border: 1px solid currentColor; border-radius: 50%;
+  font-size: .72rem; font-weight: 700; line-height: 1; opacity: .68; cursor: help;
+}
+.layout.eiaax-v1-experience .context-help::after {
+  content: attr(data-help); position: absolute; z-index: 50; left: calc(100% + 7px); top: 50%;
+  width: 240px; padding: 7px 9px; border-radius: 7px; background: #172033; color: #fff;
+  font-size: .76rem; font-weight: 500; line-height: 1.3; box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  opacity: 0; pointer-events: none; transform: translateY(-50%) translateX(-4px); transition: .14s ease;
+}
+.layout.eiaax-v1-experience .context-help:hover::after,
+.layout.eiaax-v1-experience .context-help:focus::after { opacity: 1; transform: translateY(-50%) translateX(0); }
+.layout.eiaax-v1-experience .sidebar.collapsed .context-help { display: none; }
+
+/* Cierre transversal real: densidad, legibilidad y ayuda directa por hover. */
+.layout.eiaax-v1-experience { font-size: .92rem; }
+.layout.eiaax-v1-experience .sidebar { width: 220px; padding: 8px; }
+.layout.eiaax-v1-experience .brand-row { min-height: 62px; padding: 8px 8px 6px 10px; }
+.layout.eiaax-v1-experience .brand .brand-mark--corporativo,
+.layout.eiaax-v1-experience .brand .eiaax-platform-mark { width: min(182px,100%); max-height: 44px; }
+.layout.eiaax-v1-experience .nav-section-title { min-height: 28px; padding: 4px 7px; font-size: .9rem; }
+.layout.eiaax-v1-experience .sidebar a { position: relative; min-height: 30px; padding: 4px 7px; }
+.layout.eiaax-v1-experience .nav-label { font-size: .94rem; line-height: 1.2; }
+.layout.eiaax-v1-experience .sidebar a[data-help]::after {
+  content: attr(data-help); position: fixed; left: 226px; z-index: 200; width: min(380px,34vw);
+  padding: 10px 12px; border-radius: 8px; background: #101827; color: #fff; font-size: .84rem;
+  line-height: 1.4; box-shadow: 0 10px 30px rgba(0,0,0,.26); opacity: 0; pointer-events: none;
+  transform: translateY(6px); transition: opacity .12s ease, transform .12s ease;
+}
+.layout.eiaax-v1-experience .sidebar a[data-help]:hover::after,
+.layout.eiaax-v1-experience .sidebar a[data-help]:focus-visible::after { opacity: 1; transform: translateY(0); }
+.layout.eiaax-v1-experience .panel,
+.layout.eiaax-v1-experience .compact-panel { padding: 7px 9px; margin-bottom: 6px; }
+.layout.eiaax-v1-experience .data-table { font-size: .88rem; }
+.layout.eiaax-v1-experience .data-table th { font-size: .82rem; }
+.layout.eiaax-v1-experience .btn { font-size: .88rem; min-height: 30px; }
+
+/* Hover contextual útil: se activa sobre el control, no sobre un icono de ayuda. */
+.layout.eiaax-v1-experience [data-help] { position: relative; }
+.layout.eiaax-v1-experience [data-help]::after {
+  content: attr(data-help); position: absolute; z-index: 120; left: 8px; top: calc(100% + 7px);
+  width: min(330px, 72vw); padding: 9px 11px; border-radius: 8px;
+  background: #172033; color: #fff; font-size: .84rem; font-weight: 500; line-height: 1.4;
+  white-space: normal; text-align: left; box-shadow: 0 10px 28px rgba(0,0,0,.24);
+  opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-3px);
+  transition: opacity .14s ease, transform .14s ease, visibility .14s ease;
+}
+.layout.eiaax-v1-experience [data-help]:hover::after,
+.layout.eiaax-v1-experience [data-help]:focus-visible::after {
+  opacity: 1; visibility: visible; transform: translateY(0);
+}
+.layout.eiaax-v1-experience .sidebar [data-help]::after { left: 100%; top: 0; margin-left: 8px; }
+.layout.eiaax-v1-experience .sidebar { overflow: visible; }
+.layout.eiaax-v1-experience .nav-section-items { overflow: visible; }
+
+/* Sistema transversal ejecutivo: más información útil por viewport, sin reducir legibilidad. */
+.layout.eiaax-v1-experience .content { padding: 8px 12px 16px; }
+.layout.eiaax-v1-experience .page-header { margin-bottom: 6px; }
+.layout.eiaax-v1-experience .page-header h1,
+.layout.eiaax-v1-experience .page-header.compact h1 { font-size: 1.22rem; line-height: 1.2; }
+.layout.eiaax-v1-experience .panel,
+.layout.eiaax-v1-experience .compact-panel { padding: 8px 10px; margin-bottom: 7px; border-radius: 8px; }
+.layout.eiaax-v1-experience .section-title,
+.layout.eiaax-v1-experience .panel h2,
+.layout.eiaax-v1-experience .panel h3 { margin-bottom: 5px; }
+.layout.eiaax-v1-experience .compact-form,
+.layout.eiaax-v1-experience .form-grid { gap: 7px 10px; }
+.layout.eiaax-v1-experience input,
+.layout.eiaax-v1-experience select,
+.layout.eiaax-v1-experience textarea { font-size: .9rem; }
+.layout.eiaax-v1-experience .data-table { font-size: .88rem; }
+.layout.eiaax-v1-experience .data-table th { font-size: .82rem; }
+.layout.eiaax-v1-experience .data-table th,
+.layout.eiaax-v1-experience .data-table td { padding: 5px 8px; }
+
+.layout.eiaax-v1-experience .sidebar { width: 220px; padding: 8px; }
+.layout.eiaax-v1-experience .brand-row { min-height: 60px; padding: 7px 7px 6px 10px; }
+.layout.eiaax-v1-experience .brand .brand-mark--corporativo,
+.layout.eiaax-v1-experience .brand .eiaax-platform-mark { width: min(184px, 100%); max-height: 48px; }
+.layout.eiaax-v1-experience .nav-section-title { min-height: 30px; padding: 4px 7px; font-size: .94rem; }
+.layout.eiaax-v1-experience .sidebar a,
+.layout.eiaax-v1-experience .sidebar .nav-future { min-height: 29px; padding: 4px 7px 4px 11px; }
+.layout.eiaax-v1-experience .nav-label { font-size: .96rem; line-height: 1.2; }
+.layout.eiaax-v1-experience .nav-section-items { padding: 1px 0 3px; }
+.layout.eiaax-v1-experience .topbar { min-height: 44px; padding: 0 12px; }
+.layout.eiaax-v1-experience .centro-control-page > .tab-bar,
+.layout.eiaax-v1-experience .compact-tabs { top: 44px; margin-bottom: 6px; padding: 3px; }
+.layout.eiaax-v1-experience .compact-tabs button { min-height: 29px; padding: 4px 10px; font-size: .86rem; }
+.layout.eiaax-v1-experience .cc-unified-header { padding: 7px 10px; margin-bottom: 6px; border-radius: 8px; }
+.layout.eiaax-v1-experience .cc-unified-header .v1-page-header h1 { font-size: 1.32rem; }
+.layout.eiaax-v1-experience .cc-resumen-card { min-height: 0; padding: 7px 9px; }
+.layout.eiaax-v1-experience .cc-first-viewport { padding: 7px 9px; }
+
+/* Marca: evita que un SVG claro desaparezca sobre fondos claros y elimina cajas sobredimensionadas. */
+.layout.eiaax-v1-experience .brand-mark,
+.login-page.eiaax-v1-experience .brand-mark { overflow: visible; }
+.layout.eiaax-v1-experience .brand-mark img,
+.login-page.eiaax-v1-experience .brand-mark img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.login-page.eiaax-v1-experience .login-layout { width: min(940px, 94vw); min-height: 470px; }
+.login-page.eiaax-v1-experience .login-brand-panel { padding: 30px 28px; }
+.login-page.eiaax-v1-experience .login-brand-panel .brand-mark--hero,
+.login-page.eiaax-v1-experience .login-brand-panel .eiaax-official-mark { width: min(360px, 88%); max-height: 135px; }
+.login-page.eiaax-v1-experience .login-forms { padding: 24px 28px; }
+.login-page.eiaax-v1-experience .login-card { width: min(400px,100%); }
+@media (min-width: 1280px) {
+  .layout.eiaax-v1-experience .dashboard-grid,
+  .layout.eiaax-v1-experience .executive-kpi-strip,
+  .layout.eiaax-v1-experience .cc-kpi-strip { grid-auto-flow: row; }
+}
+
+/* El tooltip no debe deformar tablas, tarjetas ni botones. */
+.layout.eiaax-v1-experience a[data-help],
+.layout.eiaax-v1-experience button[data-help] { overflow: visible; }
+.layout.eiaax-v1-experience .cc-first-actions [data-help]::after,
+.layout.eiaax-v1-experience .cc-inline-links [data-help]::after { left: auto; right: 0; }
+.layout.eiaax-v1-experience .cc-inline-links { overflow: visible; }
+.layout.eiaax-v1-experience .cc-first-actions { overflow: visible; }
+
+/* Tooltip del menú hacia el área de trabajo; mantiene el sidebar compacto. */
+.layout.eiaax-v1-experience .nav-section-title[data-help]::after,
+.layout.eiaax-v1-experience .sidebar a[data-help]::after {
+  left: calc(100% + 8px); right: auto; top: 0; margin-left: 0;
+}
+.layout.eiaax-v1-experience .nav-section-title[data-help]::after { width: 300px; }
+.layout.eiaax-v1-experience .sidebar a[data-help]::after { width: 330px; }
+
+/* Los activos corporativos son claros: fondo de marca propio para asegurar contraste. */
+.layout.eiaax-v1-experience .brand { padding: 4px 7px; border-radius: 8px; background: rgba(7,21,37,.42); }
+.layout.eiaax-v1-experience .brand .brand-mark--corporativo { filter: drop-shadow(0 2px 5px rgba(0,0,0,.28)); }
+.login-page.eiaax-v1-experience .login-brand-panel .brand-mark--hero { filter: drop-shadow(0 7px 16px rgba(0,0,0,.24)); }
+
+.layout.eiaax-v1-experience .topbar-actions [data-help]::after { left: auto; right: 0; }
+.layout.eiaax-v1-experience .sidebar-footer [data-help]::after { left: calc(100% + 8px); top: auto; bottom: 0; }
+
+/* Cabecera CC en una zona ejecutiva: contexto y controles sin filas altas. */
+.layout.eiaax-v1-experience .cc-unified-header__context-row { align-items: center; }
+.layout.eiaax-v1-experience .cc-unified-header__context-pills { display: flex; flex-wrap: nowrap; }
+.layout.eiaax-v1-experience .cc-unified-header__selectors { display: flex; align-items: center; flex-wrap: nowrap; }
+.layout.eiaax-v1-experience .cc-context-select { display: flex; align-items: center; gap: 6px; }
+.layout.eiaax-v1-experience .cc-context-select > span { white-space: nowrap; }
+.layout.eiaax-v1-experience .cc-unified-header select { min-height: 30px; font-size: .88rem; }
+.layout.eiaax-v1-experience .cc-unified-header__global-actions { display: flex; align-items: center; gap: 6px; }
+.layout.eiaax-v1-experience .cc-unified-header [data-help]::after { left: auto; right: 0; }
+.layout.eiaax-v1-experience .compact-tabs [data-help]::after { top: calc(100% + 6px); }
+
+/* Escala tipográfica transversal aprobada: legible a zoom normal. */
+.layout.eiaax-v1-experience { font-size: .92rem; }
+.layout.eiaax-v1-experience p,
+.layout.eiaax-v1-experience li,
+.layout.eiaax-v1-experience dd,
+.layout.eiaax-v1-experience dt { line-height: 1.35; }
+.layout.eiaax-v1-experience .muted,
+.layout.eiaax-v1-experience .small,
+.layout.eiaax-v1-experience label,
+.layout.eiaax-v1-experience .detail-grid,
+.layout.eiaax-v1-experience .detail-dl { font-size: .88rem; }
+.layout.eiaax-v1-experience .btn { font-size: .86rem; }
+.layout.eiaax-v1-experience .btn.small,
+.layout.eiaax-v1-experience .btn-sm { font-size: .82rem; }
+.layout.eiaax-v1-experience .cc-kpi-label,
+.layout.eiaax-v1-experience .dashboard-card-label,
+.layout.eiaax-v1-experience .executive-kpi span { font-size: .84rem; }
+.layout.eiaax-v1-experience .cc-kpi-value,
+.layout.eiaax-v1-experience .dashboard-card-value,
+.layout.eiaax-v1-experience .executive-kpi strong { font-size: 1.12rem; }
+
+.layout.eiaax-v1-experience .org-context-bar[data-help]::after { left: auto; right: 0; top: calc(100% + 7px); }
+
+/* Evita tarjetas altas por mínimos heredados; cada vista puede declarar un mínimo específico si realmente lo necesita. */
+.layout.eiaax-v1-experience .dashboard-card,
+.layout.eiaax-v1-experience .executive-kpi,
+.layout.eiaax-v1-experience .cc-kpi-item,
+.layout.eiaax-v1-experience .cc-resumen-card { min-height: 0; }
+.layout.eiaax-v1-experience .dashboard-grid,
+.layout.eiaax-v1-experience .cc-kpi-strip,
+.layout.eiaax-v1-experience .executive-kpi-strip { gap: 6px; }
+.layout.eiaax-v1-experience .async-state { min-height: 56px; padding: 12px 10px; }
+
+.layout.eiaax-v1-experience .v1-cycle-stepper { overflow: visible; }
+.layout.eiaax-v1-experience .v1-cycle-stepper__track { overflow-x: auto; overflow-y: visible; padding-bottom: 5px; }
+.layout.eiaax-v1-experience .v1-cycle-step[data-help]::after { left: 0; top: calc(100% + 5px); width: 300px; }
+
+.layout.eiaax-v1-experience .v1-kpi-strip,
+.layout.eiaax-v1-experience .v1-kpi-strip__grid { overflow: visible; }
+.layout.eiaax-v1-experience .v1-kpi-card[data-help]::after { width: 290px; }
+
+.layout.eiaax-v1-experience details.cc-secondary-detail > summary[data-help] { overflow: visible; position: relative; }
+.layout.eiaax-v1-experience details.cc-secondary-detail > summary[data-help]::after { left: 10px; top: calc(100% + 5px); }
+
+/* Controles de acción coherentes en todas las vistas. */
+.layout.eiaax-v1-experience .btn-icon { min-width: 30px; min-height: 30px; }
+.layout.eiaax-v1-experience .btn,
+.layout.eiaax-v1-experience button { line-height: 1.2; }
+.layout.eiaax-v1-experience .tab-bar,
+.layout.eiaax-v1-experience .tab-nav { margin-bottom: 6px; }
+.layout.eiaax-v1-experience .table-wrap { border-radius: 7px; }
+.layout.eiaax-v1-experience .data-table { width: 100%; }
+.layout.eiaax-v1-experience .data-table th { white-space: nowrap; }
+.layout.eiaax-v1-experience .detail-grid,
+.layout.eiaax-v1-experience .detail-dl { gap: 3px 10px; margin-bottom: 7px; }
+
+/* Ayuda también en Login, con el mismo lenguaje visual. */
+.login-page.eiaax-v1-experience [data-help] { position: relative; overflow: visible; }
+.login-page.eiaax-v1-experience [data-help]::after {
+  content: attr(data-help); position: absolute; z-index: 120; left: 0; top: calc(100% + 7px);
+  width: min(330px, 72vw); padding: 9px 11px; border-radius: 8px; background: #172033; color: #fff;
+  font-size: .84rem; font-weight: 500; line-height: 1.4; white-space: normal; text-align: left;
+  box-shadow: 0 10px 28px rgba(0,0,0,.24); opacity: 0; visibility: hidden; pointer-events: none;
+}
+.login-page.eiaax-v1-experience [data-help]:hover::after,
+.login-page.eiaax-v1-experience [data-help]:focus-visible::after { opacity: 1; visibility: visible; }
+
+/* El componente oficial del Login usa .eiaax-official-mark, no .brand-mark. */
+.login-page.eiaax-v1-experience .login-platform-identity { width: 100%; display: flex; justify-content: center; }
+.login-page.eiaax-v1-experience .eiaax-official-mark--hero { display: block; width: min(360px, 88%); height: auto; max-height: 135px; object-fit: contain; }
+.layout.eiaax-v1-experience .brand-mark--corporativo { display: block; height: auto; }
+
+/* La capa de dirección visual prevalece sobre mínimos antiguos de experience-v1. */
+.layout.eiaax-v1-experience .btn { min-height: 30px; padding: 5px 10px; border-radius: 6px; box-shadow: none; }
+.layout.eiaax-v1-experience .btn.small { min-height: 28px; padding: 4px 8px; }
+.layout.eiaax-v1-experience .tab-bar button,
+.layout.eiaax-v1-experience .tab-nav button { min-height: 30px; padding: 5px 10px; }
+.layout.eiaax-v1-experience input,
+.layout.eiaax-v1-experience select { min-height: 34px; padding: 5px 8px; border-radius: 6px; }
+.layout.eiaax-v1-experience textarea { min-height: 74px; padding: 6px 8px; border-radius: 6px; }
+.login-page.eiaax-v1-experience input,
+.login-page.eiaax-v1-experience select { min-height: 38px; padding: 7px 9px; }
+.login-page.eiaax-v1-experience .btn { min-height: 36px; padding: 7px 11px; }
+
+.layout.eiaax-v1-experience .v1-kpi-strip__grid { grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 6px; }
+.layout.eiaax-v1-experience .v1-kpi-card { padding: 7px 9px; gap: 2px; border-radius: 7px; box-shadow: none; }
+.layout.eiaax-v1-experience .v1-kpi-card--wide { grid-column: span 1; }
+.layout.eiaax-v1-experience .v1-kpi-card__label { font-size: .84rem; }
+.layout.eiaax-v1-experience .v1-kpi-card__value { font-size: 1.08rem; line-height: 1.18; }
+.layout.eiaax-v1-experience .v1-kpi-card__hint { font-size: .82rem; }
+.layout.eiaax-v1-experience .v1-attention-panel { padding: 8px 10px; border-radius: 7px; }
+.layout.eiaax-v1-experience .v1-attention-panel__title { margin-bottom: 5px; font-size: .98rem; }
+
+/* Rejillas ejecutivas: evitar dos columnas altas cuando seis indicadores caben en una línea. */
+@media (min-width: 1200px) {
+  .layout.eiaax-v1-experience .v1-empresa-kpis .v1-kpi-strip__grid,
+  .layout.eiaax-v1-experience .cc-first-viewport .v1-kpi-strip__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+@media (max-width: 1199px) and (min-width: 800px) {
+  .layout.eiaax-v1-experience .v1-empresa-kpis .v1-kpi-strip__grid,
+  .layout.eiaax-v1-experience .cc-first-viewport .v1-kpi-strip__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* El tooltip debe escapar visualmente de las bandas ejecutivas. */
+.layout.eiaax-v1-experience .cc-unified-header,
+.layout.eiaax-v1-experience .compact-tabs,
+.layout.eiaax-v1-experience .cc-first-viewport,
+.layout.eiaax-v1-experience .v1-cc-command { overflow: visible; }
+
+/* Selectores con especificidad suficiente para superar reglas legacy combinadas. */
+.layout.eiaax-v1-transversal.eiaax-v1-experience .sidebar { width: 220px; padding: 8px; }
+.layout.eiaax-v1-transversal.eiaax-v1-experience .nav-label { font-size: .96rem; line-height: 1.2; }
+.layout.eiaax-v1-transversal.eiaax-v1-experience .nav-icon { width: 18px; font-size: .9rem; }
+.layout.eiaax-v1-transversal.eiaax-v1-experience .centro-control-page .v1-page-header h1 { font-size: 1.32rem; }
+.layout.eiaax-v1-transversal.eiaax-v1-experience .centro-control-page .v1-page-header__subtitle { font-size: .86rem; }
+.login-page.eiaax-v1-experience .login-layout { gap: 0; }
+.login-page.eiaax-v1-experience .login-brand-panel { min-height: 470px; border-radius: 0; }
+
+/* Resumen de mando: tarjetas compactas y contenido accionable visible antes. */
+.layout.eiaax-v1-experience .cc-first-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 7px; margin-top: 6px; }
+.layout.eiaax-v1-experience .cc-zone-next .v1-executive-card__head { padding: 6px 9px; }
+.layout.eiaax-v1-experience .cc-zone-next .v1-executive-card__body { padding: 6px 9px; }
+.layout.eiaax-v1-experience .cc-zone-next .detail-grid { margin-bottom: 4px; }
+.layout.eiaax-v1-experience .cc-inline-links { margin: 4px 0 0; }
+@media (max-width: 900px) { .layout.eiaax-v1-experience .cc-first-grid { grid-template-columns: 1fr; } }
+
+/* Cabeceras de módulo transversales: título + acciones, sin hero cards innecesarias. */
+.layout.eiaax-v1-experience .v1-page-header,
+.layout.eiaax-v1-experience .page-header { padding: 0; min-height: 0; }
+.layout.eiaax-v1-experience .v1-page-header { gap: 8px; margin-bottom: 7px; }
+.layout.eiaax-v1-experience .v1-page-header h1 { font-size: 1.28rem; }
+.layout.eiaax-v1-experience .v1-eyebrow { margin-bottom: 2px; font-size: .78rem; }
+.layout.eiaax-v1-experience .v1-page-header__actions { gap: 5px; }
+.layout.eiaax-v1-experience .v1-context-bar { margin-bottom: 7px; padding: 7px 10px; border-radius: 7px; box-shadow: none; }
+.layout.eiaax-v1-experience .v1-context-bar__block { min-width: 130px; padding-right: 10px; }
+.layout.eiaax-v1-experience .v1-context-bar__divider { margin-right: 10px; }
+
+/* Formularios y tablas: usar ancho disponible antes de crecer en altura. */
+@media (min-width: 1200px) {
+  .layout.eiaax-v1-experience .compact-form { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .layout.eiaax-v1-experience .form-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.layout.eiaax-v1-experience .compact-form > button,
+.layout.eiaax-v1-experience .compact-form > .btn { margin-top: 1px; }
+.layout.eiaax-v1-experience .table-wrap { margin-bottom: 7px; }
+.layout.eiaax-v1-experience .data-table tbody tr { min-height: 0; }
+
+/* Mantener una sola barra de desplazamiento vertical: la del menú, no cada sección. */
+.layout.eiaax-v1-transversal.eiaax-v1-experience .sidebar { overflow-x: visible; overflow-y: hidden; }
+.layout.eiaax-v1-experience .nav-hierarchical { flex: 1; min-height: 0; overflow-y: auto; overflow-x: visible; padding-right: 2px; }
+.layout.eiaax-v1-experience .nav-section { overflow: visible; }
+.layout.eiaax-v1-experience .sidebar-footer { flex-shrink: 0; }
+
+/* Cuando el menú está colapsado, conservar iconos utilizables y no reservar ancho innecesario. */
+.layout.eiaax-v1-experience.sidebar-collapsed .sidebar { width: 64px; }
+.layout.eiaax-v1-experience.sidebar-collapsed .brand { padding: 3px; }
+.layout.eiaax-v1-experience.sidebar-collapsed .nav-section-title,
+.layout.eiaax-v1-experience.sidebar-collapsed .sidebar a { justify-content: center; padding-left: 4px; padding-right: 4px; }
+
+/* Hover/foco inequívoco sin llenar la interfaz de iconos de ayuda. */
+.layout.eiaax-v1-experience a[data-help]:hover,
+.layout.eiaax-v1-experience button[data-help]:hover { z-index: 121; }
+.layout.eiaax-v1-experience .sidebar a[data-help]:hover,
+.layout.eiaax-v1-experience .nav-section-title[data-help]:hover { background-color: rgba(255,255,255,.10); }
+
+/* Login: misma densidad profesional, sin paneles vacíos gigantes. */
+.login-page.eiaax-v1-experience .login-card { gap: 10px; }
+.login-page.eiaax-v1-experience .login-card-header { margin-bottom: 2px; }
+.login-page.eiaax-v1-experience .login-card h1 { margin-bottom: 2px; font-size: 1.6rem; }
+.login-page.eiaax-v1-experience .login-enterprise-block { margin-top: 4px; padding-top: 9px; }
+.login-page.eiaax-v1-experience .login-brand-copy { margin-top: 4px; font-size: 1rem; }
+
+.layout.eiaax-v1-experience .v1-attention-panel,
+.layout.eiaax-v1-experience .v1-attention-panel__list,
+.layout.eiaax-v1-experience .v1-attention-item { overflow: visible; }
+.layout.eiaax-v1-experience .v1-attention-item__link[data-help]::after { width: 310px; }
+
+.layout.eiaax-v1-experience .v1-executive-card { border-radius: 8px; box-shadow: none; }
+.layout.eiaax-v1-experience .v1-executive-card__head { padding: 7px 10px; gap: 7px; }
+.layout.eiaax-v1-experience .v1-executive-card__head h3 { font-size: 1rem; margin-bottom: 1px; }
+.layout.eiaax-v1-experience .v1-executive-card__head p { margin: 0; font-size: .84rem; }
+.layout.eiaax-v1-experience .v1-executive-card__body { padding: 7px 10px; }
+
+/* Ayuda global real: una sola capa fija, sin recortes por panel/sidebar. */
+.eiaax-help-layer {
+  position: fixed;
+  z-index: 9999;
+  width: min(360px, calc(100vw - 24px));
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #172033;
+  color: #fff;
+  font-size: .88rem;
+  font-weight: 500;
+  line-height: 1.4;
+  box-shadow: 0 12px 30px rgba(0,0,0,.28);
+  pointer-events: none;
+}
+.layout.eiaax-v1-experience [data-help]::after,
+.login-page.eiaax-v1-experience [data-help]::after { display: none !important; }
+
+/* Centro de Control: contexto completo en una sola línea cuando hay ancho. */
+@media (min-width: 1180px) {
+  .layout.eiaax-v1-experience .cc-unified-header {
+    grid-template-columns: minmax(245px, .95fr) auto minmax(310px, 1.2fr) auto;
+    gap: 6px 10px;
+    align-items: center;
+  }
+  .layout.eiaax-v1-experience .cc-unified-header__title-row,
+  .layout.eiaax-v1-experience .cc-unified-header__context-row { display: contents; }
+  .layout.eiaax-v1-experience .cc-unified-header .v1-page-header { grid-column: 1; }
+  .layout.eiaax-v1-experience .cc-unified-header__context-pills { grid-column: 2; }
+  .layout.eiaax-v1-experience .cc-unified-header__selectors { grid-column: 3; justify-content: stretch; }
+  .layout.eiaax-v1-experience .cc-unified-header__global-actions { grid-column: 4; justify-self: end; }
+  .layout.eiaax-v1-experience .cc-unified-header__selectors .cc-context-select { flex: 1; min-width: 0; }
+  .layout.eiaax-v1-experience .cc-unified-header__selectors .cc-context-select select { width: 100%; min-width: 0; }
+}
+
+/* Navegación lateral: sin barras horizontales y con apertura real por sección. */
+.layout.eiaax-v1-transversal.eiaax-v1-experience .sidebar { overflow-x: hidden; }
+.layout.eiaax-v1-experience .nav-hierarchical {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+.layout.eiaax-v1-experience .nav-section,
+.layout.eiaax-v1-experience .nav-section-items,
+.layout.eiaax-v1-experience .nav-section-title,
+.layout.eiaax-v1-experience .sidebar a { max-width: 100%; min-width: 0; }
+.layout.eiaax-v1-experience .nav-label { overflow: hidden; text-overflow: ellipsis; }
+
+/* Pestaña seleccionada: el indicador queda dentro del botón, nunca más largo que él. */
+.layout.eiaax-v1-experience .tab-bar button.active,
+.layout.eiaax-v1-experience .tab-bar button.tab-active,
+.layout.eiaax-v1-experience .tab-nav button.active,
+.layout.eiaax-v1-experience .tab-btn.active {
+  border-bottom: 2px solid var(--dv-accent) !important;
+  box-shadow: inset 0 -1px 0 var(--dv-accent), 0 1px 3px rgba(15,23,42,.08);
+}
+
+/* CIERRE BLOQUE 1 — logo limpio + menú/ayuda estable */
+.login-page.eiaax-v1-experience .login-platform-identity {
+  padding: 10px 14px; border-radius: 16px;
+  background: radial-gradient(circle at 62% 40%, rgba(23,78,166,.42), rgba(2,10,24,.96) 68%);
+  box-shadow: inset 0 0 0 1px rgba(125,180,255,.10), 0 12px 32px rgba(0,0,0,.28);
+}
+.login-page.eiaax-v1-experience .eiaax-official-mark--hero {
+  width: min(390px, 96%); max-height: 150px; object-fit: cover;
+  object-position: center; clip-path: inset(8% 3% 8% 3% round 14px);
+  filter: saturate(1.14) contrast(1.08) drop-shadow(0 0 16px rgba(54,125,255,.32));
+}
+.layout.eiaax-v1-transversal.eiaax-v1-experience .nav-hierarchical {
+  overflow-y: auto; overflow-x: hidden;
+}
+.layout.eiaax-v1-experience .sidebar .nav-section-title,
+.layout.eiaax-v1-experience .sidebar a { width: 100%; box-sizing: border-box; }
+.layout.eiaax-v1-experience .context-help-layer { max-width: 360px; }
+
+/* Header Centro de Control: sesión, análisis, empresa y periodo en una sola franja útil. */
+@media (min-width: 1100px) {
+  .layout.eiaax-v1-experience .cc-unified-header { display: grid; grid-template-columns: minmax(250px, .8fr) minmax(0, 2.2fr); gap: 6px 12px; align-items: center; }
+  .layout.eiaax-v1-experience .cc-unified-header__title-row { grid-column: 1 / -1; align-items: center; }
+  .layout.eiaax-v1-experience .cc-unified-header__context-row { grid-column: 1 / -1; display: grid; grid-template-columns: auto auto minmax(320px, 1fr) auto; align-items: end; gap: 8px; }
+  .layout.eiaax-v1-experience .cc-unified-header__context-pills { display: contents; }
+  .layout.eiaax-v1-experience .cc-unified-header__selectors { display: contents; }
+  .layout.eiaax-v1-experience .cc-context-pill { min-width: 0; padding: 5px 9px; }
+  .layout.eiaax-v1-experience .cc-context-select { min-width: 0 !important; }
+  .layout.eiaax-v1-experience .cc-context-select select { width: 100%; }
+}
+
+/* Estado seleccionado: el subrayado nunca debe exceder el control. */
+.layout.eiaax-v1-experience .tab-btn,
+.layout.eiaax-v1-experience .compact-tabs button { position: relative; overflow: hidden; }
+.layout.eiaax-v1-experience .tab-btn::after,
+.layout.eiaax-v1-experience .compact-tabs button::after { left: 0; right: 0; width: auto; }
+.layout.eiaax-v1-experience .tab-btn.active::after,
+.layout.eiaax-v1-experience .compact-tabs button.active::after { transform: none; }
+
+/* Centro de Control: barra de mando superior realmente unificada. */
+.layout.eiaax-v1-experience .cc-unified-header__title-row { align-items: center; flex-wrap: nowrap; }
+.layout.eiaax-v1-experience .cc-unified-header__title-row > .v1-page-header { flex: 0 1 330px; min-width: 250px; margin: 0; }
+.layout.eiaax-v1-experience .cc-unified-header__command-row { display: flex; align-items: end; justify-content: flex-end; gap: 6px; flex: 1; min-width: 0; flex-wrap: nowrap; }
+.layout.eiaax-v1-experience .cc-unified-header__command-row .cc-context-pill { min-width: 96px; padding: 5px 8px; }
+.layout.eiaax-v1-experience .cc-context-select--inline { min-width: 260px; flex: 1 1 330px; }
+.layout.eiaax-v1-experience .cc-context-select--period { min-width: 112px; flex: 0 0 112px; }
+.layout.eiaax-v1-experience .cc-unified-header__command-row select { width: 100%; min-height: 30px; }
+@media (max-width: 1180px) { .layout.eiaax-v1-experience .cc-unified-header__title-row { flex-wrap: wrap; } .layout.eiaax-v1-experience .cc-unified-header__command-row { width: 100%; flex-wrap: wrap; justify-content: flex-start; } }
+
+.external-processing-status { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:8px 10px; margin:6px 0 8px; border:1px solid #bfdbfe; border-radius:8px; background:#eff6ff; }
+.external-processing-status strong { font-size:.9rem; }
+.external-processing-status span { font-size:.84rem; color:#334155; text-align:right; }
+
+/* Indicador interno de procesamiento — solo consola del operador. */
+.layout.eiaax-v1-experience .cc-processing-meter { margin-top: 8px; padding: 8px 10px; border: 1px solid rgba(76, 119, 180, .28); border-radius: 8px; background: linear-gradient(180deg, rgba(246,249,255,.96), rgba(239,245,255,.92)); }
+.layout.eiaax-v1-experience .cc-processing-meter__head { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+.layout.eiaax-v1-experience .cc-processing-meter__head > div:first-child { display: grid; gap: 1px; }
+.layout.eiaax-v1-experience .cc-processing-meter__eyebrow { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: #53657f; }
+.layout.eiaax-v1-experience .cc-processing-meter__head strong { font-size: .93rem; }
+.layout.eiaax-v1-experience .cc-processing-meter__numbers { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.layout.eiaax-v1-experience .cc-processing-meter__numbers strong { font-size: 1.2rem; }
+.layout.eiaax-v1-experience .cc-processing-meter__numbers span { font-size: .8rem; color: #5b6678; }
+.layout.eiaax-v1-experience .cc-processing-meter__track { height: 8px; margin-top: 6px; overflow: hidden; border-radius: 999px; background: rgba(38,64,96,.12); }
+.layout.eiaax-v1-experience .cc-processing-meter__track > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #2563eb, #06b6d4, #8b5cf6); transition: width .35s ease; }
+.layout.eiaax-v1-experience .cc-processing-meter > p { margin: 5px 0 0; font-size: .75rem; color: #667085; }
+@media (max-width: 720px) { .layout.eiaax-v1-experience .cc-processing-meter__head { align-items: flex-start; flex-direction: column; gap: 4px; } }
+
+/* Presentación ejecutiva — visual comercial de impacto */
+.presentacion-executive-chart{padding:18px;background:linear-gradient(145deg,#f8fbff 0%,#fff 58%,#f4f7ff 100%);border:1px solid rgba(49,91,160,.18);box-shadow:0 14px 34px rgba(30,64,120,.08)}
+.presentacion-chart-header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:12px}.presentacion-chart-kicker{display:block;font-size:.68rem;font-weight:800;letter-spacing:.13em;color:#536aa2;margin-bottom:3px}.presentacion-chart-header h3{margin:0;font-size:1.18rem;letter-spacing:-.02em}.presentacion-impact-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.presentacion-impact-card{padding:14px;border:1px solid rgba(70,100,155,.15);border-radius:14px;background:rgba(255,255,255,.9);box-shadow:0 7px 20px rgba(40,70,120,.06)}
+.presentacion-impact-card__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.presentacion-impact-delta{font-size:.78rem;font-weight:800;padding:3px 7px;border-radius:999px;background:#eef2ff;color:#4054a5}.presentacion-impact-bars{display:grid;gap:9px;margin-top:9px}.impact-line{display:grid;grid-template-columns:112px minmax(90px,1fr) 92px;gap:9px;align-items:center;font-size:.75rem}.impact-line b{text-align:right;font-size:.78rem}.impact-track{height:9px;overflow:hidden;border-radius:999px;background:#e9eef7;box-shadow:inset 0 1px 2px rgba(30,50,80,.08)}
+.impact-fill{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#8492a8,#64748b)}.impact-fill--meta{background:linear-gradient(90deg,#5b7cff,#7557d9)}.impact-fill--real{background:linear-gradient(90deg,#1b8d83,#28a76f)}.presentacion-chart-footnote{margin:13px 0 0;font-size:.72rem;color:#657189}@media(max-width:900px){.presentacion-impact-grid{grid-template-columns:1fr}.impact-line{grid-template-columns:100px minmax(70px,1fr) 82px}}
+/* Modo Reunión Inteligente */
+.meeting-public-topics{margin:10px 0 12px;padding:12px 14px;border:1px solid rgba(67,91,142,.16);border-radius:14px;background:linear-gradient(135deg,#fbfdff,#f5f8ff);box-shadow:0 8px 22px rgba(40,70,120,.05)}
+.meeting-public-topics>span{display:block;font-size:.66rem;font-weight:800;letter-spacing:.14em;color:#60719a;margin-bottom:7px}.meeting-public-topics>div{display:flex;flex-wrap:wrap;gap:7px}.meeting-public-topics strong{font-size:.82rem;font-weight:700;padding:7px 10px;border-radius:999px;background:#fff;border:1px solid rgba(81,105,158,.15);box-shadow:0 3px 10px rgba(42,62,100,.04)}
+.meeting-coach{margin:10px 0 14px;padding:13px;border-radius:16px;background:linear-gradient(145deg,#111b34,#18284a 62%,#202f59);color:#f6f8ff;box-shadow:0 14px 34px rgba(16,29,60,.18)}.meeting-coach__head{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:10px}.meeting-coach__head>div{display:grid;gap:2px}.meeting-coach__head span{font-size:.64rem;font-weight:800;letter-spacing:.13em;color:#a9b9e7}.meeting-coach__head strong{font-size:1rem}.meeting-coach__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.meeting-coach__cue{padding:11px;border:1px solid rgba(173,194,255,.14);border-radius:12px;background:rgba(255,255,255,.055)}.meeting-coach__cue h3{margin:4px 0 5px;font-size:.9rem}.meeting-coach__cue p{margin:0;font-size:.79rem;line-height:1.42;color:#dce5ff}.meeting-coach__public{display:block;font-size:.62rem;font-weight:800;color:#8fb6ff;letter-spacing:.06em}.meeting-coach__example{margin-top:8px;padding:8px 9px;border-radius:9px;background:rgba(126,156,255,.09);font-size:.76rem;line-height:1.4;color:#eef3ff}.presentacion-client-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:8px 0;padding:8px 10px;border-radius:10px;background:#f3f6fb;color:#5c6881;font-size:.76rem}.presentacion-cliente-mode .meeting-public-topics{margin-top:4px}.presentacion-cliente-mode .page-header{margin-bottom:6px}
+@media(max-width:900px){.meeting-coach__grid{grid-template-columns:1fr}.meeting-coach__head{align-items:flex-start}.meeting-public-topics>div{display:grid;grid-template-columns:1fr 1fr}}
+.meeting-processing-brief{margin:10px 0 12px;padding:12px 14px;border-radius:14px;border:1px solid rgba(74,105,173,.18);background:linear-gradient(135deg,#f7faff,#eef3ff);box-shadow:0 8px 24px rgba(42,72,130,.06)}.meeting-processing-brief__top{display:flex;justify-content:space-between;align-items:end;gap:16px}.meeting-processing-brief__top>div{display:grid;gap:2px}.meeting-processing-brief__top>div:last-child{text-align:right}.meeting-processing-brief__top span{font-size:.68rem;color:#60719a}.meeting-processing-brief__top>div:first-child>span{font-weight:800;letter-spacing:.12em}.meeting-processing-brief__top strong{font-size:.95rem}.meeting-processing-brief__top b{font-size:1.3rem;color:#314d9a}.meeting-processing-brief__track{height:9px;margin:8px 0 10px;overflow:hidden;border-radius:999px;background:rgba(44,70,120,.10)}.meeting-processing-brief__track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#3d6df2,#5475e8,#7255d9);transition:width .35s ease}.meeting-processing-brief__next{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;align-items:center}.meeting-processing-brief__next>span{font-size:.68rem;color:#687797;text-transform:uppercase;font-weight:800;letter-spacing:.06em}.meeting-processing-brief__next>strong{font-size:.88rem}.meeting-processing-brief__next>small{grid-column:1/-1;color:#6b7280;font-size:.72rem}
+/* Presentación ejecutiva — compromisos para capturar valor */
+.presentacion-commitments{margin-top:14px;padding:18px;background:linear-gradient(145deg,#fbfdff 0%,#fff 60%,#f7f8ff 100%);border:1px solid rgba(63,91,150,.18);box-shadow:0 12px 30px rgba(31,60,112,.07)}
+.presentacion-commitments__head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:12px}.presentacion-commitments__head span{display:block;font-size:.68rem;font-weight:800;letter-spacing:.12em;color:#596fa7}.presentacion-commitments__head h2{margin:2px 0 0;font-size:1.15rem}.presentacion-commitments__head p{max-width:420px;margin:0;color:#667085;font-size:.78rem;text-align:right}
+.presentacion-commitments__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.presentacion-commitment-card{padding:14px;border:1px solid rgba(66,92,148,.14);border-radius:14px;background:rgba(255,255,255,.94);box-shadow:0 7px 20px rgba(42,67,117,.05)}
+.presentacion-commitment-card__top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.presentacion-commitment-card__top span{font-size:.64rem;font-weight:800;letter-spacing:.08em;color:#5e6fb1}.presentacion-commitment-card__top h3{margin:2px 0;font-size:.98rem}.presentacion-commitment-card__top small{color:#6a7280}.presentacion-commitment-card__top>strong{font-size:1rem;white-space:nowrap;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#3f51a4}
+.presentacion-commitment-card__split{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:11px 0}.presentacion-commitment-card__split>div{padding:9px;border-radius:10px;background:#f7f9fc}.presentacion-commitment-card__split b{font-size:.74rem}.presentacion-commitment-card__split p{margin:3px 0 0;font-size:.75rem;line-height:1.35;color:#545f70}
+.presentacion-commitment-card__facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:0}.presentacion-commitment-card__facts>div{padding:7px 8px;border-bottom:1px solid #edf0f5}.presentacion-commitment-card__facts dt{font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#7a8495}.presentacion-commitment-card__facts dd{margin:2px 0 0;font-size:.75rem;font-weight:650;color:#27364b}
+.presentacion-commitment-card__condition{margin:10px 0 0;padding:8px 9px;border-radius:9px;background:#f4f7fb;font-size:.73rem;color:#566174}@media(max-width:900px){.presentacion-commitments__grid,.presentacion-commitment-card__split,.presentacion-commitment-card__facts{grid-template-columns:1fr}.presentacion-commitments__head{flex-direction:column}.presentacion-commitments__head p{text-align:left}}
+/* Modo reunión — solicitud de datos y siguiente acción privada */
+.meeting-data-request{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:9px 10px;border:1px solid rgba(37,99,235,.18);border-radius:10px;background:rgba(239,246,255,.78)}
+.meeting-data-request>span{font-size:.78rem;color:#42526b}
+.meeting-data-request__message{margin:7px 0 0;color:#475569}
+.meeting-next-action{display:grid;gap:2px;margin-top:10px;padding:10px 11px;border-radius:10px;background:linear-gradient(135deg,rgba(237,242,255,.96),rgba(245,240,255,.96));border:1px solid rgba(99,102,241,.18)}
+.meeting-next-action>span{font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#5967a7}
+.meeting-next-action>strong{font-size:.9rem;color:#22314a}
+.meeting-next-action>small{font-size:.75rem;line-height:1.4;color:#5c6678}
+@media(max-width:720px){.meeting-data-request{align-items:flex-start;flex-direction:column}}
+
+/* Reunión: cambios y aprendizaje — privado del operador */
+.meeting-change-brief{margin:12px 0;padding:14px;border:1px solid rgba(71,98,160,.18);border-radius:14px;background:linear-gradient(145deg,#f8fbff,#fff 60%,#f5f3ff);box-shadow:0 9px 24px rgba(37,65,120,.07)}
+.meeting-change-brief__head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:10px}.meeting-change-brief__head span{font-size:.68rem;font-weight:800;letter-spacing:.11em;color:#586ca2}.meeting-change-brief__head strong{font-size:.88rem;text-align:right}
+.meeting-change-brief__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.meeting-change-brief__grid article{display:grid;align-content:start;gap:5px;padding:10px;border-radius:10px;background:rgba(255,255,255,.86);border:1px solid rgba(82,105,156,.12)}
+.meeting-change-brief__grid article>b{font-size:.73rem;color:#56627a}.meeting-change-brief__grid article>span{font-size:.76rem;line-height:1.3;color:#344054}.meeting-change-brief__next{background:linear-gradient(145deg,rgba(235,242,255,.95),rgba(244,239,255,.95))!important}.meeting-change-brief__next>strong{font-size:.88rem;color:#263b73}
+@media(max-width:1050px){.meeting-change-brief__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.meeting-change-brief__grid{grid-template-columns:1fr}.meeting-change-brief__head{align-items:flex-start;flex-direction:column}.meeting-change-brief__head strong{text-align:left}}
+
+/* Identidad configurable: el logo guardado en Configuración es la marca visible principal. */
+.login-page.eiaax-v1-experience .login-platform-identity {
+  background: linear-gradient(145deg, rgba(247,251,255,.98), rgba(225,236,252,.96));
+  border: 1px solid rgba(140,170,215,.34); box-shadow: 0 10px 28px rgba(8,34,68,.12);
+}
+.login-page.eiaax-v1-experience .login-platform-identity--configured .enterprise-mark--login { width: min(390px,96%); max-width: 390px; }
+.login-page.eiaax-v1-experience .login-platform-identity--configured .enterprise-mark__img { width: 100%; height: auto; max-width: 390px; max-height: 150px; object-fit: contain; }
+.layout.eiaax-v1-experience .sidebar-configured-brand { display:flex; justify-content:center; padding:6px 8px; border-radius:10px; background:rgba(245,249,255,.96); border:1px solid rgba(162,190,226,.24); }
+.layout.eiaax-v1-experience .sidebar-configured-brand .enterprise-mark__img { width:auto; max-width:100%; max-height:48px; object-fit:contain; }
+.cc-context-extra__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.cc-context-extra__head span{font-size:.68rem;font-weight:800;letter-spacing:.08em;color:#60739a}.cc-context-extra__head h2{margin:2px 0 0;font-size:1rem}.cc-context-extra__list{display:grid;gap:7px}.cc-context-extra__list article{display:grid;grid-template-columns:minmax(180px,1.1fr) minmax(260px,2fr) auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid #dce5f2;border-radius:9px;background:#fff}.cc-context-extra__list article span{font-size:.78rem;color:#536174}.cc-context-extra__list article em{font-style:normal;font-size:.7rem;font-weight:700;color:#805900}@media(max-width:800px){.cc-context-extra__list article{grid-template-columns:1fr}.cc-context-extra__head{align-items:flex-start;flex-direction:column}}
+
+/* Login aprobado: logo configurado protagonista, sin miniatura heredada. */
+.login-page.eiaax-v1-experience .login-brand-panel .login-platform-identity--configured {
+  width: min(440px, 96%); min-height: 185px; padding: 18px 22px; border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(145deg,#f8fbff 0%,#eaf3ff 55%,#f7f2ff 100%);
+  box-shadow: inset 0 0 0 1px rgba(55,100,180,.12),0 14px 32px rgba(4,25,55,.16);
+}
+.login-page.eiaax-v1-experience .login-brand-panel .login-platform-identity--configured .enterprise-mark--login {
+  width: 100%; max-width: none; display: flex; justify-content: center;
+}
+.login-page.eiaax-v1-experience .login-brand-panel .login-platform-identity--configured .enterprise-mark--login .enterprise-mark__img {
+  width: min(390px,92%); height: auto; max-width: 390px; max-height: 190px; object-fit: contain;
+}
+.login-page.eiaax-v1-experience .login-brand-panel .login-platform-identity--configured .enterprise-mark__name { display: none; }
+
+/* Cierre V1: ayuda contextual operativa y legible. */
+.eiaax-help-layer {
+  width: min(430px, calc(100vw - 24px));
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: .9rem;
+  line-height: 1.48;
+}
+
+/* Login V1 protegido: EIAAX protagonista; organización identificada debajo. */
+.login-page.eiaax-v1-experience .login-brand-panel .login-platform-identity--eiaax {
+  width: min(440px, 96%);
+  min-height: 185px;
+  padding: 18px 22px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg,#f8fbff 0%,#eaf3ff 55%,#f7f2ff 100%);
+  box-shadow: inset 0 0 0 1px rgba(55,100,180,.12),0 14px 32px rgba(4,25,55,.16);
+}
+.login-page.eiaax-v1-experience .login-brand-panel .login-platform-identity--eiaax .eiaax-official-mark {
+  width: min(390px, 92%);
+  height: auto;
+  max-width: 390px;
+  max-height: 190px;
+  object-fit: contain;
+}
+
+/* Ajuste aprobado 11/09/2026: ayuda lateral clara, sin tooltips negros. */
+.eiaax-help-layer {
+  position: fixed;
+  top: 82px;
+  right: 16px;
+  left: auto !important;
+  z-index: 9999;
+  width: min(330px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border: 1px solid #c9d8eb;
+  border-radius: 12px;
+  background: #f7fbff;
+  color: #213149;
+  box-shadow: 0 12px 30px rgba(35, 66, 105, .14);
+  pointer-events: none;
+}
+.eiaax-help-layer__title {
+  margin-bottom: 5px;
+  font-size: .82rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  color: #315d91;
+}
+.eiaax-help-layer__body { font-size: .9rem; line-height: 1.48; }
+
+/* Formularios claros y legibles: elimina franjas negras heredadas sin tocar acciones primarias. */
+.layout.eiaax-v1-experience input,
+.layout.eiaax-v1-experience select,
+.layout.eiaax-v1-experience textarea {
+  background: #ffffff !important;
+  color: #17263a !important;
+  border-color: #c7d3e2 !important;
+}
+.layout.eiaax-v1-experience input::placeholder,
+.layout.eiaax-v1-experience textarea::placeholder { color: #7b8797; }
+.layout.eiaax-v1-experience .btn:not(.primary):not(.danger):not(.success),
+.layout.eiaax-v1-experience button:not(.primary):not(.danger):not(.success) {
+  background-color: #f4f8fc;
+  color: #24364e;
+  border-color: #cbd8e7;
+}
+.layout.eiaax-v1-experience .btn:not(.primary):not(.danger):not(.success):hover,
+.layout.eiaax-v1-experience button:not(.primary):not(.danger):not(.success):hover {
+  background-color: #eaf2fb;
+}
+@media (max-width: 900px) {
+  .eiaax-help-layer { top: auto; right: 10px; bottom: 10px; width: min(360px, calc(100vw - 20px)); }
+}
+
+/* Cierre visual aprobado: menú azul elegante + ayuda lateral que no cubre contenido. */
+.layout.eiaax-v1-experience .nav-section-title,
+.layout.eiaax-v1-experience .sidebar .btn-link {
+  background: rgba(88, 139, 202, .18) !important;
+  color: #f3f8ff !important;
+  border: 1px solid rgba(164, 199, 239, .10) !important;
+  border-radius: 7px;
+}
+.layout.eiaax-v1-experience .nav-section-title:hover,
+.layout.eiaax-v1-experience .sidebar .btn-link:hover {
+  background: rgba(105, 158, 220, .26) !important;
+}
+.layout.eiaax-v1-experience .sidebar a {
+  background: transparent !important;
+  color: #e9f2ff !important;
+  border: 1px solid transparent !important;
+  border-radius: 7px;
+}
+.layout.eiaax-v1-experience .sidebar a.active {
+  background: linear-gradient(90deg, rgba(37, 99, 235, .72), rgba(53, 111, 196, .48)) !important;
+  color: #fff !important;
+  border-color: rgba(145, 190, 255, .18) !important;
+  box-shadow: inset 3px 0 0 #57a1ff;
+}
+.layout.eiaax-v1-experience .sidebar .nav-future {
+  background: rgba(76, 126, 188, .10) !important;
+  color: #c9d9ec !important;
+  border-radius: 7px;
+}
+
+.eiaax-help-open .layout.eiaax-v1-experience .main {
+  padding-right: 300px;
+  transition: padding-right .18s ease;
+}
+.eiaax-help-layer {
+  top: 68px;
+  right: 14px;
+  width: 270px;
+  max-height: calc(100vh - 82px);
+  overflow-y: auto;
+  padding: 16px;
+  background: linear-gradient(180deg, #fbfdff 0%, #f2f7fd 100%);
+  border: 1px solid #cbdcf0;
+  box-shadow: 0 14px 34px rgba(32, 62, 102, .12);
+  color: #24364d;
+  pointer-events: auto;
+}
+.eiaax-help-layer__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #d9e5f3;
+}
+.eiaax-help-layer__head span {
+  display: block;
+  margin-bottom: 3px;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  color: #5f77a0;
+}
+.eiaax-help-layer__head strong { font-size: 1rem; color: #17365f; }
+.eiaax-help-layer__head button {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent !important;
+  color: #6b7c93 !important;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.eiaax-help-layer__body { padding: 12px 0; font-size: .88rem; line-height: 1.48; }
+.eiaax-help-layer__tip {
+  padding: 10px 11px;
+  border-radius: 9px;
+  background: #eaf3ff;
+  border: 1px solid #cfe0f5;
+  color: #315781;
+  font-size: .78rem;
+  line-height: 1.4;
+}
+@media (max-width: 1100px) {
+  .eiaax-help-open .layout.eiaax-v1-experience .main { padding-right: 0; }
+  .eiaax-help-layer { top: auto; right: 10px; bottom: 10px; width: min(330px, calc(100vw - 20px)); max-height: 42vh; }
+}
+
+/* Ayuda colapsable + buscador de conceptos, sin cubrir el área de trabajo. */
+.eiaax-help-launcher {
+  position: fixed; right: 14px; bottom: 18px; z-index: 9999;
+  min-height: 34px; padding: 7px 12px; border: 1px solid #b9cee8;
+  border-radius: 999px; background: #f7fbff !important; color: #315d91 !important;
+  box-shadow: 0 8px 24px rgba(32,62,102,.14); font-size: .9rem; font-weight: 700; cursor: pointer;
+}
+.eiaax-help-search {
+  width: 100%; box-sizing: border-box; margin: 12px 0 8px; min-height: 36px;
+  padding: 7px 9px; border: 1px solid #c8d8ea; border-radius: 8px;
+  background: #fff; color: #20324a; font-size: .9rem;
+}
+.eiaax-help-results { display: grid; gap: 6px; margin-bottom: 10px; }
+.eiaax-help-results button {
+  display: grid; gap: 2px; width: 100%; padding: 8px 9px; text-align: left;
+  border: 1px solid #d8e5f3; border-radius: 8px; background: #fff !important; color: #263b55 !important;
+}
+.eiaax-help-results button:hover { background: #eef5fd !important; }
+.eiaax-help-results strong { font-size: .86rem; }
+.eiaax-help-results span, .eiaax-help-results p { font-size: .78rem; line-height: 1.35; color: #5e6d80; }
+
+/* Legibilidad moderada: aumenta texto sin agrandar tarjetas ni romper densidad. */
+.layout.eiaax-v1-experience { font-size: .96rem; }
+.layout.eiaax-v1-experience .muted,
+.layout.eiaax-v1-experience .small,
+.layout.eiaax-v1-experience label,
+.layout.eiaax-v1-experience .detail-grid,
+.layout.eiaax-v1-experience .detail-dl { font-size: .91rem; }
+.layout.eiaax-v1-experience .data-table { font-size: .91rem; }
+.layout.eiaax-v1-experience .data-table th { font-size: .85rem; }
+.layout.eiaax-v1-experience .btn { font-size: .9rem; }
+.layout.eiaax-v1-experience .compact-tabs button { font-size: .89rem; }
+.layout.eiaax-v1-experience .cc-kpi-label,
+.layout.eiaax-v1-experience .dashboard-card-label,
+.layout.eiaax-v1-experience .executive-kpi span { font-size: .87rem; }
+.layout.eiaax-v1-experience .cc-resumen-card__title { font-size: .85rem; }
+.layout.eiaax-v1-experience .cc-resumen-card__hint { font-size: .86rem; }
+.eiaax-help-layer__body { font-size: .92rem; }
+
+/* Legibilidad V1: incremento controlado sin agrandar tarjetas ni alterar layout. */
+.layout.eiaax-v1-experience { font-size: 15px; }
+.layout.eiaax-v1-experience .main,
+.layout.eiaax-v1-experience .main p,
+.layout.eiaax-v1-experience .main span,
+.layout.eiaax-v1-experience .main label,
+.layout.eiaax-v1-experience .main td,
+.layout.eiaax-v1-experience .main th,
+.layout.eiaax-v1-experience .main input,
+.layout.eiaax-v1-experience .main select,
+.layout.eiaax-v1-experience .main textarea,
+.layout.eiaax-v1-experience .main button,
+.layout.eiaax-v1-experience .main .btn { font-size: .92rem; }
+.layout.eiaax-v1-experience .sidebar,
+.layout.eiaax-v1-experience .sidebar a,
+.layout.eiaax-v1-experience .sidebar button { font-size: .91rem; }
+.layout.eiaax-v1-experience .muted,
+.layout.eiaax-v1-experience small { font-size: .82rem; }
+.eiaax-help-layer__body { font-size: .94rem; }
+.eiaax-help-layer__tip { font-size: .86rem; }
+
+/* Espacio externo: menos líneas, contexto sin duplicar y acciones inequívocas. */
+.external-space-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}.external-space-head h2{margin:0 0 2px}.external-space-head p{margin:0}.external-relation-badge{display:inline-flex;align-items:center;min-height:28px;padding:4px 9px;border:1px solid #cbdcf0;border-radius:999px;background:#eef5fc;color:#315781;font-size:.82rem;font-weight:700;white-space:nowrap}
+.external-publications-grid{margin:7px 0 12px;border:1px solid #dce5f0;border-radius:9px;overflow:hidden}.external-publications-grid__head,.external-publications-grid__row{display:grid;grid-template-columns:minmax(150px,1.35fr) minmax(160px,1fr) 72px minmax(190px,.9fr);gap:8px;align-items:center;padding:7px 9px}.external-publications-grid__head{background:#eef4fa;color:#52657d;font-size:.8rem;font-weight:800}.external-publications-grid__row{background:#fff;border-top:1px solid #edf1f6;font-size:.87rem}.external-publications-grid__row strong{font-size:.88rem}.external-publications-grid__actions{display:flex;align-items:center;justify-content:flex-end;gap:6px}.external-publications-grid__actions .btn{min-height:28px;padding:4px 8px}
+@media(max-width:900px){.external-space-head{flex-direction:column}.external-publications-grid__head{display:none}.external-publications-grid__row{grid-template-columns:1fr auto;gap:5px 10px}.external-publications-grid__actions{grid-column:1/-1;justify-content:flex-start}}
+
+/* Espacio externo: publicaciones en dos bloques para reducir altura y scroll. */
+.layout.eiaax-v1-experience .external-publications-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.layout.eiaax-v1-experience .external-publications-grid__head { display: none; }
+.layout.eiaax-v1-experience .external-publications-grid__row {
+  display: grid;
+  grid-template-columns: minmax(120px,1fr) auto auto;
+  grid-template-areas: "pkg state ver" "actions actions actions";
+  gap: 5px 8px;
+  align-items: center;
+  padding: 9px 10px;
+  border: 1px solid #d8e3f0;
+  border-radius: 9px;
+  background: #fbfdff;
+}
+.layout.eiaax-v1-experience .external-publications-grid__row > strong { grid-area: pkg; }
+.layout.eiaax-v1-experience .external-publications-grid__row > span:nth-of-type(1) { grid-area: state; }
+.layout.eiaax-v1-experience .external-publications-grid__row > span:nth-of-type(2) { grid-area: ver; }
+.layout.eiaax-v1-experience .external-publications-grid__actions { grid-area: actions; display:flex; justify-content:flex-end; gap:6px; }
+@media (max-width: 900px) {
+  .layout.eiaax-v1-experience .external-publications-grid { grid-template-columns: 1fr; }
+}
+
+.layout.eiaax-v1-experience .external-publications-grid__row > span:nth-of-type(1),
+.layout.eiaax-v1-experience .external-publications-grid__row > span:nth-of-type(2) {
+  font-size: .84rem;
+  color: #53657c;
+  white-space: nowrap;
+}
+.layout.eiaax-v1-experience .external-publications-grid__row > strong {
+  font-size: .92rem;
+  color: #17365f;
+}
+.layout.eiaax-v1-experience .external-publications-grid__actions .btn {
+  min-height: 28px;
+  padding: 4px 9px;
+}
+
+/* Evita que acciones de publicación obliguen ancho extra. */
+.layout.eiaax-v1-experience .external-publications-grid__row { min-width: 0; }
+.layout.eiaax-v1-experience .external-publications-grid__row > * { min-width: 0; }
+.layout.eiaax-v1-experience .external-publications-grid__actions { flex-wrap: wrap; }
+
+/* Espacio externo: compactación vertical final sin reducir legibilidad. */
+.layout.eiaax-v1-experience .external-publications-grid { gap: 5px; }
+.layout.eiaax-v1-experience .external-publications-grid__row {
+  padding: 5px 8px;
+  gap: 3px 7px;
+}
+.layout.eiaax-v1-experience .external-publications-grid__actions .btn {
+  min-height: 24px;
+  padding: 2px 8px;
+  line-height: 1.15;
+}
+
+/* Compactaci?n Centro de Control + configuraci?n SMTP. */
+.cc-cockpit--compact .v1-cc-command{padding:5px 9px;margin-bottom:6px}.cc-cockpit--compact .v1-cc-command__head{margin-bottom:3px;align-items:center}.cc-cockpit--compact .v1-cc-command__head>div{display:flex;align-items:baseline;gap:8px}.cc-cockpit--compact .v1-cc-command__head p{margin:0}.cc-empresa-hero{padding-top:5px!important}.cc-empresa-hero-band{margin-bottom:3px!important}.v1-empresa-kpis{gap:5px!important}.cc-processing-meter{margin-top:5px!important;padding:5px 8px!important}.cc-processing-meter p{display:none}.cc-resumen-ejecutivo-grid{gap:6px!important;margin-top:6px!important}.cc-resumen-card{padding:7px 9px!important}.smtp-config-strip{display:grid;grid-template-columns:1.2fr 90px 1.25fr 1.25fr auto auto auto 1fr;gap:6px;align-items:center;margin:0 0 7px}.smtp-config-strip input{min-width:0}.smtp-config-strip label{display:flex;align-items:center;gap:3px;white-space:nowrap}.comm-email-test{min-height:30px}.comm-email-test input{max-width:330px}
+@media(max-width:1050px){.smtp-config-strip{grid-template-columns:1fr 90px 1fr 1fr}.smtp-config-strip label,.smtp-config-strip button,.smtp-config-strip span{grid-column:auto}}

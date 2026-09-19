@@ -1,4 +1,4 @@
-﻿from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -86,6 +86,7 @@ from app.routers import (
     flujo_comercial,
     presentacion,
     demo_comercial,
+    reunion_demo,
     espacio_externo,
     inteligencia_externa,
     inteligencia_empresarial,
@@ -224,6 +225,7 @@ app.include_router(strategic_control.router)
 app.include_router(flujo_comercial.router)
 app.include_router(presentacion.router)
 app.include_router(demo_comercial.router)
+app.include_router(reunion_demo.router)
 app.include_router(espacio_externo.router)
 app.include_router(inteligencia_externa.router)
 app.include_router(inteligencia_empresarial.router)

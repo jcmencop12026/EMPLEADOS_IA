@@ -221,6 +221,7 @@ def compute_siguiente_accion(
         "descripcion": "No hay acciones prioritarias detectadas en este momento.",
         "prioridad": 0,
         "intencion": "A",
+        "pestaña": "resumen",
         "disponible": True,
     }
 
@@ -239,6 +240,62 @@ def compute_siguiente_accion(
     }
     return resultado
 
+
+
+def resumen_cambio_informacion(
+    db: Session,
+    expediente: EvaluacionExpediente,
+    *,
+    permisos: set[str] | None = None,
+) -> dict[str, Any]:
+    """Resume para el operador qué cambió, qué aprendió EIAAX y qué conviene hacer ahora."""
+    items = (
+        db.query(EvaluacionInformacionItem)
+        .filter(EvaluacionInformacionItem.expediente_id == expediente.id)
+        .order_by(EvaluacionInformacionItem.updated_at.desc())
+        .all()
+    )
+    recibidos = [i for i in items if i.estado == "RECIBIDO"]
+    recientes = recibidos[:5]
+    pendientes = [i for i in items if i.obligatorio and i.estado in ("PENDIENTE", "INCOMPLETO")]
+    siguiente = compute_siguiente_accion(db, expediente, permisos=permisos)
+    principal = siguiente["principal"]
+    if recientes:
+        que_cambio = f"Se incorporó o validó información en {len(recientes)} frente(s) del expediente."
+        aprendido = [
+            {
+                "campo": i.campo,
+                "titulo": i.etiqueta,
+                "fuente": i.fuente_tipo or "EXPEDIENTE",
+                "validacion": i.estado_validacion or "RECIBIDO",
+                "actualizado_at": i.updated_at.isoformat() if i.updated_at else None,
+            }
+            for i in recientes
+        ]
+    else:
+        que_cambio = "Aún no hay información recibida suficiente para registrar aprendizaje nuevo."
+        aprendido = []
+    preguntar_ahora = [
+        {"campo": i.campo, "titulo": i.etiqueta, "por_que": i.por_que, "impacto": i.impacto_precision}
+        for i in pendientes[:3]
+    ]
+    mostrar_ya = []
+    if expediente.porcentaje_informacion >= 55:
+        mostrar_ya.append("Avance y suficiencia de información")
+    if siguiente["contexto"]["hallazgos_count"]:
+        mostrar_ya.append("Hallazgos sustentados y nivel de confianza")
+    if principal.get("codigo") in {"detectar_oportunidad", "cuantificar_impacto", "continuar_evaluacion"}:
+        mostrar_ya.append("Oportunidades e impacto preliminar")
+    return {
+        "que_cambio": que_cambio,
+        "que_aprendimos": aprendido,
+        "que_preguntar_ahora": preguntar_ahora,
+        "que_podemos_mostrar_ya": mostrar_ya,
+        "siguiente_accion": principal,
+        "porcentaje_informacion": expediente.porcentaje_informacion,
+        "confianza_global": expediente.confianza_global,
+        "actualizado_at": expediente.updated_at.isoformat() if expediente.updated_at else None,
+    }
 
 def persistir_siguiente_accion(
     db: Session,

@@ -45,6 +45,7 @@ export function EspacioExternoPortalPage() {
   const [soporte, setSoporte] = useState<Record<string, unknown> | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [helpText, setHelpText] = useState("Seleccione un requisito para conocer qué información necesita EIIAX y cómo entregarla.");
 
   const loadCtx = useCallback(() => {
     fetchMiEspacioInicio()
@@ -102,10 +103,10 @@ export function EspacioExternoPortalPage() {
   const tabs: { id: Tab; label: string; show: boolean }[] = [
     { id: "inicio", label: "Inicio", show: true },
     { id: "informacion", label: "Información requerida", show: true },
-    { id: "entregas", label: "Mis entregas", show: true },
+    { id: "entregas", label: "Seguimiento", show: true },
     { id: "estado", label: "Estado", show: true },
-    { id: "resultados", label: "Resumen ejecutivo", show: relacion !== "PROSPECTO_EVALUACION" },
-    { id: "propuesta", label: "Propuesta", show: relacion === "PROSPECTO_RESULTADOS" || esCliente },
+    { id: "resultados", label: "Resumen ejecutivo", show: seccionAccesible("RESULTADOS") },
+    { id: "propuesta", label: "Propuesta", show: seccionAccesible("PROPUESTA") },
     { id: "implementacion", label: "Implementación", show: esCliente && seccionAccesible("IMPLEMENTACION") },
     { id: "empleados_ia", label: "Empleados IA", show: esCliente && seccionAccesible("EMPLEADOS_IA") },
     { id: "informes", label: "Informes", show: esCliente && seccionAccesible("INFORMES") },
@@ -159,6 +160,8 @@ export function EspacioExternoPortalPage() {
       {msg && <p className="success-banner">{msg}</p>}
       {error && <p className="error-banner">{error}</p>}
 
+      <div className="external-help-strip"><strong>Ayuda:</strong><span>{helpText}</span></div>
+
       <nav className="tab-nav">
         {tabs.filter((t) => t.show).map((t) => (
           <button
@@ -191,19 +194,34 @@ export function EspacioExternoPortalPage() {
 
       {(tab === "informacion" || tab === "entregas") && informacion && (
         <section className="panel">
-          <h2>{tab === "informacion" ? "Información requerida" : "Mis entregas"}</h2>
+          <h2>{tab === "informacion" ? "Información requerida" : "Seguimiento de entregas"}</h2>
           {tab === "informacion" && (
             <ul className="info-solicitudes">
               {((informacion.solicitudes as Record<string, unknown>[]) ?? []).map((s) => (
-                <li key={String(s.id)} className="info-solicitud-card">
-                  <strong>{String(s.etiqueta)}</strong>
-                  <p className="muted small">{String(s.explicacion ?? "")}</p>
-                  <span className="badge">{String(s.estado_validacion ?? s.estado)}</span>
+                <li
+                  key={String(s.id)}
+                  className="info-solicitud-card"
+                  onMouseEnter={() => setHelpText([s.explicacion, s.por_que, s.impacto_precision].filter(Boolean).map(String).join(" · ") || `Información requerida: ${String(s.etiqueta)}`)}
+                  onFocusCapture={() => setHelpText([s.explicacion, s.por_que, s.impacto_precision].filter(Boolean).map(String).join(" · ") || `Información requerida: ${String(s.etiqueta)}`)}
+                >
+                  <div className="ext-info-head">
+                    <strong>{String(s.etiqueta)}</strong>
+                    <span className={`badge ${String(s.estado_validacion ?? s.estado) === "EN_VALIDACION" ? "success" : ""}`}>
+                      {String(s.estado_validacion ?? s.estado) === "EN_VALIDACION" ? "✓ ENTREGADO · EN VALIDACIÓN" : String(s.estado_validacion ?? s.estado)}
+                    </span>
+                  </div>
+                  {String(s.estado_validacion ?? "") === "EN_VALIDACION" ? (
+                    <div className="delivery-confirmation">
+                      <strong>✓ Archivo recibido por EIIAX</strong>
+                      <span>{s.entregado_at ? ` · ${new Date(String(s.entregado_at)).toLocaleString()}` : " · En revisión"}</span>
+                      <button type="button" className="btn link" onClick={() => setTab("entregas")}>Ver seguimiento</button>
+                    </div>
+                  ) : null}
                   {s.puede_entregar && (
                     <form onSubmit={(e) => onEntregar(e, String(s.id))} className="entrega-form">
-                      <textarea name="contenido" rows={3} placeholder="Su respuesta u observación…" />
+                      <textarea name="contenido" rows={1} placeholder="Comentario opcional…" />
                       <input type="file" name="adjuntos" multiple accept=".txt,.csv,.json,.pdf,.docx,.xlsx" />
-                      <p className="muted small">Formatos: txt, csv, json, pdf, docx, xlsx (máx. 20 MB)</p>
+                      <span className="muted small ext-formats">txt, csv, json, pdf, docx, xlsx · máx. 20 MB</span>
                       <button type="submit" className="btn primary">Entregar</button>
                     </form>
                   )}

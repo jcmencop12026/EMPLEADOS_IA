@@ -63,6 +63,7 @@ def build_presentacion_core(
         "indicadores": indicadores,
         "graficos": _build_graficos_payload(indicadores, es_demo=es_demo),
         "oportunidades": vista.get("oportunidades", []),
+        "compromisos": _build_compromisos_payload(vista, indicadores, exp, es_demo=es_demo),
     }
 
     que_encontramos = [h.get("titulo") for h in vista.get("hallazgos", []) if h.get("titulo")]
@@ -172,6 +173,40 @@ def build_presentacion_core(
     }
     return base
 
+
+def _build_compromisos_payload(
+    vista: dict[str, Any],
+    indicadores: list[dict[str, Any]],
+    exp: EvaluacionExpediente,
+    *,
+    es_demo: bool,
+) -> list[dict[str, Any]]:
+    """Compromisos publicables necesarios para convertir potencial en resultado medible."""
+    oportunidades = vista.get("oportunidades") or []
+    compromisos: list[dict[str, Any]] = []
+    for idx, opp in enumerate(oportunidades[:4]):
+        ind = indicadores[idx] if idx < len(indicadores) else None
+        nombre_kpi = ind.get("nombre") if ind else "Cumplimiento del plan de acción"
+        base = ind.get("antes") if ind else None
+        meta = ind.get("proyectado") if ind else None
+        unidad = ind.get("unidad", "") if ind else "%"
+        compromisos.append({
+            "oportunidad": opp.get("titulo") or "Oportunidad priorizada",
+            "proceso": exp.area_proceso or "Proceso evaluado",
+            "accion_eiaax": "Analizar, priorizar, dar seguimiento y alertar desviaciones con trazabilidad.",
+            "compromiso_empresa": "Designar responsable, suministrar datos acordados y ejecutar las acciones operativas aprobadas.",
+            "responsable": "Responsable del proceso por definir con la empresa",
+            "cuando": "Desde el inicio del piloto",
+            "frecuencia": "Seguimiento semanal; alertas según desviación",
+            "kpi": nombre_kpi,
+            "linea_base": f"{base} {unidad}" if base is not None else "Por establecer con evidencia inicial",
+            "meta_conservadora": f"{meta} {unidad}" if meta is not None else "Se define al validar línea base",
+            "adherencia_minima": "≥ 90% de acciones comprometidas en plazo",
+            "evidencia": "Registro de ejecución, indicador medido y responsable",
+            "condicion_resultado": "La meta depende del cumplimiento de los compromisos de EIAAX y de la empresa.",
+            "estado": "SIMULADO" if es_demo else "PROPUESTO",
+        })
+    return compromisos
 
 def _lineas_impacto(indicadores: list[dict[str, Any]], es_demo: bool) -> list[str]:
     con_real = [i for i in indicadores if i.get("real") is not None]

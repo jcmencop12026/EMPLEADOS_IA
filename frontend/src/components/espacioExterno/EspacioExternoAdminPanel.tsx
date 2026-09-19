@@ -18,6 +18,7 @@ export function EspacioExternoAdminPanel({ expedienteId }: Props) {
   const [contratoRef, setContratoRef] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [inviteStatus, setInviteStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle");
 
   const load = useCallback(() => {
     if (!entidadId) return;
@@ -59,23 +60,30 @@ export function EspacioExternoAdminPanel({ expedienteId }: Props) {
   async function onInvite(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!entidadId) return;
-    const fd = new FormData(e.currentTarget);
-    const password = String(fd.get("password") ?? "").trim();
-    if (!password) {
-      setError("La contraseña inicial es obligatoria para invitar acceso externo.");
-      return;
-    }
+    const form = e.currentTarget;
+    const fd = new FormData(form);
     try {
-      await inviteAccesoExterno(entidadId, {
+      setInviteStatus("sending");
+      const result = await inviteAccesoExterno(entidadId, {
         email: String(fd.get("email")),
         full_name: String(fd.get("full_name")),
-        password,
       });
-      setMsg("Acceso invitado");
-      setError(null);
+      const correoEstado = String(result.correo_estado ?? "NO_CONFIGURADO");
+      if (correoEstado === "ENVIADA") {
+        setMsg("Invitación enviada. El contacto creará su propia contraseña desde el enlace seguro recibido por correo.");
+        setInviteStatus("sent");
+        setError(null);
+      } else {
+        setMsg("Acceso externo creado correctamente.");
+        setInviteStatus("failed");
+        setError(correoEstado === "FALLIDA"
+          ? "El acceso quedó preparado, pero el correo no pudo enviarse. Corrija el canal y reintente; EIIAX no entrega contraseñas temporales."
+          : "No hay un canal de correo configurado. El acceso quedó activo; complete la configuración del canal y reintente la invitación.");
+      }
       load();
-      e.currentTarget.reset();
+      form.reset();
     } catch (err) {
+      setInviteStatus("failed");
       setError(err instanceof Error ? err.message : "Error");
     }
   }
@@ -113,28 +121,25 @@ export function EspacioExternoAdminPanel({ expedienteId }: Props) {
 
   return (
     <section className="panel compact-panel">
-      <h2>Espacio externo — publicar y visibilidad</h2>
-      <p className="muted small">
-        Publicar para consulta posterior, ver como empresa y controlar qué información ve el cliente.
-      </p>
+      <div className="external-space-head">
+        <div>
+          <h2>Espacio externo</h2>
+          <p className="muted small">Controle qué información puede ver la empresa y gestione su acceso externo.</p>
+        </div>
+        {entidad && <span className="external-relation-badge">{labelEstadoRelacion(String(entidad.estado_relacion))}</span>}
+      </div>
       {msg && <p className="success-banner">{msg}</p>}
       {error && <p className="error-banner">{error}</p>}
 
-      {!entidadId ? (
+      {!entidadId && (
         <button type="button" className="btn primary" onClick={onCrearEntidad}>
           Vincular entidad externa al expediente
         </button>
-      ) : (
-        <p className="muted small">Entidad externa vinculada a este expediente. Use las acciones siguientes para invitar, publicar o promover.</p>
       )}
 
       {entidad && (
         <>
-          <p>
-            <strong>{String(entidad.nombre)}</strong> — {labelEstadoRelacion(String(entidad.estado_relacion))}
-          </p>
-
-          <h3>Publicaciones</h3>
+          <h3 className="external-section-title">Publicaciones</h3>
           <label className="muted small">
             Observación de publicación (opcional)
             <input
@@ -144,32 +149,32 @@ export function EspacioExternoAdminPanel({ expedienteId }: Props) {
               placeholder="Motivo o nota de la publicación"
             />
           </label>
-          <ul>
+          <div className="external-publications-grid" role="table" aria-label="Publicaciones externas">
+            <div className="external-publications-grid__head" role="row">
+              <span>Paquete</span><span>Estado</span><span>Versión</span><span>Acciones</span>
+            </div>
             {publicaciones.map((p) => (
-              <li key={String(p.id)}>
-                {String(p.paquete)} — {labelEstadoPublicacion(String(p.estado))} (v{String(p.version)})
-                {String(p.estado) !== "PUBLICADO_EMPRESA" && (
-                  <>
-                    {" "}
-                    <button type="button" className="btn-link" onClick={() => onPublicar(String(p.id), "PREPARADO_PRESENTAR")}>
-                      Preparar
-                    </button>
-                    {" · "}
-                    <button type="button" className="btn-link" onClick={() => onPublicar(String(p.id), "PUBLICADO_EMPRESA")}>
-                      Publicar
-                    </button>
-                  </>
-                )}
-              </li>
+              <div className="external-publications-grid__row" role="row" key={String(p.id)}>
+                <strong>{String(p.paquete)}</strong>
+                <span>{labelEstadoPublicacion(String(p.estado))}</span>
+                <span>v{String(p.version)}</span>
+                <span className="external-publications-grid__actions">
+                  {String(p.estado) !== "PUBLICADO_EMPRESA" ? (
+                    <>
+                      <button type="button" className="btn small" onClick={() => onPublicar(String(p.id), "PREPARADO_PRESENTAR")}>Preparar</button>
+                      <button type="button" className="btn small primary" onClick={() => onPublicar(String(p.id), "PUBLICADO_EMPRESA")}>Publicar</button>
+                    </>
+                  ) : <span className="muted">Publicado</span>}
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
 
-          <h3>Invitar acceso externo</h3>
-          <form onSubmit={onInvite} className="inline-form">
-            <input name="email" type="email" placeholder="email@empresa.com" required />
-            <input name="full_name" placeholder="Nombre contacto" required />
-            <input name="password" type="password" placeholder="Contraseña inicial (obligatoria)" required minLength={8} />
-            <button type="submit" className="btn">Invitar</button>
+          <h3 className="external-section-title">Invitar acceso externo</h3>
+          <form onSubmit={onInvite} className="inline-form" autoComplete="off">
+            <input name="email" type="email" autoComplete="off" placeholder="Correo del contacto" required />
+            <input name="full_name" autoComplete="off" placeholder="Nombre del contacto" required />
+                  <button type="submit" className={`btn ${inviteStatus === "sent" ? "success" : inviteStatus === "failed" ? "danger" : ""}`} disabled={inviteStatus === "sending"}>{inviteStatus === "sending" ? "Enviando..." : inviteStatus === "sent" ? "Enviado ✓" : inviteStatus === "failed" ? "Reintentar" : "Invitar"}</button>
           </form>
 
           {String(entidad.estado_relacion) !== "CLIENTE_CONTRATADO" && (

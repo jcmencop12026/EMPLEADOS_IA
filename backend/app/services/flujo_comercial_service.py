@@ -48,26 +48,70 @@ POTENCIAL_NOTE = "POTENCIAL no cuenta como valor realizado ni en ROI/payback rea
 # Catálogo contextual por sector/problema — no universal
 _INFO_CATALOGO_CONTEXTUAL: list[dict[str, Any]] = [
     {
+        "campo": "salud_caracterizacion_ips",
+        "etiqueta": "Caracterización de la IPS",
+        "explicacion": "NIT, razón social, naturaleza jurídica, nivel de atención o complejidad, municipio/departamento, sedes, horarios y población atendida.",
+        "por_que": "Permite ubicar correctamente la entidad y contextualizar mercado, operación y regulación antes de la reunión.",
+        "impacto_precision": "Sin caracterización institucional, EIAAX no puede comparar adecuadamente la IPS con su entorno.",
+        "niveles": {"PRELIMINAR", "DIAGNOSTICA", "PROFUNDA"},
+        "obligatorio": True,
+        "sectores": {"salud", "ips", "hospital", "clinica", "clínica"},
+        "problemas": set(),
+    },
+    {
+        "campo": "salud_portafolio_servicios",
+        "etiqueta": "Servicios, especialidades y capacidad",
+        "explicacion": "Servicios habilitados y realmente prestados, especialidades, sedes, capacidad instalada, horarios y volúmenes aproximados.",
+        "por_que": "Permite identificar capacidad disponible, brechas de oferta y oportunidades preliminares de crecimiento.",
+        "impacto_precision": "Sin portafolio y capacidad, cualquier oportunidad comercial o de expansión sería solo una hipótesis.",
+        "niveles": {"PRELIMINAR", "DIAGNOSTICA", "PROFUNDA"},
+        "obligatorio": True,
+        "sectores": {"salud", "ips", "hospital", "clinica", "clínica"},
+        "problemas": set(),
+    },
+    {
+        "campo": "salud_pagadores_contratacion",
+        "etiqueta": "EPS, pagadores y contratación",
+        "explicacion": "Principales EPS/ERP/clientes, modalidades de contratación, peso aproximado por pagador y situaciones relevantes de red o acceso.",
+        "por_que": "Relaciona la operación de la IPS con sus fuentes reales de demanda, facturación y recaudo.",
+        "impacto_precision": "Sin pagadores y contratación no se puede valorar correctamente dependencia, crecimiento ni riesgo de cartera.",
+        "niveles": {"PRELIMINAR", "DIAGNOSTICA", "PROFUNDA"},
+        "obligatorio": False,
+        "sectores": {"salud", "ips", "hospital", "clinica", "clínica"},
+        "problemas": set(),
+    },
+    {
         "campo": "salud_facturacion",
         "etiqueta": "Facturación y radicación",
-        "explicacion": "Volúmenes, tiempos y rechazos en facturación.",
-        "por_que": "Contextualiza oportunidades de mejora en ciclo de ingresos.",
-        "impacto_precision": "Sin datos de facturación, el impacto es estimado.",
-        "niveles": {"DIAGNOSTICA", "PROFUNDA"},
+        "explicacion": "Detalle de los últimos 6 meses por factura y pagador: fecha de factura, fecha de radicación, valor facturado, servicio/contrato, estado y rechazos o devoluciones de radicación.",
+        "por_que": "Permite medir volumen, oportunidad de radicación, concentración por pagador y reprocesos del ciclo de ingresos sin trasladar el análisis al gerente.",
+        "impacto_precision": "Sin detalle por factura y fechas, EIIAX solo puede formular hipótesis y no cuantificar causas ni impacto con precisión.",
+        "niveles": {"PRELIMINAR", "DIAGNOSTICA", "PROFUNDA"},
         "obligatorio": True,
-        "sectores": {"salud", "ips", "hospital", "clinica"},
+        "sectores": {"salud", "ips", "hospital", "clinica", "clínica"},
         "problemas": {"facturacion", "auditoria", "glosa", "radicacion", "cartera"},
     },
     {
         "campo": "salud_glosas",
         "etiqueta": "Glosas y devoluciones",
-        "explicacion": "Tipos de glosa, montos, causales y tiempos de respuesta.",
-        "por_que": "Permite cuantificar recuperación y automatización.",
-        "impacto_precision": "Sin glosas, no se dimensiona recuperación real.",
-        "niveles": {"DIAGNOSTICA", "PROFUNDA"},
+        "explicacion": "Detalle de glosas y devoluciones de los últimos 6 meses: factura, pagador, fecha, causal/motivo, valor glosado, fecha y tipo de respuesta IPS, valor aceptado/ratificado/recuperado y fecha de pago cuando exista.",
+        "por_que": "Permite identificar causas repetitivas, tiempos de respuesta, comportamiento por pagador y recuperación real para priorizar oportunidades.",
+        "impacto_precision": "Sin trazabilidad de glosa, respuesta y recuperación no es posible distinguir valor potencial de valor efectivamente recuperable.",
+        "niveles": {"PRELIMINAR", "DIAGNOSTICA", "PROFUNDA"},
         "obligatorio": True,
-        "sectores": {"salud", "ips", "hospital"},
-        "problemas": {"glosa", "devolucion", "facturacion", "auditoria"},
+        "sectores": {"salud", "ips", "hospital", "clinica", "clínica"},
+        "problemas": {"glosa", "devolucion", "facturacion", "auditoria", "cartera"},
+    },
+    {
+        "campo": "salud_cartera_recaudo",
+        "etiqueta": "Cartera y recaudo por factura",
+        "explicacion": "Cartera abierta por factura y pagador: fecha de emisión/radicación, vencimiento, valor, saldo, pagos parciales, edad de cartera, última gestión y estado de cobro.",
+        "por_que": "Permite medir envejecimiento, concentración, velocidad de recaudo y separar demoras del pagador de problemas internos de radicación o gestión.",
+        "impacto_precision": "Sin cartera por factura y trazabilidad de pagos, EIIAX no puede defender el impacto financiero ni priorizar recuperación con evidencia.",
+        "niveles": {"PRELIMINAR", "DIAGNOSTICA", "PROFUNDA"},
+        "obligatorio": True,
+        "sectores": {"salud", "ips", "hospital", "clinica", "clínica"},
+        "problemas": {"cartera", "recaudo", "facturacion", "glosa", "flujo", "caja"},
     },
     {
         "campo": "salud_pagos",
@@ -79,6 +123,46 @@ _INFO_CATALOGO_CONTEXTUAL: list[dict[str, Any]] = [
         "obligatorio": False,
         "sectores": {"salud", "ips"},
         "problemas": {"pago", "cartera", "recaudo", "facturacion"},
+    },
+    {
+        "campo": "salud_rrhh",
+        "etiqueta": "Talento humano y capacidad",
+        "explicacion": "Planta anonimizada por cargo/área/turno, tipo de vinculación, horas programadas vs. trabajadas, extras, ausentismo/incapacidades, rotación, vacantes y costo agregado de personal. No requiere datos personales innecesarios.",
+        "por_que": "Permite relacionar capacidad humana, cobertura, sobrecarga, ausentismo y productividad con los procesos críticos.",
+        "impacto_precision": "Sin una vista agregada por rol, área y turno no se puede distinguir falta de capacidad de problemas de programación, distribución o automatización.",
+        "niveles": {"PRELIMINAR", "DIAGNOSTICA", "PROFUNDA"}, "obligatorio": True,
+        "sectores": {"salud", "ips", "hospital", "clinica", "clínica"},
+        "problemas": {"rrhh", "talento", "personal", "ausentismo", "rotacion", "turnos", "productividad"},
+    },
+    {
+        "campo": "salud_operaciones_capacidad",
+        "etiqueta": "Operaciones, demanda y capacidad",
+        "explicacion": "Volúmenes por servicio/área/fecha/turno, capacidad instalada y disponible, horarios, ocupación/utilización, tiempos de espera y ciclo, cancelaciones, no-show, reprocesos e incidencias.",
+        "por_que": "Permite detectar cuellos de botella, capacidad ociosa, picos de demanda y reprocesos sin asumir que el problema está donde más se percibe.",
+        "impacto_precision": "Sin demanda, capacidad y tiempos por proceso EIIAX no puede cuantificar la capacidad recuperable ni priorizar mejoras.",
+        "niveles": {"PRELIMINAR", "DIAGNOSTICA", "PROFUNDA"}, "obligatorio": True,
+        "sectores": {"salud", "ips", "hospital", "clinica", "clínica"},
+        "problemas": {"operaciones", "operacion", "capacidad", "demanda", "sla", "reproceso", "espera"},
+    },
+    {
+        "campo": "salud_compras_inventario",
+        "etiqueta": "Compras, inventario y abastecimiento",
+        "explicacion": "Ítem/SKU/categoría, compras, proveedor, costo unitario, existencias, consumos, mínimos/máximos, quiebres, lead time, vencimiento/lote cuando aplique y compras urgentes.",
+        "por_que": "Permite relacionar consumo, inventario y compras para detectar sobreinventario, faltantes, dependencia y costo evitable.",
+        "impacto_precision": "Sin movimientos y consumo no se puede diferenciar inventario necesario de capital inmovilizado ni estimar riesgo de ruptura.",
+        "niveles": {"PRELIMINAR", "DIAGNOSTICA", "PROFUNDA"}, "obligatorio": True,
+        "sectores": {"salud", "ips", "hospital", "clinica", "clínica"},
+        "problemas": {"compras", "inventario", "abastecimiento", "proveedores", "stock", "vencimientos"},
+    },
+    {
+        "campo": "salud_sistemas_integraciones",
+        "etiqueta": "Sistemas e integraciones",
+        "explicacion": "Inventario de aplicaciones, proceso soportado, responsable/proveedor, interfaces origen-destino, frecuencia, manual vs. automático, incidentes/caídas, duplicidad de captura y controles de calidad. No incluir credenciales ni secretos.",
+        "por_que": "Permite identificar fricción digital, digitación duplicada, dependencias, riesgos de continuidad y oportunidades de integración/orquestación.",
+        "impacto_precision": "Sin mapa de sistemas e interfaces EIIAX no puede separar un problema de proceso de uno de integración o calidad de datos.",
+        "niveles": {"PRELIMINAR", "DIAGNOSTICA", "PROFUNDA"}, "obligatorio": True,
+        "sectores": {"salud", "ips", "hospital", "clinica", "clínica"},
+        "problemas": {"sistemas", "integraciones", "integracion", "tecnologia", "interfaces", "digital"},
     },
     {
         "campo": "finanzas_cartera",
@@ -127,11 +211,13 @@ def _parse(raw: str | None) -> Any:
 
 
 def _normalize_tokens(*parts: str | None) -> set[str]:
+    import unicodedata
     tokens: set[str] = set()
     for p in parts:
         if not p:
             continue
-        for t in re.split(r"[\s,/\-_]+", p.lower()):
+        normalized = "".join(c for c in unicodedata.normalize("NFD", p.lower()) if unicodedata.category(c) != "Mn")
+        for t in re.split(r"[\s,/\-_]+", normalized):
             if len(t) >= 3:
                 tokens.add(t)
     return tokens
@@ -139,7 +225,7 @@ def _normalize_tokens(*parts: str | None) -> set[str]:
 
 def resolve_catalogo_contextual(exp: EvaluacionExpediente) -> list[dict[str, Any]]:
     """Campos adicionales según sector, área y problema — no catálogo universal."""
-    sector_tokens = _normalize_tokens(exp.sector, exp.area_proceso)
+    sector_tokens = _normalize_tokens(exp.sector, exp.area_proceso, exp.entidad_nombre)
     problema_tokens = _normalize_tokens(exp.necesidad, exp.objetivo, exp.area_proceso, exp.titulo)
     result: list[dict[str, Any]] = []
     for spec in _INFO_CATALOGO_CONTEXTUAL:
@@ -166,13 +252,36 @@ def merge_catalogo_aplicable(exp: EvaluacionExpediente) -> list[dict[str, Any]]:
     return merged
 
 
+def _base_redundante_por_contexto(item: EvaluacionInformacionItem, contextual: list[dict[str, Any]]) -> bool:
+    """Evita pedir genéricos cuando el catálogo sectorial ya solicita información más concreta."""
+    campos_contextuales = {c["campo"] for c in contextual}
+    if item.campo == "contexto_negocio" and "salud_caracterizacion_ips" in campos_contextuales:
+        return True
+    if item.campo == "procesos_afectados" and "salud_portafolio_servicios" in campos_contextuales:
+        return True
+    if item.campo == "problema_detalle" and any(c.startswith("salud_") for c in campos_contextuales):
+        return True
+    return False
+
+
 def sync_informacion_contextual(db: Session, exp: EvaluacionExpediente, *, user_id: str | None = None) -> list[EvaluacionInformacionItem]:
     """Extiende sync adaptativo con campos sectoriales."""
     items = eval_svc.sync_informacion_adaptativa(db, exp, user_id=user_id)
     applicable = resolve_catalogo_contextual(exp)
+    for item in items:
+        if item.estado in {"PENDIENTE", "INCOMPLETO"} and _base_redundante_por_contexto(item, applicable):
+            item.obligatorio = False
     existing = {i.campo: i for i in items}
     for orden_offset, spec in enumerate(applicable):
         if spec["campo"] in existing:
+            item = existing[spec["campo"]]
+            item.etiqueta = spec["etiqueta"]
+            item.explicacion = spec["explicacion"]
+            item.por_que = spec["por_que"]
+            item.impacto_precision = spec["impacto_precision"]
+            item.obligatorio = spec["obligatorio"]
+            if spec["obligatorio"] and not item.respuesta and item.estado == "OPCIONAL":
+                item.estado = "PENDIENTE"
             continue
         item = EvaluacionInformacionItem(
             organization_id=exp.organization_id,

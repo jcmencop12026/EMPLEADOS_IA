@@ -1,12 +1,13 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { createEvaluacion, fetchEvaluaciones, type EvaluacionExpedienteSummary } from "../api";
+import { Link, useSearchParams } from "react-router-dom";
+import { createEntidadExterna, createEvaluacion, fetchEntidadExterna, fetchEvaluaciones, setPublicacionEstado, syncInformacionExpediente, type EvaluacionExpedienteSummary } from "../api";
 import { usePermissions } from "../hooks/usePermissions";
 
 const ESTADOS = ["", "BORRADOR", "EN_CURSO", "PRELIMINAR", "DIAGNOSTICA", "PROFUNDA", "CERRADO"] as const;
 
 export function EvaluacionesPage() {
   const { has } = usePermissions();
+  const [searchParams] = useSearchParams();
   const [items, setItems] = useState<EvaluacionExpedienteSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -20,6 +21,7 @@ export function EvaluacionesPage() {
     necesidad: "",
     objetivo: "",
     area_proceso: "",
+    sector: "",
     nivel: "PRELIMINAR",
   });
 
@@ -36,11 +38,43 @@ export function EvaluacionesPage() {
 
   useEffect(() => { load(); }, [busqueda, filtroEstado]);
 
+  useEffect(() => {
+    if (searchParams.get("nuevo") !== "1") return;
+    const area = searchParams.get("area") ?? "";
+    const temas = searchParams.get("temas") ?? "";
+    const sector = searchParams.get("sector") ?? "";
+    setShowForm(true);
+    setForm((prev) => ({
+      ...prev,
+      titulo: prev.titulo || (area ? `Evaluación EIIAX — ${area}` : "Evaluación EIIAX"),
+      area_proceso: prev.area_proceso || area,
+      necesidad: prev.necesidad || (temas ? `Interés confirmado durante demostración: ${area}. Temas: ${temas}.` : area ? `Interés confirmado durante demostración: ${area}.` : ""),
+      objetivo: prev.objetivo || "Evaluar con información real de la entidad los temas priorizados durante la demostración y cuantificar oportunidades con evidencia.",
+      sector: prev.sector || sector,
+    }));
+  }, [searchParams]);
+
   async function onCreate(e: FormEvent) {
     e.preventDefault();
     try {
       const created = await createEvaluacion(form);
-      window.location.href = `/evaluaciones/${created.id}`;
+      await syncInformacionExpediente(created.id);
+      if (searchParams.get("nuevo") === "1") {
+        const ext = await createEntidadExterna(created.id);
+        const entidad = ext.entidad as Record<string, unknown> | undefined;
+        if (entidad?.id) {
+          const detail = await fetchEntidadExterna(String(entidad.id));
+          const publicaciones = (detail.publicaciones as Record<string, unknown>[] | undefined) ?? [];
+          for (const pub of publicaciones.filter((x) => ["INICIO", "INFORMACION"].includes(String(x.paquete)))) {
+            if (String(pub.estado) !== "PUBLICADO_EMPRESA") {
+              await setPublicacionEstado(String(pub.id), "PUBLICADO_EMPRESA", undefined, "Preparado automáticamente desde cierre de demostración");
+            }
+          }
+        }
+        window.location.href = `/centro-control?expediente=${created.id}&seccion=espacio_externo`;
+        return;
+      }
+      window.location.href = `/evaluaciones/${created.id}?tab=informacion`;
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo crear la evaluación");
     }

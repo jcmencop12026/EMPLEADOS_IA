@@ -7,7 +7,7 @@ export type IdentityAssetId = "eiaax-hero" | "eiaax-corporativo" | "ex-08" | "ex
 
 /** Activos versionados en repo — ruta directa sin HEAD async (evita fallback en Windows). */
 const BUNDLED_ASSETS: Partial<Record<IdentityAssetId, string>> = {
-  "eiaax-hero": `${ASSET_BASE}/eiaax-hero.svg`,
+  "eiaax-hero": `${ASSET_BASE}/eiaax-logo-approved.png`,
   "eiaax-corporativo": `${ASSET_BASE}/eiaax-corporativo.svg`,
   "ex-08": `${ASSET_BASE}/ex-08.svg`,
 };

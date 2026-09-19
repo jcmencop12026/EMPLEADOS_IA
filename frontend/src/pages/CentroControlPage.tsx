@@ -4,6 +4,7 @@ import type { CentroControlResumen, EvaluacionExpedienteSummary } from "../api";
 import { fetchCentroControlResumen, fetchEvaluaciones } from "../api";
 import { CentroControlCockpit } from "../components/centroControl/CentroControlCockpit";
 import { CentroControlEmpresaPanel } from "../components/centroControl/CentroControlEmpresaPanel";
+import { CentroControlEmpresaExtras } from "../components/centroControl/CentroControlEmpresaExtras";
 import { PageHeader } from "../components/v1";
 import { useOrganizationContext } from "../hooks/useOrganizationContext";
 import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
@@ -11,12 +12,16 @@ import { usePermissions } from "../hooks/usePermissions";
 import { formatAuditAction, formatHealthStatus } from "../lib/labels";
 
 const SECCIONES_DEFAULT = [
-  { id: "resumen", label: "Resumen" },
-  { id: "valor", label: "Valor" },
-  { id: "operacion", label: "Operación" },
-  { id: "ia_costos", label: "IA y costos" },
-  { id: "implementacion", label: "Implementación" },
-  { id: "salud", label: "Salud" },
+  { id: "resumen", label: "Resumen", help: "Vea en una sola pantalla qué sabemos de esta empresa, qué información falta, qué encontró EIAAX, cuánto valor potencial existe y cuál es la siguiente acción recomendada." },
+  { id: "valor", label: "Valor", help: "Cuantifique el impacto económico de los hallazgos y oportunidades. Use esta sección para comparar valor potencial, metas y resultados antes de decidir dónde actuar primero." },
+  { id: "operacion", label: "Operación", help: "Revise cómo está funcionando la operación de la empresa: actividad, avances, incidencias y puntos que requieren intervención. Úsela para pasar del diagnóstico al control operativo." },
+  { id: "ia_costos", label: "IA y costos", help: "Controle qué recursos de IA se están utilizando, cuánto cuestan y qué valor generan. Sirve para vigilar consumo, eficiencia y retorno de la operación con IA." },
+  { id: "implementacion", label: "Implementación", help: "Siga la ejecución de las soluciones aprobadas: qué debe implementarse, avance, responsables, bloqueos y próximos hitos hasta poner la mejora en operación." },
+  { id: "salud", label: "Salud", help: "Analice la empresa desde la perspectiva del sector salud: facturación, radicación, glosas, cartera, servicios y otros indicadores disponibles para detectar causas y oportunidades." },
+  { id: "documentos", label: "Documentos", help: "Controle las evidencias que sustentan el diagnóstico. Aquí identifica qué documentos ya recibió EIAAX, cuáles faltan y qué requisito respalda cada evidencia." },
+  { id: "requisitos", label: "Requisitos", help: "Vea exactamente qué información necesita EIAAX para aumentar la confianza del diagnóstico. Cada requisito debe indicar qué se solicita, para qué se utilizará y cómo afecta el análisis si falta." },
+  { id: "espacio_externo", label: "Espacio externo", help: "Gestione lo que verá y entregará el contacto de la empresa. Desde aquí habilita acceso, solicita información y controla qué resultados o propuestas están autorizados para publicarse." },
+  { id: "historial", label: "Historial", help: "Consulte la trazabilidad del expediente: solicitudes, entregas, validaciones, decisiones y cambios. Úselo para saber qué ocurrió, cuándo y cómo evolucionó el análisis." },
 ] as const;
 
 type SeccionId = (typeof SECCIONES_DEFAULT)[number]["id"];
@@ -49,7 +54,8 @@ export function CentroControlPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [periodo, setPeriodo] = useState("mtd");
-  const [seccion, setSeccion] = useState<SeccionId>("resumen");
+  const seccionInicial = (searchParams.get("seccion") as SeccionId | null) ?? "resumen";
+  const [seccion, setSeccion] = useState<SeccionId>(SECCIONES_DEFAULT.some((x) => x.id === seccionInicial) ? seccionInicial : "resumen");
   const expedienteContext = searchParams.get("expediente") ?? "";
 
   const contextoLabel = useMemo(() => {
@@ -110,7 +116,7 @@ export function CentroControlPage() {
     );
   }
 
-  const secciones = SECCIONES_DEFAULT;
+  const secciones = expedienteContext ? SECCIONES_DEFAULT : SECCIONES_DEFAULT.slice(0, 6);
   const valor = data?.valor_consolidado ?? data?.resumen_ejecutivo?.valor;
 
   return (
@@ -122,31 +128,7 @@ export function CentroControlPage() {
             subtitle="Consola maestra — contexto, ciclo, atención y siguiente acción"
             eyebrow="EIAAX"
           />
-          <div className="cc-unified-header__global-actions">
-            <select
-              value={periodo}
-              onChange={(e) => setPeriodo(e.target.value)}
-              title="Periodo de análisis del tablero global"
-              aria-label="Periodo"
-            >
-              <option value="mtd">Mes actual</option>
-              <option value="7d">Últimos 7 días</option>
-              <option value="30d">Últimos 30 días</option>
-            </select>
-            <button
-              type="button"
-              className="btn secondary small"
-              onClick={load}
-              disabled={loading}
-              title="Actualiza los datos visibles del Centro de Control sin cambiar el contexto seleccionado"
-            >
-              Actualizar
-            </button>
-          </div>
-        </div>
-
-        <div className="cc-unified-header__context-row">
-          <div className="cc-unified-header__context-pills">
+          <div className="cc-unified-header__command-row">
             <span className="cc-context-pill" title="Organización de la sesión activa">
               <span className="cc-context-pill__label">Sesión</span>
               <strong>{homeOrganizationName || effectiveOrganizationName}</strong>
@@ -155,46 +137,41 @@ export function CentroControlPage() {
               <span className="cc-context-pill__label">Análisis</span>
               <strong>{contextoLabel}</strong>
             </span>
+            <label className="cc-context-select cc-context-select--inline">
+              <span className="cc-context-pill__label">Empresa / prospecto</span>
+              <select
+                value={expedienteContext}
+                onChange={(e) => setExpedienteContext(e.target.value)}
+                title="Selecciona la empresa o prospecto para operar en contexto"
+                data-help="Cambia entre la visión global y una empresa o prospecto específico. Al seleccionar uno, el Centro de Control conserva ese contexto para evaluación, oportunidades, valor y acciones relacionadas."
+              >
+                <option value="">Todas las empresas / prospectos</option>
+                {evaluaciones.map((ev) => (
+                  <option key={ev.id} value={ev.id}>{ev.entidad_nombre} — {ev.codigo}</option>
+                ))}
+              </select>
+            </label>
             {isViewingOtherOrganization && (
               <span className="cc-context-pill cc-context-pill--warn" title="Vista multi-organización activa">
                 <span className="cc-context-pill__label">Vista</span>
                 <strong>{effectiveOrganizationName}</strong>
               </span>
             )}
-          </div>
-
-          <div className="cc-unified-header__selectors">
-            <label className="cc-context-select">
-              <span className="muted small">Empresa / prospecto</span>
-              <select
-                value={expedienteContext}
-                onChange={(e) => setExpedienteContext(e.target.value)}
-                title="Selecciona la empresa o prospecto para operar en contexto"
-              >
-                <option value="">Todas las empresas / prospectos</option>
-                {evaluaciones.map((ev) => (
-                  <option key={ev.id} value={ev.id}>
-                    {ev.entidad_nombre} — {ev.codigo}
-                  </option>
-                ))}
+            <label className="cc-context-select cc-context-select--period">
+              <span className="cc-context-pill__label">Periodo</span>
+              <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} title="Periodo de análisis" data-help="Define el periodo usado por los indicadores sin cambiar el contexto seleccionado.">
+                <option value="mtd">Mes actual</option>
+                <option value="7d">Últimos 7 días</option>
+                <option value="30d">Últimos 30 días</option>
               </select>
             </label>
+            <button type="button" className="btn secondary small" onClick={load} disabled={loading} title="Actualizar" data-help="Refresca indicadores, prioridades, valor y estado sin perder el contexto seleccionado.">
+              Actualizar
+            </button>
             {expedienteContext && (
               <>
-                <Link
-                  to={presentacionPath ?? `/presentacion/${expedienteContext}`}
-                  className="btn secondary small"
-                  title="Abre la presentación ejecutiva autorizada para reunión con el cliente"
-                >
-                  Presentar
-                </Link>
-                <Link
-                  to={`/evaluaciones/${expedienteContext}?tab=vista-empresa`}
-                  className="btn secondary small"
-                  title="Vista de la empresa tal como la vería el cliente en portal autorizado"
-                >
-                  Ver empresa
-                </Link>
+                <Link to={`${presentacionPath ?? `/presentacion/${expedienteContext}`}?preparar=1`} className="btn primary small" data-help="Prepara el propósito, los temas disponibles y el paquete de datos antes de iniciar la reunión.">Preparar reunión</Link>
+                <Link to={`/evaluaciones/${expedienteContext}?tab=vista-empresa`} className="btn secondary small" data-help="Abre la Vista Empresa tal como se presenta al cliente autorizado.">Ver empresa</Link>
               </>
             )}
           </div>
@@ -213,6 +190,7 @@ export function CentroControlPage() {
                 type="button"
                 className={`tab-btn ${seccion === s.id ? "active" : ""}`}
                 onClick={() => setSeccion(s.id as SeccionId)}
+                data-help={s.help}
               >
                 {s.label}
               </button>
@@ -221,9 +199,6 @@ export function CentroControlPage() {
 
           {seccion === "resumen" && (
             <>
-              {expedienteContext && has("evaluacion.view") && (
-                <CentroControlEmpresaPanel evaluacionId={expedienteContext} />
-              )}
               <CentroControlCockpit
                 data={data}
                 periodo={periodo}
@@ -234,6 +209,9 @@ export function CentroControlPage() {
                 )}
                 expedienteEstado={evaluaciones.find((e) => e.id === expedienteContext)?.estado}
               />
+              {expedienteContext && has("evaluacion.view") && (
+                <CentroControlEmpresaPanel evaluacionId={expedienteContext} />
+              )}
             </>
           )}
 
@@ -719,6 +697,9 @@ export function CentroControlPage() {
                 )}
               </section>
             </>
+          )}
+          {expedienteContext && (seccion === "documentos" || seccion === "requisitos" || seccion === "espacio_externo" || seccion === "historial") && (
+            <CentroControlEmpresaExtras evaluacionId={expedienteContext} mode={seccion} />
           )}
         </>
       )}

@@ -233,6 +233,8 @@ def upload_adjuntos_externo(
             item.estado = "RECIBIDO"
             item.estado_validacion = "EN_VALIDACION"
             item.entregado_por = user.id
+            item.entregado_at = _utcnow()
+            item.updated_at = _utcnow()
     else:
         raise HTTPException(status_code=422, detail="entrega_id o item_id requerido")
 

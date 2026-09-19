@@ -19,7 +19,7 @@ export function OrganizationContextBar() {
   const selectValue = selectedOrganizationId ?? homeOrganizationId;
 
   return (
-    <div className="org-context-bar" title="Organización activa para Centro de Control y Mi Trabajo">
+    <div className="org-context-bar" title="Organización activa para Centro de Control y Mi Trabajo" data-help="Define la organización cuyos datos está consultando como usuario de plataforma. Cambiarla actualiza el contexto global de EIAAX; no confundir con la empresa o prospecto específico analizado dentro del Centro de Control.">
       <label className="org-context-label" htmlFor="org-context-select">
         Organización:
       </label>

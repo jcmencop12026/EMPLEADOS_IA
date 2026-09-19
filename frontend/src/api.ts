@@ -176,6 +176,8 @@ export type OrgConfig = {
   enterprise_logo_url?: string | null;
   enterprise_logo_compact_url?: string | null;
   enterprise_accent_color?: string | null;
+  enterprise_login_theme?: string | null;
+  enterprise_login_background_url?: string | null;
 };
 
 export type SecuritySummary = {
@@ -952,6 +954,8 @@ export type LoginIdentity = {
   accent_color?: string | null;
   platform_name: string;
   has_configured_logo?: boolean;
+  login_theme?: string | null;
+  login_background_url?: string | null;
 };
 
 export async function fetchLoginIdentity(): Promise<LoginIdentity> {
@@ -1908,7 +1912,7 @@ function parseContentDispositionFilename(header: string | null): string | null {
   }
 }
 
-/** Descarga autenticada vía Bearer — no expone token en URL. */
+/** Descarga autenticada vÃƒÂ­a Bearer Ã¢â‚¬â€ no expone token en URL. */
 export async function downloadKnowledgeDocument(id: string, fallbackFilename?: string): Promise<void> {
   const headers = new Headers();
   const token = getToken();
@@ -3443,7 +3447,7 @@ export async function fetchIntegrationHealth(id: string): Promise<IntegrationHea
   return api(`/api/integraciones/conectores/${id}/salud`);
 }
 
-// —— Aprendizaje y repriorización (1260) ——
+// Ã¢â‚¬â€Ã¢â‚¬â€ Aprendizaje y repriorizaciÃƒÂ³n (1260) Ã¢â‚¬â€Ã¢â‚¬â€
 
 export type CicloAprendizajeItem = {
   id: string;
@@ -3567,7 +3571,7 @@ export async function fetchHistorialAprendizaje(cicloId?: string): Promise<unkno
   return api(`/api/aprendizaje/historial${params}`);
 }
 
-// —— Optimización y recomendaciones (1290) ——
+// Ã¢â‚¬â€Ã¢â‚¬â€ OptimizaciÃƒÂ³n y recomendaciones (1290) Ã¢â‚¬â€Ã¢â‚¬â€
 
 export type OptimizacionRecomendacion = {
   id: string;
@@ -3816,7 +3820,7 @@ export async function fetchSupportTipos(): Promise<{ tipos: string[]; estados: s
   return api("/api/soporte/tipos");
 }
 
-// —— Comunicaciones MB-11 ——
+// Ã¢â‚¬â€Ã¢â‚¬â€ Comunicaciones MB-11 Ã¢â‚¬â€Ã¢â‚¬â€
 
 export type CommChannel = {
   id: string;
@@ -3892,8 +3896,16 @@ export async function fetchCommChannels(): Promise<CommChannel[]> {
   return api("/api/comunicaciones/canales");
 }
 
+export async function testCommEmailChannel(destinatario: string): Promise<{ estado: string; detalle: string; destinatario?: string; fecha?: string; ready?: boolean }> {
+  return api("/api/comunicaciones/canales/probar-correo", { method: "POST", body: JSON.stringify({ destinatario }) });
+}
+
 export async function createCommChannel(data: Record<string, unknown>): Promise<CommChannel> {
   return api("/api/comunicaciones/canales", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateCommChannel(id: string, data: Record<string, unknown>): Promise<CommChannel> {
+  return api(`/api/comunicaciones/canales/${id}`, { method: "PUT", body: JSON.stringify(data) });
 }
 
 export async function fetchCommTemplates(): Promise<CommTemplate[]> {
@@ -4067,6 +4079,7 @@ export async function createEvaluacion(data: {
   necesidad?: string;
   objetivo?: string;
   area_proceso?: string;
+  sector?: string;
   nivel?: string;
 }): Promise<EvaluacionExpedienteDetail> {
   return api("/api/evaluaciones", { method: "POST", body: JSON.stringify(data) });
@@ -4091,6 +4104,20 @@ export async function syncInformacionExpediente(expedienteId: string): Promise<E
   return api(`/api/evaluaciones/${expedienteId}/informacion/sync`, { method: "POST" });
 }
 
+export type EvaluacionProcessingStatus = {
+  status: "IDLE" | "PROCESSING" | "DONE" | "ERROR";
+  stage: string;
+  progress: number;
+  started_at: string | null;
+  finished_at: string | null;
+  duration_ms: number | null;
+  elapsed_ms: number | null;
+  error: string | null;
+};
+
+export async function fetchEvaluacionProcessingStatus(expedienteId: string): Promise<EvaluacionProcessingStatus> {
+  return api(`/api/evaluaciones/${expedienteId}/procesamiento`);
+}
 export async function evaluarExpediente(id: string): Promise<{ expediente: EvaluacionExpedienteDetail; hallazgos_creados: number }> {
   return api(`/api/evaluaciones/${id}/evaluar`, { method: "POST" });
 }
@@ -4193,6 +4220,20 @@ export async function fetchPiiaxStatus(): Promise<Record<string, unknown>> {
   return api("/api/evaluaciones/integracion/piiax");
 }
 
+export type EvaluacionCambioInformacion = {
+  que_cambio: string;
+  que_aprendimos: Array<{ campo: string; titulo: string; fuente: string; validacion: string; actualizado_at: string | null }>;
+  que_preguntar_ahora: Array<{ campo: string; titulo: string; por_que?: string | null; impacto?: string | null }>;
+  que_podemos_mostrar_ya: string[];
+  siguiente_accion: { codigo?: string; titulo?: string; descripcion?: string; prioridad?: number };
+  porcentaje_informacion: number;
+  confianza_global: string;
+  actualizado_at: string | null;
+};
+
+export async function fetchEvaluacionCambiosInformacion(expedienteId: string): Promise<EvaluacionCambioInformacion> {
+  return api(`/api/evaluaciones/${expedienteId}/cambios-informacion`);
+}
 export async function fetchSiguienteAccion(expedienteId: string): Promise<Record<string, unknown>> {
   return api(`/api/evaluaciones/${expedienteId}/siguiente-accion`);
 }
@@ -4300,7 +4341,7 @@ export async function crearSolicitudGobierno(body: {
   });
 }
 
-// —— MB-03 Partners / Aliados ——
+// Ã¢â‚¬â€Ã¢â‚¬â€ MB-03 Partners / Aliados Ã¢â‚¬â€Ã¢â‚¬â€
 
 export type PartnerSummary = {
   id: string;
@@ -4833,12 +4874,29 @@ export type PresentacionIndicador = {
   periodo?: string | null;
 };
 
+export type PresentacionCompromiso = {
+  oportunidad: string;
+  proceso: string;
+  accion_eiaax: string;
+  compromiso_empresa: string;
+  responsable: string;
+  cuando: string;
+  frecuencia: string;
+  kpi: string;
+  linea_base: string;
+  meta_conservadora: string;
+  adherencia_minima: string;
+  evidencia: string;
+  condicion_resultado: string;
+  estado: "PROPUESTO" | "SIMULADO" | string;
+};
 export type PresentacionPayload = DemoPresentacion & {
   es_demo?: boolean;
   expediente_id?: string;
   fecha?: string;
   version?: number;
   indicadores?: PresentacionIndicador[];
+  compromisos?: PresentacionCompromiso[];
   graficos?: {
     tipo?: string;
     nota?: string;
@@ -4980,6 +5038,15 @@ export async function fetchEntidadExterna(entidadId: string): Promise<Record<str
   return api(`/api/espacio-externo/entidades/${entidadId}`);
 }
 
+export async function crearSolicitudInformacionExterna(
+  entidadId: string,
+  payload: { titulo: string; descripcion?: string; informacion_item_id?: string },
+): Promise<Record<string, unknown>> {
+  return api(`/api/espacio-externo/entidades/${entidadId}/solicitudes`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
 export async function inviteAccesoExterno(
   entidadId: string,
   payload: { email: string; full_name: string; rol_externo?: string; password?: string },
@@ -5208,3 +5275,16 @@ export async function importarDiagnosticoExpediente(
   const q = diagnosticId ? `?diagnostic_id=${encodeURIComponent(diagnosticId)}` : "";
   return api(`/api/flujo-comercial/expedientes/${expedienteId}/importar-diagnostico${q}`, { method: "POST" });
 }
+
+
+export type DemoReunionRespuesta = { respuesta:string; tema_activo:string; temas_relacionados:string[]; modo:string; semantica:string; fuente:string; requiere_datos_reales:boolean; empresa_demo?:string };
+export async function askDemoReunion(expedienteId:string, pregunta:string, temaActivo:string): Promise<DemoReunionRespuesta> {
+  return api<DemoReunionRespuesta>(`/api/demo-comercial/presentacion/${expedienteId}/preguntar`, { method:"POST", body: JSON.stringify({ pregunta, tema_activo: temaActivo }) });
+}
+
+export type DemoSala={codigo:string;guest_token?:string;guest_url?:string;expediente_id:string;tema:string;proposito:string;estado:string;visible?:Record<string,unknown>|null;revision:number};
+export const createDemoSala=(expediente_id:string,tema:string,proposito:string):Promise<DemoSala>=>api<DemoSala>('/api/reunion-demo/salas',{method:'POST',body:JSON.stringify({expediente_id,tema,proposito})});
+export const updateDemoSala=(codigo:string,body:Record<string,unknown>):Promise<DemoSala>=>api<DemoSala>(`/api/reunion-demo/salas/${codigo}`,{method:'PATCH',body:JSON.stringify(body)});
+export async function fetchDemoSalaPublic(codigo:string,token:string):Promise<DemoSala>{const r=await fetch(`/api/reunion-demo/sala/${codigo}?token=${encodeURIComponent(token)}`,{cache:'no-store',credentials:'omit'});if(!r.ok)throw new Error('Sala no disponible');return r.json();}
+
+export const inviteDemoSala=(codigo:string,email:string,nombre:string):Promise<{estado:string;email:string;codigo:string}>=>api<{estado:string;email:string;codigo:string}>(`/api/reunion-demo/salas/${codigo}/invitar`,{method:'POST',body:JSON.stringify({email,nombre})});

@@ -10,6 +10,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.orm import close_all_sessions
 
+os.environ.setdefault("APP_ENV", "test")
+
 if "DATABASE_URL" not in os.environ:
     _TEST_DB = tempfile.mktemp(suffix=".db")
     os.environ["DATABASE_URL"] = f"sqlite:///{_TEST_DB}"

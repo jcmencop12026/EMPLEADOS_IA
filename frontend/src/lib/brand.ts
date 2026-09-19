@@ -17,6 +17,8 @@ export type EnterpriseVisualIdentity = {
   logoUrl?: string | null;
   logoCompactUrl?: string | null;
   accentColor?: string | null;
+  loginTheme?: string | null;
+  loginBackgroundUrl?: string | null;
 };
 
 export const DEFAULT_ENTERPRISE_IDENTITY: EnterpriseVisualIdentity = {
@@ -24,6 +26,8 @@ export const DEFAULT_ENTERPRISE_IDENTITY: EnterpriseVisualIdentity = {
   logoUrl: null,
   logoCompactUrl: null,
   accentColor: "#1d4ed8",
+  loginTheme: "aurora",
+  loginBackgroundUrl: null,
 };
 
 export const ENTERPRISE_IDENTITY_EVENT = "eiaax-enterprise-identity-changed";

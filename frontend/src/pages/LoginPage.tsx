@@ -12,34 +12,22 @@ import {
 } from "../api";
 import { saveUser } from "../auth/session";
 import { EiaaxOfficialMark } from "../components/identity/EiaaxOfficialMark";
-import { EnterpriseMark } from "../components/identity/EnterpriseMark";
 import { useLoginIdentity } from "../hooks/useLoginIdentity";
 import { EIAAX_BRAND, type EnterpriseVisualIdentity } from "../lib/brand";
 
 const SESSION_EXPIRED_KEY = "eaios_session_expired";
 
 function LoginBrandPanel({ identity }: { identity: EnterpriseVisualIdentity }) {
-  const hasTenantLogo = Boolean(identity.logoUrl || identity.logoCompactUrl);
-
   return (
     <aside className="login-brand-panel">
-      <div className="login-platform-identity" aria-label="Identidad oficial EIAAX">
-        <EiaaxOfficialMark level="hero" title={EIAAX_BRAND.title} />
+      <div className="login-platform-identity login-platform-identity--eiaax" aria-label="Identidad EIAAX">
+        {identity.logoUrl ? <img src={identity.logoUrl} alt={identity.displayName || EIAAX_BRAND.name} className="login-configured-logo" /> : <EiaaxOfficialMark level="hero" title={EIAAX_BRAND.title} />}
       </div>
 
-      {(hasTenantLogo || identity.displayName) && (
+      {identity.displayName && (
         <div className="login-organization-identity" aria-label="Organización de acceso">
           <span className="login-organization-label">Organización</span>
-          {hasTenantLogo ? (
-            <EnterpriseMark
-              variant="login"
-              displayName={identity.displayName}
-              logoUrl={identity.logoUrl}
-              logoCompactUrl={identity.logoCompactUrl}
-            />
-          ) : (
-            <strong className="login-organization-name">{identity.displayName}</strong>
-          )}
+          <strong className="login-organization-name">{identity.displayName}</strong>
         </div>
       )}
 
@@ -51,9 +39,11 @@ function LoginBrandPanel({ identity }: { identity: EnterpriseVisualIdentity }) {
 export function LoginPage() {
   const navigate = useNavigate();
   const { asEnterprise } = useLoginIdentity();
-  const accentStyle = asEnterprise.accentColor
-    ? ({ "--v1-enterprise-accent": asEnterprise.accentColor } as CSSProperties)
-    : undefined;
+  const accentStyle = ({
+    "--v1-enterprise-accent": asEnterprise.accentColor || "#1d4ed8",
+    ...(asEnterprise.loginBackgroundUrl ? { "--login-bg-image": `url(${asEnterprise.loginBackgroundUrl})` } : {}),
+  } as CSSProperties);
+  const loginThemeClass = `login-theme-${asEnterprise.loginTheme || "aurora"}`;
   const [searchParams, setSearchParams] = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -67,8 +57,12 @@ export function LoginPage() {
   const [ssoProviders, setSsoProviders] = useState<{ id: string; name: string; provider_type: string }[]>([]);
   const [showSso, setShowSso] = useState(false);
   const [loading, setLoading] = useState(false);
+  const isExternalAccess = searchParams.get("external") === "1";
 
   useEffect(() => {
+    const invitedUser = searchParams.get("user") ?? "";
+    if (invitedUser) setUsername(invitedUser);
+    if (searchParams.get("access") === "ready") setSessionNotice("Acceso activado. Inicie sesión para abrir directamente el espacio seguro de su empresa.");
     const expiredParam = searchParams.get("expired") === "1";
     const hadRealExpiry = sessionStorage.getItem(SESSION_EXPIRED_KEY) === "1";
     if (expiredParam && hadRealExpiry) {
@@ -122,7 +116,9 @@ export function LoginPage() {
     setToken(accessToken);
     const user = await api<UserMe>("/api/auth/me");
     saveUser(user);
-    navigate("/", { replace: true });
+    const requested = searchParams.get("next");
+    const target = requested && requested.startsWith("/") && !requested.startsWith("//") ? requested : "/";
+    navigate(target, { replace: true });
   }
 
   async function onSubmit(e: FormEvent) {
@@ -161,7 +157,7 @@ export function LoginPage() {
 
   if (mfaToken) {
     return (
-      <div className="login-page eiaax-v1-experience" style={accentStyle}>
+      <div className={`login-page eiaax-v1-experience ${loginThemeClass}`} style={accentStyle}>
         <div className="login-layout">
           <LoginBrandPanel identity={asEnterprise} />
           <form className="login-card login-card-elevated" onSubmit={onMfaSubmit}>
@@ -178,18 +174,23 @@ export function LoginPage() {
   }
 
   return (
-    <div className="login-page eiaax-v1-experience" style={accentStyle}>
+    <div className={`login-page eiaax-v1-experience ${loginThemeClass}`} style={accentStyle}>
       <div className="login-layout">
         <LoginBrandPanel identity={asEnterprise} />
         <div className="login-forms">
           <form className="login-card login-card-elevated" onSubmit={onSubmit}>
-            <header className="login-card-header"><h1>Iniciar sesión</h1><p className="muted small">Acceso a la plataforma {EIAAX_BRAND.name}</p></header>
+            <header className="login-card-header">
+              <div className="login-card-brandline">
+                {asEnterprise.logoCompactUrl ? <img src={asEnterprise.logoCompactUrl} alt="" className="login-compact-logo" aria-hidden="true" /> : null}
+                <div><h1>{isExternalAccess ? "Acceso a su espacio EIIAX" : "Iniciar sesión"}</h1><p className="muted small">{isExternalAccess ? "Entre para abrir directamente el espacio seguro de su empresa" : `Acceso a la plataforma ${EIAAX_BRAND.name}`}</p></div>
+              </div>
+            </header>
             {sessionNotice && <p className="login-notice" role="status">{sessionNotice}</p>}
             <label>Usuario<input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" placeholder="Su usuario corporativo" disabled={loading} /></label>
-            <label>Contraseña<span className="password-field"><input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" placeholder="Contraseña" disabled={loading} /><button type="button" className="password-toggle" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"} title={showPassword ? "Oculta la contraseña visible" : "Muestra temporalmente la contraseña escrita"} disabled={loading}>{showPassword ? "Ocultar" : "Ver"}</button></span></label>
+            <label>Contraseña<span className="password-field"><input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" placeholder="Contraseña" disabled={loading} /><button type="button" className="password-toggle" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"} title={showPassword ? "Oculta la contraseña visible" : "Muestra temporalmente la contraseña escrita"} data-help={showPassword ? "Vuelve a ocultar los caracteres de la contraseña en pantalla." : "Muestra temporalmente los caracteres escritos para comprobar la contraseña antes de iniciar sesión."} disabled={loading}>{showPassword ? "Ocultar" : "Ver"}</button></span></label>
             {error && <p className="error" role="alert">{error}</p>}
-            <button type="submit" className="btn primary login-submit" disabled={loading} title="Valida sus credenciales y entra al ecosistema EIAAX">{loading ? "Entrando…" : "Entrar"}</button>
-            <button type="button" className="link-button login-forgot" onClick={() => setShowForgot((v) => !v)} disabled={loading} title="Muestra las opciones disponibles para recuperar el acceso">¿Olvidó su contraseña?</button>
+            <button type="submit" className="btn primary login-submit" disabled={loading} title="Valida sus credenciales y entra al ecosistema EIAAX" data-help="Valida el usuario y la contraseña escritos. Si son correctos, inicia la sesión y abre EIAAX con los permisos y la organización asignados a su cuenta.">{loading ? "Entrando…" : "Entrar"}</button>
+            <button type="button" className="link-button login-forgot" onClick={() => setShowForgot((v) => !v)} disabled={loading} title="Muestra las opciones disponibles para recuperar el acceso" data-help="Muestra la orientación disponible para recuperar el acceso cuando no recuerda su contraseña. No modifica la cuenta por sí solo.">¿Olvidó su contraseña?</button>
             {showForgot && <div className="login-forgot-panel" role="region" aria-label="Recuperación de contraseña"><p className="muted">La recuperación automática por correo no está habilitada en esta instalación. Solicite al administrador del sistema que restablezca su acceso de forma segura.</p></div>}
             <div className="login-enterprise-block">
               <div className="login-enterprise-head"><strong>Acceso empresarial</strong><span className="muted small" title="Código que identifica el acceso de su organización">¿Qué es el código?</span></div>

@@ -58,6 +58,16 @@ def render_presentacion_pdf(data: dict[str, Any]) -> bytes:
             add(f"• {item}", size_body)
         add("", size_body, 6)
 
+    compromisos = data.get("compromisos") or []
+    if compromisos:
+        add("Compromisos para capturar el valor", size_title, 20)
+        for item in compromisos[:4]:
+            add(f"Oportunidad: {item.get('oportunidad', '—')}", size_body)
+            add(f"EIAAX: {item.get('accion_eiaax', '—')}", size_small, 14)
+            add(f"Empresa: {item.get('compromiso_empresa', '—')}", size_small, 14)
+            add(f"KPI: {item.get('kpi', '—')} | Base: {item.get('linea_base', '—')} | Meta: {item.get('meta_conservadora', '—')}", size_small, 14)
+            add(f"Condición: {item.get('condicion_resultado', '—')}", size_small, 14)
+        add("", size_body, 6)
     indicadores = data.get("indicadores") or []
     if indicadores:
         add("Indicadores", size_title, 20)

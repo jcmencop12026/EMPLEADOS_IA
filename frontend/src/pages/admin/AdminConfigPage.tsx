@@ -103,7 +103,7 @@ export function AdminConfigPage() {
           <div className="config-identidad">
             <div className="config-brand-mother">
               <BrandMark level="micro" />
-              <p className="muted small">Marca madre EIAAX — no sustituible por la identidad tenant.</p>
+              <p className="muted small">Si configura un logo aquí, será la marca visible principal en login y menú. Si no configura ninguno, EIAAX usa su identidad predeterminada.</p>
             </div>
             <label className="config-field">Nombre visible de la empresa
               <input
@@ -132,7 +132,16 @@ export function AdminConfigPage() {
                 placeholder="#1d4ed8"
               />
             </label>
-            <p className="muted small">La identidad de informes hereda logo y nombre configurados aquí.</p>
+            <label className="config-field">Diseño del login
+              <select className="config-input-md" value={config.enterprise_login_theme ?? "aurora"} onChange={(e) => setConfig({ ...config, enterprise_login_theme: e.target.value })}>
+                <option value="aurora">Aurora EIIAX</option>
+                <option value="nexus">Nexus tecnológico</option>
+                <option value="midnight">Noche ejecutiva</option>
+                <option value="clean">Claro minimalista</option>
+              </select>
+            </label>
+            <EnterpriseLogoField label="Fondo del login (opcional)" value={config.enterprise_login_background_url ?? ""} onChange={(v) => setConfig({ ...config, enterprise_login_background_url: v })} />
+            <p className="muted small">Logo principal, logo abreviado, color, diseño y fondo del login quedan parametrizables sin tocar código.</p>
           </div>
         )}
 

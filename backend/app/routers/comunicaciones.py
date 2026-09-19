@@ -50,6 +50,27 @@ def list_channels(user: User = Depends(get_current_user), db: Session = Depends(
     return svc.list_channels(db, user.organization_id)
 
 
+@router.post("/canales/probar-correo")
+def test_email_channel(body: dict, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "communications.channel.manage", db)
+    destinatario = str(body.get("destinatario") or "").strip()
+    if "@" not in destinatario:
+        raise HTTPException(status_code=422, detail="Correo de prueba inválido.")
+    readiness = svc.email_channel_readiness(db, user.organization_id)
+    if not readiness.get("ready"):
+        return readiness
+    result = svc.send_direct_email(
+        db,
+        user.organization_id,
+        destinatario=destinatario,
+        asunto="EIAAX — prueba de correo",
+        contenido="Prueba de configuración de correo EIAAX. Si recibió este mensaje, el canal SMTP está operativo.",
+    )
+    svc.write_audit(db, action="communications.email.test", organization_id=user.organization_id, user_id=user.id, detail=f"{result.get('estado')}:{destinatario}")
+    db.commit()
+    return {**result, "destinatario": destinatario, "fecha": datetime.utcnow().isoformat()}
+
+
 @router.post("/canales", response_model=CommChannelOut, status_code=status.HTTP_201_CREATED)
 def create_channel(body: CommChannelCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     check_permission(user, "communications.channel.manage", db)
@@ -57,6 +78,15 @@ def create_channel(body: CommChannelCreate, user: User = Depends(get_current_use
         return svc.create_channel(db, user.organization_id, user, body.model_dump())
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/canales/{channel_id}", response_model=CommChannelOut)
+def update_channel(channel_id: str, body: dict, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_permission(user, "communications.channel.manage", db)
+    try:
+        return svc.update_channel(db, user.organization_id, user, channel_id, body)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/plantillas", response_model=list[CommTemplateOut])

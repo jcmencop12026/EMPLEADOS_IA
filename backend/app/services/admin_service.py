@@ -380,6 +380,8 @@ def default_org_config() -> dict:
         "enterprise_logo_url": None,
         "enterprise_logo_compact_url": None,
         "enterprise_accent_color": None,
+        "enterprise_login_theme": "aurora",
+        "enterprise_login_background_url": None,
     }
 
 
@@ -394,6 +396,8 @@ def update_org_config(db: Session, *, org: Organization, actor_id: str, config: 
         "enterprise_logo_url",
         "enterprise_logo_compact_url",
         "enterprise_accent_color",
+        "enterprise_login_theme",
+        "enterprise_login_background_url",
     }
     for key, value in config.items():
         if key in allowed:

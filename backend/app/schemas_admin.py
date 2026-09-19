@@ -105,6 +105,8 @@ class OrgConfigOut(BaseModel):
     enterprise_logo_url: str | None = None
     enterprise_logo_compact_url: str | None = None
     enterprise_accent_color: str | None = None
+    enterprise_login_theme: str | None = None
+    enterprise_login_background_url: str | None = None
 
 
 class OrgConfigUpdate(BaseModel):
@@ -116,6 +118,8 @@ class OrgConfigUpdate(BaseModel):
     enterprise_logo_url: str | None = Field(default=None, max_length=700_000)
     enterprise_logo_compact_url: str | None = Field(default=None, max_length=700_000)
     enterprise_accent_color: str | None = Field(default=None, max_length=20)
+    enterprise_login_theme: str | None = Field(default=None, max_length=40)
+    enterprise_login_background_url: str | None = Field(default=None, max_length=700_000)
 
 
 class SecuritySummaryOut(BaseModel):

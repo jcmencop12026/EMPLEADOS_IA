@@ -24,6 +24,7 @@ export function CycleStepper({ currentIndex, expedienteId, isDemo, compact = fal
               to={cicloEtapaRuta(etapa, { expedienteId, isDemo })}
               className={`v1-cycle-step v1-cycle-step--${state}`}
               title={`Etapa ${idx + 1}: ${etapa}`}
+              data-help={`Etapa ${idx + 1} del ciclo EIAAX: ${etapa}. Ábrala para trabajar esta fase conservando la empresa o prospecto seleccionado y su trazabilidad dentro del ciclo completo.`}
               aria-current={state === "current" ? "step" : undefined}
             >
               <span className="v1-cycle-step__num">{idx + 1}</span>

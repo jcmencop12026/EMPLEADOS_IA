@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { OrganizationContextBar } from "./components/OrganizationContextBar";
 import { fetchTrabajoResumen, fetchUnreadCount } from "./api";
 import { filterMenuByPermissions, canAccessRoute } from "./auth/permissions";
@@ -16,7 +16,7 @@ import { navIconFor } from "./lib/navIcons";
 
 type NavSection = (typeof MENU)[number];
 const COLLAPSE_KEY = "eaios_menu_collapsed";
-const SECTION_KEY = "eaios_menu_sections";
+const SECTION_KEY = "eaios_menu_sections_v2";
 
 function loadSections(): Record<string, boolean> {
   try {
@@ -37,6 +37,7 @@ export function AppShell() {
 }
 
 function AppShellInner() {
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
   const [sections, setSections] = useState<Record<string, boolean>>(loadSections);
   const [unread, setUnread] = useState(0);
@@ -44,10 +45,12 @@ function AppShellInner() {
   const user = getCachedUser();
   const { organizationQueryParam } = useOrganizationContext();
   const { identity } = useEnterpriseIdentity();
+  const permissionKey = JSON.stringify(user?.permissions ?? []);
   const permissionSet = useMemo(
-    () => new Set(user?.permissions ?? []),
-    [user?.permissions],
+    () => new Set<string>(JSON.parse(permissionKey)),
+    [permissionKey],
   );
+  const isExternalPortal = permissionSet.has("espacio_externo.portal") && !permissionSet.has("control_center.view");
 
   const visibleMenu = useMemo(
     () =>
@@ -67,6 +70,18 @@ function AppShellInner() {
   }, [sections]);
 
   useEffect(() => {
+    const activeSection = visibleMenu.find((section) =>
+      section.items.some((item) => item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to)),
+    );
+    if (!activeSection) return;
+    setSections((prev) => {
+      const next = Object.fromEntries(visibleMenu.map((section) => [section.id, section.id === activeSection.id]));
+      return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+    });
+  }, [location.pathname, visibleMenu]);
+
+  useEffect(() => {
+    if (isExternalPortal) return;
     const refreshNotif = () => fetchUnreadCount().then(setUnread).catch(() => undefined);
     const refreshTrabajo = () => {
       if (!canAccessRoute("/trabajo", permissionSet)) return;
@@ -87,13 +102,16 @@ function AppShellInner() {
       window.removeEventListener("notifications-changed", refresh);
       window.removeEventListener(ORGANIZATION_CONTEXT_EVENT, refresh);
     };
-  }, [permissionSet, organizationQueryParam]);
+  }, [permissionSet, organizationQueryParam, isExternalPortal]);
 
   function toggleSection(id: string) {
-    setSections((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }));
+    setSections((prev) => {
+      const willOpen = !(prev[id] ?? false);
+      return Object.fromEntries(visibleMenu.map((section) => [section.id, willOpen && section.id === id]));
+    });
   }
 
-  const isOpen = (id: string) => sections[id] ?? true;
+  const isOpen = (id: string) => sections[id] ?? false;
 
   function renderSection(section: NavSection) {
     const open = isOpen(section.id);
@@ -104,6 +122,7 @@ function AppShellInner() {
           className="nav-section-title"
           onClick={() => toggleSection(section.id)}
           title={`${open ? "Contraer" : "Expandir"} sección ${section.label}`}
+          data-help={`${section.label}: ${open ? "oculta" : "muestra"} las opciones de esta área. Solo se mantiene una sección abierta para aprovechar mejor el espacio de trabajo.`}
           aria-expanded={open}
         >
           <span className="nav-icon">{open ? "▾" : "▸"}</span>
@@ -122,7 +141,9 @@ function AppShellInner() {
                   key={item.to}
                   to={item.to}
                   end={item.end}
-                  title={`Ir a ${item.label}`}
+                  title={item.help ?? `${item.label}: abre esta opción y conserva el contexto actual de empresa o prospecto.`}
+                  data-help={item.help ?? `${item.label}: aquí puede trabajar esta función conservando el contexto actual. Pase el cursor para conocer su propósito y úsela cuando necesite actuar sobre este proceso.`}
+                  aria-label={item.help ? `${item.label}. ${item.help}` : item.label}
                   className={section.id === "admin" ? "nav-sub" : undefined}
                 >
                   <span className="nav-icon" aria-hidden="true">{navIconFor(item.to)}</span>
@@ -174,36 +195,22 @@ function AppShellInner() {
                 boxShadow: "none",
               }}
             >
-              <BrandMark
-                level={collapsed ? "ex08" : "corporativo"}
-                title={EIAAX_BRAND.title}
-                style={{
-                  width: collapsed ? 34 : "100%",
-                  maxWidth: collapsed ? 34 : 196,
-                  height: "auto",
-                  display: "block",
-                  margin: "0 auto",
-                }}
-              />
-            </div>
-
-            {!collapsed && hasTenantLogo && (
-              <div
-                title={`Identidad de ${identity.displayName || "la organización"}`}
-                style={{
-                  padding: "5px 8px",
-                  borderRadius: 8,
-                  background: "rgba(255,255,255,0.92)",
-                }}
-              >
+              {hasTenantLogo ? (
                 <EnterpriseMark
-                  variant="shell"
+                  variant={collapsed ? "compact" : "shell"}
                   displayName={identity.displayName}
                   logoUrl={identity.logoUrl}
                   logoCompactUrl={identity.logoCompactUrl}
+                  className="sidebar-configured-brand"
                 />
-              </div>
-            )}
+              ) : (
+                <BrandMark
+                  level={collapsed ? "ex08" : "corporativo"}
+                  title={EIAAX_BRAND.title}
+                  style={{ width: collapsed ? 34 : "100%", maxWidth: collapsed ? 34 : 196, height: "auto", display: "block", margin: "0 auto" }}
+                />
+              )}
+            </div>
 
             {!collapsed && identity.displayName && (
               <span
@@ -225,6 +232,7 @@ function AppShellInner() {
             type="button"
             className="btn-icon"
             title={collapsed ? "Expandir menú principal" : "Colapsar menú principal"}
+            data-help={collapsed ? "Expande el menú para mostrar títulos y opciones de navegación." : "Reduce el menú lateral para ampliar el espacio disponible de la pantalla de trabajo."}
             aria-label={collapsed ? "Expandir menú principal" : "Colapsar menú principal"}
             onClick={() => setCollapsed((c) => !c)}
           >
@@ -232,7 +240,14 @@ function AppShellInner() {
           </button>
         </div>
         <nav className="nav-hierarchical" aria-label="Menú principal">
-          {visibleMenu.map(renderSection)}
+          {isExternalPortal ? (
+            <div className="nav-section">
+              <NavLink to="/mi-espacio" className="nav-sub">
+                <span className="nav-icon" aria-hidden="true">⌂</span>
+                <span className="nav-label">Mi espacio</span>
+              </NavLink>
+            </div>
+          ) : visibleMenu.map(renderSection)}
         </nav>
         <div className="sidebar-footer">
           {user && (
@@ -245,6 +260,7 @@ function AppShellInner() {
             type="button"
             className="btn-link"
             title="Cierra la sesión actual y vuelve al acceso seguro"
+            data-help="Finaliza su sesión de EIAAX en este navegador y regresa a la pantalla de acceso. Úselo al terminar o cuando cambie de usuario."
             onClick={logout}
           >
             <span className="nav-icon">⎋</span>
@@ -259,15 +275,16 @@ function AppShellInner() {
           </span>
           <div className="topbar-actions">
             <ThemeToggle />
-            <OrganizationContextBar />
-            <NavLink
+            {!isExternalPortal && <OrganizationContextBar />}
+            {!isExternalPortal && <NavLink
               className="notification-bell"
               to="/notificaciones"
               title="Abre el Centro de notificaciones y muestra eventos que requieren su atención"
+              data-help="Abre las notificaciones de EIAAX. Úselo para revisar alertas, cambios y eventos que pueden requerir atención o una decisión."
               aria-label="Centro de notificaciones"
             >
               🔔{unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}
-            </NavLink>
+            </NavLink>}
           </div>
         </header>
         <section className="content">

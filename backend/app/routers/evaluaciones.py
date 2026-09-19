@@ -14,6 +14,7 @@ from app.deps import get_current_user
 from app.models import User
 from app.permissions import require_permission, user_permissions
 from app.services import evaluacion_service as svc
+from app.services import evaluacion_processing_status as proc_status
 from app.services import evaluacion_accion_service as acc_svc
 from app.services import espacio_externo_service as esp_svc
 from app.services import evidencia_entrega_service as evid_svc
@@ -214,7 +215,8 @@ def sync_informacion(
     user: User = Depends(require_permission("evaluacion.manage")),
 ):
     exp = svc._get_expediente(db, expediente_id, user.organization_id)  # noqa: SLF001
-    svc.sync_informacion_adaptativa(db, exp, user_id=user.id)
+    from app.services import flujo_comercial_service as flujo_svc
+    flujo_svc.sync_informacion_contextual(db, exp, user_id=user.id)
     db.commit()
     return svc.expediente_to_detail(db, exp)
 
@@ -286,18 +288,34 @@ async def subir_adjuntos_informacion(
     return result
 
 
+@router.get("/{expediente_id}/procesamiento")
+def estado_procesamiento(
+    expediente_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.view")),
+):
+    svc._get_expediente(db, expediente_id, user.organization_id)  # noqa: SLF001
+    return proc_status.get(expediente_id)
+
+
 @router.post("/{expediente_id}/evaluar")
 def evaluar_expediente(
     expediente_id: str,
     db: Session = Depends(get_db),
     user: User = Depends(require_permission("evaluacion.evaluate")),
 ):
-    result = svc.ejecutar_evaluacion_preliminar(
-        db, expediente_id, user.organization_id, user_id=user.id,
-    )
-    db.commit()
-    return result
-
+    proc_status.start(expediente_id)
+    try:
+        result = svc.ejecutar_evaluacion_preliminar(
+            db, expediente_id, user.organization_id, user_id=user.id,
+        )
+        db.commit()
+        result["processing"] = proc_status.finish(expediente_id)
+        return result
+    except Exception as exc:
+        db.rollback()
+        proc_status.fail(expediente_id, type(exc).__name__)
+        raise
 
 @router.post("/{expediente_id}/hallazgos", status_code=201)
 def create_hallazgo(
@@ -548,6 +566,16 @@ def crear_indicador(
     db.commit()
     return acc_svc._indicador_dict(ind)  # noqa: SLF001
 
+
+@router.get("/{expediente_id}/cambios-informacion")
+def get_cambios_informacion(
+    expediente_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("evaluacion.view")),
+):
+    return svc.get_resumen_cambio_informacion(
+        db, expediente_id, user.organization_id, permisos=user_permissions(user, db),
+    )
 
 @router.get("/{expediente_id}/siguiente-accion")
 def get_siguiente_accion(

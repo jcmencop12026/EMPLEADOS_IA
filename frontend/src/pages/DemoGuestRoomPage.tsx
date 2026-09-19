@@ -1,0 +1,15 @@
+import { useEffect, useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
+import { fetchDemoSalaPublic, type DemoSala } from "../api";
+
+export function DemoGuestRoomPage(){
+ const {codigo=""}=useParams(); const [sp]=useSearchParams(); const token=sp.get("token")||"";
+ const [sala,setSala]=useState<DemoSala|null>(null); const [error,setError]=useState<string|null>(null);
+ useEffect(()=>{let stop=false; const load=()=>fetchDemoSalaPublic(codigo,token).then(x=>{if(!stop){setSala(x);setError(null)}}).catch(e=>{if(!stop)setError(e.message)}); load(); const id=setInterval(load,1500); return()=>{stop=true;clearInterval(id)}},[codigo,token]);
+ if(error)return <main className="guest-room"><h1>EIIAX · Sala ejecutiva</h1><p className="error">{error}</p></main>;
+ if(!sala)return <main className="guest-room"><h1>EIIAX · Sala ejecutiva</h1><p>Conectando con la reunión…</p></main>;
+ const v=sala.visible as any;
+ return <main className="guest-room guest-room-v2"><header className="guest-hero"><div><span className="semantic-badge hecho">REUNIÓN EN VIVO</span><h1>EIIAX · Inteligencia para decidir y mejorar</h1><p>Demostración ejecutiva · caso ficticio preparado para explorar oportunidades de impacto.</p></div><div className="guest-impact"><span>↑ Ingresos</span><span>↓ Pérdidas</span><span>↓ Costos</span><span>↑ Productividad</span><span>⚠ Riesgos</span></div></header>
+ <section className="panel guest-stage"><div className="guest-stage-label">CONTENIDO COMPARTIDO POR EL PRESENTADOR</div><h2>{v?.titulo||"Bienvenido a EIIAX"}</h2>{v?.subtitulo&&<p className="guest-subtitle">{v.subtitulo}</p>}{!v?.titulo&&<p className="guest-welcome">En unos instantes verá cómo EIIAX identifica oportunidades, conecta procesos y convierte datos en decisiones.</p>}{Array.isArray(v?.contenido)&&<div className="guest-findings">{v.contenido.map((x:string,i:number)=><article key={x}><span>{String(i+1).padStart(2,"0")}</span><p>{x}</p></article>)}</div>}{v?.respuesta&&<div className="elia-answer guest-elia"><strong>ELIA · RESPUESTA EN VIVO</strong><p>{v.respuesta}</p></div>}{Array.isArray(v?.compromisos)&&<div className="guest-commitments"><h3>Condiciones y compromisos para materializar el beneficio</h3>{v.compromisos.map((c:any,i:number)=><article key={`${c.responsable}-${i}`}><strong>{c.responsable}</strong><p>{c.descripcion}</p><small>{c.fecha&&<>Momento: {c.fecha} · </>}{c.evidencia&&<>Evidencia: {c.evidencia} · </>}Estado: {c.estado||"PROPUESTO"}</small>{c.beneficio&&<em className="guest-commitment-benefit">Condición/efecto: {c.beneficio}</em>}</article>)}</div>}{v?.nota&&<p className="guest-condition-note">{v.nota}</p>}</section>
+ <footer className="guest-footer"><span>Los datos de esta demostración son simulados/estimados y no representan resultados de su entidad.</span><strong>Sala {sala.codigo} · sincronización automática</strong></footer></main>
+}

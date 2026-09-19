@@ -51,6 +51,8 @@ export function useLoginIdentity() {
     logoUrl: identity?.logo_url ?? null,
     logoCompactUrl: identity?.logo_compact_url ?? null,
     accentColor: identity?.accent_color ?? "#1d4ed8",
+    loginTheme: identity?.login_theme ?? "aurora",
+    loginBackgroundUrl: identity?.login_background_url ?? null,
   };
 
   return { identity, asEnterprise, loading, reload };

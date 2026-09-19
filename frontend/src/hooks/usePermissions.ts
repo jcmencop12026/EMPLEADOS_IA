@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { getCachedUser, validateSession } from "../auth/session";
 
 export function usePermissions() {
-  const [permissions, setPermissions] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const cachedUser = getCachedUser();
+  const [permissions, setPermissions] = useState<Set<string>>(() => new Set(cachedUser?.permissions ?? []));
+  const [loading, setLoading] = useState(!cachedUser);
 
   useEffect(() => {
     let active = true;

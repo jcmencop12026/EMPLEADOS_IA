@@ -1,0 +1,23 @@
+﻿PID=13304
+NAME=node.exe
+CMD="node"   "D:\EMPLEADOS_IA\frontend\node_modules\.bin\\..\vite\bin\vite.js" --host 127.0.0.1 --port 5180 --host 127.0.0.1 --port 5180
+HTML=<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <script type="module">import { injectIntoGlobalHook } from "/@react-refresh";
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;</script>
+
+    <script type="module" src="/@vite/client"></script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EIAAX â Ecosistema Inteligente de Procesos Empresariales</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx?t=1788987024088"></script>
+  </body>
+</html>
+

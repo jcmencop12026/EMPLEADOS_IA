@@ -471,7 +471,7 @@ def update_informacion_item(
         .first()
     )
     if not item:
-        raise HTTPException(status_code=404, detail="Ítem de información no encontrado")
+        raise HTTPException(status_code=404, detail="Ãtem de informaciÃ³n no encontrado")
     if respuesta is not None:
         item.respuesta = respuesta.strip() or None
     if evidencia_ref is not None:
@@ -1511,6 +1511,18 @@ def ask_eiaax(
 
     return {**base, "modo_respuesta": "local_heuristica", "llm_real": False, "estado": "ok", "respuesta": None}
 
+
+def get_resumen_cambio_informacion(
+    db: Session,
+    expediente_id: str,
+    organization_id: str,
+    *,
+    permisos: set[str] | None = None,
+) -> dict[str, Any]:
+    from app.services.evaluacion_siguiente_accion_service import resumen_cambio_informacion
+
+    exp = _get_expediente(db, expediente_id, organization_id)
+    return resumen_cambio_informacion(db, exp, permisos=permisos or set())
 
 def get_siguiente_accion(
     db: Session,

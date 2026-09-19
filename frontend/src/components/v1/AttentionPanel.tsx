@@ -35,7 +35,7 @@ export function AttentionPanel({
         <ul className="v1-attention-panel__list">
           {items.map((item) => (
             <li key={item.id} className={`v1-attention-item v1-attention-item--${item.priority ?? "media"}`}>
-              <Link to={item.href} className="v1-attention-item__link">
+              <Link to={item.href} className="v1-attention-item__link" data-help={`${item.title}. ${item.detail ? `Tipo: ${item.detail}. ` : ""}Ábralo para revisar por qué requiere atención, consultar su contexto y ejecutar la acción correspondiente.`}>
                 <strong>{item.title}</strong>
                 {item.detail && <span className="v1-attention-item__detail">{item.detail}</span>}
               </Link>

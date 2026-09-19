@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
+from pydantic import BaseModel, Field
 
 from app.database import get_db
 from app.deps import get_current_user
@@ -11,9 +12,30 @@ from app.models import User
 from app.permissions import require_permission
 from app.services import demo_comercial_service as svc
 from app.services import presentacion_service as pres_svc
+from app.services import demo_reunion_copilot_service as copilot_svc
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api/demo-comercial", tags=["demo-comercial"])
+
+
+class ReunionPregunta(BaseModel):
+    pregunta: str = Field(..., min_length=2, max_length=2000)
+    tema_activo: str = Field("facturacion", min_length=2, max_length=40)
+
+
+@router.post("/presentacion/{expediente_id}/preguntar")
+def preguntar_en_reunion(
+    expediente_id: str,
+    body: ReunionPregunta,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    try:
+        return copilot_svc.answer_demo_question(db, user.organization_id, expediente_id, body.pregunta, body.tema_activo)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except (PermissionError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/manifest")

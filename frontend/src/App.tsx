@@ -49,6 +49,7 @@ import { CentroEstrategicoPage } from "./pages/CentroEstrategicoPage";
 import { DemoComercialPage } from "./pages/DemoComercialPage";
 import { PresentacionEjecutivaPage } from "./pages/PresentacionEjecutivaPage";
 import { PresentacionRealPage } from "./pages/PresentacionRealPage";
+import { DemoGuestRoomPage } from "./pages/DemoGuestRoomPage";
 import { InformesPeriodicosDemoPage } from "./pages/InformesPeriodicosDemoPage";
 import { EspacioExternoPortalPage } from "./pages/EspacioExternoPortalPage";
 import { PartnersPage } from "./pages/PartnersPage";
@@ -76,6 +77,7 @@ import { ExecutionsPage } from "./pages/ExecutionsPage";
 import { KnowledgeDetailPage } from "./pages/KnowledgeDetailPage";
 import { KnowledgePage } from "./pages/KnowledgePage";
 import { LoginPage } from "./pages/LoginPage";
+import { SetPasswordPage } from "./pages/SetPasswordPage";
 import { MiSeguridadPage } from "./pages/MiSeguridadPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { TrabajoPage } from "./pages/TrabajoPage";
@@ -86,14 +88,22 @@ import { OperationsHubPage } from "./pages/OperationsHubPage";
 import { TestLabPage } from "./pages/TestLabPage";
 import { ToolsPage } from "./pages/ToolsPage";
 import { getToken } from "./api";
+import { ContextHelpLayer } from "./components/ContextHelpLayer";
+
+function LoginEntry() {
+  if (!getToken()) return <LoginPage />;
+  const requested = new URLSearchParams(window.location.search).get("next");
+  const target = requested && requested.startsWith("/") && !requested.startsWith("//") ? requested : "/";
+  return <Navigate to={target} replace />;
+}
 
 export default function App() {
   return (
-    <Routes>
-      <Route
-        path="/login"
-        element={getToken() ? <Navigate to="/" replace /> : <LoginPage />}
-      />
+    <>
+      <Routes>
+      <Route path="/login" element={<LoginEntry />} />
+      <Route path="/activar-acceso" element={<SetPasswordPage />} />
+      <Route path="/sala-demo/:codigo" element={<DemoGuestRoomPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route index element={<HomePage />} />
@@ -248,6 +258,8 @@ export default function App() {
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
+      </Routes>
+      {getToken() ? <ContextHelpLayer /> : null}
+    </>
   );
 }

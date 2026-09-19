@@ -29,7 +29,18 @@ def resolve_secret(secret_ref: str | None) -> str | None:
         return None
     source, key = parsed
     if source == "env":
-        return os.environ.get(key) or None
+        value = os.environ.get(key)
+        if value:
+            return value
+        if os.name == "nt":
+            try:
+                import winreg
+                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as reg:
+                    value, _ = winreg.QueryValueEx(reg, key)
+                    return str(value).strip() or None
+            except (OSError, ImportError):
+                pass
+        return None
     return None
 
 

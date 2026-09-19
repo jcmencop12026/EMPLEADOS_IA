@@ -25,6 +25,8 @@ def login_identity(db: Session = Depends(get_db)) -> dict:
             "accent_color": "#1d4ed8",
             "platform_name": "EIAAX",
             "has_configured_logo": False,
+            "login_theme": "aurora",
+            "login_background_url": None,
         }
     config = admin_svc.get_org_config(org)
     logo_url = config.get("enterprise_logo_url")
@@ -37,4 +39,6 @@ def login_identity(db: Session = Depends(get_db)) -> dict:
         "accent_color": config.get("enterprise_accent_color") or "#1d4ed8",
         "platform_name": "EIAAX",
         "has_configured_logo": has_logo,
+        "login_theme": config.get("enterprise_login_theme") or "aurora",
+        "login_background_url": config.get("enterprise_login_background_url"),
     }

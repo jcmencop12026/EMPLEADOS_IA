@@ -4,14 +4,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import uuid
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import quote
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.audit import write_audit
+from app.config import settings
 from app.communications_models import CommMessage
 from app.espacio_externo_models import (
     AUDIENCIAS_PUBLICACION,
@@ -35,6 +38,7 @@ from app.security import hash_password
 from app.services import agent_factory as agent_svc
 from app.services import communications_service as comm_svc
 from app.services import evaluacion_service as eval_svc
+from app.services.password_recovery_service import request_password_reset
 from app.services import evidencia_entrega_service as evid_svc
 from app.services import implementacion_service as impl_svc
 from app.services import support_service as support_svc
@@ -259,11 +263,18 @@ def invite_external_user(
 ) -> dict[str, Any]:
     if rol_externo not in ROLES_ACCESO_EXTERNO:
         raise HTTPException(status_code=422, detail="rol_externo inválido")
+    portal_url = os.environ.get("EIAAX_PUBLIC_URL", "").strip()
+    if settings.app_env != "test":
+        if not portal_url:
+            raise HTTPException(status_code=503, detail="Invitación bloqueada: EIAAX_PUBLIC_URL no está configurada.")
+        correo_ready = comm_svc.email_channel_readiness(db, organization_id)
+        if not correo_ready["ready"]:
+            raise HTTPException(status_code=503, detail=f"Invitación bloqueada: {correo_ready['detalle']}")
     entidad = _get_entidad(db, entidad_id, organization_id)
     username = email.strip().lower()
     user = db.query(User).filter(User.username == username).first()
+    pwd = password or f"Ext-{uuid.uuid4().hex[:10]}!"
     if not user:
-        pwd = password or f"Ext-{uuid.uuid4().hex[:10]}!"
         user = User(
             organization_id=organization_id,
             username=username,
@@ -277,6 +288,15 @@ def invite_external_user(
         )
         db.add(user)
         db.flush()
+    else:
+        if user.organization_id != organization_id:
+            raise HTTPException(status_code=409, detail="El correo ya pertenece a otra organización")
+        user.email = email
+        user.full_name = full_name
+        user.is_active = True
+        user.status = "ACTIVE"
+        if password:
+            user.password_hash = hash_password(password)
     acceso = (
         db.query(EntidadEmpresaAcceso)
         .filter(EntidadEmpresaAcceso.entidad_id == entidad.id, EntidadEmpresaAcceso.user_id == user.id)
@@ -297,15 +317,43 @@ def invite_external_user(
             activo=True,
         )
         db.add(acceso)
+    db.flush()
+    entidad.contacto_email = email
+    portal_url = os.environ.get("EIAAX_PUBLIC_URL", "").strip()
+    activation_token = request_password_reset(db, email_or_username=username)
+    acceso_texto = f"{portal_url.rstrip('/')}/activar-acceso?token={activation_token}&next=%2Fmi-espacio&user={quote(username)}&external=1" if portal_url and activation_token else (portal_url or "la dirección de EIAAX suministrada por el administrador")
+    correo = comm_svc.send_direct_email(
+        db,
+        organization_id,
+        destinatario=email,
+        asunto=f"Acceso al espacio EIAAX de {entidad.nombre}",
+        contenido=(
+            f"Hola {full_name},\n\n"
+            f"Se habilitó su acceso al espacio externo de {entidad.nombre} en EIAAX.\n"
+            f"Usuario: {username}\n"
+            f"Active su acceso y defina su contraseña aquí: {acceso_texto}\n\n"
+            "Por seguridad, EIIAX no envía una contraseña temporal. Este enlace es personal, de un solo uso y expira en 1 hora.\n"
+            "Después de activar su acceso, el inicio de sesión lo llevará directamente a su espacio de evaluación.\n"
+            "En el portal podrá consultar únicamente la información autorizada y entregar los datos solicitados para la evaluación.\n"
+        ),
+    )
     write_audit(
         db,
         organization_id=organization_id,
         user_id=admin_id,
         action="espacio_externo.acceso_invited",
-        detail=json.dumps({"entidad_id": entidad.id, "user_id": user.id, "rol": rol_externo}),
+        detail=json.dumps({"entidad_id": entidad.id, "user_id": user.id, "rol": rol_externo, "correo": correo["estado"]}),
         commit=False,
     )
-    return {"user_id": user.id, "username": user.username, "acceso_id": acceso.id, "rol_externo": rol_externo}
+    return {
+        "user_id": user.id,
+        "username": user.username,
+        "acceso_id": acceso.id,
+        "rol_externo": rol_externo,
+        "correo_estado": correo["estado"],
+        "correo_detalle": correo["detalle"],
+        "portal_url": portal_url or None,
+    }
 
 
 def revoke_access(
@@ -663,10 +711,13 @@ def get_portal_informacion(db: Session, user: User) -> dict[str, Any]:
                 "id": i.id,
                 "etiqueta": i.etiqueta,
                 "explicacion": i.explicacion,
+                "por_que": i.por_que,
+                "impacto_precision": i.impacto_precision,
                 "obligatorio": i.obligatorio,
                 "estado": i.estado,
                 "estado_validacion": i.estado_validacion or "PENDIENTE",
                 "puede_entregar": i.estado in ("PENDIENTE", "INCOMPLETO") or i.estado_validacion == "REQUIERE_COMPLEMENTO",
+                "entregado_at": i.entregado_at.isoformat() if i.entregado_at else None,
             }
             for i in items
             if i.obligatorio or i.estado != "OPCIONAL"
@@ -920,6 +971,12 @@ def validar_entrega_interna(
             item.validado_at = now
             if marcar_suficiencia:
                 item.suficiencia_minima_at = now
+    exp = eval_svc._get_expediente(db, entrega.expediente_id, organization_id)  # noqa: SLF001
+    items = db.query(EvaluacionInformacionItem).filter(
+        EvaluacionInformacionItem.expediente_id == entrega.expediente_id
+    ).all()
+    eval_svc._recalc_metrics(exp, items)  # noqa: SLF001
+    exp.updated_at = now
     write_audit(
         db,
         organization_id=organization_id,
@@ -928,7 +985,16 @@ def validar_entrega_interna(
         detail=json.dumps({"entrega_id": entrega.id, "estado": estado}),
         commit=False,
     )
-    return _entrega_dict(entrega, db, include_internal=True)
+    result = _entrega_dict(entrega, db, include_internal=True)
+    result["analisis"] = {
+        "porcentaje_informacion": exp.porcentaje_informacion,
+        "confianza_global": exp.confianza_global,
+        "faltantes_obligatorios": sum(
+            1 for i in items if i.obligatorio and i.estado in ("PENDIENTE", "INCOMPLETO")
+        ),
+        "listo_para_profundizar": exp.porcentaje_informacion >= 55,
+    }
+    return result
 
 
 def get_portal_estado(db: Session, user: User) -> dict[str, Any]:
@@ -1253,6 +1319,22 @@ def crear_solicitud_informacion(
     informacion_item_id: str | None = None,
 ) -> dict[str, Any]:
     entidad = _get_entidad(db, entidad_id, organization_id)
+    if informacion_item_id:
+        existente = (
+            db.query(EvaluacionEntregaExterna)
+            .filter(
+                EvaluacionEntregaExterna.organization_id == organization_id,
+                EvaluacionEntregaExterna.entidad_id == entidad.id,
+                EvaluacionEntregaExterna.informacion_item_id == informacion_item_id,
+                EvaluacionEntregaExterna.estado.in_(("SOLICITADO", "RECIBIDO", "EN_VALIDACION")),
+            )
+            .order_by(EvaluacionEntregaExterna.solicitado_at.desc())
+            .first()
+        )
+        if existente:
+            result = _entrega_dict(existente, db)
+            result["reused"] = True
+            return result
     entrega = EvaluacionEntregaExterna(
         organization_id=organization_id,
         expediente_id=entidad.expediente_id,
@@ -1266,4 +1348,6 @@ def crear_solicitud_informacion(
     )
     db.add(entrega)
     db.flush()
-    return _entrega_dict(entrega, db)
+    result = _entrega_dict(entrega, db)
+    result["reused"] = False
+    return result

@@ -12,6 +12,8 @@ import {
   fetchCommMessages,
   fetchCommRules,
   fetchCommTemplates,
+  testCommEmailChannel,
+  updateCommChannel,
 } from "../api";
 
 type Tab = "bandeja" | "plantillas" | "reglas" | "canales" | "programadas" | "historial";
@@ -39,6 +41,10 @@ export function ComunicacionesPage() {
   const [filterEstado, setFilterEstado] = useState("");
   const [filterQ, setFilterQ] = useState("");
   const [showNew, setShowNew] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
+  const [testEmailStatus, setTestEmailStatus] = useState<{ estado: string; detalle: string; fecha?: string } | null>(null);
+  const [testingEmail, setTestingEmail] = useState(false);
+  const [smtpSaving, setSmtpSaving] = useState(false);
 
   const [newTpl, setNewTpl] = useState({
     codigo: "",
@@ -160,6 +166,52 @@ export function ComunicacionesPage() {
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo crear el canal");
+    }
+  };
+
+  const emailChannel = channels.find((c) => c.tipo === "CORREO_ELECTRONICO");
+  const emailCfg = (emailChannel?.config ?? {}) as Record<string, unknown>;
+  const emailAuthMode = String(emailCfg.auth_mode ?? "password").toLowerCase();
+  const isGmailApi = emailAuthMode === "gmail_api";
+
+  const onSaveSmtp = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!emailChannel) { setError("No existe canal de correo electr?nico."); return; }
+    const fd = new FormData(e.currentTarget);
+    setSmtpSaving(true);
+    try {
+      await updateCommChannel(emailChannel.id, {
+        activo: true, prioridad: 10,
+        config: {
+          ...emailCfg,
+          auth_mode: emailAuthMode,
+          smtp_host: String(fd.get("smtp_host") || emailCfg.smtp_host || "smtp.gmail.com"),
+          smtp_port: Number(fd.get("smtp_port") || emailCfg.smtp_port || 587),
+          smtp_username: String(fd.get("smtp_username") || emailCfg.smtp_username || ""),
+          from_email: String(fd.get("from_email") || emailCfg.from_email || ""),
+          use_tls: Boolean(fd.get("use_tls")), use_ssl: Boolean(fd.get("use_ssl")),
+        },
+      });
+      setTestEmailStatus(null); setError(null); await reload();
+    } catch (err) { setError(err instanceof Error ? err.message : "No se pudo guardar el canal de correo"); }
+    finally { setSmtpSaving(false); }
+  };
+
+  const onTestEmail = async () => {
+    if (!testEmail.trim()) {
+      setError("Indique el correo que recibirá la prueba.");
+      return;
+    }
+    setTestingEmail(true);
+    setTestEmailStatus(null);
+    try {
+      const r = await testCommEmailChannel(testEmail.trim());
+      setTestEmailStatus({ estado: r.estado, detalle: r.detalle, fecha: r.fecha });
+      setError(null);
+    } catch (err) {
+      setTestEmailStatus({ estado: "FALLIDA", detalle: err instanceof Error ? err.message : "No fue posible probar el correo." });
+    } finally {
+      setTestingEmail(false);
     }
   };
 
@@ -373,9 +425,33 @@ export function ComunicacionesPage() {
 
       {tab === "canales" && (
         <section className="card">
-          <div className="toolbar" style={{ marginBottom: "1rem" }}>
+          <div className="toolbar" style={{ marginBottom: ".6rem" }}>
             <h2>Canales</h2>
             <button type="button" className="btn" onClick={onCreateChannel}>Añadir canal interno</button>
+          </div>
+          {emailChannel && (
+            <form className="smtp-config-strip" onSubmit={onSaveSmtp}>
+              <strong style={{ minWidth: "190px" }}>{isGmailApi ? "Gmail API + OAuth 2.0" : "SMTP"}</strong>
+              <input name="smtp_host" defaultValue={String(emailCfg.smtp_host ?? "smtp.gmail.com")} aria-label="Servidor SMTP" />
+              <input name="smtp_port" type="number" defaultValue={Number(emailCfg.smtp_port ?? 587)} aria-label="Puerto SMTP" />
+              <input name="smtp_username" type="email" defaultValue={String(emailCfg.smtp_username ?? "")} placeholder="Usuario SMTP" aria-label="Usuario SMTP" />
+              <input name="from_email" type="email" defaultValue={String(emailCfg.from_email ?? "")} placeholder="Remitente" aria-label="Remitente" />
+              <label><input name="use_tls" type="checkbox" defaultChecked={emailCfg.use_tls !== false} /> TLS</label>
+              <label><input name="use_ssl" type="checkbox" defaultChecked={Boolean(emailCfg.use_ssl)} /> SSL</label>
+              <button type="submit" className="btn" disabled={smtpSaving}>{smtpSaving ? "Guardando…" : "Guardar configuración"}</button>
+              <span className={emailChannel.secret_configured ? "external-step-ok" : "text-danger"}>{isGmailApi ? "OAuth configurado" : emailChannel.secret_configured ? "Credencial disponible" : "Falta credencial"}</span>
+            </form>
+          )}
+          <div className="toolbar comm-email-test" style={{ marginBottom: ".7rem", alignItems: "center" }}>
+            <input type="email" placeholder={isGmailApi ? "Correo para prueba Gmail API" : "Correo para prueba SMTP"} value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
+            <button type="button" className={testEmailStatus?.estado === "ENVIADA" ? "btn success" : "btn"} onClick={onTestEmail} disabled={testingEmail}>
+              {testingEmail ? "Probando…" : testEmailStatus?.estado === "ENVIADA" ? "Correo enviado ✓" : "Probar envío"}
+            </button>
+            {testEmailStatus && (
+              <span className={testEmailStatus.estado === "ENVIADA" ? "external-step-ok" : "text-danger"}>
+                {testEmailStatus.detalle}{testEmailStatus.fecha ? ` · ${new Date(testEmailStatus.fecha).toLocaleString("es-CO")}` : ""}
+              </span>
+            )}
           </div>
           <table className="data-table">
             <thead>

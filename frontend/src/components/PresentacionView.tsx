@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { PresentacionPayload } from "../api";
 import { PresentacionIndicadoresChart } from "./PresentacionIndicadoresChart";
+import { PresentacionCompromisos } from "./PresentacionCompromisos";
 
 type Props = {
   data: PresentacionPayload;
@@ -43,6 +44,8 @@ export function PresentacionView({
           nota={data.graficos.nota}
         />
       ) : null}
+
+      {data.compromisos?.length ? <PresentacionCompromisos items={data.compromisos} /> : null}
 
       <div className="presentacion-sections">
         {data.secciones.map((sec) => (

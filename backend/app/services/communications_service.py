@@ -6,7 +6,9 @@ import hashlib
 import json
 import logging
 import re
+import smtplib
 from datetime import datetime, timedelta, timezone
+from email.message import EmailMessage
 from typing import Any
 
 from sqlalchemy.exc import IntegrityError
@@ -33,6 +35,7 @@ from app.communications_models import (
 )
 from app.events.bus import EventMessage, subscribe
 from app.gateway.secrets import mask_secret, resolve_secret, secret_configured
+from app.gateway.gmail_oauth import refresh_access_token, send_gmail_api_message, smtp_xoauth2_login
 from app.integration_security import SSRFError, validate_external_url
 from app.models import Organization, User
 from app.notifications import resolve_event_id
@@ -276,10 +279,28 @@ def _deliver_channel(db: Session, msg: CommMessage, channel: CommChannel) -> tup
     if channel.tipo == "INTERNO_PLATAFORMA":
         return "ENVIADA", "Registrada en bandeja interna de comunicaciones"
     if channel.tipo == "CORREO_ELECTRONICO":
-        if not secret_configured(channel.secret_ref):
-            return "ENVIADA", "Correo aceptado por adaptador simulado (sin SMTP configurado)"
-        _ = resolve_secret(channel.secret_ref)
-        return "ENVIADA", "Correo aceptado por proveedor (entrega no confirmada)"
+        destinatario = (msg.destinatario_externo or "").strip()
+        if not destinatario and msg.destinatario_id:
+            user = (
+                db.query(User)
+                .filter(
+                    User.id == msg.destinatario_id,
+                    User.organization_id == msg.organization_id,
+                    User.is_active.is_(True),
+                )
+                .first()
+            )
+            destinatario = (user.email or "").strip() if user else ""
+        if not destinatario:
+            return "FALLIDA", "El destinatario no tiene correo electrónico configurado."
+        result = send_direct_email(
+            db,
+            msg.organization_id,
+            destinatario=destinatario,
+            asunto=msg.asunto or "Comunicación EIIAX",
+            contenido=msg.contenido or "",
+        )
+        return str(result.get("estado") or "FALLIDA"), str(result.get("detalle") or "")
     if channel.tipo == "WEBHOOK":
         url = cfg.get("webhook_url") or cfg.get("url")
         if not url:
@@ -292,6 +313,135 @@ def _deliver_channel(db: Session, msg: CommMessage, channel: CommChannel) -> tup
             _ = resolve_secret(channel.secret_ref)
         return "ENVIADA", "Webhook aceptado por destino (respuesta no verificada en esta fase)"
     return "FALLIDA", f"Canal no soportado: {channel.tipo}"
+
+
+
+def _oauth_credentials(cfg: dict[str, Any]) -> tuple[str | None, str | None, str | None]:
+    client_id = resolve_secret(str(cfg.get("oauth_client_id_ref") or "env:EIIAX_GMAIL_OAUTH_CLIENT_ID"))
+    client_secret = resolve_secret(str(cfg.get("oauth_client_secret_ref") or "env:EIIAX_GMAIL_OAUTH_CLIENT_SECRET"))
+    refresh_token = resolve_secret(str(cfg.get("oauth_refresh_token_ref") or "env:EIIAX_GMAIL_OAUTH_REFRESH_TOKEN"))
+    return client_id, client_secret, refresh_token
+
+
+def _smtp_authenticate(smtp: smtplib.SMTP, channel: CommChannel, cfg: dict[str, Any], username: str) -> None:
+    auth_mode = str(cfg.get("auth_mode") or "password").strip().lower()
+    if auth_mode == "oauth2":
+        client_id, client_secret, refresh_token = _oauth_credentials(cfg)
+        if not client_id or not client_secret or not refresh_token:
+            raise RuntimeError("Configuracion OAuth2 incompleta.")
+        access_token = refresh_access_token(
+            client_id=client_id, client_secret=client_secret, refresh_token=refresh_token
+        )
+        smtp_xoauth2_login(smtp, username=username, access_token=access_token)
+        return
+    password = resolve_secret(channel.secret_ref)
+    if not password:
+        raise RuntimeError("Secreto SMTP no configurado.")
+    smtp.login(username, password)
+
+
+def email_channel_readiness(db: Session, org_id: str) -> dict[str, Any]:
+    """Valida prerrequisitos del canal de correo sin enviar ni exponer secretos."""
+    channel = (
+        db.query(CommChannel)
+        .filter(
+            CommChannel.organization_id == org_id,
+            CommChannel.tipo == "CORREO_ELECTRONICO",
+            CommChannel.activo.is_(True),
+        )
+        .order_by(CommChannel.prioridad, CommChannel.created_at)
+        .first()
+    )
+    if not channel:
+        return {"ready": False, "estado": "NO_CONFIGURADO", "detalle": "No existe canal de correo activo."}
+    cfg = _json_load(channel.config_json)
+    host = str(cfg.get("smtp_host") or cfg.get("host") or "").strip()
+    username = str(cfg.get("smtp_username") or cfg.get("username") or cfg.get("from_email") or "").strip()
+    from_email = str(cfg.get("from_email") or username).strip()
+    missing = []
+    auth_mode = str(cfg.get("auth_mode") or "password").strip().lower()
+    if auth_mode != "gmail_api" and not host:
+        missing.append("host")
+    if not username:
+        missing.append("usuario")
+    if not from_email:
+        missing.append("remitente")
+    if auth_mode in ("oauth2", "gmail_api"):
+        client_id, client_secret, refresh_token = _oauth_credentials(cfg)
+        if not client_id:
+            missing.append("oauth_client_id")
+        if not client_secret:
+            missing.append("oauth_client_secret")
+        if not refresh_token:
+            missing.append("oauth_refresh_token")
+    elif not secret_configured(channel.secret_ref):
+        missing.append("secreto")
+    if missing:
+        return {"ready": False, "estado": "NO_CONFIGURADO", "detalle": "Canal de correo incompleto: " + ", ".join(missing) + "."}
+    return {"ready": True, "estado": "LISTO", "detalle": f"Canal de correo listo para prueba real ({auth_mode})."}
+
+
+def send_direct_email(
+    db: Session,
+    org_id: str,
+    *,
+    destinatario: str,
+    asunto: str,
+    contenido: str,
+) -> dict[str, Any]:
+    """Envía correo real por Gmail API/OAuth o SMTP según la configuración activa."""
+    channel = (
+        db.query(CommChannel)
+        .filter(
+            CommChannel.organization_id == org_id,
+            CommChannel.tipo == "CORREO_ELECTRONICO",
+            CommChannel.activo.is_(True),
+        )
+        .order_by(CommChannel.prioridad, CommChannel.created_at)
+        .first()
+    )
+    if not channel:
+        return {"estado": "NO_CONFIGURADO", "detalle": "No existe canal de correo activo."}
+    cfg = _json_load(channel.config_json)
+    host = str(cfg.get("smtp_host") or cfg.get("host") or "").strip()
+    port = int(cfg.get("smtp_port") or cfg.get("port") or (465 if cfg.get("use_ssl") else 587))
+    username = str(cfg.get("smtp_username") or cfg.get("username") or cfg.get("from_email") or "").strip()
+    from_email = str(cfg.get("from_email") or username).strip()
+    readiness = email_channel_readiness(db, org_id)
+    if not readiness.get("ready"):
+        return {"estado": readiness.get("estado", "NO_CONFIGURADO"), "detalle": readiness.get("detalle")}
+    auth_mode = str(cfg.get("auth_mode") or "password").strip().lower()
+    if not username or not from_email or (auth_mode != "gmail_api" and not host):
+        return {"estado": "NO_CONFIGURADO", "detalle": "Canal de correo incompleto para el modo de autenticación activo."}
+    msg = EmailMessage()
+    msg["Subject"] = asunto
+    msg["From"] = from_email
+    msg["To"] = destinatario
+    msg.set_content(contenido)
+    try:
+        if auth_mode == "gmail_api":
+            client_id, client_secret, refresh_token = _oauth_credentials(cfg)
+            access_token = refresh_access_token(
+                client_id=client_id or "", client_secret=client_secret or "", refresh_token=refresh_token or ""
+            )
+            send_gmail_api_message(access_token=access_token, message_bytes=msg.as_bytes())
+            return {"estado": "ENVIADA", "detalle": "Correo aceptado por Gmail API."}
+        if bool(cfg.get("use_ssl")) or port == 465:
+            with smtplib.SMTP_SSL(host, port, timeout=20) as smtp:
+                _smtp_authenticate(smtp, channel, cfg, username)
+                smtp.send_message(msg)
+        else:
+            with smtplib.SMTP(host, port, timeout=20) as smtp:
+                smtp.ehlo()
+                if bool(cfg.get("use_tls", True)):
+                    smtp.starttls()
+                    smtp.ehlo()
+                _smtp_authenticate(smtp, channel, cfg, username)
+                smtp.send_message(msg)
+    except Exception as exc:
+        logger.warning("Fallo de correo directo: %s", sanitize_comm_text(str(exc)))
+        return {"estado": "FALLIDA", "detalle": "No fue posible enviar el correo por el canal configurado."}
+    return {"estado": "ENVIADA", "detalle": "Correo aceptado por el servidor SMTP."}
 
 
 def send_message(db: Session, msg: CommMessage, *, commit: bool = True) -> CommMessage:
@@ -384,6 +534,27 @@ def list_templates(db: Session, org_id: str) -> list[dict[str, Any]]:
 def list_rules(db: Session, org_id: str) -> list[dict[str, Any]]:
     rows = db.query(CommRule).filter(CommRule.organization_id == org_id).order_by(CommRule.nombre).all()
     return [rule_to_dict(r) for r in rows]
+
+
+def update_channel(db: Session, org_id: str, user: User, channel_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    ch = db.query(CommChannel).filter(CommChannel.id == channel_id, CommChannel.organization_id == org_id).first()
+    if not ch:
+        raise LookupError("Canal no encontrado.")
+    if data.get("nombre") is not None:
+        ch.nombre = str(data["nombre"]).strip() or ch.nombre
+    if data.get("activo") is not None:
+        ch.activo = bool(data["activo"])
+    if data.get("prioridad") is not None:
+        ch.prioridad = int(data["prioridad"])
+    if data.get("config") is not None:
+        current_cfg = _json_load(ch.config_json)
+        current_cfg.update(data["config"])
+        ch.config_json = _json_dump(current_cfg)
+    if data.get("secret_ref"):
+        ch.secret_ref = str(data["secret_ref"]).strip()
+    write_audit(db, action="communications.channel.updated", organization_id=org_id, user_id=user.id, detail=ch.nombre)
+    db.commit(); db.refresh(ch)
+    return channel_to_dict(ch)
 
 
 def create_channel(db: Session, org_id: str, user: User, data: dict[str, Any]) -> dict[str, Any]:

@@ -58,9 +58,11 @@ export function SiguienteAccionPanel({ expedienteId, onNavigateTab, onRefresh }:
 
   const meta = (
     <>
-      {principal.intencion && (
+      {principal.intencion === "B" && onNavigateTab ? (
+        <button type="button" className="btn-link siguiente-info-link" onClick={() => onNavigateTab(principal.pestaña ?? "diagnostico")}>Ver información requerida</button>
+      ) : principal.intencion ? (
         <StatusBadge tone="info" label={label(INTENCION_AGENTE, principal.intencion)} />
-      )}
+      ) : null}
       {principal.estado_es && (
         <StatusBadge
           tone={principal.disponible === false ? "warning" : "neutral"}

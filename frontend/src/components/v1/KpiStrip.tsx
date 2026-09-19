@@ -36,7 +36,7 @@ export function KpiStrip({ items, title, className = "" }: Props) {
             </>
           );
           if (item.href?.startsWith("/")) {
-            return <Link key={item.id} to={item.href} className={cls} data-kpi-id={item.id}>{inner}</Link>;
+            return <Link key={item.id} to={item.href} className={cls} data-kpi-id={item.id} data-help={`${item.label}: ${item.hint ?? "indicador clave del contexto actual"}. Ábralo para revisar el detalle que sustenta este valor.`}>{inner}</Link>;
           }
           if (item.href) {
             return <a key={item.id} href={item.href} className={cls} data-kpi-id={item.id}>{inner}</a>;

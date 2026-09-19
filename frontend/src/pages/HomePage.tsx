@@ -22,6 +22,10 @@ export function HomePage() {
     return <CentroControlPage />;
   }
 
+  if (has("espacio_externo.portal")) {
+    return <Navigate to="/mi-espacio" replace />;
+  }
+
   if (home && home !== "/") {
     return <Navigate to={home} replace />;
   }

@@ -60,9 +60,6 @@ export function CentroControlCockpit({ data, periodo, expedienteId, compact = fa
             <h2 className="section-title">Ciclo operativo EIAAX</h2>
             <p className="muted small">De conocer a mejorar — navegue por etapa con contexto conservado</p>
           </div>
-          {expedienteId && (
-            <Link to={`/evaluaciones/${expedienteId}`} className="btn small secondary">Abrir cabina</Link>
-          )}
         </div>
         <CycleStepper
           currentIndex={etapaActualIdx}
@@ -72,15 +69,15 @@ export function CentroControlCockpit({ data, periodo, expedienteId, compact = fa
         />
       </section>
 
-      <section className="cc-first-viewport panel compact-panel">
+      {!compact && <section className="cc-first-viewport panel compact-panel">
         <div className="cc-first-head">
           <div>
             <h2 className="section-title">Resumen de mando</h2>
             <p className="muted small">Periodo: {periodo === "mtd" ? "mes actual" : periodo}</p>
           </div>
           <div className="cc-first-actions">
-            <Link to="/trabajo" className="btn small secondary">Mi trabajo</Link>
-            <Link to="/operaciones" className="btn small secondary">Operaciones</Link>
+            <Link to="/trabajo" className="btn small secondary" title="Ver pendientes, prioridades y tareas que requieren su intervención." data-help="Abre su bandeja de trabajo. Úsela para atender pendientes y prioridades que requieren intervención humana, conservando la empresa o prospecto en contexto." aria-label="Abrir Mi trabajo y revisar pendientes">Mi trabajo</Link>
+            <Link to="/operaciones" className="btn small secondary" title="Supervisar ejecuciones y operación activa sin perder el contexto seleccionado." data-help="Abre la supervisión operativa. Úsela para comprobar ejecuciones en curso, incidencias, avance y resultados antes de intervenir o escalar." aria-label="Abrir Operaciones y supervisar ejecuciones">Operaciones</Link>
           </div>
         </div>
 
@@ -117,19 +114,14 @@ export function CentroControlCockpit({ data, periodo, expedienteId, compact = fa
                 <dd>{fmtNum(data.valor_consolidado?.potencial)}</dd>
               </dl>
               <p className="cc-inline-links">
-                <Link to="/oportunidades">Centro de oportunidades</Link>
+                <Link to="/oportunidades" title="Revisar oportunidades detectadas, priorizarlas y llevarlas a decisión o materialización." data-help="Abre el Centro de oportunidades. Úselo para revisar hallazgos detectados por EIAAX, priorizarlos, valorarlos y llevarlos a aprobación o materialización.">Centro de oportunidades</Link>
                 {" · "}
-                <Link to="/costos-valor">Valoración</Link>
+                <Link to="/costos-valor" title="Comparar costo, valor potencial, valor realizado y retorno para sustentar decisiones." data-help="Abre la valoración económica. Úsela para comparar costo, valor potencial, valor realizado y retorno antes de decidir o presentar una iniciativa.">Valoración</Link>
               </p>
             </div>
           </div>
         </div>
-        {compact && valorChartPuntos.some((p) => p.valor != null) && (
-          <div className="cc-compact-chart-strip">
-            <ValorComparacionChart title="Valor consolidado" puntos={valorChartPuntos} unidad="COP" compact />
-          </div>
-        )}
-      </section>
+      </section>}
 
       {!compact && (
         <>

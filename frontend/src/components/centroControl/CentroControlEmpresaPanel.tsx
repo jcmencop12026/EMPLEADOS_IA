@@ -16,6 +16,16 @@ import { narrativaCampo } from "../../lib/informeNarrativa";
 
 type Props = { evaluacionId: string };
 
+function estimarAvanceAnalitico(infoPct: number, hallazgos: number, oportunidades: number) {
+  if (infoPct < 100) {
+    const avance = Math.max(5, Math.min(35, Math.round(infoPct * 0.35)));
+    return { avance, estado: "Recibiendo información", eta: "Pendiente completar información mínima" };
+  }
+  if (hallazgos === 0) return { avance: 55, estado: "Procesando información", eta: "Aprox. 6–10 min" };
+  if (oportunidades === 0) return { avance: 78, estado: "Analizando hallazgos", eta: "Aprox. 2–5 min" };
+  return { avance: 100, estado: "Primera salida disponible", eta: "Resultados listos" };
+}
+
 export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
   const navigate = useNavigate();
   const [exp, setExp] = useState<EvaluacionExpedienteDetail | null>(null);
@@ -58,15 +68,16 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
   const indicadores = (impacto?.indicadores as Array<Record<string, unknown>> | undefined) ?? [];
   const valorKpi = formatValorPotencialKpi(exp.valor_potencial);
   const infoFaltante = Math.max(0, 100 - (exp.porcentaje_informacion ?? 0));
+  const procesamiento = estimarAvanceAnalitico(exp.porcentaje_informacion ?? 0, exp.hallazgos.length, oportunidades);
 
   return (
     <div className="cc-empresa-panel">
       <ExecutiveCard
         className="cc-empresa-hero"
-        title={exp.entidad_nombre}
-        subtitle={`${exp.codigo} · ${exp.titulo}`}
+        title={`${exp.entidad_nombre} — ${exp.codigo} · ${exp.titulo}`}
+        subtitle=""
         demo={exp.entidad_nombre?.startsWith("[DEMO]")}
-        actions={<Link to={`/evaluaciones/${evaluacionId}`} className="btn primary small" title="Abre la cabina completa para ejecutar diagnóstico, valoración y acciones de esta empresa">Abrir cabina</Link>}
+        actions={<Link to={`/evaluaciones/${evaluacionId}`} className="btn primary small" title="Abre la cabina completa para ejecutar diagnóstico, valoración y acciones de esta empresa" data-help="Abre el puesto operativo completo de esta empresa. Úselo para pasar del resumen ejecutivo a diagnóstico, valoración, decisiones y acciones con toda la evidencia disponible.">Abrir cabina</Link>}
       >
         <div className="cc-empresa-hero-band">
           <div className="v1-empresa-meta">
@@ -82,13 +93,23 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
           { id: "valor", label: "Valor potencial", value: valorKpi.main, unit: valorKpi.unit, hint: String(exp.valor_potencial ?? "").includes("DEMO") ? "DEMO — DATOS SIMULADOS" : undefined, tone: "value", wide: true },
           { id: "nivel", label: "Nivel", value: labelNivelEvaluacion(exp.nivel) },
         ]} />
+        <div className="cc-processing-meter" data-help="Indicador interno de avance analítico. Combina completitud de información y resultados ya generados para estimar en qué punto del procesamiento está EIAAX. Se usa para gestionar la reunión y no se muestra al cliente.">
+          <div className="cc-processing-meter__head">
+            <div><span className="cc-processing-meter__eyebrow">Procesamiento EIAAX</span><strong>{procesamiento.estado}</strong></div>
+            <div className="cc-processing-meter__numbers"><strong>{procesamiento.avance}%</strong><span>{procesamiento.eta}</span></div>
+          </div>
+          <div className="cc-processing-meter__track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={procesamiento.avance} aria-label="Avance estimado del procesamiento EIAAX">
+            <span style={{ width: `${procesamiento.avance}%` }} />
+          </div>
+          <p>Indicador aproximado para gestión interna de la reunión. No visible para la empresa.</p>
+        </div>
       </ExecutiveCard>
 
       <section className="cc-resumen-ejecutivo-grid" aria-label="Resumen ejecutivo de la empresa">
         <article className="cc-resumen-card"><h3 className="cc-resumen-card__title">Qué sabemos</h3><p className="cc-resumen-card__value">{exp.porcentaje_informacion}% información</p><p className="cc-resumen-card__hint">{exp.hallazgos.length} hallazgos · confianza {label(CONFIANZA, exp.confianza_global)}</p></article>
         <article className="cc-resumen-card"><h3 className="cc-resumen-card__title">Qué falta</h3><p className="cc-resumen-card__value">{infoFaltante > 0 ? `${infoFaltante}% por completar` : "Completo"}</p><p className="cc-resumen-card__hint">{exp.necesidad ? String(exp.necesidad).slice(0, 72) : "Sin necesidad registrada"}</p></article>
         <article className="cc-resumen-card"><h3 className="cc-resumen-card__title">Lo que encontró EIAAX</h3><p className="cc-resumen-card__value">{exp.hallazgos.length} hallazgos</p><p className="cc-resumen-card__hint">{oportunidades} oportunidades vinculadas</p></article>
-        <article className="cc-resumen-card cc-resumen-card--action"><h3 className="cc-resumen-card__title">Siguiente acción</h3><p className="cc-resumen-card__value">{label(ESTADO_EXPEDIENTE, exp.estado)}</p><p className="cc-resumen-card__hint"><Link to={`/evaluaciones/${evaluacionId}`} title="Abre la cabina para ejecutar la siguiente acción recomendada">Abrir cabina →</Link></p></article>
+        <article className="cc-resumen-card cc-resumen-card--action"><h3 className="cc-resumen-card__title">Siguiente acción</h3><p className="cc-resumen-card__value">{label(ESTADO_EXPEDIENTE, exp.estado)}</p><p className="cc-resumen-card__hint">Continúe con la recomendación operativa de abajo.</p></article>
       </section>
 
       <div className="cc-grid-2 cc-prioridad-operativa">
@@ -104,7 +125,7 @@ export function CentroControlEmpresaPanel({ evaluacionId }: Props) {
       </div>
 
       <details className="panel compact-panel cc-secondary-detail">
-        <summary title="Despliega la cadena analítica completa cuando necesite revisar el detalle del proceso">Cadena analítica · ver detalle</summary>
+        <summary title="Despliega la cadena analítica completa cuando necesite revisar el detalle del proceso" data-help="Expande la trazabilidad analítica de esta empresa. Úsela cuando necesite revisar cómo EIAAX pasó de evidencia y diagnóstico a hallazgos, oportunidades y recomendaciones.">Cadena analítica · ver detalle</summary>
         <CadenaAnaliticaPanel expedienteId={evaluacionId} compact />
       </details>
 

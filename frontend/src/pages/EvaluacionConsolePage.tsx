@@ -190,10 +190,11 @@ export function EvaluacionConsolePage() {
       <div className="eval-console-main">
         <PageHeader
           eyebrow="Cabina empresa"
-          title={exp.titulo}
-          subtitle={`${exp.codigo} · ${exp.entidad_nombre}`}
+          title={`${exp.titulo} — ${exp.codigo} · ${exp.entidad_nombre}`}
+          subtitle=""
           actions={
             <>
+              <span className="piiax-status-inline"><span className={`piiax-dot ${piiax?.disponible ? "on" : "off"}`} />{piiax?.disponible ? "PIIAX conectado" : "PIIAX no conectado"}</span>
               <Link to="/evaluaciones" className="btn secondary small">← Evaluaciones</Link>
               <Link to="/centro-control" className="btn secondary small">Centro de Control</Link>
               <Link to={`/presentacion/${evaluacionId}`} className="btn secondary small">Presentación</Link>
@@ -203,11 +204,6 @@ export function EvaluacionConsolePage() {
             </>
           }
         />
-
-        <div className="piiax-status-bar compact inline-badge">
-          <span className={`piiax-dot ${piiax?.disponible ? "on" : "off"}`} title={piiax?.disponible ? "PIIAX disponible" : "Integración PIIAX no conectada"} />
-          <span className="small">{piiax?.disponible ? "PIIAX conectado" : "PIIAX no conectado"}</span>
-        </div>
 
         <KpiStrip
           items={[
@@ -421,8 +417,8 @@ export function EvaluacionConsolePage() {
                     description="Cargando la vista que vería la empresa según permisos y visibilidad configurados."
                   />
                 )}
-                <p style={{ marginTop: "1rem" }}>
-                  <Link className="btn primary" to="/mi-espacio">Abrir portal externo (mi espacio)</Link>
+                <p className="muted small" style={{ marginTop: "1rem" }}>
+                  Esta es la previsualización segura del administrador. El portal real se abre únicamente con la sesión del usuario externo autorizado.
                 </p>
               </section>
             )}
