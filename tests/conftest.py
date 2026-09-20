@@ -199,8 +199,11 @@ if _is_postgresql_url(_db_url):
 
 else:
 
-    @pytest.fixture(scope="session")
+    @pytest.fixture(scope="function")
     def client() -> TestClient:
+        # SQLite no tolera bien una única conexión/cliente compartido durante
+        # toda la regresión cuando existen workers y schedulers en segundo plano.
+        # Un TestClient por prueba garantiza cierre de lifespan y libera locks.
         yield from _client_context()
 
 
