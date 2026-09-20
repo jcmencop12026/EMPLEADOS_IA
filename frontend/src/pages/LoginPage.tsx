@@ -11,7 +11,7 @@ import {
   type UserMe,
 } from "../api";
 import { saveUser } from "../auth/session";
-import { EiaaxOfficialMark } from "../components/identity/EiaaxOfficialMark";
+import { EnterpriseMark } from "../components/identity/EnterpriseMark";
 import { useLoginIdentity } from "../hooks/useLoginIdentity";
 import { EIAAX_BRAND, type EnterpriseVisualIdentity } from "../lib/brand";
 
@@ -21,7 +21,7 @@ function LoginBrandPanel({ identity }: { identity: EnterpriseVisualIdentity }) {
   return (
     <aside className="login-brand-panel">
       <div className="login-platform-identity login-platform-identity--eiaax" aria-label="Identidad EIAAX">
-        {identity.logoUrl ? <img src={identity.logoUrl} alt={identity.displayName || EIAAX_BRAND.name} className="login-configured-logo" /> : <EiaaxOfficialMark level="hero" title={EIAAX_BRAND.title} />}
+        <EnterpriseMark displayName={identity.displayName} logoUrl={identity.logoUrl} logoCompactUrl={identity.logoCompactUrl} variant="login" />
       </div>
 
       {identity.displayName && (
