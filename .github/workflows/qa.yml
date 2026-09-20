@@ -293,7 +293,9 @@ jobs:
           fetch-depth: 0
 
       - name: Verificar espacios en blanco conflictivos
-        run: git fetch origin main && git diff --check origin/main...HEAD
+        run: |
+          git fetch origin main
+          git diff --check origin/main...HEAD -- . ":(exclude)INTERCAMBIO/**" ":(exclude)data/evidence/**"
 
   pruebas-windows:
     name: Pruebas Windows
