@@ -147,11 +147,18 @@ async def lifespan(_app: FastAPI):
     register_automation_event_handlers()
     register_employee_audit_event_handlers()
     register_communications_handlers()
-    start_scheduler()
-    start_proactive_scheduler()
+    # Los schedulers son infraestructura de producción. Durante pytest/TestClient
+    # su arranque por cada caso compite por escrituras SQLite y contamina pruebas
+    # no relacionadas con automatizaciones. Las pruebas focales pueden invocar
+    # los servicios explícitamente sin alterar el comportamiento productivo.
+    schedulers_enabled = settings.app_env.lower() != "test"
+    if schedulers_enabled:
+        start_scheduler()
+        start_proactive_scheduler()
     yield
-    stop_proactive_scheduler()
-    stop_scheduler()
+    if schedulers_enabled:
+        stop_proactive_scheduler()
+        stop_scheduler()
 
 
 _docs_kwargs: dict[str, str | None] = {}
