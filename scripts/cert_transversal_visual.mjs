@@ -18,7 +18,7 @@ const VIEWPORTS = [
   { name: "1440x900", width: 1440, height: 900 },
   { name: "1920x1080", width: 1920, height: 1080 },
 ];
-const CYCLE_STAGE_COUNT = 15;
+const CYCLE_STAGE_COUNT = 14;
 
 const CABINA_TABS = [
   { id: "empresa", label: "Empresa", expectText: /Resumen ejecutivo|Siguiente acción/i },
