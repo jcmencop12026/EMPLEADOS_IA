@@ -51,7 +51,7 @@ export function EspacioExternoAdminPanel({ expedienteId }: Props) {
       const ent = r.entidad as Record<string, unknown>;
       setEntidadId(String(ent.id));
       setDetail(r);
-      setMsg("Entidad empresa creada");
+      setMsg("Entidad externa vinculada");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
     }
