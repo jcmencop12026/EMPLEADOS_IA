@@ -231,10 +231,10 @@ jobs:
           export JWT_SECRET=ci-visual-test-secret-min-32-chars-long
           export ALLOW_INSECURE_DEV_DEFAULTS=true
           PYTHONPATH=backend:. python backend/scripts/seed_demo_horizonte.py
-          PYTHONPATH=backend:. uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          PYTHONPATH=backend:. uvicorn app.main:app --host 127.0.0.1 --port 8010 &
           cd frontend && npm run dev -- --host 127.0.0.1 --port 5180 &
           for i in $(seq 1 30); do
-            curl -sf http://127.0.0.1:8000/health && break
+            curl -sf http://127.0.0.1:8010/health && break
             sleep 2
           done
           curl -sf http://127.0.0.1:5180/ | head -c 200
