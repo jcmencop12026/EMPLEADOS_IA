@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "backend" / "alembic" / "migration_ledger.json"
 MAIN_PY = ROOT / "backend" / "app" / "main.py"
 
-V2_HEAD = "1341a1b2c3d4e"
+V2_HEAD = "1831a1b2c3d4e"
 V1_HEAD = "d1e2f3a4b5c6"
 
 
