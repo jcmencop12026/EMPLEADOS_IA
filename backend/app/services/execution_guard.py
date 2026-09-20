@@ -485,12 +485,35 @@ def terminate_process_tree(proc: subprocess.Popen) -> None:
 
 
 def process_tree_alive(pid: int) -> bool:
-    """Indica si un PID o alguno de sus descendientes sigue vivo."""
-    parent_alive = True
-    try:
-        os.kill(pid, 0)
-    except (ProcessLookupError, OSError):
-        parent_alive = False
+    """Indica si un PID o alguno de sus descendientes sigue vivo.
+
+    En Windows no se usa os.kill(pid, 0): Python puede tratar un PID ya
+    finalizado/reutilizado como existente. CIM permite comprobar el proceso
+    real y evita falsos positivos en la certificación de terminación del árbol.
+    """
+    if os.name == "nt":
+        try:
+            out = subprocess.run(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    f"$p=Get-CimInstance Win32_Process -Filter \"ProcessId={pid}\" -ErrorAction SilentlyContinue; if($p){{'1'}}",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=8,
+                check=False,
+            )
+            parent_alive = out.stdout.strip() == "1"
+        except (OSError, subprocess.SubprocessError):
+            parent_alive = False
+    else:
+        parent_alive = True
+        try:
+            os.kill(pid, 0)
+        except (ProcessLookupError, OSError):
+            parent_alive = False
     for child in _list_child_pids(pid):
         if process_tree_alive(child):
             return True
