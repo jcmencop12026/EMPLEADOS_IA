@@ -14,6 +14,7 @@ if not exist "frontend\node_modules" (
 )
 if not exist "data" mkdir data
 call .venv\Scripts\activate.bat
+rem OAuth Gmail se resuelve tambien desde HKCU\\Environment en backend/app/gateway/secrets.py.
 echo API:  http://127.0.0.1:8010
 echo Web:  http://127.0.0.1:5180
 echo Login: admin / Admin2026*
