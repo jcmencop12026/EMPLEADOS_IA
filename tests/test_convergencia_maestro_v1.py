@@ -29,12 +29,13 @@ def test_centro_control_contexto_expediente():
     page = (FRONT / "pages" / "CentroControlPage.tsx").read_text(encoding="utf-8")
     assert "CentroControlEmpresaPanel" in page
     assert 'searchParams.get("expediente")' in page
-    assert "Ver como empresa" in page
+    assert "Ver empresa" in page
 
 
 def test_cabina_kpi_strip_compacta():
     page = (FRONT / "pages" / "EvaluacionConsolePage.tsx").read_text(encoding="utf-8")
-    assert "executive-kpi-strip" in page
+    cockpit = (FRONT / "components" / "centroControl" / "CentroControlCockpit.tsx").read_text(encoding="utf-8")
+    assert "KpiStrip" in cockpit
     assert "metrics-grid" not in page
 
 
