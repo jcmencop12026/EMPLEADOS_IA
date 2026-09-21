@@ -17,12 +17,15 @@ pytestmark = [pytest.mark.operations]
 
 
 @pytest.fixture
-def cc_db():
+def cc_db(client: TestClient):
     from app.database import SessionLocal
 
     db = SessionLocal()
-    yield db
-    db.close()
+    try:
+        yield db
+    finally:
+        db.rollback()
+        db.close()
 
 
 def _admin(db: Session) -> User:
@@ -80,10 +83,8 @@ def test_1250c_oportunidades_estados_operativos(client: TestClient, auth_headers
 
 
 def test_1250c_cross_tenant(client: TestClient, auth_headers, cc_db):
-    from app.database import SessionLocal
-
     org_b = Organization(name=f"OrgB-1250c-{uuid.uuid4().hex[:6]}")
-    db = SessionLocal()
+    db = cc_db
     db.add(org_b)
     db.commit()
     user_b = User(
@@ -100,7 +101,7 @@ def test_1250c_cross_tenant(client: TestClient, auth_headers, cc_db):
     summary_a = svc.get_executive_summary(db, admin_a)
     summary_b = svc.get_executive_summary(db, user_b)
     assert summary_a["organization_id"] != summary_b["organization_id"]
-    db.close()
+    db.rollback()
 
 
 def test_1250c_rbac_sin_finops_permiso(cc_db):
@@ -117,8 +118,6 @@ def test_1250c_rbac_sin_finops_permiso(cc_db):
 
 
 def test_1250c_superadmin_org_context(client: TestClient, auth_headers, cc_db):
-    from app.database import SessionLocal
-
     org_b = Organization(name=f"OrgB-sa-{uuid.uuid4().hex[:6]}")
     db = SessionLocal()
     db.add(org_b)
@@ -129,7 +128,7 @@ def test_1250c_superadmin_org_context(client: TestClient, auth_headers, cc_db):
     )
     assert res.status_code == 200
     assert res.json()["organization_id"] == org_b.id
-    db.close()
+    db.rollback()
 
 
 def test_1250c_periodo_filtro(client: TestClient, auth_headers):
