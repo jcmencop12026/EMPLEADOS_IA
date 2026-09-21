@@ -20,7 +20,11 @@ function Run-Native([string]$name,[string]$exe,[string[]]$arguments,[string]$cwd
         # PowerShell 5.1: invocación nativa directa. Evita ProcessStartInfo/ArgumentList.
         # Redirigir a archivo temporal conserva stdout/stderr y el exit code real.
         $tmp = Join-Path $env:TEMP ("ejecutor_j_" + [guid]::NewGuid().ToString("N") + ".log")
-        & $exe @arguments *> $tmp
+        if ($exe -like "*.cmd" -or $exe -like "*.bat") {
+            & cmd.exe /d /s /c "`"$exe`" $($arguments -join ' ')" *> $tmp
+        } else {
+            & $exe @arguments *> $tmp
+        }
         $code = $LASTEXITCODE
         if (Test-Path $tmp) {
             Get-Content $tmp | Tee-Object -FilePath $OUT -Append | Write-Host
