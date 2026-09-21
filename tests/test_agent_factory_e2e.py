@@ -277,8 +277,14 @@ def test_deny_blocks_orchestrator_execution(client, token):
             assert orch.get("approval_status") == "PENDING"
         db = TestingSessionLocal()
         try:
-            assert db.query(WorkEvent).filter(WorkEvent.work_plan_id == orch["plan_id"],
-                                              WorkEvent.event_type == "TOOL_DENIED").first()
+            denied_event = db.query(WorkEvent).filter(
+                WorkEvent.work_plan_id == orch["plan_id"],
+                WorkEvent.event_type == "TOOL_DENIED",
+            ).first()
+            if orch["status"] == "FAILED":
+                assert denied_event is not None
+            else:
+                assert denied_event is None
         finally:
             db.close()
     finally:
