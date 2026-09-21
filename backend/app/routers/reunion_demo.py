@@ -127,9 +127,8 @@ def crear_sala(body: SalaCreate, user: User = Depends(get_current_user)):
         _ROOMS[code] = room
         _persist_rooms()
     result = {**_public(room), "guest_token": token}
-    public_url = os.getenv("EIIAX_PUBLIC_URL", "").rstrip("/")
-    if public_url:
-        result["guest_url"] = f"{public_url}/sala-demo/{code}?token={token}"
+    public_url = os.getenv("EIIAX_PUBLIC_URL", "").rstrip("/") or "http://127.0.0.1:5180"
+    result["guest_url"] = f"{public_url}/sala-demo/{code}?token={token}"
     return result
 
 @router.patch("/salas/{code}")
