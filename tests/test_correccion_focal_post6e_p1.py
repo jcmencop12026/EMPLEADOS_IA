@@ -28,10 +28,10 @@ def test_p1_cc_01_metrics_grid_css_present():
 def test_p1_cc_01_centro_control_resumen_structure():
     """P1-CC-01: Resumen ejecutivo conserva estructura de KPI."""
     page = CC_PAGE.read_text(encoding="utf-8")
-    assert 'className="metrics-grid"' in page
-    assert 'className="metric-card cc-metric-card"' in page
-    assert 'className="metric-label"' in page
-    assert "Resumen ejecutivo" in page
+    cockpit = (ROOT / "frontend" / "src" / "components" / "centroControl" / "CentroControlCockpit.tsx").read_text(encoding="utf-8")
+    assert "CentroControlCockpit" in page
+    assert "<KpiStrip items={kpiItems} />" in cockpit
+    assert "Resumen de mando" in cockpit
 
 
 def test_p1_cc_02_health_status_labels():
