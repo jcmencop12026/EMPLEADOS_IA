@@ -132,6 +132,7 @@ def test_1230_cross_tenant(client: TestClient, auth_headers, cc_db):
     db.add(user_b)
     db.commit()
     data_b = svc.get_executive_summary(db, user_b)
+    db.rollback()
     data_a = client.get("/api/centro-control/resumen-ejecutivo", headers=auth_headers).json()
     assert data_a["organization_id"] != data_b["organization_id"]
     db.rollback()
