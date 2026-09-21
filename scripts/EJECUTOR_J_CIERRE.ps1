@@ -15,27 +15,23 @@ function Write-Log([string]$text) {
 function Run-Native([string]$name,[string]$exe,[string[]]$arguments,[string]$cwd=$ROOT) {
     Write-Log ""
     Write-Log ("=== " + $name + " ===")
+    Push-Location $cwd
     try {
-        $psi = New-Object System.Diagnostics.ProcessStartInfo
-        $psi.FileName = $exe
-        $psi.WorkingDirectory = $cwd
-        $psi.UseShellExecute = $false
-        $psi.RedirectStandardOutput = $true
-        $psi.RedirectStandardError = $true
-        # Windows PowerShell 5.1/.NET Framework no expone ProcessStartInfo.ArgumentList.\n        # Los argumentos usados por EJECUTOR-J no contienen espacios, por lo que Arguments\n        # mantiene compatibilidad con PowerShell 5.1 y PowerShell 7 sin cambiar la batería.\n        $psi.Arguments = ($arguments -join " ")
-        $p = New-Object System.Diagnostics.Process
-        $p.StartInfo = $psi
-        [void]$p.Start()
-        $stdout = $p.StandardOutput.ReadToEnd()
-        $stderr = $p.StandardError.ReadToEnd()
-        $p.WaitForExit()
-        if ($stdout) { $stdout.TrimEnd() | Tee-Object -FilePath $OUT -Append | Write-Host }
-        if ($stderr) { $stderr.TrimEnd() | Tee-Object -FilePath $OUT -Append | Write-Host }
-        $code = $p.ExitCode
+        # PowerShell 5.1: invocación nativa directa. Evita ProcessStartInfo/ArgumentList.
+        # Redirigir a archivo temporal conserva stdout/stderr y el exit code real.
+        $tmp = Join-Path $env:TEMP ("ejecutor_j_" + [guid]::NewGuid().ToString("N") + ".log")
+        & $exe @arguments *> $tmp
+        $code = $LASTEXITCODE
+        if (Test-Path $tmp) {
+            Get-Content $tmp | Tee-Object -FilePath $OUT -Append | Write-Host
+            Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+        }
     } catch {
         $_ | Out-File -FilePath $OUT -Append -Encoding utf8
         Write-Host $_
         $code = 1
+    } finally {
+        Pop-Location
     }
     Write-Log ("EXIT=" + $code)
     return $code
