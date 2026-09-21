@@ -55,7 +55,8 @@ $results["REGRESION_FALLOS_PREVIOS"] = Run-Native "REGRESION FALLOS PREVIOS" $py
 $results["AUDITOR_CONVERGENCIA"] = Run-Native "AUDITOR CONVERGENCIA" $py @("-m","pytest","tests\test_convergencia_c2.py","tests\test_convergencia_final_1250.py","tests\test_convergencia_final_fase2.py","tests\test_cierre_comercial_valor_pre_fase2.py","-q")
 $npm = (Get-Command npm.cmd -ErrorAction SilentlyContinue).Source
 if (-not $npm) { $npm = "npm.cmd" }
-$results["FRONTEND_BUILD"] = Run-Native "FRONTEND BUILD" $npm @("run","build") (Join-Path $ROOT "frontend")
+# npm.cmd se ejecuta a través de cmd.exe en Windows PowerShell 5.1 para preservar salida y exit code.
+$results["FRONTEND_BUILD"] = Run-Native "FRONTEND BUILD" "cmd.exe" @("/d","/c","npm","run","build") (Join-Path $ROOT "frontend")
 $results["GIT_POST"] = Run-Native "GIT POST / NO-DANO" $git @("status","--short")
 
 $pass = ($results.Values | Where-Object { $_ -ne 0 }).Count -eq 0
