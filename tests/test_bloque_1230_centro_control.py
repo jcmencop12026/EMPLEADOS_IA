@@ -17,12 +17,15 @@ pytestmark = [pytest.mark.operations]
 
 
 @pytest.fixture
-def cc_db():
+def cc_db(client: TestClient):
     from app.database import SessionLocal
 
     db = SessionLocal()
-    yield db
-    db.close()
+    try:
+        yield db
+    finally:
+        db.rollback()
+        db.close()
 
 
 def _admin(db: Session) -> User:
@@ -114,10 +117,8 @@ def test_1230_salud_plataforma(client: TestClient, auth_headers):
 
 
 def test_1230_cross_tenant(client: TestClient, auth_headers, cc_db):
-    from app.database import SessionLocal
-
     org_b = Organization(name=f"OrgB-1230-{uuid.uuid4().hex[:6]}")
-    db = SessionLocal()
+    db = cc_db
     db.add(org_b)
     db.commit()
     user_b = User(
@@ -133,7 +134,7 @@ def test_1230_cross_tenant(client: TestClient, auth_headers, cc_db):
     data_b = svc.get_executive_summary(db, user_b)
     data_a = client.get("/api/centro-control/resumen-ejecutivo", headers=auth_headers).json()
     assert data_a["organization_id"] != data_b["organization_id"]
-    db.close()
+    db.rollback()
 
 
 def test_1230_rbac_viewer_denegado(client: TestClient, cc_db):
