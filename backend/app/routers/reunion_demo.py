@@ -155,9 +155,7 @@ def ver_sala_publica(code: str, token: str):
 def invitar_sala(code: str, body: SalaInvite, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     room = _get(code)
     if room["organization_id"] != user.organization_id: raise HTTPException(403, "Sala de otra organización")
-    base = os.getenv("EIIAX_PUBLIC_URL", "").rstrip("/")
-    if not base:
-        raise HTTPException(503, "EIIAX_PUBLIC_URL no está configurada para invitaciones externas")
+    base = os.getenv("EIIAX_PUBLIC_URL", "").rstrip("/") or "http://127.0.0.1:5180"
     link = f"{base}/sala-demo/{room['codigo']}?token={room['token']}"
     subject = "EIIAX | Invitación a demostración ejecutiva"
     text = f"Hola {body.nombre},\n\nHa sido invitado a una demostración ejecutiva de EIIAX.\n\nDurante la reunión podrá ver, en tiempo real, los temas que el presentador comparta y las respuestas de ELIA que se decida publicar. Los datos utilizados son ficticios y demostrativos.\n\nIngresar a la sala: {link}\n\nEl enlace es temporal y no da acceso al Centro de Control ni al espacio de evaluación.\n\nEIIAX"
