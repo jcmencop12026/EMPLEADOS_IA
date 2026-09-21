@@ -21,7 +21,7 @@ def test_centro_control_consola_maestra():
     master = (FRONT / "components" / "centroControl" / "CentroControlMasterAccess.tsx").read_text(encoding="utf-8")
     cc = (FRONT / "pages" / "CentroControlPage.tsx").read_text(encoding="utf-8")
     assert "CentroControlMasterAccess" in cockpit
-    assert "Consola maestra" in master
+    assert "Accesos de profundidad" in master
     assert "cc-salud-inline" in cc or "Salud de servicios" in cc
 
 
