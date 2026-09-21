@@ -119,7 +119,7 @@ def test_1250c_rbac_sin_finops_permiso(cc_db):
 
 def test_1250c_superadmin_org_context(client: TestClient, auth_headers, cc_db):
     org_b = Organization(name=f"OrgB-sa-{uuid.uuid4().hex[:6]}")
-    db = SessionLocal()
+    db = cc_db
     db.add(org_b)
     db.commit()
     res = client.get(
