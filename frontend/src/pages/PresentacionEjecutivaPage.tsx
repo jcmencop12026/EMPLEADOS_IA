@@ -6,6 +6,7 @@ import {
   createDemoSala, updateDemoSala, inviteDemoSala, type DemoSala,
   fetchDemoPresentacion,
   type PresentacionPayload,
+  ApiError,
 } from "../api";
 import { ContextualHelp } from "../components/ContextualHelp";
 import { DemoBanner } from "../components/DemoBanner";
@@ -92,7 +93,7 @@ export function PresentacionEjecutivaPage() {
   async function enviarInvitacionSala() {
     if(!sala || !inviteEmail.trim()) return; setInviteEstado("Enviando invitación…");
     try{await inviteDemoSala(sala.codigo,inviteEmail.trim(),inviteNombre.trim()||"Gerencia");setInviteEstado(`Invitación enviada a ${inviteEmail.trim()}`);}
-    catch(e){setInviteEstado(e instanceof Error?e.message:"No se pudo enviar la invitación");}
+    catch(e){setInviteEstado(e instanceof ApiError ? e.detail : e instanceof Error ? e.message : "No se pudo enviar la invitación");}
   }
   async function mostrarAlGerente(payload: Record<string, unknown>) {
     if (!sala) return;
@@ -152,7 +153,7 @@ export function PresentacionEjecutivaPage() {
             <div className="section-header"><div><span className="semantic-badge hecho">REUNIÓN EN CURSO</span><h2>{tema.label}</h2><p className="muted">Caso ficticio preparado: {tema.paquete}</p></div><div className="meeting-room-controls">{!sala ? <button type="button" className="btn primary small" onClick={abrirSala}>Abrir sala para gerente</button> : <><span className="semantic-badge hecho">SALA {sala.codigo}</span><button type="button" className="btn small" disabled={!sala.guest_url} title={sala.guest_url?"Copiar enlace temporal":"Configure EIIAX_PUBLIC_URL para habilitar enlace externo"} onClick={()=>sala.guest_url&&navigator.clipboard.writeText(sala.guest_url)}>Copiar enlace</button></>}</div></div>
             {salaError && <p className="error">{salaError}</p>}
             {sala && !sala.guest_url && <p className="info-box small">Sala creada y protegida. Para usarla desde otro computador falta configurar la URL pública vigente del entorno.</p>}
-            {sala && sala.guest_url && <div className="meeting-invite-row"><strong>Invitar al gerente:</strong><input type="text" placeholder="Nombre" value={inviteNombre} onChange={e=>setInviteNombre(e.target.value)} /><input type="email" placeholder="correo@empresa.com" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} /><button type="button" className="btn small primary" disabled={!inviteEmail.trim()} onClick={enviarInvitacionSala}>Enviar invitación</button>{inviteEstado&&<span className="small">{inviteEstado}</span>}</div>}
+            {sala && sala.guest_url && <><div className="meeting-guest-access"><strong>Acceso del gerente:</strong><input type="text" readOnly value={sala.guest_url} aria-label="Enlace del gerente" /><a className="btn small primary" href={sala.guest_url} target="_blank" rel="noreferrer">Abrir pantalla gerente</a></div><div className="meeting-invite-row"><strong>Invitar al gerente:</strong><input type="text" placeholder="Nombre" value={inviteNombre} onChange={e=>setInviteNombre(e.target.value)} /><input type="email" placeholder="correo@empresa.com" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} /><button type="button" className="btn small primary" disabled={!inviteEmail.trim()} onClick={enviarInvitacionSala}>Enviar invitación</button>{inviteEstado&&<span className="small">{inviteEstado}</span>}</div></>}
             <div className="demo-live-topicbar">{disponibles.map((t) => <button key={t.id} type="button" className={`live-topic-card ${tema.id === t.id ? "active" : ""}`} onClick={() => { setTemaEnVivo(t.id); setVistaReunion("TEMA"); }}><strong>{t.label}</strong><small>{t.demuestra[0]}</small></button>)}<div className="live-topic-card exploratory"><strong>＋ Otros temas</strong><small>EIIAX puede cruzar procesos y explorar nuevas oportunidades fuera del catálogo.</small></div></div>
             {sala && <div className="meeting-share-actions"><button type="button" className="btn small" onClick={()=>mostrarAlGerente({titulo:tema.label,subtitulo:`Caso ficticio: ${tema.paquete} · Oportunidades priorizadas`,contenido:[...tema.hallazgos,...tema.oportunidades.map(x=>`Oportunidad: ${x}`)]})}>Mostrar tema y oportunidades al gerente</button><span className="muted small">El invitado solo ve lo que usted publique.</span></div>}
             <div className="demo-live-grid">
