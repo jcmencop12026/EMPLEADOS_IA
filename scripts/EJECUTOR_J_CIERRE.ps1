@@ -22,7 +22,7 @@ function Run-Native([string]$name,[string]$exe,[string[]]$arguments,[string]$cwd
         $psi.UseShellExecute = $false
         $psi.RedirectStandardOutput = $true
         $psi.RedirectStandardError = $true
-        foreach ($a in $arguments) { [void]$psi.ArgumentList.Add($a) }
+        # Windows PowerShell 5.1/.NET Framework no expone ProcessStartInfo.ArgumentList.\n        # Los argumentos usados por EJECUTOR-J no contienen espacios, por lo que Arguments\n        # mantiene compatibilidad con PowerShell 5.1 y PowerShell 7 sin cambiar la batería.\n        $psi.Arguments = ($arguments -join " ")
         $p = New-Object System.Diagnostics.Process
         $p.StartInfo = $psi
         [void]$p.Start()
