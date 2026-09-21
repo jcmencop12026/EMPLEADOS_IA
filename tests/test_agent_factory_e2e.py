@@ -274,7 +274,7 @@ def test_deny_blocks_orchestrator_execution(client, token):
         if orch["status"] == "FAILED":
             assert "denegada" in (orch.get("error") or "").lower()
         else:
-            assert orch.get("approval_id")
+            assert orch.get("approval_status") == "PENDING"
         db = TestingSessionLocal()
         try:
             assert db.query(WorkEvent).filter(WorkEvent.work_plan_id == orch["plan_id"],
