@@ -439,7 +439,10 @@ def send_direct_email(
                 _smtp_authenticate(smtp, channel, cfg, username)
                 smtp.send_message(msg)
     except Exception as exc:
-        logger.warning("Fallo de correo directo: %s", sanitize_comm_text(str(exc)))
+        safe_error = sanitize_comm_text(str(exc))
+        logger.warning("Fallo de correo directo: %s", safe_error)
+        if safe_error.startswith("GOOGLE_OAUTH_"):
+            return {"estado": "FALLIDA", "detalle": f"Google OAuth rechazó la autorización ({safe_error}). No se modificaron las credenciales almacenadas."}
         return {"estado": "FALLIDA", "detalle": "No fue posible enviar el correo por el canal configurado."}
     return {"estado": "ENVIADA", "detalle": "Correo aceptado por el servidor SMTP."}
 
