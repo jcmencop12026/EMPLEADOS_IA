@@ -20,7 +20,13 @@ def refresh_access_token(*, client_id: str, client_secret: str, refresh_token: s
         },
         timeout=20,
     )
-    response.raise_for_status()
+    if response.is_error:
+        try:
+            payload = response.json()
+            oauth_error = str(payload.get("error") or "oauth_error").strip()
+        except Exception:
+            oauth_error = "oauth_error"
+        raise RuntimeError(f"GOOGLE_OAUTH_{oauth_error.upper()}")
     token = str(response.json().get("access_token") or "").strip()
     if not token:
         raise RuntimeError("Google OAuth no devolvio access_token.")
