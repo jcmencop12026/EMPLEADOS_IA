@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ApiError, fetchOrgConfig, updateOrgConfig, type OrgConfig } from "../../api";
+import { ApiError, fetchOrgConfig, testEmailService, updateOrgConfig, type OrgConfig } from "../../api";
 import { EnterpriseLogoField } from "../../components/admin/EnterpriseLogoField";
 import { BrandMark } from "../../components/identity/BrandMark";
 import { ErrorState, LoadingState } from "../../components/AsyncState";
@@ -26,6 +26,9 @@ export function AdminConfigPage() {
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<TabId>("general");
   const [msg, setMsg] = useState<string | null>(null);
+  const [testEmail, setTestEmail] = useState("");
+  const [testingEmail, setTestingEmail] = useState(false);
+  const [emailTestResult, setEmailTestResult] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -51,6 +54,30 @@ export function AdminConfigPage() {
       setError(err instanceof ApiError ? err.message : "No se pudo guardar");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function runEmailTest() {
+    const destinatario = testEmail.trim();
+    setEmailTestResult(null);
+    if (!destinatario || !destinatario.includes("@")) {
+      setEmailTestResult("Ingrese un correo válido para realizar la prueba.");
+      return;
+    }
+    setTestingEmail(true);
+    try {
+      const result = await testEmailService(destinatario);
+      const when = result.fecha ? new Date(result.fecha).toLocaleString("es-CO") : new Date().toLocaleString("es-CO");
+      if (result.estado === "ENVIADA") {
+        setEmailTestResult(`SMTP operativo · correo enviado a ${result.destinatario ?? destinatario} · ${when}`);
+      } else {
+        setEmailTestResult(`${result.detalle || "El servicio de correo no está operativo."} · ${when}`);
+      }
+    } catch (err) {
+      const detail = err instanceof ApiError ? err.detail : "No fue posible probar el servicio de correo.";
+      setEmailTestResult(`Error SMTP · ${detail}`);
+    } finally {
+      setTestingEmail(false);
     }
   }
 
@@ -186,6 +213,24 @@ export function AdminConfigPage() {
             <p className="muted">Alertas y centro de notificaciones.</p>
             <Link className="btn secondary" to="/notificaciones">Notificaciones</Link>
             <Link className="btn secondary" to="/comunicaciones">Comunicaciones</Link>
+            <div className="config-field">
+              <strong>Prueba del servicio de correo</strong>
+              <p className="muted small">Envía un correo real usando el mismo canal configurado para las invitaciones. La contraseña nunca se muestra.</p>
+              <div className="ops-actions">
+                <input
+                  className="config-input-lg"
+                  type="email"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  placeholder="correo@dominio.com"
+                  aria-label="Correo destinatario de prueba"
+                />
+                <button type="button" className="btn secondary" onClick={runEmailTest} disabled={testingEmail}>
+                  {testingEmail ? "Probando…" : "Probar servicio de correo"}
+                </button>
+              </div>
+              {emailTestResult && <p className={emailTestResult.startsWith("SMTP operativo") ? "success" : "error"}>{emailTestResult}</p>}
+            </div>
           </div>
         )}
 
