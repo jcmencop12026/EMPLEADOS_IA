@@ -6,6 +6,7 @@ from fastapi import HTTPException
 
 from app.routers import reunion_demo
 from app.services import demo_reunion_copilot_service as copilot
+from app.services import communications_service as communications
 
 
 def test_copilot_catalog_has_six_domains():
@@ -140,3 +141,25 @@ def test_expired_room_is_rejected():
     assert exc.value.status_code == 404
     reunion_demo._ROOMS.clear()
     reunion_demo._ROOMS.update(original)
+
+
+def test_email_transport_prefers_stable_smtp_when_app_password_exists(monkeypatch):
+    monkeypatch.setenv("EIIAX_SMTP_APP_PASSWORD", "abcdefghijklmnop")
+    cfg = communications._effective_email_config({
+        "auth_mode": "gmail_api",
+        "from_email": "proauditorx@gmail.com",
+    })
+    assert cfg["auth_mode"] == "password"
+    assert cfg["smtp_host"] == "smtp.gmail.com"
+    assert cfg["smtp_port"] == 587
+    assert cfg["use_tls"] is True
+    assert cfg["use_ssl"] is False
+    assert cfg["smtp_secret_ref"] == "env:EIIAX_SMTP_APP_PASSWORD"
+    assert "abcdefghijklmnop" not in repr(cfg)
+
+
+def test_email_transport_preserves_legacy_channel_without_app_password(monkeypatch):
+    monkeypatch.delenv("EIIAX_SMTP_APP_PASSWORD", raising=False)
+    monkeypatch.setattr(communications, "secret_configured", lambda ref: False)
+    original = {"auth_mode": "gmail_api", "from_email": "proauditorx@gmail.com"}
+    assert communications._effective_email_config(original) == original
