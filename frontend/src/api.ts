@@ -970,6 +970,21 @@ export async function updateOrgConfig(data: Partial<OrgConfig>): Promise<OrgConf
   return api<OrgConfig>("/api/admin/config", { method: "PUT", body: JSON.stringify(data) });
 }
 
+export type EmailServiceTestResult = {
+  estado: string;
+  detalle?: string | null;
+  destinatario?: string;
+  fecha?: string;
+  ready?: boolean;
+};
+
+export async function testEmailService(destinatario: string): Promise<EmailServiceTestResult> {
+  return api<EmailServiceTestResult>("/api/comunicaciones/canales/probar-correo", {
+    method: "POST",
+    body: JSON.stringify({ destinatario }),
+  });
+}
+
 export async function fetchSecuritySummary(): Promise<SecuritySummary> {
   return api<SecuritySummary>("/api/admin/security");
 }
