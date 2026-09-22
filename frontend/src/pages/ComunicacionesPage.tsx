@@ -195,6 +195,7 @@ export function ComunicacionesPage() {
           from_email: String(fd.get("from_email") || emailCfg.from_email || ""),
           use_tls: Boolean(fd.get("use_tls")), use_ssl: Boolean(fd.get("use_ssl")),
         },
+        secret_ref: "env:EIIAX_SMTP_APP_PASSWORD",
       });
       setTestEmailStatus(null); setError(null); await reload();
     } catch (err) { setError(err instanceof Error ? err.message : "No se pudo guardar el canal de correo"); }
