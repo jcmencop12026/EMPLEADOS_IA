@@ -436,7 +436,7 @@ def send_direct_email(
     )
     if not channel:
         return {"estado": "NO_CONFIGURADO", "detalle": "No existe canal de correo activo."}
-    cfg = _json_load(channel.config_json)
+    cfg = _effective_email_config(_json_load(channel.config_json))
     host = str(cfg.get("smtp_host") or cfg.get("host") or "").strip()
     port = int(cfg.get("smtp_port") or cfg.get("port") or (465 if cfg.get("use_ssl") else 587))
     username = str(cfg.get("smtp_username") or cfg.get("username") or cfg.get("from_email") or "").strip()
