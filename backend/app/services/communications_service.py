@@ -323,6 +323,40 @@ def _oauth_credentials(cfg: dict[str, Any]) -> tuple[str | None, str | None, str
     return client_id, client_secret, refresh_token
 
 
+def _effective_email_config(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Prefiere SMTP Gmail estable cuando existe la contraseña de aplicación.
+
+    No persiste ni expone el secreto. Si no está configurado, conserva exactamente
+    el transporte definido en el canal (incluido Gmail API/OAuth legado).
+    """
+    effective = dict(cfg)
+    smtp_secret_ref = str(effective.get("smtp_secret_ref") or "env:EIIAX_SMTP_APP_PASSWORD")
+    if secret_configured(smtp_secret_ref):
+        username = str(
+            effective.get("smtp_username")
+            or effective.get("username")
+            or effective.get("from_email")
+            or "proauditorx@gmail.com"
+        ).strip()
+        effective.update(
+            {
+                "auth_mode": "password",
+                "smtp_host": "smtp.gmail.com",
+                "smtp_port": 587,
+                "smtp_username": username,
+                "from_email": str(effective.get("from_email") or username).strip(),
+                "use_tls": True,
+                "use_ssl": False,
+                "smtp_secret_ref": smtp_secret_ref,
+            }
+        )
+    return effective
+
+
+def _smtp_secret_ref(channel: CommChannel, cfg: dict[str, Any]) -> str | None:
+    return str(cfg.get("smtp_secret_ref") or channel.secret_ref or "").strip() or None
+
+
 def _smtp_authenticate(smtp: smtplib.SMTP, channel: CommChannel, cfg: dict[str, Any], username: str) -> None:
     auth_mode = str(cfg.get("auth_mode") or "password").strip().lower()
     if auth_mode == "oauth2":
@@ -334,7 +368,7 @@ def _smtp_authenticate(smtp: smtplib.SMTP, channel: CommChannel, cfg: dict[str, 
         )
         smtp_xoauth2_login(smtp, username=username, access_token=access_token)
         return
-    password = resolve_secret(channel.secret_ref)
+    password = resolve_secret(_smtp_secret_ref(channel, cfg))
     if not password:
         raise RuntimeError("Secreto SMTP no configurado.")
     smtp.login(username, password)
@@ -354,7 +388,7 @@ def email_channel_readiness(db: Session, org_id: str) -> dict[str, Any]:
     )
     if not channel:
         return {"ready": False, "estado": "NO_CONFIGURADO", "detalle": "No existe canal de correo activo."}
-    cfg = _json_load(channel.config_json)
+    cfg = _effective_email_config(_json_load(channel.config_json))
     host = str(cfg.get("smtp_host") or cfg.get("host") or "").strip()
     username = str(cfg.get("smtp_username") or cfg.get("username") or cfg.get("from_email") or "").strip()
     from_email = str(cfg.get("from_email") or username).strip()
@@ -374,7 +408,7 @@ def email_channel_readiness(db: Session, org_id: str) -> dict[str, Any]:
             missing.append("oauth_client_secret")
         if not refresh_token:
             missing.append("oauth_refresh_token")
-    elif not secret_configured(channel.secret_ref):
+    elif not secret_configured(_smtp_secret_ref(channel, cfg)):
         missing.append("secreto")
     if missing:
         return {"ready": False, "estado": "NO_CONFIGURADO", "detalle": "Canal de correo incompleto: " + ", ".join(missing) + "."}
