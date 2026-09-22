@@ -674,3 +674,43 @@
 .eiaax-v1-transversal .oportunidades-list .data-table td {
   line-height: 1.35;
 }
+
+
+/* CIERRE-J 2026-09 — legibilidad transversal sin perder densidad */
+.eiaax-v1-transversal {
+  font-size: 0.94rem;
+}
+.eiaax-v1-transversal .nav-label,
+.eiaax-v1-transversal .nav-section-title,
+.eiaax-v1-transversal .sidebar-user,
+.eiaax-v1-transversal .topbar,
+.eiaax-v1-transversal .org-context-bar {
+  font-size: 0.88rem;
+}
+.eiaax-v1-transversal .page-header .muted,
+.eiaax-v1-transversal .page-header.compact .muted,
+.eiaax-v1-transversal .muted {
+  font-size: 0.86rem;
+}
+.eiaax-v1-transversal .tab-bar button,
+.eiaax-v1-transversal .tab-nav button,
+.eiaax-v1-transversal .tab-btn,
+.eiaax-v1-transversal .btn,
+.eiaax-v1-transversal input,
+.eiaax-v1-transversal select,
+.eiaax-v1-transversal textarea,
+.eiaax-v1-transversal label {
+  font-size: 0.88rem;
+}
+.eiaax-v1-transversal .data-table {
+  font-size: 0.88rem;
+}
+.eiaax-v1-transversal .data-table th {
+  font-size: 0.8rem;
+}
+.eiaax-v1-transversal .executive-kpi span,
+.eiaax-v1-transversal .cc-kpi-label,
+.eiaax-v1-transversal .dashboard-card-label,
+.eiaax-v1-transversal .salud-kpi-mini span {
+  font-size: 0.8rem;
+}
