@@ -151,6 +151,7 @@ export function ComunicacionesPage() {
         template_version_id: tpl.current_version_id,
         channel_id: ch.id,
         condicion: JSON.parse(newRule.condicion),
+        secret_ref: "env:EIIAX_SMTP_APP_PASSWORD",
       });
       await reload();
     } catch (err) {
@@ -172,7 +173,9 @@ export function ComunicacionesPage() {
   const emailChannel = channels.find((c) => c.tipo === "CORREO_ELECTRONICO");
   const emailCfg = (emailChannel?.config ?? {}) as Record<string, unknown>;
   const emailAuthMode = String(emailCfg.auth_mode ?? "password").toLowerCase();
-  const isGmailApi = emailAuthMode === "gmail_api";
+  const smtpAppPasswordReady = emailChannel?.secret_configured === true;
+  const effectiveEmailAuthMode = smtpAppPasswordReady ? "password" : emailAuthMode;
+  const isGmailApi = effectiveEmailAuthMode === "gmail_api";
 
   const onSaveSmtp = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -184,7 +187,8 @@ export function ComunicacionesPage() {
         activo: true, prioridad: 10,
         config: {
           ...emailCfg,
-          auth_mode: emailAuthMode,
+          auth_mode: "password",
+          smtp_secret_ref: "env:EIIAX_SMTP_APP_PASSWORD",
           smtp_host: String(fd.get("smtp_host") || emailCfg.smtp_host || "smtp.gmail.com"),
           smtp_port: Number(fd.get("smtp_port") || emailCfg.smtp_port || 587),
           smtp_username: String(fd.get("smtp_username") || emailCfg.smtp_username || ""),
