@@ -1265,3 +1265,30 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* CIERRE-J 2026-09 — login legible y proporcionado */
+.login-page.eiaax-v1-experience .login-card {
+  width: min(390px, 92vw);
+  padding: 26px 30px;
+}
+.login-page.eiaax-v1-experience .login-card h1 {
+  font-size: 1.35rem;
+}
+.login-page.eiaax-v1-experience .login-card label,
+.login-page.eiaax-v1-experience .login-card input,
+.login-page.eiaax-v1-experience .login-card button,
+.login-page.eiaax-v1-experience .login-card .muted,
+.login-page.eiaax-v1-experience .login-card .small {
+  font-size: 0.92rem;
+}
+.login-page.eiaax-v1-experience .login-card input {
+  min-height: 38px;
+}
+.login-page.eiaax-v1-experience .login-submit {
+  min-height: 40px;
+  font-weight: 700;
+}
+.login-page.eiaax-v1-experience .login-brand-panel {
+  min-width: 390px;
+}
