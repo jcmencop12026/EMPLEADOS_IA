@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import secrets
 import threading
 from pathlib import Path
@@ -16,6 +17,23 @@ from app.database import get_db
 from app.config import DATA_DIR
 from sqlalchemy.orm import Session
 from app.services import communications_service as comm_svc
+
+
+def _manager_public_base() -> str:
+    configured = os.getenv("EIIAX_PUBLIC_URL", "").strip().rstrip("/")
+    if configured and "127.0.0.1" not in configured and "localhost" not in configured.lower():
+        return configured
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        sock.connect(("8.8.8.8", 53))
+        lan_ip = sock.getsockname()[0]
+    except OSError:
+        lan_ip = ""
+    finally:
+        sock.close()
+    if lan_ip and not lan_ip.startswith("127."):
+        return f"http://{lan_ip}:5180"
+    return ""
 
 router = APIRouter(prefix="/api/reunion-demo", tags=["reunion-demo"])
 _LOCK = threading.RLock()
@@ -127,7 +145,7 @@ def crear_sala(body: SalaCreate, user: User = Depends(get_current_user)):
         _ROOMS[code] = room
         _persist_rooms()
     result = {**_public(room), "guest_token": token}
-    public_url = os.getenv("EIIAX_PUBLIC_URL", "").rstrip("/") or "http://127.0.0.1:5180"
+    public_url = _manager_public_base()
     result["guest_url"] = f"{public_url}/sala-demo/{code}?token={token}"
     return result
 
@@ -155,7 +173,7 @@ def ver_sala_publica(code: str, token: str):
 def invitar_sala(code: str, body: SalaInvite, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     room = _get(code)
     if room["organization_id"] != user.organization_id: raise HTTPException(403, "Sala de otra organización")
-    base = os.getenv("EIIAX_PUBLIC_URL", "").rstrip("/") or "http://127.0.0.1:5180"
+    base = _manager_public_base()
     link = f"{base}/sala-demo/{room['codigo']}?token={room['token']}"
     subject = "EIIAX | Invitación a demostración ejecutiva"
     text = f"Hola {body.nombre},\n\nHa sido invitado a una demostración ejecutiva de EIIAX.\n\nDurante la reunión podrá ver, en tiempo real, los temas que el presentador comparta y las respuestas de ELIA que se decida publicar. Los datos utilizados son ficticios y demostrativos.\n\nIngresar a la sala: {link}\n\nEl enlace es temporal y no da acceso al Centro de Control ni al espacio de evaluación.\n\nEIIAX"
