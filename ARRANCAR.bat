@@ -51,7 +51,7 @@ if not defined EIIAX_CLOUDFLARED (
 
 del /q "%EIIAX_TUNNEL_LOG%" >nul 2>&1
 del /q "%~dp0runtime\eiaax_public_url.txt" >nul 2>&1
-start "EIIAX TUNEL HTTPS" /min cmd /c ""%EIIAX_CLOUDFLARED%" tunnel --no-autoupdate --url http://127.0.0.1:5180 --logfile "%EIIAX_TUNNEL_LOG%" --loglevel info"
+start "EIIAX TUNEL HTTPS" powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\MONITOR_TUNEL_EIIAX.ps1" -Cloudflared "%EIIAX_CLOUDFLARED%" -Root "%~dp0"
 
 echo.
 echo [EIIAX] Creando acceso HTTPS temporal para el Gerente...
@@ -71,7 +71,8 @@ echo.
 echo ============================================================
 echo EIIAX REMOTO LISTO
 echo Invitados: !EIIAX_PUBLIC_URL!
-echo Cree una SALA NUEVA para que el correo use esta URL HTTPS.
+echo Canal supervisado: si Cloudflare lo interrumpe, EIIAX intentara renovarlo.
+echo La cabina actualizara el enlace vigente; si cambia, reenvie la invitacion.
 echo ============================================================
 
 :LOCAL
