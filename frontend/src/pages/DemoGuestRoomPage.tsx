@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { fetchDemoSalaPublic, type DemoSala } from "../api";
+import { fetchDemoSalaPublic, sendDemoGuestInterest, type DemoSala } from "../api";
 
 const GUEST_IMPACT = [["↗","Ingresos"],["↘","Pérdidas"],["◉","Costos"],["⚡","Productividad"],["◇","Riesgos"]];
 const IMPACT_DETAIL:any={
@@ -13,11 +13,11 @@ const IMPACT_DETAIL:any={
 
 export function DemoGuestRoomPage(){
  const {codigo=""}=useParams(); const [sp]=useSearchParams(); const token=sp.get("token")||"";
- const [sala,setSala]=useState<DemoSala|null>(null); const [error,setError]=useState<string|null>(null); const [selected,setSelected]=useState<number|null>(null); const [impact,setImpact]=useState("Ingresos"); const [panel,setPanel]=useState<"oportunidades"|"indicadores"|"acciones">("oportunidades"); const [decision,setDecision]=useState<string|null>(null); const [focus,setFocus]=useState(0);
+ const [sala,setSala]=useState<DemoSala|null>(null); const [error,setError]=useState<string|null>(null); const [selected,setSelected]=useState<number|null>(null); const [interestMsg,setInterestMsg]=useState<string|null>(null); const [impact,setImpact]=useState("Ingresos"); const [panel,setPanel]=useState<"oportunidades"|"indicadores"|"acciones">("oportunidades"); const [decision,setDecision]=useState<string|null>(null); const [focus,setFocus]=useState(0);
  useEffect(()=>{let stop=false; const load=()=>fetchDemoSalaPublic(codigo,token).then(x=>{if(!stop){setSala(x);setError(null)}}).catch(e=>{if(!stop)setError(e.message)}); load(); const id=setInterval(load,1500); return()=>{stop=true;clearInterval(id)}},[codigo,token]);
  if(error)return <main className="guest-room"><h1>EIIAX · Sala ejecutiva</h1><p className="error">{error}</p></main>;
  if(!sala)return <main className="guest-room"><h1>EIIAX · Sala ejecutiva</h1><p>Conectando con la reunión…</p></main>;
- const v=sala.visible as any; const findings=Array.isArray(v?.contenido)?v.contenido:[];
+ const v=sala.visible as any; const findings=Array.isArray(v?.contenido)?v.contenido:[]; const registrar=async(accion:string,detalle:string)=>{try{await sendDemoGuestInterest(codigo,token,accion,impact,detalle);setInterestMsg("✓ Interés enviado al presentador");setTimeout(()=>setInterestMsg(null),3500)}catch{setInterestMsg("No fue posible registrar el interés")}};
  return <main className="guest-room guest-room-v2 guest-room-v3 guest-room-v4 guest-room-v7">
  <header className="guest-executive-header">
   <div className="guest-logo-plate"><img src="/assets/identity/eiaax-logo-approved.webp" alt="EIIAX" /></div>
@@ -26,7 +26,7 @@ export function DemoGuestRoomPage(){
  </header>
  <section className="guest-decision-strip">
    <div><span>IMPACTO ACTIVO · {impact.toUpperCase()}</span><strong>{IMPACT_DETAIL[impact].value}</strong><p>{IMPACT_DETAIL[impact].title}</p><small>{IMPACT_DETAIL[impact].text}</small></div>
-   <button onClick={()=>{setPanel("oportunidades");setDecision(IMPACT_DETAIL[impact].action)}}>{IMPACT_DETAIL[impact].action} →</button>
+   <button onClick={()=>{setPanel("oportunidades");setDecision(IMPACT_DETAIL[impact].action);registrar("QUIERO_PROFUNDIZAR",IMPACT_DETAIL[impact].title)}}>Quiero profundizar esto →</button>
  </section>
  <nav className="guest-actionbar guest-actionbar-v7">
    <button className={panel==="oportunidades"?"active":""} onClick={()=>setPanel("oportunidades")}>◈ Qué encontramos</button>
@@ -40,10 +40,10 @@ export function DemoGuestRoomPage(){
    <div className="guest-opportunity-rail">{findings.slice(0,6).map((x:string,i:number)=><button key={i} className={focus===i?"active":""} onClick={()=>{setFocus(i);setSelected(null)}}><b>{String(i+1).padStart(2,"0")}</b><span>{x.replace(/^Oportunidad:\\s*/,"")}</span></button>)}</div>
  </>}
  {panel==="indicadores"&&<div className="guest-manager-kpis guest-manager-kpis-v7"><article><span>INGRESOS</span><b>$4.860 M</b><p>Facturación observada en 6 meses</p><em>Base para dimensionar el impacto</em></article><article><span>VELOCIDAD</span><b>18,7 días</b><p>Factura → radicación</p><em>Reducir ciclo acelera caja</em></article><article><span>CARTERA</span><b>$742 M</b><p>Mayor a 90 días</p><em>Priorizar por recuperabilidad</em></article><article><span>CONCENTRACIÓN</span><b>31%</b><p>En un pagador</p><em>Riesgo y oportunidad contractual</em></article></div>}
- {panel==="acciones"&&<div className="guest-next-actions guest-next-actions-v7"><button onClick={()=>{setPanel("oportunidades");setDecision("Oportunidad priorizada")}}><b>01</b><div><strong>Elegir dónde actuar</strong><p>Priorizamos el hallazgo con mayor valor y posibilidad de intervención.</p><em>Priorizar ahora →</em></div></button><button onClick={()=>setDecision("Validación con datos IPS solicitada")}><b>02</b><div><strong>Validar con datos de la IPS</strong><p>Pasamos de la simulación a magnitud, evidencia y responsables reales.</p><em>Solicitar ejercicio preliminar →</em></div></button><button onClick={()=>setDecision("Siguiente sesión marcada como interés")}><b>03</b><div><strong>Convertirlo en plan</strong><p>Definimos alcance, responsables, evidencia y siguiente decisión.</p><em>Registrar siguiente paso →</em></div></button></div>}
+ {panel==="acciones"&&<div className="guest-next-actions guest-next-actions-v7"><button onClick={()=>{setPanel("oportunidades");setDecision("Oportunidad priorizada");registrar("PRIORIZAR_OPORTUNIDAD",findings[focus]||impact)}}><b>01</b><div><strong>Elegir dónde actuar</strong><p>Priorizamos el hallazgo con mayor valor y posibilidad de intervención.</p><em>Priorizar ahora →</em></div></button><button onClick={()=>{setDecision("Validación con datos IPS solicitada");registrar("EVALUAR_CON_MIS_DATOS","Solicita ejercicio preliminar controlado")}}><b>02</b><div><strong>Validar con datos de la IPS</strong><p>Pasamos de la simulación a magnitud, evidencia y responsables reales.</p><em>Solicitar ejercicio preliminar →</em></div></button><button onClick={()=>{setDecision("Siguiente sesión marcada como interés");registrar("SIGUIENTE_SESION","Solicita conocer metodología y siguiente paso")}}><b>03</b><div><strong>Convertirlo en plan</strong><p>Definimos alcance, responsables, evidencia y siguiente decisión.</p><em>Registrar siguiente paso →</em></div></button></div>}
  {selected!==null&&findings[selected]&&<aside className="guest-drilldown guest-drilldown-v7"><button onClick={()=>setSelected(null)}>×</button><span>LECTURA EJECUTIVA</span><h3>{findings[selected].replace(/^Oportunidad:\\s*/,"")}</h3><p>EIIAX conecta este hallazgo con el proceso activo para orientar una decisión, no solo mostrar un dato.</p><strong>Con datos reales de la IPS</strong><p>Validamos magnitud, evidencia, responsable, impacto económico y acción antes de presentarlo como resultado real.</p></aside>}
  {v?.respuesta&&<div className="elia-answer guest-elia"><strong>ELIA · RESPUESTA EN VIVO</strong><p>{v.respuesta}</p></div>}
  </section>
- <footer className="guest-footer guest-footer-v7"><span>Demo con datos simulados/estimados.</span><strong>Sala {sala.codigo} · sincronización automática</strong></footer>
+ {interestMsg&&<div className="guest-interest-confirm">{interestMsg}</div>}<footer className="guest-footer guest-footer-v7"><span>Demo con datos simulados/estimados.</span><strong>Sala {sala.codigo} · sincronización automática</strong></footer>
  </main>
 }
