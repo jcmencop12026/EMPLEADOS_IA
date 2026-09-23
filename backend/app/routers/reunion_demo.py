@@ -170,7 +170,13 @@ def actualizar_sala(code: str, body: SalaUpdate, user: User = Depends(get_curren
                 room[key] = _sanitize_visible(value) if key == "visible" else value
         room["revision"] += 1
         _persist_rooms()
-    return _public(room)
+    result = _public(room)
+    result["guest_token"] = room["token"]
+    try:
+        result["guest_url"] = f"{_manager_public_base()}/sala-demo/{room['codigo']}?token={room['token']}"
+    except HTTPException:
+        result["guest_url"] = None
+    return result
 
 @router.get("/sala/{code}")
 def ver_sala_publica(code: str, token: str):
