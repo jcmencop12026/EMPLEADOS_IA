@@ -1,4 +1,6 @@
-param([string]$Cloudflared="cloudflared.exe",[string]$Root=(Split-Path -Parent $PSScriptRoot))
+param([string]$Cloudflared="cloudflared.exe",[string]$Root="")
+if([string]::IsNullOrWhiteSpace($Root)){ $Root = Split-Path -Parent $PSScriptRoot }
+$Root = $Root.Trim().Trim('"').TrimEnd('\\')
 $ErrorActionPreference="Continue"
 $runtime=Join-Path $Root "runtime"
 New-Item -ItemType Directory -Force -Path $runtime | Out-Null
