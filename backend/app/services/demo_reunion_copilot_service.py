@@ -4,7 +4,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from app.services import demo_comercial_service as demo_svc
 
 TOPIC_ALIASES = {
     "facturacion": ("factura", "facturacion", "ingreso", "servicio", "mercado", "demanda", "contratacion", "cartera", "radicacion", "pago", "dinero", "recuper"),
@@ -36,7 +35,6 @@ TOPIC_GUIDE = {
 }
 
 def answer_demo_question(db, organization_id: str, expediente_id: str, question: str, active_topic: str) -> dict[str, Any]:
-    presentation = demo_svc.build_presentacion(db, organization_id, expediente_id, audiencia="GERENCIA")
     topics = _topics(question, active_topic)
     guides = [TOPIC_GUIDE[t] for t in topics if t in TOPIC_GUIDE]
     if not guides:
@@ -60,5 +58,5 @@ def answer_demo_question(db, organization_id: str, expediente_id: str, question:
         "semantica": "SIMULADO_ESTIMADO_NO_VERIFICADO",
         "fuente": "Caso ficticio preparado y presentación demo del expediente",
         "requiere_datos_reales": True,
-        "empresa_demo": presentation.get("empresa"),
+        "empresa_demo": None,
     }
