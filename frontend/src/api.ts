@@ -5297,9 +5297,12 @@ export async function askDemoReunion(expedienteId:string, pregunta:string, temaA
   return api<DemoReunionRespuesta>(`/api/demo-comercial/presentacion/${expedienteId}/preguntar`, { method:"POST", body: JSON.stringify({ pregunta, tema_activo: temaActivo }) });
 }
 
-export type DemoSala={codigo:string;guest_token?:string;guest_url?:string;expediente_id:string;tema:string;proposito:string;estado:string;visible?:Record<string,unknown>|null;revision:number};
+export type DemoSala={codigo:string;guest_token?:string;guest_url?:string;expediente_id:string;tema:string;proposito:string;estado:string;visible?:Record<string,unknown>|null;intereses?:Array<{accion:string;tema:string;detalle:string;fecha:string}>;revision:number};
 export const createDemoSala=(expediente_id:string,tema:string,proposito:string):Promise<DemoSala>=>api<DemoSala>('/api/reunion-demo/salas',{method:'POST',body:JSON.stringify({expediente_id,tema,proposito})});
 export const updateDemoSala=(codigo:string,body:Record<string,unknown>):Promise<DemoSala>=>api<DemoSala>(`/api/reunion-demo/salas/${codigo}`,{method:'PATCH',body:JSON.stringify(body)});
 export async function fetchDemoSalaPublic(codigo:string,token:string):Promise<DemoSala>{const r=await fetch(`/api/reunion-demo/sala/${codigo}?token=${encodeURIComponent(token)}`,{cache:'no-store',credentials:'omit'});if(!r.ok)throw new Error('Sala no disponible');return r.json();}
+
+export async function sendDemoGuestInterest(codigo:string,token:string,accion:string,tema:string,detalle=""){const r=await fetch(`/api/reunion-demo/sala/${codigo}/interes?token=${encodeURIComponent(token)}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({accion,tema,detalle}),credentials:"omit"});if(!r.ok)throw new Error("No se pudo registrar el interés");return r.json();}
+export const fetchDemoSalaPresenter=(codigo:string):Promise<DemoSala>=>api<DemoSala>(`/api/reunion-demo/salas/${codigo}`);
 
 export const inviteDemoSala=(codigo:string,email:string,nombre:string):Promise<{estado:string;email:string;codigo:string}>=>api<{estado:string;email:string;codigo:string}>(`/api/reunion-demo/salas/${codigo}/invitar`,{method:'POST',body:JSON.stringify({email,nombre})});
