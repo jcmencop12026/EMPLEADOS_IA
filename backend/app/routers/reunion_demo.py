@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 import os
-import socket
 import secrets
 import threading
 from pathlib import Path
@@ -19,21 +18,27 @@ from sqlalchemy.orm import Session
 from app.services import communications_service as comm_svc
 
 
+_PUBLIC_URL_FILE = DATA_DIR.parent / "runtime" / "eiaax_public_url.txt"
+
+
 def _manager_public_base() -> str:
+    """Devuelve exclusivamente una base publica utilizable por un invitado remoto."""
     configured = os.getenv("EIIAX_PUBLIC_URL", "").strip().rstrip("/")
-    if configured and "127.0.0.1" not in configured and "localhost" not in configured.lower():
+    if configured.startswith("https://") and "127.0.0.1" not in configured and "localhost" not in configured.lower():
         return configured
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
     try:
-        sock.connect(("8.8.8.8", 53))
-        lan_ip = sock.getsockname()[0]
+        persisted = _PUBLIC_URL_FILE.read_text(encoding="utf-8").strip().rstrip("/")
     except OSError:
-        lan_ip = ""
-    finally:
-        sock.close()
-    if lan_ip and not lan_ip.startswith("127."):
-        return f"http://{lan_ip}:5180"
-    return ""
+        persisted = ""
+    if persisted.startswith("https://") and "trycloudflare.com" in persisted.lower():
+        return persisted
+
+    raise HTTPException(
+        503,
+        "Acceso remoto no disponible. Inicie EIIAX con ARRANCAR.bat y espere a que muestre EIIAX REMOTO LISTO.",
+    )
+
 
 router = APIRouter(prefix="/api/reunion-demo", tags=["reunion-demo"])
 _LOCK = threading.RLock()
@@ -134,6 +139,7 @@ def _get(code: str) -> dict:
 
 @router.post("/salas")
 def crear_sala(body: SalaCreate, user: User = Depends(get_current_user)):
+    public_url = _manager_public_base()
     code = secrets.token_hex(3).upper()
     token = secrets.token_urlsafe(24)
     now = datetime.now(timezone.utc)
@@ -145,7 +151,6 @@ def crear_sala(body: SalaCreate, user: User = Depends(get_current_user)):
         _ROOMS[code] = room
         _persist_rooms()
     result = {**_public(room), "guest_token": token}
-    public_url = _manager_public_base()
     result["guest_url"] = f"{public_url}/sala-demo/{code}?token={token}"
     return result
 
