@@ -20,7 +20,7 @@ export function DemoGuestRoomPage(){
  const v=sala.visible as any; const findings=Array.isArray(v?.contenido)?v.contenido:[]; const registrar=async(accion:string,detalle:string)=>{try{await sendDemoGuestInterest(codigo,token,accion,impact,detalle);setInterestMsg("✓ Interés enviado al presentador");setTimeout(()=>setInterestMsg(null),3500)}catch{setInterestMsg("No fue posible registrar el interés")}};
  return <main className="guest-room guest-room-v2 guest-room-v3 guest-room-v4 guest-room-v7">
  <header className="guest-executive-header">
-  <div className="guest-logo-plate"><img src="/assets/identity/eiaax-logo-approved.webp" alt="EIIAX" /></div>
+  <div className="guest-logo-plate"><img src="/assets/identity/eiaax-logo-approved.png" alt="EIIAX" /></div>
   <div className="guest-executive-title"><span className="semantic-badge hecho">● REUNIÓN EN VIVO</span><h1>{v?.titulo||"Inteligencia para decidir y mejorar"}</h1><p>{v?.subtitulo||"IA aplicada para convertir datos en decisiones con impacto."}</p></div>
   <div className="guest-impact guest-impact-top">{GUEST_IMPACT.map(([icon,label])=><button type="button" key={label} className={impact===label?"active":""} onClick={()=>setImpact(label)}><b>{icon}</b>{label}</button>)}</div>
  </header>
