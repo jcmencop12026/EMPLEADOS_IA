@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   downloadPresentacionPdf,
   askDemoReunion,
-  createDemoSala, updateDemoSala, inviteDemoSala, type DemoSala,
+  createDemoSala, updateDemoSala, inviteDemoSala, fetchDemoSalaPresenter, type DemoSala,
   fetchDemoPresentacion,
   type PresentacionPayload,
   ApiError,
@@ -30,7 +30,7 @@ export function PresentacionEjecutivaPage() {
   const [temaEnVivo, setTemaEnVivo] = useState(DEMO_MEETING_TOPICS[0].id);
   const [temasInteres, setTemasInteres] = useState<string[]>([]);
   const [audiencia, setAudiencia] = useState<AudienciaId>("GERENCIA");
-  const [vistaReunion, setVistaReunion] = useState<"TEMA"|"IMPACTO"|"DETALLE"|"CIERRE">("TEMA");
+  const [vistaReunion, setVistaReunion] = useState<"TEMA"|"IMPACTO"|"DETALLE"|"CIERRE"|"GERENTE">("TEMA");
   const [data, setData] = useState<PresentacionPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +48,12 @@ export function PresentacionEjecutivaPage() {
     setAssistantEnabled(!reunionIniciada);
     return () => setAssistantEnabled(true);
   }, [reunionIniciada, setAssistantEnabled]);
+
+  useEffect(() => {
+    if (!sala?.codigo) return;
+    const id=window.setInterval(()=>fetchDemoSalaPresenter(sala.codigo).then(r=>setSala(prev=>prev?{...prev,...r}:prev)).catch(()=>{}),2000);
+    return ()=>window.clearInterval(id);
+  }, [sala?.codigo]);
 
   useEffect(() => {
     if (!expedienteId) return;
@@ -151,7 +157,8 @@ export function PresentacionEjecutivaPage() {
       )}
 
       <div id="presentacion-demo" />
-      {reunionIniciada && <nav className="meeting-view-tabs" aria-label="Vista de reunión"><button className={vistaReunion==="TEMA"?"active":""} onClick={()=>setVistaReunion("TEMA")}>Tema activo</button><button className={vistaReunion==="IMPACTO"?"active":""} onClick={()=>setVistaReunion("IMPACTO")}>Impacto y gráficos</button><button className={vistaReunion==="DETALLE"?"active":""} onClick={()=>setVistaReunion("DETALLE")}>Detalle y trazabilidad</button><button className={vistaReunion==="CIERRE"?"active":""} onClick={()=>setVistaReunion("CIERRE")}>Resumen y cierre</button></nav>}
+      {reunionIniciada && <nav className="meeting-view-tabs" aria-label="Vista de reunión"><button className={vistaReunion==="TEMA"?"active":""} onClick={()=>setVistaReunion("TEMA")}>Tema activo</button><button className={vistaReunion==="IMPACTO"?"active":""} onClick={()=>setVistaReunion("IMPACTO")}>Impacto y gráficos</button><button className={vistaReunion==="DETALLE"?"active":""} onClick={()=>setVistaReunion("DETALLE")}>Detalle y trazabilidad</button><button className={vistaReunion==="GERENTE"?"active":""} onClick={()=>setVistaReunion("GERENTE")}>👁 Vista del Gerente</button><button className={vistaReunion==="CIERRE"?"active":""} onClick={()=>setVistaReunion("CIERRE")}>Resumen y cierre</button></nav>}
+      {reunionIniciada && vistaReunion==="GERENTE" && <section className="panel presenter-guest-monitor"><div className="section-header"><div><span className="semantic-badge hecho">CONTROL DEL PRESENTADOR</span><h2>Lo que está viendo el Gerente</h2><p className="muted">Réplica local de la publicación vigente. Usted decide qué se revela.</p></div></div>{sala?.guest_token?<iframe title="Vista actual del gerente" src={`/sala-demo/${sala.codigo}?token=${encodeURIComponent(sala.guest_token)}`} />:<div className="info-box">Abra una sala para activar la vista controlada.</div>}<div className="presenter-interest-feed"><strong>Señales de interés del Gerente</strong>{sala?.intereses?.length?<ul>{[...sala.intereses].reverse().slice(0,5).map((x,i)=><li key={i}><b>{x.accion.replaceAll("_"," ")}</b> · {x.tema}{x.detalle?` — ${x.detalle}`:""}</li>)}</ul>:<span className="muted"> Aún no ha marcado intereses.</span>}</div></section>}
       {reunionIniciada && (() => {
         const disponibles = DEMO_MEETING_TOPICS.filter((t) => temasActivos.includes(t.label));
         const tema = disponibles.find((t) => t.id === temaEnVivo) ?? disponibles[0];
