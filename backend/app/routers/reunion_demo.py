@@ -222,4 +222,10 @@ def ver_sala_presentador(code: str, user: User = Depends(get_current_user)):
     room = _get(code)
     if room["organization_id"] != user.organization_id:
         raise HTTPException(403, "Sala de otra organización")
-    return _public(room)
+    result = _public(room)
+    result["guest_token"] = room["token"]
+    try:
+        result["guest_url"] = f"{_manager_public_base()}/sala-demo/{room['codigo']}?token={room['token']}"
+    except HTTPException:
+        result["guest_url"] = None
+    return result
