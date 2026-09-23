@@ -163,3 +163,16 @@ def test_email_transport_preserves_legacy_channel_without_app_password(monkeypat
     monkeypatch.setattr(communications, "secret_configured", lambda ref: False)
     original = {"auth_mode": "gmail_api", "from_email": "proauditorx@gmail.com"}
     assert communications._effective_email_config(original) == original
+
+
+def test_elia_demo_answers_without_rebuilding_presentation():
+    answer = copilot.answer_demo_question(
+        None, "org-demo", "exp-demo",
+        "¿Cuánto podríamos recuperar de la cartera y cuáles son las principales oportunidades?",
+        "facturacion",
+    )
+    assert answer["respuesta"]
+    assert "Ingresos, facturación y cartera" in answer["respuesta"]
+    assert "SIMULADOS/ESTIMADOS" in answer["respuesta"]
+    assert answer["modo"] == "DEMO"
+    assert answer["requiere_datos_reales"] is True
