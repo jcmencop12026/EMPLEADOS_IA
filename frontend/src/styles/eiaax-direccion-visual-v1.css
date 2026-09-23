@@ -1118,3 +1118,36 @@
   .login-page.eiaax-v1-experience .login-platform-identity--eiaax { min-height: 120px; }
   .login-page.eiaax-v1-experience .login-forms { padding: 24px; }
 }
+
+
+/* CIERRE-J marca — aprovechar el área disponible sin alterar el activo configurado. */
+.login-page.eiaax-v1-experience .login-platform-identity--eiaax .enterprise-mark--login {
+  width: 100%;
+  max-width: none;
+  min-height: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-page.eiaax-v1-experience .login-platform-identity--eiaax .enterprise-mark--login .enterprise-mark__img {
+  width: min(430px, 94%);
+  height: auto;
+  max-width: 430px;
+  max-height: 190px;
+  object-fit: contain;
+}
+.layout.eiaax-v1-experience .sidebar .enterprise-mark--shell,
+.layout.eiaax-v1-experience .sidebar .enterprise-mark--compact {
+  width: 100%;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.layout.eiaax-v1-experience .sidebar .enterprise-mark--shell .enterprise-mark__img,
+.layout.eiaax-v1-experience .sidebar .enterprise-mark--compact .enterprise-mark__img {
+  width: min(118px, 92%);
+  height: auto;
+  max-height: 64px;
+  object-fit: contain;
+}
