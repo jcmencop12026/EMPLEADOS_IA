@@ -176,3 +176,42 @@ def test_elia_demo_answers_without_rebuilding_presentation():
     assert "SIMULADOS/ESTIMADOS" in answer["respuesta"]
     assert answer["modo"] == "DEMO"
     assert answer["requiere_datos_reales"] is True
+
+
+def test_guest_interest_is_recorded_and_visible_to_presenter(tmp_path):
+    original_store = reunion_demo._ROOM_STORE
+    original_rooms = dict(reunion_demo._ROOMS)
+    try:
+        reunion_demo._ROOM_STORE = tmp_path / "rooms.json"
+        reunion_demo._ROOMS.clear()
+        reunion_demo._ROOMS["INT001"] = {
+            "codigo":"INT001","token":"tok","expediente_id":"E1","tema":"facturacion",
+            "proposito":"DEMO_INTEGRAL","estado":"ABIERTA","visible":{"titulo":"Demo"},
+            "intereses":[],"revision":1,"created_at":datetime.now(timezone.utc),
+            "expires_at":datetime.now(timezone.utc)+timedelta(hours=1),
+            "organization_id":"org1","operator_id":"u1",
+        }
+        out = reunion_demo.registrar_interes_publico(
+            "INT001", reunion_demo.GuestAction(accion="EVALUAR_CON_MIS_DATOS", tema="Ingresos", detalle="Quiero validar"), "tok"
+        )
+        assert out["estado"] == "REGISTRADO"
+        assert reunion_demo._ROOMS["INT001"]["intereses"][0]["accion"] == "EVALUAR_CON_MIS_DATOS"
+        public = reunion_demo.ver_sala_publica("INT001", "tok")
+        assert public["intereses"][0]["tema"] == "Ingresos"
+    finally:
+        reunion_demo._ROOMS.clear()
+        reunion_demo._ROOMS.update(original_rooms)
+        reunion_demo._ROOM_STORE = original_store
+
+
+def test_controlled_visible_allows_only_public_methodology_and_level():
+    visible = reunion_demo._sanitize_visible({
+        "titulo":"Oportunidad","nivel":"PROPUESTA",
+        "metodologia":["Conocer","Validar","Implementar"],
+        "metodologia_privada":{"reglas":"NO PUBLICAR"},
+        "formula":"NO PUBLICAR",
+    })
+    assert visible["nivel"] == "PROPUESTA"
+    assert visible["metodologia"] == ["Conocer","Validar","Implementar"]
+    assert "metodologia_privada" not in visible
+    assert "formula" not in visible
