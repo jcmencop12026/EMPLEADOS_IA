@@ -36,6 +36,10 @@ def preguntar_en_reunion(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except (PermissionError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        # El copiloto demo es determinista y no depende de un proveedor IA externo;
+        # exponer un detalle util evita que la UI quede aparentemente inerte.
+        raise HTTPException(status_code=500, detail=f"ELIA no pudo responder: {type(exc).__name__}: {exc}") from exc
 
 
 @router.get("/manifest")
