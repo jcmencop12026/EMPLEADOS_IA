@@ -42,7 +42,7 @@ export function PresentacionEjecutivaPage() {
   const [sala, setSala] = useState<DemoSala | null>(null);
   const [salaError, setSalaError] = useState<string | null>(null);
   const [metricPrivada, setMetricPrivada] = useState<DemoMetricSelection | null>(null);
-  const [inviteEmail, setInviteEmail] = useState(""); const [inviteNombre,setInviteNombre]=useState(""); const [inviteEstado,setInviteEstado]=useState<string|null>(null);
+  const [inviteEmail, setInviteEmail] = useState(""); const [inviteNombre,setInviteNombre]=useState(""); const [inviteEstado,setInviteEstado]=useState<string|null>(null); const [nivelRevelacion,setNivelRevelacion]=useState<"DEMO"|"PRELIMINAR"|"PROPUESTA">("DEMO");
 
   useEffect(() => {
     setAssistantEnabled(!reunionIniciada);
@@ -111,7 +111,7 @@ export function PresentacionEjecutivaPage() {
   }
   async function mostrarAlGerente(payload: Record<string, unknown>) {
     if (!sala) return;
-    try { const r=await updateDemoSala(sala.codigo,{tema:temaEnVivo,visible:payload}); setSala({...sala,...r}); } catch(e){setSalaError(e instanceof Error?e.message:"No se pudo sincronizar");}
+    try { const r=await updateDemoSala(sala.codigo,{tema:temaEnVivo,visible:{...payload,nivel:nivelRevelacion}}); setSala({...sala,...r}); } catch(e){setSalaError(e instanceof Error?e.message:"No se pudo sincronizar");}
   }
 
   async function preguntarElia(e: React.FormEvent) {
@@ -170,7 +170,7 @@ export function PresentacionEjecutivaPage() {
             {sala && !sala.guest_url && <p className="info-box small">Sala creada y protegida. Para usarla desde otro computador falta configurar la URL pública vigente del entorno.</p>}
             {sala && sala.guest_url && <><div className="meeting-guest-access"><strong>Acceso del gerente:</strong><input type="text" readOnly value={sala.guest_url} aria-label="Enlace del gerente" /><a className="btn small primary" href={sala.guest_url} target="_blank" rel="noreferrer">Abrir pantalla gerente</a></div><div className="meeting-invite-row"><strong>Invitar al gerente:</strong><input type="text" placeholder="Nombre" value={inviteNombre} onChange={e=>setInviteNombre(e.target.value)} /><input type="email" placeholder="correo@empresa.com" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} /><button type="button" className="btn small primary" disabled={!inviteEmail.trim()} onClick={enviarInvitacionSala}>Enviar invitación</button>{inviteEstado&&<span className="meeting-invite-status small" role="status">{inviteEstado}</span>}</div></>}
             <div className="demo-live-topicbar">{disponibles.map((t) => <button key={t.id} type="button" className={`live-topic-card ${tema.id === t.id ? "active" : ""}`} onClick={() => { setTemaEnVivo(t.id); setVistaReunion("TEMA"); }}><strong>{t.label}</strong><small>{t.demuestra[0]}</small></button>)}<div className="live-topic-card exploratory"><strong>＋ Otros temas</strong><small>EIIAX puede cruzar procesos y explorar nuevas oportunidades fuera del catálogo.</small></div></div>
-            {sala && <div className="meeting-share-actions"><button type="button" className="btn small" onClick={()=>mostrarAlGerente({titulo:tema.label,subtitulo:`Caso ficticio: ${tema.paquete} · Oportunidades priorizadas`,contenido:[...tema.hallazgos,...tema.oportunidades.map(x=>`Oportunidad: ${x}`)]})}>PUBLICAR AL GERENTE</button><span className="muted small">El invitado solo ve lo que usted publique.</span></div>}
+            {sala && <div className="meeting-share-actions controlled-publish"><label>Nivel visible <select value={nivelRevelacion} onChange={e=>setNivelRevelacion(e.target.value as any)}><option value="DEMO">Demo · capacidad</option><option value="PRELIMINAR">Preliminar · evidencia resumida</option><option value="PROPUESTA">Propuesta · metodología y alcance</option></select></label><button type="button" className="btn small primary" onClick={()=>mostrarAlGerente({titulo:tema.label,subtitulo:nivelRevelacion==="DEMO"?`Caso ficticio: ${tema.paquete} · Oportunidades priorizadas`:`Evaluación ${nivelRevelacion.toLowerCase()} · información controlada`,contenido:[...tema.hallazgos.slice(0,nivelRevelacion==="DEMO"?3:5),...tema.oportunidades.slice(0,nivelRevelacion==="PROPUESTA"?3:2).map(x=>`Oportunidad: ${x}`)],metodologia:nivelRevelacion==="PROPUESTA"?["Conocer y conectar","Analizar y detectar","Validar y priorizar","Implementar","Medir y mejorar"]:undefined})}>PUBLICAR AL GERENTE</button><span className="muted small">ELIA puede conocer más; el Gerente solo recibe esta capa.</span></div>}
             <div className="demo-live-grid">
               <div><h3>Datos mínimos que necesitaríamos de su entidad</h3><ul>{tema.minimo.map((x) => <li key={x}>{x}</li>)}</ul></div>
               <div><h3>Indicadores ficticios preparados</h3><ul>{tema.indicadores.map((x) => <li key={x}><strong>{x}</strong></li>)}</ul></div>
