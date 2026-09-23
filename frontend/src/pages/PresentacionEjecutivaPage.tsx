@@ -36,6 +36,7 @@ export function PresentacionEjecutivaPage() {
   const [preguntaElia, setPreguntaElia] = useState("");
   const [respuestaElia, setRespuestaElia] = useState<string | null>(null);
   const [eliaLoading, setEliaLoading] = useState(false);
+  const [eliaError, setEliaError] = useState<string | null>(null);
   const [sala, setSala] = useState<DemoSala | null>(null);
   const [salaError, setSalaError] = useState<string | null>(null);
   const [metricPrivada, setMetricPrivada] = useState<DemoMetricSelection | null>(null);
@@ -104,8 +105,8 @@ export function PresentacionEjecutivaPage() {
     e.preventDefault();
     if (!expedienteId || !preguntaElia.trim()) return;
     setEliaLoading(true);
-    try { const r = await askDemoReunion(expedienteId, preguntaElia.trim(), temaEnVivo); setRespuestaElia(r.respuesta); setError(null); }
-    catch (e) { setError(e instanceof Error ? e.message : "ELIA no pudo responder"); }
+    try { const r = await askDemoReunion(expedienteId, preguntaElia.trim(), temaEnVivo); setRespuestaElia(r.respuesta); setEliaError(null); setError(null); }
+    catch (e) { setRespuestaElia(null); setEliaError(e instanceof ApiError ? e.detail : e instanceof Error ? e.message : "ELIA no pudo responder"); }
     finally { setEliaLoading(false); }
   }
 
@@ -155,7 +156,7 @@ export function PresentacionEjecutivaPage() {
             {sala && !sala.guest_url && <p className="info-box small">Sala creada y protegida. Para usarla desde otro computador falta configurar la URL pública vigente del entorno.</p>}
             {sala && sala.guest_url && <><div className="meeting-guest-access"><strong>Acceso del gerente:</strong><input type="text" readOnly value={sala.guest_url} aria-label="Enlace del gerente" /><a className="btn small primary" href={sala.guest_url} target="_blank" rel="noreferrer">Abrir pantalla gerente</a></div><div className="meeting-invite-row"><strong>Invitar al gerente:</strong><input type="text" placeholder="Nombre" value={inviteNombre} onChange={e=>setInviteNombre(e.target.value)} /><input type="email" placeholder="correo@empresa.com" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} /><button type="button" className="btn small primary" disabled={!inviteEmail.trim()} onClick={enviarInvitacionSala}>Enviar invitación</button>{inviteEstado&&<span className="meeting-invite-status small" role="status">{inviteEstado}</span>}</div></>}
             <div className="demo-live-topicbar">{disponibles.map((t) => <button key={t.id} type="button" className={`live-topic-card ${tema.id === t.id ? "active" : ""}`} onClick={() => { setTemaEnVivo(t.id); setVistaReunion("TEMA"); }}><strong>{t.label}</strong><small>{t.demuestra[0]}</small></button>)}<div className="live-topic-card exploratory"><strong>＋ Otros temas</strong><small>EIIAX puede cruzar procesos y explorar nuevas oportunidades fuera del catálogo.</small></div></div>
-            {sala && <div className="meeting-share-actions"><button type="button" className="btn small" onClick={()=>mostrarAlGerente({titulo:tema.label,subtitulo:`Caso ficticio: ${tema.paquete} · Oportunidades priorizadas`,contenido:[...tema.hallazgos,...tema.oportunidades.map(x=>`Oportunidad: ${x}`)]})}>Mostrar tema y oportunidades al gerente</button><span className="muted small">El invitado solo ve lo que usted publique.</span></div>}
+            {sala && <div className="meeting-share-actions"><button type="button" className="btn small" onClick={()=>mostrarAlGerente({titulo:tema.label,subtitulo:`Caso ficticio: ${tema.paquete} · Oportunidades priorizadas`,contenido:[...tema.hallazgos,...tema.oportunidades.map(x=>`Oportunidad: ${x}`)]})}>PUBLICAR AL GERENTE</button><span className="muted small">El invitado solo ve lo que usted publique.</span></div>}
             <div className="demo-live-grid">
               <div><h3>Datos mínimos que necesitaríamos de su entidad</h3><ul>{tema.minimo.map((x) => <li key={x}>{x}</li>)}</ul></div>
               <div><h3>Indicadores ficticios preparados</h3><ul>{tema.indicadores.map((x) => <li key={x}><strong>{x}</strong></li>)}</ul></div>
@@ -174,6 +175,7 @@ export function PresentacionEjecutivaPage() {
                 <input value={preguntaElia} onChange={(e) => setPreguntaElia(e.target.value)} placeholder="Ej.: ¿Esto se relaciona con cartera y cuánto podríamos recuperar?" />
                 <button className="btn primary" type="submit" disabled={eliaLoading || !preguntaElia.trim()}>{eliaLoading ? "Analizando…" : "Preguntar a ELIA"}</button>
               </form>
+              {eliaError && <div className="error elia-inline-error" role="alert"><strong>ELIA no pudo completar la respuesta:</strong> {eliaError}</div>}
               {respuestaElia && <div className="elia-answer"><strong>ELIA</strong><p>{respuestaElia}</p><div className="elia-share-row"><span className="muted small">Respuesta de demostración · no constituye resultado verificado ni compromiso económico.</span>{sala && <button type="button" className="btn small primary" onClick={()=>mostrarAlGerente({titulo:`ELIA · ${tema.label}`,subtitulo:"Respuesta a la pregunta realizada durante la demostración",respuesta:respuestaElia})}>Mostrar al gerente</button>}</div></div>}
             </section>
             <p className="meeting-demo-note muted small"><strong>DEMO:</strong> cifras simuladas; no corresponden a una entidad real.</p>
