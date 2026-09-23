@@ -1167,3 +1167,11 @@
   .meeting-invite-row { grid-template-columns: auto 130px minmax(200px, 1fr) auto; }
   .meeting-invite-row > .small { grid-column: 2 / -1; }
 }
+
+.meeting-invite-row{display:flex!important;align-items:center;gap:8px;flex-wrap:nowrap!important}
+.meeting-invite-row>strong{flex:0 0 auto}
+.meeting-invite-row>input[type="text"]{flex:0 0 150px;width:150px}
+.meeting-invite-row>input[type="email"]{flex:0 1 320px;width:320px;min-width:220px}
+.meeting-invite-row>button{flex:0 0 auto;white-space:nowrap}
+.meeting-invite-row>.meeting-invite-status{flex:1 1 auto;min-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:900px){.meeting-invite-row{flex-wrap:wrap!important}.meeting-invite-row>.meeting-invite-status{flex-basis:100%;margin-left:0}}
