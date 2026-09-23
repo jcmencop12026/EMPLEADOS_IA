@@ -42,7 +42,7 @@ export function PresentacionEjecutivaPage() {
   const [sala, setSala] = useState<DemoSala | null>(null);
   const [salaError, setSalaError] = useState<string | null>(null);
   const [metricPrivada, setMetricPrivada] = useState<DemoMetricSelection | null>(null);
-  const [inviteEmail, setInviteEmail] = useState(""); const [inviteNombre,setInviteNombre]=useState(""); const [inviteEstado,setInviteEstado]=useState<string|null>(null); const [nivelRevelacion,setNivelRevelacion]=useState<"DEMO"|"PRELIMINAR"|"PROPUESTA">("DEMO");
+  const [inviteEmail, setInviteEmail] = useState(""); const [inviteNombre,setInviteNombre]=useState(""); const [inviteEstado,setInviteEstado]=useState<string|null>(null); const [nivelRevelacion,setNivelRevelacion]=useState<"DEMO"|"PRELIMINAR"|"PROPUESTA">("DEMO"); const [eliaPublicar,setEliaPublicar]=useState(false);
 
   useEffect(() => {
     setAssistantEnabled(!reunionIniciada);
@@ -118,7 +118,7 @@ export function PresentacionEjecutivaPage() {
     e.preventDefault();
     if (!expedienteId || !preguntaElia.trim()) return;
     setEliaLoading(true);
-    try { const r = await askDemoReunion(expedienteId, preguntaElia.trim(), temaEnVivo); setRespuestaElia(r.respuesta); setEliaError(null); setError(null); }
+    try { const r = await askDemoReunion(expedienteId, preguntaElia.trim(), temaEnVivo); setRespuestaElia(r.respuesta); setEliaError(null); setError(null); if(eliaPublicar&&sala){await mostrarAlGerente({titulo:`ELIA · ${temaSeleccionado.label}`,subtitulo:"Análisis solicitado por el presentador",respuesta:r.respuesta});} }
     catch (e) { setRespuestaElia(null); setEliaError(e instanceof ApiError ? e.detail : e instanceof Error ? e.message : "ELIA no pudo responder"); }
     finally { setEliaLoading(false); }
   }
@@ -183,10 +183,10 @@ export function PresentacionEjecutivaPage() {
               <span className="muted small">Se usará para crear el alcance real al cerrar la reunión.</span>
             </div>
             <section className="elia-meeting-copilot">
-              <div className="elia-meeting-head"><div><span className="semantic-badge hecho">ELIA · COPILOTO</span><h3>Preguntas en vivo</h3></div><span className="muted small">Contexto activo: {tema.label}</span></div>
+              <div className="elia-meeting-head"><div><span className="semantic-badge hecho">ELIA · COPILOTO</span><h3>Preguntas en vivo</h3></div><div className="elia-live-controls"><span className="muted small">Contexto activo: {tema.label}</span><label><input type="checkbox" checked={eliaPublicar} onChange={e=>setEliaPublicar(e.target.checked)} disabled={!sala}/> Publicar próxima respuesta al gerente</label></div></div>
               <p className="muted small">Pregunte como lo haría el gerente. ELIA cruza el caso demo y distingue lo simulado de lo que requiere datos reales.</p>
               <form className="elia-question-form" onSubmit={preguntarElia}>
-                <input value={preguntaElia} onChange={(e) => setPreguntaElia(e.target.value)} placeholder="Ej.: ¿Esto se relaciona con cartera y cuánto podríamos recuperar?" />
+                <input value={preguntaElia} onChange={(e) => setPreguntaElia(e.target.value)} placeholder="Pregunte sobre el demo o solicite un análisis adicional para la reunión…" />
                 <button className="btn primary" type="submit" disabled={eliaLoading || !preguntaElia.trim()}>{eliaLoading ? "Analizando…" : "Preguntar a ELIA"}</button>
               </form>
               {eliaError && <div className="error elia-inline-error" role="alert"><strong>ELIA no pudo completar la respuesta:</strong> {eliaError}</div>}
