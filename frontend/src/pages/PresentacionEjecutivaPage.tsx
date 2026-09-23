@@ -16,11 +16,13 @@ import { DemoTraceability } from "../components/DemoTraceability";
 import { DemoExecutiveClose } from "../components/DemoExecutiveClose";
 import { AUDIENCIAS, HELP_DEMO_COMERCIAL, type AudienciaId } from "../lib/demoComercialHelp";
 import { DEMO_MEETING_TOPICS } from "../lib/demoMeetingCatalog";
+import { useContextualAssistant } from "../context/ContextualAssistantContext";
 
 export function PresentacionEjecutivaPage() {
   const { expedienteId } = useParams<{ expedienteId: string }>();
   const [searchParams] = useSearchParams();
   const preparar = searchParams.get("preparar") === "1";
+  const { setAssistantEnabled } = useContextualAssistant();
   const [tipoReunion, setTipoReunion] = useState("DEMO_INTEGRAL");
   const [temasActivos, setTemasActivos] = useState<string[]>(() => DEMO_MEETING_TOPICS.map((t) => t.label));
   const [temaDetalle, setTemaDetalle] = useState(DEMO_MEETING_TOPICS[0].id);
@@ -41,6 +43,11 @@ export function PresentacionEjecutivaPage() {
   const [salaError, setSalaError] = useState<string | null>(null);
   const [metricPrivada, setMetricPrivada] = useState<DemoMetricSelection | null>(null);
   const [inviteEmail, setInviteEmail] = useState(""); const [inviteNombre,setInviteNombre]=useState(""); const [inviteEstado,setInviteEstado]=useState<string|null>(null);
+
+  useEffect(() => {
+    setAssistantEnabled(!reunionIniciada);
+    return () => setAssistantEnabled(true);
+  }, [reunionIniciada, setAssistantEnabled]);
 
   useEffect(() => {
     if (!expedienteId) return;
