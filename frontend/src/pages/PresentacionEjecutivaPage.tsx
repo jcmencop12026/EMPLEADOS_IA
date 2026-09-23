@@ -42,7 +42,7 @@ export function PresentacionEjecutivaPage() {
   const [sala, setSala] = useState<DemoSala | null>(null);
   const [salaError, setSalaError] = useState<string | null>(null);
   const [metricPrivada, setMetricPrivada] = useState<DemoMetricSelection | null>(null);
-  const [inviteEmail, setInviteEmail] = useState(""); const [inviteNombre,setInviteNombre]=useState(""); const [inviteEstado,setInviteEstado]=useState<string|null>(null); const [nivelRevelacion,setNivelRevelacion]=useState<"DEMO"|"PRELIMINAR"|"PROPUESTA">("DEMO"); const [eliaPublicar,setEliaPublicar]=useState(false);
+  const [inviteEmail, setInviteEmail] = useState(""); const [inviteNombre,setInviteNombre]=useState(""); const [inviteEstado,setInviteEstado]=useState<string|null>(null); const [nivelRevelacion,setNivelRevelacion]=useState<"DEMO"|"PRELIMINAR"|"PROPUESTA">("DEMO"); const [eliaPublicar,setEliaPublicar]=useState(false); const [borradorGerente,setBorradorGerente]=useState<string>("");
 
   useEffect(() => {
     setAssistantEnabled(!reunionIniciada);
@@ -118,7 +118,7 @@ export function PresentacionEjecutivaPage() {
     e.preventDefault();
     if (!expedienteId || !preguntaElia.trim()) return;
     setEliaLoading(true);
-    try { const r = await askDemoReunion(expedienteId, preguntaElia.trim(), temaEnVivo); setRespuestaElia(r.respuesta); setEliaError(null); setError(null); if(eliaPublicar&&sala){await mostrarAlGerente({titulo:`ELIA · ${temaSeleccionado.label}`,subtitulo:"Análisis solicitado por el presentador",respuesta:r.respuesta});} }
+    try { const r = await askDemoReunion(expedienteId, preguntaElia.trim(), temaEnVivo); setRespuestaElia(r.respuesta); setBorradorGerente(r.respuesta); setEliaError(null); setError(null); if(eliaPublicar&&sala){await mostrarAlGerente({titulo:`ELIA · ${temaSeleccionado.label}`,subtitulo:"Análisis solicitado por el presentador",respuesta:r.respuesta});} }
     catch (e) { setRespuestaElia(null); setEliaError(e instanceof ApiError ? e.detail : e instanceof Error ? e.message : "ELIA no pudo responder"); }
     finally { setEliaLoading(false); }
   }
@@ -190,7 +190,7 @@ export function PresentacionEjecutivaPage() {
                 <button className="btn primary" type="submit" disabled={eliaLoading || !preguntaElia.trim()}>{eliaLoading ? "Analizando…" : "Preguntar a ELIA"}</button>
               </form>
               {eliaError && <div className="error elia-inline-error" role="alert"><strong>ELIA no pudo completar la respuesta:</strong> {eliaError}</div>}
-              {respuestaElia && <div className="elia-answer"><strong>ELIA</strong><p>{respuestaElia}</p><div className="elia-share-row"><span className="muted small">Respuesta de demostración · no constituye resultado verificado ni compromiso económico.</span>{sala && <button type="button" className="btn small primary" onClick={()=>mostrarAlGerente({titulo:`ELIA · ${tema.label}`,subtitulo:"Respuesta a la pregunta realizada durante la demostración",respuesta:respuestaElia})}>Mostrar al gerente</button>}</div></div>}
+              {respuestaElia && <div className="elia-answer elia-editorial"><strong>ELIA · BORRADOR PRIVADO</strong><p>{respuestaElia}</p><label className="elia-edit-label">Editar antes de publicar<textarea value={borradorGerente} onChange={e=>setBorradorGerente(e.target.value)} rows={3}/></label><div className="elia-share-row"><span className="muted small">Privado hasta que usted decida publicarlo. Revise cifras, fuentes y alcance.</span>{sala && <button type="button" className="btn small primary" disabled={!borradorGerente.trim()} onClick={()=>mostrarAlGerente({titulo:`ELIA · ${tema.label}`,subtitulo:"Hallazgo preparado y autorizado por el presentador",respuesta:borradorGerente,nota:"Contenido presentado durante la reunión; su validación con datos reales depende del alcance acordado."})}>Preparar y publicar</button>}</div></div>}
             </section>
             <p className="meeting-demo-note muted small"><strong>DEMO:</strong> cifras simuladas; no corresponden a una entidad real.</p>
           </section>
