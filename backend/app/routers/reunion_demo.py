@@ -100,11 +100,16 @@ class SalaUpdate(BaseModel):
     visible: dict | None = None
     estado: str | None = None
 
+class GuestAction(BaseModel):
+    accion: str = Field(..., min_length=2, max_length=80)
+    tema: str = Field("", max_length=120)
+    detalle: str = Field("", max_length=500)
+
 PUBLIC_ROOM_FIELDS = {
     "codigo", "expediente_id", "tema", "proposito", "estado",
-    "visible", "revision", "created_at", "expires_at",
+    "visible", "revision", "created_at", "expires_at", "intereses",
 }
-PUBLIC_VISIBLE_FIELDS = {"titulo", "subtitulo", "contenido", "respuesta", "nota", "tipo", "compromisos"}
+PUBLIC_VISIBLE_FIELDS = {"titulo", "subtitulo", "contenido", "respuesta", "nota", "tipo", "compromisos", "nivel", "metodologia"}
 
 
 COMMITMENT_FIELDS = {"responsable", "descripcion", "evidencia", "estado", "fecha", "beneficio"}
@@ -145,7 +150,7 @@ def crear_sala(body: SalaCreate, user: User = Depends(get_current_user)):
     now = datetime.now(timezone.utc)
     room = {"codigo": code, "token": token, "expediente_id": body.expediente_id,
             "tema": body.tema, "proposito": body.proposito, "estado": "ABIERTA",
-            "visible": None, "revision": 1, "created_at": now, "expires_at": now + timedelta(hours=4),
+            "visible": None, "intereses": [], "revision": 1, "created_at": now, "expires_at": now + timedelta(hours=4),
             "organization_id": user.organization_id, "operator_id": user.id}
     with _LOCK:
         _ROOMS[code] = room
@@ -185,3 +190,30 @@ def invitar_sala(code: str, body: SalaInvite, db: Session = Depends(get_db), use
     result = comm_svc.send_direct_email(db, user.organization_id, destinatario=body.email.strip(), asunto=subject, contenido=text)
     if result.get("estado") != "ENVIADA": raise HTTPException(503, result.get("detalle") or "No se pudo enviar")
     return {"estado":"ENVIADA","email":body.email.strip(),"codigo":room["codigo"]}
+
+
+@router.post("/sala/{code}/interes")
+def registrar_interes_publico(code: str, body: GuestAction, token: str):
+    room = _get(code)
+    if not secrets.compare_digest(token, room["token"]):
+        raise HTTPException(403, "Enlace de sala inválido")
+    item = {
+        "accion": body.accion,
+        "tema": body.tema,
+        "detalle": body.detalle,
+        "fecha": datetime.now(timezone.utc).isoformat(),
+    }
+    with _LOCK:
+        room.setdefault("intereses", []).append(item)
+        room["intereses"] = room["intereses"][-20:]
+        room["revision"] += 1
+        _persist_rooms()
+    return {"estado": "REGISTRADO", "interes": item, "revision": room["revision"]}
+
+
+@router.get("/salas/{code}")
+def ver_sala_presentador(code: str, user: User = Depends(get_current_user)):
+    room = _get(code)
+    if room["organization_id"] != user.organization_id:
+        raise HTTPException(403, "Sala de otra organización")
+    return _public(room)
