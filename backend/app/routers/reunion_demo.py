@@ -205,18 +205,14 @@ def renovar_acceso_sala(code: str, body: SalaRenew, user: User = Depends(get_cur
     if body.refresh_tunnel:
         _RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
         _TUNNEL_REFRESH_FILE.write_text(datetime.now(timezone.utc).isoformat(), encoding="ascii")
-        deadline = time.monotonic() + 25
+        deadline = time.monotonic() + 70
         while time.monotonic() < deadline:
             time.sleep(1)
             try:
                 candidate = _manager_public_base()
             except HTTPException:
                 continue
-            try:
-                status = _TUNNEL_STATUS_FILE.read_text(encoding="ascii").strip().upper()
-            except OSError:
-                status = ""
-            if candidate != old_base and status == "ACTIVO":
+            if candidate != old_base and _tunnel_status(candidate) == "ACTIVO":
                 base = candidate
                 break
         if not base or base == old_base:
