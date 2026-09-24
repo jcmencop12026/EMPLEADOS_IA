@@ -100,6 +100,10 @@ class SalaUpdate(BaseModel):
     visible: dict | None = None
     estado: str | None = None
 
+class SalaRenew(BaseModel):
+    rotate_token: bool = True
+    hours: int = Field(4, ge=1, le=24)
+
 class GuestAction(BaseModel):
     accion: str = Field(..., min_length=2, max_length=80)
     tema: str = Field("", max_length=120)
@@ -158,6 +162,37 @@ def crear_sala(body: SalaCreate, user: User = Depends(get_current_user)):
     result = {**_public(room), "guest_token": token}
     result["guest_url"] = f"{public_url}/sala-demo/{code}?token={token}"
     return result
+
+@router.post("/salas/{code}/renovar")
+def renovar_acceso_sala(code: str, body: SalaRenew, user: User = Depends(get_current_user)):
+    """Renueva desde EIIAX el acceso remoto sin depender de soporte externo."""
+    room = _get(code)
+    if room["organization_id"] != user.organization_id:
+        raise HTTPException(403, "Sala de otra organización")
+    base = _manager_public_base()
+    with _LOCK:
+        if body.rotate_token:
+            room["token"] = secrets.token_urlsafe(24)
+        room["expires_at"] = datetime.now(timezone.utc) + timedelta(hours=body.hours)
+        room["estado"] = "ABIERTA"
+        room["revision"] += 1
+        _persist_rooms()
+    result = {**_public(room), "guest_token": room["token"]}
+    result["guest_url"] = f"{base}/sala-demo/{room['codigo']}?token={room['token']}"
+    result["remote_status"] = "ACTIVO"
+    return result
+
+@router.get("/salas/{code}/acceso")
+def estado_acceso_sala(code: str, user: User = Depends(get_current_user)):
+    room = _get(code)
+    if room["organization_id"] != user.organization_id:
+        raise HTTPException(403, "Sala de otra organización")
+    try:
+        base = _manager_public_base()
+        return {"estado":"ACTIVO","guest_url":f"{base}/sala-demo/{room['codigo']}?token={room['token']}","expires_at":room["expires_at"]}
+    except HTTPException as exc:
+        return {"estado":"NO_DISPONIBLE","guest_url":None,"expires_at":room["expires_at"],"detalle":exc.detail}
+
 
 @router.patch("/salas/{code}")
 def actualizar_sala(code: str, body: SalaUpdate, user: User = Depends(get_current_user)):
