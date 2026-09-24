@@ -216,7 +216,11 @@ def renovar_acceso_sala(code: str, body: SalaRenew, user: User = Depends(get_cur
                 base = candidate
                 break
         if not base or base == old_base:
-            raise HTTPException(503, "No fue posible renovar el canal remoto. EIIAX mantuvo la sala sin alterar.")
+            # Si el watchdog recupero el mismo canal y este responde, no destruimos una sala valida.
+            if old_base and _tunnel_status(old_base) == "ACTIVO":
+                base = old_base
+            else:
+                raise HTTPException(503, "No fue posible renovar el canal remoto. EIIAX mantuvo la sala sin alterar.")
     with _LOCK:
         if body.rotate_token:
             room["token"] = secrets.token_urlsafe(24)
