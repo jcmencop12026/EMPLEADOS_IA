@@ -5,6 +5,7 @@ import json
 import os
 import secrets
 import threading
+import time
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
@@ -18,7 +19,10 @@ from sqlalchemy.orm import Session
 from app.services import communications_service as comm_svc
 
 
-_PUBLIC_URL_FILE = DATA_DIR.parent / "runtime" / "eiaax_public_url.txt"
+_RUNTIME_DIR = DATA_DIR.parent / "runtime"
+_PUBLIC_URL_FILE = _RUNTIME_DIR / "eiaax_public_url.txt"
+_TUNNEL_REFRESH_FILE = _RUNTIME_DIR / "eiaax_tunnel_refresh.request"
+_TUNNEL_STATUS_FILE = _RUNTIME_DIR / "eiaax_tunnel_status.txt"
 
 
 def _manager_public_base() -> str:
@@ -102,6 +106,7 @@ class SalaUpdate(BaseModel):
 
 class SalaRenew(BaseModel):
     rotate_token: bool = True
+    refresh_tunnel: bool = True
     hours: int = Field(4, ge=1, le=24)
 
 class GuestAction(BaseModel):
@@ -169,7 +174,31 @@ def renovar_acceso_sala(code: str, body: SalaRenew, user: User = Depends(get_cur
     room = _get(code)
     if room["organization_id"] != user.organization_id:
         raise HTTPException(403, "Sala de otra organización")
-    base = _manager_public_base()
+    old_base = None
+    try:
+        old_base = _manager_public_base()
+    except HTTPException:
+        pass
+    base = old_base
+    if body.refresh_tunnel:
+        _RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+        _TUNNEL_REFRESH_FILE.write_text(datetime.now(timezone.utc).isoformat(), encoding="ascii")
+        deadline = time.monotonic() + 25
+        while time.monotonic() < deadline:
+            time.sleep(1)
+            try:
+                candidate = _manager_public_base()
+            except HTTPException:
+                continue
+            try:
+                status = _TUNNEL_STATUS_FILE.read_text(encoding="ascii").strip().upper()
+            except OSError:
+                status = ""
+            if candidate != old_base and status == "ACTIVO":
+                base = candidate
+                break
+        if not base or base == old_base:
+            raise HTTPException(503, "No fue posible renovar el canal remoto. EIIAX mantuvo la sala sin alterar.")
     with _LOCK:
         if body.rotate_token:
             room["token"] = secrets.token_urlsafe(24)
