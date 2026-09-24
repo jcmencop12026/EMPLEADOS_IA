@@ -6,6 +6,8 @@ import os
 import secrets
 import threading
 import time
+import urllib.request
+import urllib.error
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
@@ -42,6 +44,26 @@ def _manager_public_base() -> str:
         503,
         "Acceso remoto no disponible. Inicie EIIAX con ARRANCAR.bat y espere a que muestre EIIAX REMOTO LISTO.",
     )
+
+
+def _tunnel_status(base: str | None = None) -> str:
+    try:
+        raw = _TUNNEL_STATUS_FILE.read_text(encoding="ascii").strip().upper()
+    except OSError:
+        raw = ""
+    if raw == "RENOVANDO":
+        return "RENOVANDO"
+    if not base:
+        try:
+            base = _manager_public_base()
+        except HTTPException:
+            return "CAIDO"
+    try:
+        req = urllib.request.Request(base + "/", method="HEAD", headers={"User-Agent": "EIIAX-health/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as response:
+            return "ACTIVO" if 200 <= response.status < 500 else "CAIDO"
+    except (OSError, urllib.error.URLError, ValueError):
+        return "CAIDO"
 
 
 router = APIRouter(prefix="/api/reunion-demo", tags=["reunion-demo"])
@@ -218,9 +240,10 @@ def estado_acceso_sala(code: str, user: User = Depends(get_current_user)):
         raise HTTPException(403, "Sala de otra organización")
     try:
         base = _manager_public_base()
-        return {"estado":"ACTIVO","guest_url":f"{base}/sala-demo/{room['codigo']}?token={room['token']}","expires_at":room["expires_at"]}
     except HTTPException as exc:
-        return {"estado":"NO_DISPONIBLE","guest_url":None,"expires_at":room["expires_at"],"detalle":exc.detail}
+        return {"estado":"CAIDO","guest_url":None,"expires_at":room["expires_at"],"detalle":exc.detail}
+    status = _tunnel_status(base)
+    return {"estado":status,"guest_url":f"{base}/sala-demo/{room[\'codigo\']}?token={room[\'token\']}" if status == "ACTIVO" else None,"expires_at":room["expires_at"]}
 
 
 @router.patch("/salas/{code}")
