@@ -104,7 +104,8 @@ export function PresentacionEjecutivaPage() {
     try { const r=await createDemoSala(expedienteId, temaEnVivo, tipoReunion); setSala(r); setSalaError(null); }
     catch(e){setSalaError(e instanceof Error?e.message:"No se pudo abrir la sala");}
   }
-  async function renovarAccesoGerente(){ if(!sala)return; setSalaError(null); try{const r=await renewDemoSala(sala.codigo,4);setSala({...sala,...r});setInviteEstado("Acceso renovado. El enlace anterior quedó invalidado; copie o reenvíe el nuevo.");}catch(e){setSalaError(e instanceof ApiError?e.detail:e instanceof Error?e.message:"No se pudo renovar el acceso");}}\n  async function enviarInvitacionSala() {
+  async function renovarAccesoGerente(){ if(!sala)return; setSalaError(null); try{const r=await renewDemoSala(sala.codigo,4);setSala({...sala,...r});setInviteEstado("Acceso renovado. El enlace anterior quedó invalidado; copie o reenvíe el nuevo.");}catch(e){setSalaError(e instanceof ApiError?e.detail:e instanceof Error?e.message:"No se pudo renovar el acceso");}}
+  async function enviarInvitacionSala() {
     if(!sala || !inviteEmail.trim()) return; setInviteEstado("Enviando invitación…");
     try{await inviteDemoSala(sala.codigo,inviteEmail.trim(),inviteNombre.trim()||"Gerencia");setInviteEstado(`Invitación enviada a ${inviteEmail.trim()}`);}
     catch(e){setInviteEstado(e instanceof ApiError ? e.detail : e instanceof Error ? e.message : "No se pudo enviar la invitación");}
