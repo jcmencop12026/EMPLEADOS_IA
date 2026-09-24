@@ -226,3 +226,34 @@ def test_quick_tunnel_runtime_url_wins_over_stale_environment(monkeypatch, tmp_p
         assert reunion_demo._manager_public_base() == "https://nuevo-vigente.trycloudflare.com"
     finally:
         reunion_demo._PUBLIC_URL_FILE = original_file
+
+
+def test_renew_healthy_tunnel_is_non_destructive(monkeypatch, tmp_path):
+    original_store = reunion_demo._ROOM_STORE
+    original_rooms = dict(reunion_demo._ROOMS)
+    original_refresh = reunion_demo._TUNNEL_REFRESH_FILE
+    try:
+        reunion_demo._ROOM_STORE = tmp_path / "rooms.json"
+        reunion_demo._TUNNEL_REFRESH_FILE = tmp_path / "refresh.request"
+        reunion_demo._ROOMS.clear()
+        reunion_demo._ROOMS["REN001"] = {
+            "codigo":"REN001","token":"tok-estable","expediente_id":"E1","tema":"facturacion",
+            "proposito":"DEMO_INTEGRAL","estado":"ABIERTA","visible":None,"intereses":[],
+            "revision":1,"created_at":datetime.now(timezone.utc),
+            "expires_at":datetime.now(timezone.utc)+timedelta(hours=1),
+            "organization_id":"org1","operator_id":"u1",
+        }
+        monkeypatch.setattr(reunion_demo, "_manager_public_base", lambda: "https://estable.trycloudflare.com")
+        monkeypatch.setattr(reunion_demo, "_tunnel_status", lambda base=None: "ACTIVO")
+        user = SimpleNamespace(id="u1", organization_id="org1")
+        out = reunion_demo.renovar_acceso_sala("REN001", reunion_demo.SalaRenew(), user)
+        assert out["remote_status"] == "ACTIVO"
+        assert out["guest_token"] == "tok-estable"
+        assert out["guest_url"].startswith("https://estable.trycloudflare.com/")
+        assert not reunion_demo._TUNNEL_REFRESH_FILE.exists()
+        assert reunion_demo._ROOMS["REN001"]["revision"] == 2
+    finally:
+        reunion_demo._ROOMS.clear()
+        reunion_demo._ROOMS.update(original_rooms)
+        reunion_demo._ROOM_STORE = original_store
+        reunion_demo._TUNNEL_REFRESH_FILE = original_refresh
