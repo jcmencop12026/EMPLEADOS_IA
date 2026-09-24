@@ -216,14 +216,14 @@ def renovar_acceso_sala(code: str, body: SalaRenew, user: User = Depends(get_cur
             except OSError as exc:
                 raise HTTPException(503, f"No fue posible solicitar recuperación del acceso remoto: {exc}") from exc
 
-            deadline = time.monotonic() + 75
+            deadline = time.monotonic() + 35
             while time.monotonic() < deadline:
                 time.sleep(1)
                 try:
                     candidate = _manager_public_base()
                 except HTTPException:
                     continue
-                if candidate and _tunnel_status(candidate) == "ACTIVO":
+                if candidate and candidate != old_base and _tunnel_status(candidate) == "ACTIVO":
                     base = candidate
                     break
 
