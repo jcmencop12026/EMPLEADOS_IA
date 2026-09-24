@@ -8,6 +8,12 @@ $log=Join-Path $runtime "cloudflared-quick.log"
 $urlFile=Join-Path $runtime "eiaax_public_url.txt"
 $refreshFile=Join-Path $runtime "eiaax_tunnel_refresh.request"
 $statusFile=Join-Path $runtime "eiaax_tunnel_status.txt"
+$healthUrl="http://127.0.0.1:5180/"
+function Test-TunnelAlive([string]$u){
+  if([string]::IsNullOrWhiteSpace($u)){return $false}
+  try { $r=Invoke-WebRequest -Uri $u -Method Head -TimeoutSec 6 -UseBasicParsing -ErrorAction Stop; return ($r.StatusCode -ge 200 -and $r.StatusCode -lt 500) }
+  catch { return $false }
+}
 while($true){
   Remove-Item $refreshFile -Force -ErrorAction SilentlyContinue
   Set-Content -Path $statusFile -Value "RENOVANDO" -Encoding ascii
@@ -28,7 +34,8 @@ while($true){
   if(-not $p.HasExited){
     while(-not $p.HasExited){
       if(Test-Path $refreshFile){ Remove-Item $refreshFile -Force -ErrorAction SilentlyContinue; Set-Content -Path $statusFile -Value "RENOVANDO" -Encoding ascii; Write-Host "[EIIAX] Renovacion solicitada desde la plataforma..." -ForegroundColor Yellow; Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; break }
-      Start-Sleep 1
+      if($published -and -not (Test-TunnelAlive $published)){ Set-Content -Path $statusFile -Value "CAIDO" -Encoding ascii; Write-Host "[EIIAX] El canal publico dejo de responder. Recuperando..." -ForegroundColor Yellow; Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; break }
+      Start-Sleep 10
     }
     if(-not $p.HasExited){$p.WaitForExit()}
   }
