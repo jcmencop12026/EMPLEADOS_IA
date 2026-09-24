@@ -192,42 +192,54 @@ def crear_sala(body: SalaCreate, user: User = Depends(get_current_user)):
 
 @router.post("/salas/{code}/renovar")
 def renovar_acceso_sala(code: str, body: SalaRenew, user: User = Depends(get_current_user)):
-    """Renueva desde EIIAX el acceso remoto sin depender de soporte externo."""
+    """Renueva la sala y solo reemplaza el Quick Tunnel cuando hace falta."""
     room = _get(code)
     if room["organization_id"] != user.organization_id:
         raise HTTPException(403, "Sala de otra organización")
+
     old_base = None
     try:
         old_base = _manager_public_base()
     except HTTPException:
         pass
-    base = old_base
-    if body.refresh_tunnel:
-        _RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-        _TUNNEL_REFRESH_FILE.write_text(datetime.now(timezone.utc).isoformat(), encoding="ascii")
-        deadline = time.monotonic() + 70
-        while time.monotonic() < deadline:
-            time.sleep(1)
+
+    # Ruta normal: si el canal vigente responde, renovar la sala es inmediato.
+    # No destruimos un Quick Tunnel saludable solo por pulsar "Renovar acceso".
+    if old_base and _tunnel_status(old_base) == "ACTIVO":
+        base = old_base
+    else:
+        base = None
+        if body.refresh_tunnel:
+            _RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
             try:
-                candidate = _manager_public_base()
-            except HTTPException:
-                continue
-            if candidate != old_base and _tunnel_status(candidate) == "ACTIVO":
-                base = candidate
-                break
-        if not base or base == old_base:
-            # Si el watchdog recupero el mismo canal y este responde, no destruimos una sala valida.
-            if old_base and _tunnel_status(old_base) == "ACTIVO":
-                base = old_base
-            else:
-                raise HTTPException(503, "No fue posible renovar el canal remoto. EIIAX mantuvo la sala sin alterar.")
+                _TUNNEL_REFRESH_FILE.write_text(datetime.now(timezone.utc).isoformat(), encoding="ascii")
+            except OSError as exc:
+                raise HTTPException(503, f"No fue posible solicitar recuperación del acceso remoto: {exc}") from exc
+
+            deadline = time.monotonic() + 75
+            while time.monotonic() < deadline:
+                time.sleep(1)
+                try:
+                    candidate = _manager_public_base()
+                except HTTPException:
+                    continue
+                if candidate and _tunnel_status(candidate) == "ACTIVO":
+                    base = candidate
+                    break
+
+        if not base:
+            raise HTTPException(503, "El acceso remoto no respondió. La sala existente se conservó sin cambios.")
+
     with _LOCK:
-        if body.rotate_token:
+        # Mantener el token conserva enlaces ya enviados. Solo rotarlo cuando se pidió
+        # expresamente y el túnel tuvo que ser recuperado.
+        if body.rotate_token and (not old_base or base != old_base):
             room["token"] = secrets.token_urlsafe(24)
         room["expires_at"] = datetime.now(timezone.utc) + timedelta(hours=body.hours)
         room["estado"] = "ABIERTA"
         room["revision"] += 1
         _persist_rooms()
+
     result = {**_public(room), "guest_token": room["token"]}
     result["guest_url"] = f"{base}/sala-demo/{room['codigo']}?token={room['token']}"
     result["remote_status"] = "ACTIVO"
