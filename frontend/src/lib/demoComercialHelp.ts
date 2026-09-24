@@ -21,6 +21,7 @@ export const AUDIENCIAS = [
   { id: "OPERACION", label: "Operación" },
   { id: "SISTEMAS", label: "Sistemas" },
   { id: "FINANCIERO", label: "Financiero" },
+  { id: "RRHH", label: "RR. HH." },
 ] as const;
 
 export type AudienciaId = (typeof AUDIENCIAS)[number]["id"];
