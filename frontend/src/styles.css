@@ -3179,3 +3179,23 @@ body:has(.espacio-externo-portal) .eiaax-help-layer,body:has(.espacio-externo-po
 .guest-footer-v7{position:fixed!important;left:24px!important;right:24px!important;bottom:5px!important;z-index:15!important;margin:0!important}
 .guest-evidence-v8,.guest-why-v9,.guest-progress-v9,.guest-action-v8{height:100%!important;min-height:0!important;overflow:auto!important;padding:14px!important}
 @media(max-height:800px){.guest-room.guest-room-v8{padding-top:8px!important;gap:3px!important}.guest-executive-header{min-height:70px!important}.guest-welcome-ribbon{padding:4px 9px!important}.guest-decision-strip{min-height:36px!important;padding:4px 9px!important}.guest-v10-discovery{padding:7px 10px!important}.guest-v10-grid{gap:6px!important}.guest-v10-grid button{padding:7px 9px!important}.guest-question-box{padding:6px 8px!important}}
+
+/* EIIAX V14.3 — sala ejecutiva equilibrada: prioridad compacta + radar completo */
+.guest-workspace-v8{overflow:hidden!important}
+.guest-v10-command{display:grid!important;grid-template-columns:minmax(300px,.68fr) minmax(620px,1.75fr)!important;grid-template-rows:1fr auto!important;gap:8px!important;height:100%!important}
+.guest-v10-hero{display:flex!important;min-height:0!important;height:auto!important;padding:15px 17px!important;border-radius:16px!important;justify-content:center!important}
+.guest-v10-hero>span{font-size:.57rem!important;letter-spacing:.08em!important}
+.guest-v10-hero h2{font-size:clamp(1.05rem,1.5vw,1.42rem)!important;line-height:1.08!important;margin:7px 0!important;max-width:24ch!important}
+.guest-v10-hero>p{font-size:.68rem!important;line-height:1.32!important;margin:0 0 7px!important;max-width:48ch!important}
+.guest-story-impact{margin:3px 0 7px!important}.guest-story-impact b{font-size:1.28rem!important}.guest-story-impact small{font-size:.57rem!important}
+.guest-story-actions{margin-top:4px!important;gap:5px!important}.guest-story-actions button{padding:6px 8px!important;font-size:.58rem!important}
+.guest-v10-discovery{height:auto!important;min-height:0!important;padding:9px 10px!important;border-radius:16px!important}
+.guest-v10-discovery>header{margin-bottom:5px!important}.guest-v10-discovery>header span{font-size:.58rem!important}.guest-v10-discovery>header strong{font-size:.57rem!important}
+.guest-v10-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+.guest-v10-grid button{min-height:0!important;padding:8px 9px!important;border-radius:12px!important;align-content:center!important}
+.guest-v10-grid button b{font-size:.57rem!important}.guest-v10-grid button span{font-size:.62rem!important;line-height:1.18!important}.guest-v10-grid button small,.guest-v10-grid button em{font-size:.52rem!important}
+.guest-question-box{position:static!important;grid-column:1/-1!important;left:auto!important;right:auto!important;bottom:auto!important;margin:0!important;padding:7px 9px!important;min-height:44px!important}
+.guest-question-box b{font-size:.64rem!important}.guest-question-box span{font-size:.54rem!important}.guest-question-box input,.guest-question-box button{padding:6px 8px!important;font-size:.6rem!important}
+.guest-footer-v7{font-size:.52rem!important}
+@media(max-height:800px){.guest-v10-command{grid-template-columns:minmax(280px,.62fr) minmax(600px,1.8fr)!important}.guest-v10-hero{padding:10px 13px!important}.guest-v10-hero h2{font-size:1.08rem!important}.guest-v10-grid button{padding:6px 8px!important}.guest-question-box{min-height:38px!important;padding:5px 8px!important}}
+@media(max-width:1050px){.guest-v10-command{grid-template-columns:1fr!important;overflow:auto!important}.guest-v10-hero{min-height:190px!important}.guest-v10-grid{grid-template-columns:repeat(2,1fr)!important}.guest-question-box{grid-column:1!important}}
