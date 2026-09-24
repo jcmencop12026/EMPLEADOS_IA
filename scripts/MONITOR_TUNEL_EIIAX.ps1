@@ -25,6 +25,8 @@ try {
 while($true){
   Remove-Item $refreshFile -Force -ErrorAction SilentlyContinue
   Set-Content -Path $statusFile -Value "RENOVANDO" -Encoding ascii
+  # No anunciar una URL anterior mientras nace un túnel nuevo.
+  Remove-Item $urlFile -Force -ErrorAction SilentlyContinue
   Remove-Item $log -Force -ErrorAction SilentlyContinue
   Write-Host "[EIIAX] Iniciando canal HTTPS remoto..." -ForegroundColor Cyan
   $args=@("tunnel","--no-autoupdate","--url","http://127.0.0.1:5180","--logfile",$log,"--loglevel","info")
@@ -35,7 +37,16 @@ while($true){
     Start-Sleep 1
     if(Test-Path $log){
       $m=Select-String -Path $log -Pattern 'https://[a-zA-Z0-9-]+\.trycloudflare\.com' -AllMatches | Select-Object -Last 1
-      if($m){$published=$m.Matches.Value | Select-Object -Last 1; Set-Content -Path $urlFile -Value $published -Encoding ascii; Set-Content -Path $statusFile -Value "ACTIVO" -Encoding ascii; Write-Host "[EIIAX] REMOTO LISTO: $published" -ForegroundColor Green; break}
+      if($m){
+        $candidate=$m.Matches.Value | Select-Object -Last 1
+        if(Test-TunnelAlive $candidate){
+          $published=$candidate
+          Set-Content -Path $urlFile -Value $published -Encoding ascii
+          Set-Content -Path $statusFile -Value "ACTIVO" -Encoding ascii
+          Write-Host "[EIIAX] REMOTO LISTO: $published" -ForegroundColor Green
+          break
+        }
+      }
     }
   }
   if(-not $published){Write-Host "[EIIAX] El canal no obtuvo URL; se reintentara automaticamente." -ForegroundColor Yellow}
