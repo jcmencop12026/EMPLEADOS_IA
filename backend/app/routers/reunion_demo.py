@@ -28,17 +28,17 @@ _TUNNEL_STATUS_FILE = _RUNTIME_DIR / "eiaax_tunnel_status.txt"
 
 
 def _manager_public_base() -> str:
-    """Devuelve exclusivamente una base publica utilizable por un invitado remoto."""
-    configured = os.getenv("EIIAX_PUBLIC_URL", "").strip().rstrip("/")
-    if configured.startswith("https://") and "127.0.0.1" not in configured and "localhost" not in configured.lower():
-        return configured
-
+    """Devuelve la base publica vigente. En Quick Tunnel, runtime manda sobre variables heredadas."""
     try:
         persisted = _PUBLIC_URL_FILE.read_text(encoding="utf-8").strip().rstrip("/")
     except OSError:
         persisted = ""
     if persisted.startswith("https://") and "trycloudflare.com" in persisted.lower():
         return persisted
+
+    configured = os.getenv("EIIAX_PUBLIC_URL", "").strip().rstrip("/")
+    if configured.startswith("https://") and "127.0.0.1" not in configured and "localhost" not in configured.lower():
+        return configured
 
     raise HTTPException(
         503,
