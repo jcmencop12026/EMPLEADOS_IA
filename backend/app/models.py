@@ -1,7 +1,8 @@
 import uuid
+import re
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -20,6 +21,7 @@ class Organization(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    slug: Mapped[str] = mapped_column(String(80), unique=True, nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(30), default="ACTIVE")
     timezone: Mapped[str] = mapped_column(String(64), default="America/Bogota")
     config_json: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -28,6 +30,15 @@ class Organization(Base):
 
     users: Mapped[list["User"]] = relationship(back_populates="organization")
     roles: Mapped[list["Role"]] = relationship(back_populates="organization")
+
+
+@event.listens_for(Organization, "before_insert")
+def _ensure_organization_slug(_mapper, _connection, target: Organization) -> None:
+    if target.slug:
+        return
+    base = re.sub(r"[^a-z0-9]+", "-", (target.name or "empresa").lower()).strip("-")[:50] or "empresa"
+    suffix = (target.id or _uuid())[:8]
+    target.slug = f"{base}-{suffix}"
 
 
 class User(Base):

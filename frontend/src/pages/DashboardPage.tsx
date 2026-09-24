@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError, fetchDashboardSummary, type DashboardSummary } from "../api";
 import { EmptyState, ErrorState, LoadingState } from "../components/AsyncState";
+import { EVENT_TYPE, formatAuditAction, label } from "../lib/labels";
 
 export function DashboardPage() {
   const [data, setData] = useState<DashboardSummary | null>(null);
@@ -68,7 +69,7 @@ export function DashboardPage() {
                 {data.recent_events.map((ev) => (
                   <tr key={ev.id}>
                     <td className="mono">{new Date(ev.created_at).toLocaleString()}</td>
-                    <td>{ev.event_type}</td>
+                    <td>{label(EVENT_TYPE, ev.event_type)}</td>
                     <td>
                       {ev.work_plan_id ? (
                         <Link to={`/ejecuciones/${ev.work_plan_id}`}>{ev.work_plan_id.slice(0, 8)}…</Link>
@@ -100,7 +101,7 @@ export function DashboardPage() {
                 {data.recent_audit.map((row) => (
                   <tr key={row.id}>
                     <td className="mono">{new Date(row.created_at).toLocaleString()}</td>
-                    <td>{row.action}</td>
+                    <td>{formatAuditAction(row.action)}</td>
                     <td className="cell-truncate" title={row.detail || ""}>{row.detail || "—"}</td>
                   </tr>
                 ))}
@@ -110,13 +111,6 @@ export function DashboardPage() {
           <Link className="btn link" to="/auditoria">Ver auditoría completa</Link>
         </section>
       </div>
-
-      <section className="panel dashboard-slots muted">
-        <p>
-          Espacios reservados para integración futura: <strong>Automatizaciones</strong> y{" "}
-          <strong>Notificaciones</strong> (PR #6 / #7).
-        </p>
-      </section>
     </div>
   );
 }

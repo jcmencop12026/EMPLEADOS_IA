@@ -1,0 +1,12 @@
+INFO:     127.0.0.1:49887 - "GET /api/public/login-identity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54605 - "GET /api/public/login-identity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54606 - "GET /api/public/login-identity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52562 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57553 - "GET /api/public/login-identity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57554 - "GET /api/public/login-identity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62838 - "GET /api/public/login-identity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62839 - "GET /api/public/login-identity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64162 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50980 - "POST /api/auth/login HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:51352 - "POST /api/auth/login HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:62111 - "POST /api/auth/login HTTP/1.1" 401 Unauthorized

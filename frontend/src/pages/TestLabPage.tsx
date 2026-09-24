@@ -16,7 +16,7 @@ const SAMPLE_DOC = {
     tipo_documento: "CC",
     numero_documento: "1234567890",
     fecha: "2026-01-01",
-    contenido: "Documento de prueba Test Lab con contenido suficiente para análisis",
+    contenido: "Documento de prueba del laboratorio con contenido suficiente para análisis",
   }],
 };
 
@@ -53,7 +53,7 @@ export function TestLabPage() {
         setKnowledge(k.filter((x) => x.status === "ACTIVA"));
         setRuns(r);
       })
-      .catch((e) => setError(e instanceof Error ? e.message : "Error al cargar Test Lab"))
+      .catch((e) => setError(e instanceof Error ? e.message : "Error al cargar el laboratorio de pruebas"))
       .finally(() => setPageLoading(false));
   }, []);
 
@@ -80,12 +80,12 @@ export function TestLabPage() {
     }
   }
 
-  if (pageLoading) return <p className="muted">Cargando Test Lab…</p>;
+  if (pageLoading) return <p className="muted">Cargando laboratorio de pruebas…</p>;
 
   return (
     <div className="ops-page">
       <header className="page-header">
-        <h1>Test Lab</h1>
+        <h1>Laboratorio de pruebas</h1>
         <p className="muted">Pruebe un Empleado IA antes de certificar o activar — motor real de orquestación</p>
       </header>
 
@@ -144,8 +144,8 @@ export function TestLabPage() {
           <p><strong>Herramienta:</strong> {result.tool_code || "—"}</p>
           <p><strong>Duración:</strong> {result.duration_ms != null ? `${result.duration_ms} ms` : "—"}</p>
           <p><strong>Coste:</strong> {result.cost_label || "No disponible"}</p>
-          <p><strong>WorkPlan:</strong> {result.work_plan_id ? <Link to={`/ejecuciones/${result.work_plan_id}`}>{result.work_plan_id}</Link> : "—"}</p>
-          {result.approval_id && <p><strong>Aprobación:</strong> {result.approval_id} (ESPERANDO_APROBACION)</p>}
+          <p><strong>Plan de trabajo:</strong> {result.work_plan_id ? <Link to={`/ejecuciones/${result.work_plan_id}`}>{result.work_plan_id}</Link> : "—"}</p>
+          {result.approval_id && <p><strong>Aprobación:</strong> {result.approval_id} (esperando aprobación)</p>}
           {result.error_message && <p className="error">{result.error_message}</p>}
           {result.result && (
             <details>
@@ -163,7 +163,7 @@ export function TestLabPage() {
         ) : (
           <table className="data-table">
             <thead>
-              <tr><th>Fecha</th><th>Empleado</th><th>Estado</th><th>Duración</th><th>WorkPlan</th></tr>
+              <tr><th>Fecha</th><th>Empleado</th><th>Estado</th><th>Duración</th><th>Plan de trabajo</th></tr>
             </thead>
             <tbody>
               {runs.map((r) => (

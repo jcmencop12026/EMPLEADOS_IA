@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 type LoadingProps = { message?: string };
 
 export function LoadingState({ message = "Cargando…" }: LoadingProps) {
@@ -9,16 +11,18 @@ export function LoadingState({ message = "Cargando…" }: LoadingProps) {
   );
 }
 
-type EmptyProps = { title?: string; message?: string };
+type EmptyProps = { title?: string; message?: string; action?: ReactNode };
 
 export function EmptyState({
   title = "Sin datos",
   message = "No hay información para mostrar en este momento.",
+  action,
 }: EmptyProps) {
   return (
     <div className="async-state empty-state">
       <strong>{title}</strong>
       <p className="muted">{message}</p>
+      {action}
     </div>
   );
 }

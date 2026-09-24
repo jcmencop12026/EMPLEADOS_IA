@@ -1,13 +1,16 @@
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
+import { ThemeProvider } from "./hooks/useTheme";
 import "./styles.css";
+import "./styles/eiaax-transversal-v1.css";
+import "./styles/eiaax-experience-v1.css";
+import "./styles/eiaax-direccion-visual-v1.css";
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <BrowserRouter>
+  <BrowserRouter>
+    <ThemeProvider>
       <App />
-    </BrowserRouter>
-  </StrictMode>,
+    </ThemeProvider>
+  </BrowserRouter>,
 );

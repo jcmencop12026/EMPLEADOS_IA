@@ -9,7 +9,10 @@ from datetime import datetime, timezone
 from app.database import SessionLocal
 from app.automation_models import Automation
 from app.enums import AutomationStatus, AutomationTriggerType
+from app.models import Organization
 from app.services import automation_service
+from app.services import communications_service
+from app.tenant_scope import ORG_STATUS_ACTIVE
 
 logger = logging.getLogger(__name__)
 
@@ -24,11 +27,13 @@ def _tick() -> None:
         now = datetime.now(timezone.utc)
         due = (
             db.query(Automation)
+            .join(Organization, Automation.organization_id == Organization.id)
             .filter(
                 Automation.status == AutomationStatus.ACTIVE,
                 Automation.trigger_type == AutomationTriggerType.SCHEDULE,
                 Automation.next_run_at.isnot(None),
                 Automation.next_run_at <= now,
+                Organization.status == ORG_STATUS_ACTIVE,
             )
             .all()
         )
@@ -54,6 +59,7 @@ def _tick() -> None:
                 logger.exception("Scheduler error automation=%s", automation.id)
                 automation.status = AutomationStatus.ERROR
                 db.commit()
+        communications_service.process_scheduled_and_retries(db)
     finally:
         db.close()
 
@@ -86,3 +92,7 @@ def stop_scheduler() -> None:
     _stop.set()
     if _thread:
         _thread.join(timeout=2)
+
+
+def is_scheduler_running() -> bool:
+    return _thread is not None and _thread.is_alive()

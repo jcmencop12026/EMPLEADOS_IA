@@ -40,7 +40,7 @@ export function AutomationRunsPage() {
               <th>Fin</th>
               <th>Estado</th>
               <th>Intento</th>
-              <th>WorkPlan</th>
+              <th>Plan de trabajo</th>
               <th>Costo</th>
               <th>Error</th>
             </tr>

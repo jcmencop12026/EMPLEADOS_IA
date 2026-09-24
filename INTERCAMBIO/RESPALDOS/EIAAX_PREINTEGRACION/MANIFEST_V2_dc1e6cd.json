@@ -1,0 +1,16 @@
+{
+  "artifact": "EIAAX_V2_dc1e6cd_20260831T015348Z.tar.gz",
+  "git_sha": "dc1e6cda8d3de6695d9a052a2a13afdb5f431077",
+  "tag": "fase2-candidato-final-certificado",
+  "label": "V2 / Fase 2 candidato certificado",
+  "created_utc": "2026-08-31T01:53:48Z",
+  "sha256": "075b68ae0003268baffe0a420a980b5e7de94536e8520c04918fd54a36abcb97",
+  "size_bytes": 2617180,
+  "format": "git archive tar.gz",
+  "prefix": "EIAAX_V2_dc1e6cd/",
+  "alembic_baseline_head": "1341a1b2c3d4e",
+  "migration_files": 53,
+  "secrets_included": false,
+  "regenerate_command": "git archive --format=tar.gz --prefix=EIAAX_V2_dc1e6cd/ dc1e6cda8d3de6695d9a052a2a13afdb5f431077 -o EIAAX_V2_dc1e6cd.tar.gz",
+  "verify_command": "sha256sum EIAAX_V2_dc1e6cd_20260831T015348Z.tar.gz"
+}

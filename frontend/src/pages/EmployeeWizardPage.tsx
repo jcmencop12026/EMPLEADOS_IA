@@ -10,7 +10,7 @@ import {
   updateEmployee,
 } from "../api";
 
-const STEPS = ["Identidad", "Capabilities", "Herramientas", "Modelo", "Revisión"];
+const STEPS = ["Identidad", "Capacidades", "Herramientas", "Modelo", "Revisión"];
 
 type WizardForm = {
   name: string;
@@ -163,7 +163,7 @@ export function EmployeeWizardPage() {
         <Link to={employeeId ? `/empleados/${employeeId}` : "/directorio"} className="muted">
           ← {employeeId ? "Detalle" : "Directorio"}
         </Link>
-        <h1>Agent Factory — {isEdit ? "Editar" : "Crear"} Empleado IA</h1>
+        <h1>Fábrica de Empleados IA — {isEdit ? "Editar" : "Crear"} Empleado IA</h1>
       </header>
 
       <div className="wizard-steps">
@@ -227,7 +227,7 @@ export function EmployeeWizardPage() {
           <div className="review-box">
             <p><strong>{form.name}</strong> — {form.specialty}</p>
             <p className="muted">{form.role} · {form.objective}</p>
-            <p>Capabilities: {form.capability_ids.length} · Herramientas: {form.tool_ids.length}</p>
+            <p>Capacidades: {form.capability_ids.length} · Herramientas: {form.tool_ids.length}</p>
             <p className="mono muted">{form.model_provider} / {form.model_name || "—"}</p>
           </div>
         )}

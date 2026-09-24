@@ -18,7 +18,9 @@ from app.schemas_admin import (
     RoleUpdate,
     SecuritySummaryOut,
     UserCreate,
+    UserIdentityDetailOut,
     UserOut,
+    UserOverviewOut,
     UserStatusUpdate,
     UserUpdate,
 )
@@ -27,13 +29,16 @@ from app.services import admin_service as svc
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
-@router.get("/users", response_model=list[UserOut])
+@router.get("/users", response_model=list[UserOut] | list[UserOverviewOut])
 def list_users(
     q: str | None = Query(default=None),
     status: str | None = Query(default=None),
+    vista: str | None = Query(default=None),
     db: Session = Depends(get_db),
     user: User = Depends(require_permission("admin.user.view")),
 ):
+    if vista == "operativa":
+        return svc.list_users_overview(db, user.organization_id, q=q, status_filter=status)
     return svc.list_users(db, user.organization_id, q=q, status_filter=status)
 
 
@@ -63,6 +68,15 @@ def get_user(
     user: User = Depends(require_permission("admin.user.view")),
 ):
     return svc.get_user_in_org(db, user_id, user.organization_id)
+
+
+@router.get("/users/{user_id}/identidad", response_model=UserIdentityDetailOut)
+def get_user_identity(
+    user_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permission("admin.user.view")),
+):
+    return svc.get_user_identity_detail(db, user.organization_id, user_id)
 
 
 @router.put("/users/{user_id}", response_model=UserOut)

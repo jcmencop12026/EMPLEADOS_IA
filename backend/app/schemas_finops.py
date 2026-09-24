@@ -9,6 +9,7 @@ class ConsumptionIn(BaseModel):
     employee_id: str | None = None
     work_plan_id: str | None = None
     task_id: str | None = None
+    opportunity_id: str | None = None
     execution_ref: str | None = None
     provider: str | None = None
     model_name: str | None = None
@@ -29,6 +30,7 @@ class ConsumptionOut(BaseModel):
     employee_id: str | None
     work_plan_id: str | None
     task_id: str | None
+    opportunity_id: str | None
     execution_ref: str | None
     provider: str | None
     model_name: str | None
@@ -93,6 +95,7 @@ class RateOut(BaseModel):
 class ValueIn(BaseModel):
     employee_id: str | None = None
     work_plan_id: str | None = None
+    opportunity_id: str | None = None
     task_id: str | None = None
     value_type: str
     certainty: str = "Estimado"
@@ -108,6 +111,7 @@ class ValueOut(BaseModel):
     organization_id: str
     employee_id: str | None
     work_plan_id: str | None
+    opportunity_id: str | None
     task_id: str | None
     value_type: str
     certainty: str
@@ -127,6 +131,7 @@ class BudgetIn(BaseModel):
     amount_limit: Decimal
     currency: str = "USD"
     policy: str = "Solo informar"
+    alert_threshold_pct: int = Field(default=90, ge=50, le=100)
     name: str | None = None
     active: bool = True
 
@@ -137,6 +142,7 @@ class BudgetPatch(BaseModel):
     amount_limit: Decimal | None = None
     currency: str | None = None
     policy: str | None = None
+    alert_threshold_pct: int | None = Field(default=None, ge=50, le=100)
     name: str | None = None
     active: bool | None = None
 
@@ -151,11 +157,28 @@ class BudgetOut(BaseModel):
     amount_limit: Decimal
     currency: str
     policy: str
+    alert_threshold_pct: int
     name: str | None
     active: bool
     spent: Decimal
+    balance: Decimal
     state: str
     projection: Decimal | None = None
+    blocks_execution: bool = False
+
+
+class OpportunityEconomicsOut(BaseModel):
+    opportunity_id: str
+    opportunity_codigo: str
+    total_cost: Decimal | None
+    total_cost_label: str
+    valor_potencial: Decimal | None
+    valor_materializado: Decimal | None
+    finops_value_sum: Decimal | None
+    consumption_count: int
+    consumptions: list[ConsumptionOut]
+    finops_reference: str | None
+    atribucion_nivel: str | None
 
 
 class DashboardSummary(BaseModel):

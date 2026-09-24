@@ -12,6 +12,8 @@ from sqlalchemy.engine import Engine
 from app.database import Base
 from app import models  # noqa: F401
 from app import orchestration_models  # noqa: F401
+from app import opportunity_models  # noqa: F401
+from app import llm_models  # noqa: F401
 from scripts.legacy_preservation import (
     LEGACY_MARKER_TABLES,
     LegacyPreservationError,

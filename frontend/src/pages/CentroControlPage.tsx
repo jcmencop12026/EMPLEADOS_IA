@@ -1,0 +1,708 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import type { CentroControlResumen, EvaluacionExpedienteSummary } from "../api";
+import { fetchCentroControlResumen, fetchEvaluaciones } from "../api";
+import { CentroControlCockpit } from "../components/centroControl/CentroControlCockpit";
+import { CentroControlEmpresaPanel } from "../components/centroControl/CentroControlEmpresaPanel";
+import { CentroControlEmpresaExtras } from "../components/centroControl/CentroControlEmpresaExtras";
+import { PageHeader } from "../components/v1";
+import { useOrganizationContext } from "../hooks/useOrganizationContext";
+import { usePageAssistantContext } from "../hooks/usePageAssistantContext";
+import { usePermissions } from "../hooks/usePermissions";
+import { formatAuditAction, formatHealthStatus } from "../lib/labels";
+
+const SECCIONES_DEFAULT = [
+  { id: "resumen", label: "Resumen", help: "Vea en una sola pantalla qué sabemos de esta empresa, qué información falta, qué encontró EIAAX, cuánto valor potencial existe y cuál es la siguiente acción recomendada." },
+  { id: "valor", label: "Valor", help: "Cuantifique el impacto económico de los hallazgos y oportunidades. Use esta sección para comparar valor potencial, metas y resultados antes de decidir dónde actuar primero." },
+  { id: "operacion", label: "Operación", help: "Revise cómo está funcionando la operación de la empresa: actividad, avances, incidencias y puntos que requieren intervención. Úsela para pasar del diagnóstico al control operativo." },
+  { id: "ia_costos", label: "IA y costos", help: "Controle qué recursos de IA se están utilizando, cuánto cuestan y qué valor generan. Sirve para vigilar consumo, eficiencia y retorno de la operación con IA." },
+  { id: "implementacion", label: "Implementación", help: "Siga la ejecución de las soluciones aprobadas: qué debe implementarse, avance, responsables, bloqueos y próximos hitos hasta poner la mejora en operación." },
+  { id: "salud", label: "Salud", help: "Analice la empresa desde la perspectiva del sector salud: facturación, radicación, glosas, cartera, servicios y otros indicadores disponibles para detectar causas y oportunidades." },
+  { id: "documentos", label: "Documentos", help: "Controle las evidencias que sustentan el diagnóstico. Aquí identifica qué documentos ya recibió EIAAX, cuáles faltan y qué requisito respalda cada evidencia." },
+  { id: "requisitos", label: "Requisitos", help: "Vea exactamente qué información necesita EIAAX para aumentar la confianza del diagnóstico. Cada requisito debe indicar qué se solicita, para qué se utilizará y cómo afecta el análisis si falta." },
+  { id: "espacio_externo", label: "Espacio externo", help: "Gestione lo que verá y entregará el contacto de la empresa. Desde aquí habilita acceso, solicita información y controla qué resultados o propuestas están autorizados para publicarse." },
+  { id: "historial", label: "Historial", help: "Consulte la trazabilidad del expediente: solicitudes, entregas, validaciones, decisiones y cambios. Úselo para saber qué ocurrió, cuándo y cómo evolucionó el análisis." },
+] as const;
+
+type SeccionId = (typeof SECCIONES_DEFAULT)[number]["id"];
+
+function fmtNum(v: unknown): string {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "number") return v.toLocaleString("es-CO");
+  return String(v);
+}
+
+function healthComponentStatus(salud: Record<string, unknown>, key: string): string | undefined {
+  const components = salud.components as Record<string, { status?: string }> | undefined;
+  return components?.[key]?.status ?? (salud[key] as { status?: string } | undefined)?.status;
+}
+
+function SemanticBadge({ tipo }: { tipo: string }) {
+  const cls = tipo.toLowerCase();
+  if (cls === "hecho") return <span className="semantic-badge hecho">HECHO</span>;
+  if (cls === "inferencia") return <span className="semantic-badge inferencia">INFERENCIA</span>;
+  if (cls === "recomendacion") return <span className="semantic-badge recomendacion">RECOMENDACIÓN</span>;
+  return <span className="semantic-badge">{tipo}</span>;
+}
+
+export function CentroControlPage() {
+  const { has } = usePermissions();
+  const { organizationQueryParam, effectiveOrganizationName, isViewingOtherOrganization, homeOrganizationName } = useOrganizationContext();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [data, setData] = useState<CentroControlResumen | null>(null);
+  const [evaluaciones, setEvaluaciones] = useState<EvaluacionExpedienteSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [periodo, setPeriodo] = useState("mtd");
+  const seccionInicial = (searchParams.get("seccion") as SeccionId | null) ?? "resumen";
+  const [seccion, setSeccion] = useState<SeccionId>(SECCIONES_DEFAULT.some((x) => x.id === seccionInicial) ? seccionInicial : "resumen");
+  const expedienteContext = searchParams.get("expediente") ?? "";
+
+  const contextoLabel = useMemo(() => {
+    if (!expedienteContext) return "Todas las empresas";
+    const match = evaluaciones.find((e) => e.id === expedienteContext);
+    return match ? `${match.entidad_nombre} · ${match.codigo}` : "Empresa seleccionada";
+  }, [expedienteContext, evaluaciones]);
+
+  usePageAssistantContext({
+    periodo,
+    seccion,
+    expediente_id: expedienteContext || undefined,
+    empresa: contextoLabel !== "Todas las empresas" ? contextoLabel : undefined,
+    modulo: "centro_control",
+  });
+
+  useEffect(() => {
+    if (!has("evaluacion.view")) return;
+    fetchEvaluaciones()
+      .then((r) => setEvaluaciones(r.items))
+      .catch(() => undefined);
+  }, [has]);
+
+  const presentacionPath = useMemo(() => {
+    if (!expedienteContext) return null;
+    const match = evaluaciones.find((e) => e.id === expedienteContext);
+    if (match?.entidad_nombre?.startsWith("[DEMO]")) {
+      return `/demo/presentacion/${expedienteContext}`;
+    }
+    return `/presentacion/${expedienteContext}`;
+  }, [expedienteContext, evaluaciones]);
+
+  function setExpedienteContext(id: string) {
+    const next = new URLSearchParams(searchParams);
+    if (id) next.set("expediente", id);
+    else next.delete("expediente");
+    setSearchParams(next, { replace: true });
+  }
+
+  const load = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    fetchCentroControlResumen(periodo, organizationQueryParam)
+      .then(setData)
+      .catch((e) => setError(e instanceof Error ? e.message : "Error al cargar"))
+      .finally(() => setLoading(false));
+  }, [periodo, organizationQueryParam]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (!has("control_center.view")) {
+    return (
+      <div className="ops-page">
+        <p className="error">No tiene permiso para ver el Centro de Control.</p>
+      </div>
+    );
+  }
+
+  const secciones = expedienteContext ? SECCIONES_DEFAULT : SECCIONES_DEFAULT.slice(0, 6);
+  const valor = data?.valor_consolidado ?? data?.resumen_ejecutivo?.valor;
+
+  return (
+    <div className="ops-page centro-control-page cc-page-header-compact">
+      <header className="cc-unified-header" aria-label="Cabecera Centro de Control">
+        <div className="cc-unified-header__title-row">
+          <PageHeader
+            title="Centro de Control"
+            subtitle="Consola maestra — contexto, ciclo, atención y siguiente acción"
+            eyebrow="EIAAX"
+          />
+          <div className="cc-unified-header__command-row">
+            <span className="cc-context-pill" title="Organización de la sesión activa">
+              <span className="cc-context-pill__label">Sesión</span>
+              <strong>{homeOrganizationName || effectiveOrganizationName}</strong>
+            </span>
+            <span className="cc-context-pill cc-context-pill--emphasis" title="Empresa o prospecto en análisis operativo">
+              <span className="cc-context-pill__label">Análisis</span>
+              <strong>{contextoLabel}</strong>
+            </span>
+            <label className="cc-context-select cc-context-select--inline">
+              <span className="cc-context-pill__label">Empresa / prospecto</span>
+              <select
+                value={expedienteContext}
+                onChange={(e) => setExpedienteContext(e.target.value)}
+                title="Selecciona la empresa o prospecto para operar en contexto"
+                data-help="Cambia entre la visión global y una empresa o prospecto específico. Al seleccionar uno, el Centro de Control conserva ese contexto para evaluación, oportunidades, valor y acciones relacionadas."
+              >
+                <option value="">Todas las empresas / prospectos</option>
+                {evaluaciones.map((ev) => (
+                  <option key={ev.id} value={ev.id}>{ev.entidad_nombre} — {ev.codigo}</option>
+                ))}
+              </select>
+            </label>
+            {isViewingOtherOrganization && (
+              <span className="cc-context-pill cc-context-pill--warn" title="Vista multi-organización activa">
+                <span className="cc-context-pill__label">Vista</span>
+                <strong>{effectiveOrganizationName}</strong>
+              </span>
+            )}
+            <label className="cc-context-select cc-context-select--period">
+              <span className="cc-context-pill__label">Periodo</span>
+              <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} title="Periodo de análisis" data-help="Define el periodo usado por los indicadores sin cambiar el contexto seleccionado.">
+                <option value="mtd">Mes actual</option>
+                <option value="7d">Últimos 7 días</option>
+                <option value="30d">Últimos 30 días</option>
+              </select>
+            </label>
+            <button type="button" className="btn secondary small" onClick={load} disabled={loading} title="Actualizar" data-help="Refresca indicadores, prioridades, valor y estado sin perder el contexto seleccionado.">
+              Actualizar
+            </button>
+            {expedienteContext && (
+              <>
+                <Link to={`${presentacionPath ?? `/presentacion/${expedienteContext}`}?preparar=1`} className="btn primary small" data-help="Prepara el propósito, los temas disponibles y el paquete de datos antes de iniciar la reunión.">Preparar reunión</Link>
+                <Link to={`/evaluaciones/${expedienteContext}?tab=vista-empresa`} className="btn secondary small" data-help="Abre la Vista Empresa tal como se presenta al cliente autorizado.">Ver empresa</Link>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {loading && <p className="muted">Cargando centro de control…</p>}
+      {error && <p className="error">{error}</p>}
+
+      {data && (
+        <>
+          <nav className="tab-bar compact-tabs" aria-label="Secciones ejecutivas">
+            {secciones.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                className={`tab-btn ${seccion === s.id ? "active" : ""}`}
+                onClick={() => setSeccion(s.id as SeccionId)}
+                data-help={s.help}
+              >
+                {s.label}
+              </button>
+            ))}
+          </nav>
+
+          {seccion === "resumen" && (
+            <>
+              <CentroControlCockpit
+                data={data}
+                periodo={periodo}
+                expedienteId={expedienteContext || undefined}
+                compact={Boolean(expedienteContext)}
+                isDemoExpediente={Boolean(
+                  evaluaciones.find((e) => e.id === expedienteContext)?.entidad_nombre?.startsWith("[DEMO]"),
+                )}
+                expedienteEstado={evaluaciones.find((e) => e.id === expedienteContext)?.estado}
+              />
+              {expedienteContext && has("evaluacion.view") && (
+                <CentroControlEmpresaPanel evaluacionId={expedienteContext} />
+              )}
+            </>
+          )}
+
+          {seccion === "valor" && (
+            <>
+              <section className="panel compact-panel">
+                <h2 className="section-title">Valor por naturaleza</h2>
+                <p className="muted potential-excluded">{valor?.nota_potencial ?? "El valor potencial no se suma al valor realizado."}</p>
+                <div className="value-nature-grid">
+                  <div className="value-nature-card verified">
+                    <div className="value-nature-head">Verificado <SemanticBadge tipo="hecho" /></div>
+                    <span className="value-nature-amount">{fmtNum(valor?.verificado)}</span>
+                  </div>
+                  <div className="value-nature-card estimated">
+                    <div className="value-nature-head">Estimado <SemanticBadge tipo="inferencia" /></div>
+                    <span className="value-nature-amount">{fmtNum(valor?.estimado)}</span>
+                  </div>
+                  <div className="value-nature-card potential">
+                    <div className="value-nature-head">Potencial <SemanticBadge tipo="inferencia" /></div>
+                    <span className="value-nature-amount">{fmtNum(valor?.potencial)}</span>
+                  </div>
+                  <div className="value-nature-card price-base">
+                    <div className="value-nature-head">Realizado (verif. + estim.)</div>
+                    <span className="value-nature-amount">{fmtNum(valor?.realizado)}</span>
+                  </div>
+                </div>
+              </section>
+
+              <div className="cc-grid-2">
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Valoración económica</h2>
+                  {!data.valor_retorno?.disponible ? (
+                    <p className="muted">{data.valor_retorno?.estado ?? "Sin información disponible"}</p>
+                  ) : (
+                    <dl className="detail-grid">
+                      <dt>Verificado</dt><dd>{fmtNum(data.valor_retorno.valor_verificado)}</dd>
+                      <dt>Estimado</dt><dd>{fmtNum(data.valor_retorno.valor_estimado)}</dd>
+                      <dt>Potencial</dt><dd className="potential-excluded">{fmtNum(data.valor_retorno.valor_potencial)}</dd>
+                      <dt>Retorno</dt><dd>{data.valor_retorno.retorno_porcentaje != null ? `${data.valor_retorno.retorno_porcentaje}%` : "—"}</dd>
+                    </dl>
+                  )}
+                  <p><Link to="/costos-valor">Ver valoración</Link></p>
+                </section>
+
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Comercial y propuestas</h2>
+                  {!data.comercial?.disponible ? (
+                    <p className="muted">{data.comercial?.estado ?? "Sin información disponible"}</p>
+                  ) : (
+                    <dl className="detail-grid">
+                      <dt>Propuestas</dt><dd>{data.comercial.propuestas_total ?? "—"}</dd>
+                      <dt>Verificado</dt><dd>{fmtNum(data.comercial.valor_verificado)}</dd>
+                      <dt>Estimado</dt><dd>{fmtNum(data.comercial.valor_estimado)}</dd>
+                      <dt>Potencial</dt><dd className="potential-excluded">{fmtNum(data.comercial.valor_potencial)}</dd>
+                      <dt>ROI promedio</dt><dd>{data.comercial.roi_promedio != null ? `${data.comercial.roi_promedio}%` : "—"}</dd>
+                      <dt>Payback</dt><dd>{data.comercial.payback_promedio_meses != null ? `${data.comercial.payback_promedio_meses} meses` : "—"}</dd>
+                      {data.comercial.margen_promedio_pct != null && (
+                        <><dt>Margen</dt><dd>{data.comercial.margen_promedio_pct}%</dd></>
+                      )}
+                      {data.comercial.margen_restringido && (
+                        <><dt>Margen</dt><dd className="muted">No disponible (permiso requerido)</dd></>
+                      )}
+                    </dl>
+                  )}
+                  <p><Link to="/comercial">Ver comercial</Link></p>
+                </section>
+              </div>
+            </>
+          )}
+
+          {seccion === "operacion" && (
+            <>
+              <div className="cc-grid-2">
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Empleados IA</h2>
+                  {!data.empleados_ia ? (
+                    <p className="muted">Sin información disponible</p>
+                  ) : (
+                    <table className="data-table compact-table">
+                      <thead><tr><th>Empleado</th><th>Estado</th><th>Última actividad</th><th></th></tr></thead>
+                      <tbody>
+                        {data.empleados_ia.items.slice(0, 8).map((e) => (
+                          <tr key={e.id}>
+                            <td>{e.nombre}</td>
+                            <td>{e.estado}</td>
+                            <td>{e.ultima_actividad ? new Date(e.ultima_actividad).toLocaleString("es-CO") : "—"}</td>
+                            <td><Link to={e.enlace}>Detalle</Link></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </section>
+
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Oportunidades</h2>
+                  {!data.oportunidades?.disponible ? (
+                    <p className="muted">{data.oportunidades?.estado ?? "Sin información disponible"}</p>
+                  ) : (
+                    <dl className="detail-grid">
+                      <dt>Detectadas</dt><dd>{data.oportunidades.resumen?.oportunidades_detectadas ?? "—"}</dd>
+                      <dt>En seguimiento</dt><dd>{data.oportunidades.estados_operativos?.seguimiento ?? "—"}</dd>
+                      <dt>Materializadas</dt><dd>{data.oportunidades.resumen?.materializadas ?? "—"}</dd>
+                      <dt>Pend. aprobación</dt><dd>{data.oportunidades.resumen?.pendientes_aprobacion ?? "—"}</dd>
+                    </dl>
+                  )}
+                  <p><Link to="/oportunidades">Ir a oportunidades</Link></p>
+                </section>
+              </div>
+
+              <div className="cc-grid-2">
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Línea base e impacto</h2>
+                  {!data.impacto?.disponible ? (
+                    <p className="muted">{data.impacto?.estado ?? "Sin información disponible"}</p>
+                  ) : (
+                    <dl className="detail-grid">
+                      <dt>Líneas base activas</dt><dd>{data.impacto.lineas_base_activas ?? "—"}</dd>
+                      <dt>Mediciones</dt><dd>{data.impacto.mediciones ?? "—"}</dd>
+                      <dt>Impactos reales</dt><dd>{data.impacto.impactos_reales ?? "—"}</dd>
+                      <dt>Pend. validación</dt><dd>{data.impacto.mediciones_pendientes_validacion ?? "—"}</dd>
+                    </dl>
+                  )}
+                  <p><Link to="/lineas-base">Ver líneas base</Link></p>
+                </section>
+
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Diagnóstico</h2>
+                  {!data.diagnostico?.disponible ? (
+                    <p className="muted">{data.diagnostico?.estado ?? "Sin información disponible"}</p>
+                  ) : (
+                    <dl className="detail-grid">
+                      <dt>Diagnósticos activos</dt><dd>{data.diagnostico.diagnosticos_activos ?? "—"}</dd>
+                      <dt>Hallazgos</dt><dd>{data.diagnostico.hallazgos ?? "—"}</dd>
+                      <dt>Riesgos</dt><dd>{data.diagnostico.riesgos ?? "—"}</dd>
+                    </dl>
+                  )}
+                  <p><Link to="/diagnosticos">Ver diagnósticos</Link></p>
+                </section>
+              </div>
+
+              <div className="cc-grid-2">
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Mi Trabajo</h2>
+                  {!data.mi_trabajo?.disponible ? (
+                    <p className="muted">{data.mi_trabajo?.estado ?? "Sin información disponible"}</p>
+                  ) : (
+                    <dl className="detail-grid">
+                      <dt>Pendientes</dt><dd>{data.mi_trabajo.pendientes ?? "—"}</dd>
+                      <dt>Vencidas</dt><dd>{data.mi_trabajo.vencidas ?? "—"}</dd>
+                      <dt>Requieren aprobación</dt><dd>{data.mi_trabajo.requieren_aprobacion ?? "—"}</dd>
+                    </dl>
+                  )}
+                  <p><Link to="/trabajo">Ir a Mi Trabajo</Link></p>
+                </section>
+
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Auditor Empleados IA</h2>
+                  {!data.auditor_empleados?.disponible ? (
+                    <p className="muted">{data.auditor_empleados?.estado ?? "Sin información disponible"}</p>
+                  ) : (
+                    <>
+                      <dl className="detail-grid">
+                        <dt>Hallazgos abiertos</dt><dd>{data.auditor_empleados.hallazgos_abiertos ?? "—"}</dd>
+                        <dt>Críticos</dt><dd>{data.auditor_empleados.criticos ?? "—"}</dd>
+                        <dt>Requieren mejora</dt><dd>{data.auditor_empleados.requieren_mejora ?? "—"}</dd>
+                      </dl>
+                      <p className="muted">Auditor recomienda. Humano decide. Fábrica ejecuta.</p>
+                    </>
+                  )}
+                  <p><Link to="/empleados/auditoria">Ver auditoría</Link></p>
+                </section>
+              </div>
+
+              <div className="cc-grid-2">
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Mesa de Ayuda</h2>
+                  {!data.mb12_soporte?.disponible ? (
+                    <p className="muted">{data.mb12_soporte?.estado ?? "Sin información disponible"}</p>
+                  ) : (
+                    <dl className="detail-grid">
+                      <dt>Casos abiertos</dt><dd>{data.mb12_soporte.casos_abiertos ?? "—"}</dd>
+                      <dt>Críticos</dt><dd>{data.mb12_soporte.casos_criticos ?? "—"}</dd>
+                      <dt>Vencidos</dt><dd>{data.mb12_soporte.casos_vencidos ?? "—"}</dd>
+                    </dl>
+                  )}
+                  <p><Link to="/soporte">Ir a Mesa de Ayuda</Link></p>
+                </section>
+
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Comunicaciones</h2>
+                  {!data.mb11_comunicaciones?.disponible ? (
+                    <p className="muted">{data.mb11_comunicaciones?.estado ?? "Sin información disponible"}</p>
+                  ) : (
+                    <dl className="detail-grid">
+                      <dt>Enviados</dt><dd>{data.mb11_comunicaciones.enviados ?? "—"}</dd>
+                      <dt>Pendientes</dt><dd>{data.mb11_comunicaciones.pendientes ?? "—"}</dd>
+                      <dt>Fallidos</dt><dd>{data.mb11_comunicaciones.fallidos ?? "—"}</dd>
+                      <dt>Canales degradados</dt><dd>{data.mb11_comunicaciones.canales_degradados ?? "—"}</dd>
+                    </dl>
+                  )}
+                  <p><Link to="/comunicaciones">Ir a Comunicaciones</Link></p>
+                </section>
+              </div>
+
+              <div className="cc-grid-2">
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Señales internas</h2>
+                  <dl className="detail-grid">
+                    <dt>Total</dt><dd>{data.senales?.total ?? "—"}</dd>
+                    <dt>Sin procesar</dt><dd>{data.senales?.sin_procesar ?? "—"}</dd>
+                    <dt>Errores ingesta</dt><dd>{data.senales?.errores_ingesta ?? "—"}</dd>
+                  </dl>
+                  <p><Link to="/senales">Ver señales</Link></p>
+                </section>
+
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Inteligencia externa</h2>
+                  {!data.inteligencia_externa?.disponible ? (
+                    <p className="muted">{data.inteligencia_externa?.estado ?? "Sin información disponible"}</p>
+                  ) : (
+                    <dl className="detail-grid">
+                      <dt>Fuentes activas</dt><dd>{data.inteligencia_externa.fuentes_activas ?? "—"}</dd>
+                      <dt>Sin validar</dt><dd>{data.inteligencia_externa.sin_validar ?? "—"}</dd>
+                      <dt>Riesgos abiertos</dt><dd>{data.inteligencia_externa.riesgos_abiertos ?? "—"}</dd>
+                    </dl>
+                  )}
+                  <p><Link to="/inteligencia-externa">Ver inteligencia externa</Link></p>
+                </section>
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Integraciones</h2>
+                  <p className="muted">Conectores, cableado y trazabilidad de integraciones empresariales.</p>
+                  <p><Link to="/integraciones">Ir a integraciones</Link></p>
+                </section>
+              </div>
+
+              <section className="panel compact-panel">
+                <h2 className="section-title">Actividad reciente</h2>
+                {!data.actividad_reciente?.length ? (
+                  <p className="muted">Sin actividad operativa reciente</p>
+                ) : (
+                  <table className="data-table compact-table">
+                    <thead><tr><th>Evento</th><th>Fecha</th><th></th></tr></thead>
+                    <tbody>
+                      {data.actividad_reciente.slice(0, 8).map((ev) => (
+                        <tr key={ev.id}>
+                          <td>{ev.tipo}</td>
+                          <td>{ev.fecha ? new Date(ev.fecha).toLocaleString("es-CO") : "—"}</td>
+                          <td>{ev.enlace ? <Link to={ev.enlace}>Ver</Link> : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </section>
+            </>
+          )}
+
+          {seccion === "ia_costos" && (
+            <>
+              <div className="cc-grid-2">
+                <section className="panel compact-panel">
+                  <h2 className="section-title">FinOps</h2>
+                  {!data.finops?.disponible ? (
+                    <p className="muted">Sin información disponible</p>
+                  ) : (
+                    <dl className="detail-grid">
+                      <dt>Costo periodo</dt><dd>{data.finops.dashboard?.total_cost_label ?? "—"}</dd>
+                      <dt>Valor generado</dt><dd>{data.finops.dashboard?.total_value_label ?? "—"}</dd>
+                      <dt>Tokens</dt><dd>{data.finops.tokens_periodo ?? "—"}</dd>
+                      <dt>ROI</dt><dd>{data.finops.dashboard?.roi_label ?? "—"}</dd>
+                    </dl>
+                  )}
+                  <p><Link to="/costos-valor">Ver costos y valor</Link></p>
+                </section>
+
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Planificador de consumo</h2>
+                  {!data.mb07_planificador?.disponible ? (
+                    <p className="muted">{data.mb07_planificador?.estado ?? "Sin información disponible"}</p>
+                  ) : (
+                    <dl className="detail-grid">
+                      <dt>Consumo real</dt><dd>{fmtNum(data.mb07_planificador.consumo_real)}</dd>
+                      <dt>Proyección mes</dt><dd>{fmtNum(data.mb07_planificador.consumo_proyectado)}</dd>
+                      <dt>Presupuesto</dt><dd>{fmtNum(data.mb07_planificador.presupuesto_limite)}</dd>
+                      <dt>Utilización</dt><dd>{data.mb07_planificador.presupuesto_utilizacion_pct != null ? `${data.mb07_planificador.presupuesto_utilizacion_pct}%` : "—"}</dd>
+                      <dt>Riesgo capacidad</dt><dd>{String(data.mb07_planificador.capacidad_riesgo ?? "—")}</dd>
+                    </dl>
+                  )}
+                </section>
+
+                <section className="panel compact-panel">
+                  <h2 className="section-title">TCO</h2>
+                  {!data.tco?.disponible ? (
+                    <p className="muted">{data.tco?.estado ?? "Sin información disponible"}</p>
+                  ) : (
+                    <dl className="detail-grid">
+                      <dt>Inversión mensual</dt><dd>{fmtNum(data.tco.inversion_total)}</dd>
+                      <dt>Costos IA (FinOps)</dt><dd>{fmtNum(data.tco.finops_ia)}</dd>
+                      <dt>Alertas</dt><dd>{data.tco.alertas ?? "—"}</dd>
+                      {data.tco.margen_pct != null && <><dt>Margen</dt><dd>{data.tco.margen_pct}%</dd></>}
+                      {data.tco.margen_restringido && <><dt>Margen</dt><dd className="muted">No disponible</dd></>}
+                    </dl>
+                  )}
+                  <p><Link to="/tco">Ver TCO</Link></p>
+                </section>
+              </div>
+
+              <div className="cc-grid-2">
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Proveedores IA</h2>
+                  {!data.multiproveedor?.disponible ? (
+                    <p className="muted">{data.multiproveedor?.estado ?? "Sin información disponible"}</p>
+                  ) : (
+                    <>
+                      <dl className="detail-grid">
+                        <dt>Proveedores</dt><dd>{data.multiproveedor.proveedores_total ?? "—"}</dd>
+                        <dt>Degradados</dt><dd>{data.multiproveedor.proveedores_degradados ?? "—"}</dd>
+                        <dt>Inferencias periodo</dt><dd>{data.multiproveedor.observabilidad?.total_inferencias ?? "—"}</dd>
+                        <dt>Tasa éxito</dt><dd>{data.multiproveedor.observabilidad?.tasa_exito != null ? `${data.multiproveedor.observabilidad.tasa_exito}%` : "—"}</dd>
+                      </dl>
+                      <table className="data-table compact-table">
+                        <thead><tr><th>Proveedor</th><th>Estado</th><th>Detalle</th></tr></thead>
+                        <tbody>
+                          {(data.multiproveedor.salud ?? []).slice(0, 5).map((p) => (
+                            <tr key={p.provider_id}>
+                              <td>{p.nombre}</td>
+                              <td>{p.estado}</td>
+                              <td>{p.detalle}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </>
+                  )}
+                  <p><Link to="/administracion/proveedores-ia">Administrar proveedores</Link></p>
+                </section>
+
+                <section className="panel compact-panel">
+                  <h2 className="section-title">Consumo por proveedor</h2>
+                  {!data.llm?.proveedores?.length ? (
+                    <p className="muted">Sin proveedores configurados</p>
+                  ) : (
+                    <table className="data-table compact-table">
+                      <thead><tr><th>Proveedor</th><th>Estado</th><th>Errores 24h</th><th>Tokens 24h</th></tr></thead>
+                      <tbody>
+                        {data.llm.proveedores.slice(0, 5).map((p) => (
+                          <tr key={p.id}>
+                            <td>{p.nombre}</td>
+                            <td>{p.estado ?? "—"}</td>
+                            <td>{p.errores_24h}</td>
+                            <td>{p.tokens_24h ?? "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </section>
+              </div>
+            </>
+          )}
+
+          {seccion === "implementacion" && (
+            <section className="panel compact-panel">
+              <h2 className="section-title">Implementación y éxito del cliente</h2>
+              {!data.implementacion?.disponible ? (
+                <p className="muted">{data.implementacion?.estado ?? "Sin información disponible"}</p>
+              ) : (
+                <>
+                  <dl className="detail-grid">
+                    <dt>Proyectos activos</dt><dd>{data.implementacion.proyectos_activos ?? "—"}</dd>
+                    <dt>Total proyectos</dt><dd>{data.implementacion.proyectos_total ?? "—"}</dd>
+                    <dt>Hitos en riesgo</dt><dd>{data.implementacion.hitos_en_riesgo ?? "—"}</dd>
+                    <dt>Riesgos abiertos</dt><dd>{data.implementacion.riesgos_abiertos ?? "—"}</dd>
+                  </dl>
+                  {data.implementacion.recientes && data.implementacion.recientes.length > 0 && (
+                    <table className="data-table compact-table">
+                      <thead><tr><th>Código</th><th>Título</th><th>Estado</th><th>Avance</th></tr></thead>
+                      <tbody>
+                        {data.implementacion.recientes.slice(0, 5).map((p) => (
+                          <tr key={p.id}>
+                            <td>{p.codigo}</td>
+                            <td><Link to={`/implementacion/${p.id}`}>{p.titulo}</Link></td>
+                            <td>{p.estado}</td>
+                            <td>{p.avance_pct != null ? `${p.avance_pct}%` : "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </>
+              )}
+              <p><Link to="/implementacion">Ver implementación</Link></p>
+            </section>
+          )}
+
+          {seccion === "salud" && (
+            <>
+              <section className="panel compact-panel cc-salud-inline">
+                <h2 className="section-title">Salud de servicios</h2>
+                <p className="muted small">Estado operativo sin salir del Centro de Control. Los módulos profundos quedan bajo demanda.</p>
+                <div className="cc-salud-grid">
+                  <div className="cc-salud-card">
+                    <h3 className="cc-subtitle">Plataforma</h3>
+                    {data.salud_plataforma ? (
+                      <dl className="detail-grid compact">
+                        <dt>API</dt><dd>{formatHealthStatus(data.salud_plataforma.status as string)}</dd>
+                        <dt>Base de datos</dt><dd>{formatHealthStatus(healthComponentStatus(data.salud_plataforma as Record<string, unknown>, "database"))}</dd>
+                        <dt>Schedulers</dt><dd>{formatHealthStatus(healthComponentStatus(data.salud_plataforma as Record<string, unknown>, "schedulers"))}</dd>
+                      </dl>
+                    ) : (
+                      <p className="muted">Sin telemetría</p>
+                    )}
+                  </div>
+                  <div className="cc-salud-card">
+                    <h3 className="cc-subtitle">Continuidad</h3>
+                    {!data.continuidad?.disponible ? (
+                      <p className="muted">{data.continuidad?.estado ?? "Sin incidentes"}</p>
+                    ) : (
+                      <dl className="detail-grid compact">
+                        <dt>Degradados</dt><dd>{data.continuidad.servicios_degradados ?? "—"}</dd>
+                        <dt>Incidentes</dt><dd>{data.continuidad.incidentes_abiertos ?? "—"}</dd>
+                        <dt>Backups fallidos</dt><dd>{data.continuidad.backups_fallidos ?? "—"}</dd>
+                      </dl>
+                    )}
+                  </div>
+                  <div className="cc-salud-card">
+                    <h3 className="cc-subtitle">Optimización</h3>
+                    {!data.optimizacion?.disponible ? (
+                      <p className="muted">{data.optimizacion?.estado ?? "Sin datos"}</p>
+                    ) : (
+                      <dl className="detail-grid compact">
+                        <dt>Recomendaciones</dt><dd>{data.optimizacion.recomendaciones_total ?? "—"}</dd>
+                        <dt>Pendientes</dt><dd>{data.optimizacion.pendientes_aprobacion ?? "—"}</dd>
+                        <dt>Aprobadas</dt><dd>{data.optimizacion.aprobadas ?? "—"}</dd>
+                      </dl>
+                    )}
+                  </div>
+                  <div className="cc-salud-card">
+                    <h3 className="cc-subtitle">Aprendizaje</h3>
+                    {!data.aprendizaje?.disponible ? (
+                      <p className="muted">{data.aprendizaje?.estado ?? "Sin datos"}</p>
+                    ) : (
+                      <dl className="detail-grid compact">
+                        <dt>Ciclos</dt><dd>{data.aprendizaje.ciclos_total ?? "—"}</dd>
+                        <dt>Patrones</dt><dd>{data.aprendizaje.patrones_detectados ?? "—"}</dd>
+                        <dt>Recalibraciones</dt><dd>{data.aprendizaje.recalibraciones_pendientes ?? "—"}</dd>
+                      </dl>
+                    )}
+                  </div>
+                </div>
+                <details className="cc-salud-deep">
+                  <summary className="muted small">Módulos profundos (bajo demanda)</summary>
+                  <p className="cc-salud-deep-links">
+                    <Link to="/continuidad">Continuidad</Link>
+                    {" · "}
+                    <Link to="/optimizacion">Optimización</Link>
+                    {" · "}
+                    <Link to="/aprendizaje">Aprendizaje</Link>
+                    {" · "}
+                    <Link to="/auditoria">Auditoría</Link>
+                  </p>
+                </details>
+              </section>
+
+              <section className="panel compact-panel">
+                <h2 className="section-title">Auditoría reciente</h2>
+                {!data.auditoria_reciente?.length ? (
+                  <p className="muted">Sin registros recientes</p>
+                ) : (
+                  <table className="data-table compact-table">
+                    <thead><tr><th>Acción</th><th>Actor</th><th>Fecha</th></tr></thead>
+                    <tbody>
+                      {data.auditoria_reciente.slice(0, 8).map((row) => (
+                        <tr key={row.id}>
+                          <td>{formatAuditAction(row.accion)}</td>
+                          <td>{row.actor ?? "—"}</td>
+                          <td>{row.fecha ? new Date(row.fecha).toLocaleString("es-CO") : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </section>
+            </>
+          )}
+          {expedienteContext && (seccion === "documentos" || seccion === "requisitos" || seccion === "espacio_externo" || seccion === "historial") && (
+            <CentroControlEmpresaExtras evaluacionId={expedienteContext} mode={seccion} />
+          )}
+        </>
+      )}
+    </div>
+  );
+}

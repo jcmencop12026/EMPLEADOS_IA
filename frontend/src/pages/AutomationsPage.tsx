@@ -10,6 +10,7 @@ import {
   pauseAutomation,
   runAutomationNow,
 } from "../api";
+import { EmptyState } from "../components/AsyncState";
 
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Borrador",
@@ -75,6 +76,13 @@ export function AutomationsPage() {
         </select>
       </div>
       {error && <p className="error" role="alert">{error}</p>}
+      {filtered.length === 0 && items.length === 0 ? (
+        <EmptyState
+          title="Sin automatizaciones"
+          message="EIAAX puede proponer automatizaciones desde diagnóstico, oportunidades o solución IA. También puede crearlas manualmente cuando corresponda."
+          action={<Link to="/automatizaciones/nueva" className="btn primary">Crear automatización</Link>}
+        />
+      ) : (
       <div className="panel table-wrap">
         <table className="data-table">
           <thead>
@@ -122,6 +130,7 @@ export function AutomationsPage() {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }

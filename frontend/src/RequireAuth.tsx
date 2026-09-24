@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { getToken } from "./api";
-import { validateSession } from "./auth/session";
+import { getCachedUser, validateSession } from "./auth/session";
 import { LoadingState } from "./components/AsyncState";
 
 export function RequireAuth() {
   const location = useLocation();
-  const [ready, setReady] = useState(false);
-  const [valid, setValid] = useState(false);
+  const cached = Boolean(getToken() && getCachedUser());
+  const [ready, setReady] = useState(cached);
+  const [valid, setValid] = useState(cached);
 
   useEffect(() => {
     if (!getToken()) {
@@ -24,13 +25,14 @@ export function RequireAuth() {
         setValid(false);
         setReady(true);
       });
-  }, [location.pathname]);
+  }, []);
 
   if (!ready) {
     return <LoadingState message="Verificando sesión…" />;
   }
   if (!valid) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    const next = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace state={{ from: location }} />;
   }
   return <Outlet />;
 }

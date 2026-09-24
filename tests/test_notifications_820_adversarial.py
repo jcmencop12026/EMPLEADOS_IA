@@ -170,7 +170,7 @@ def test_listener_commit_forbidden_and_savepoint_holds():
         if malicious_listener and malicious_listener in bus._subscribers:
             bus._subscribers.remove(malicious_listener)
         admin = db.query(User).filter(User.username == "admin").one()
-        admin.role = "admin"
+        admin.role = original_role
         db.commit()
         db.close()
 
@@ -180,6 +180,7 @@ def test_two_listeners_second_commit_fails_no_partial_persist():
     handlers = []
     try:
         admin = db.query(User).filter(User.username == "admin").one()
+        original_role = admin.role
         marker = {"a": False}
 
         def listener_a(event, session):
@@ -209,7 +210,7 @@ def test_two_listeners_second_commit_fails_no_partial_persist():
             if handler in bus._subscribers:
                 bus._subscribers.remove(handler)
         admin = db.query(User).filter(User.username == "admin").one()
-        admin.role = "admin"
+        admin.role = original_role
         db.commit()
         db.close()
 

@@ -205,6 +205,23 @@ def test_config_get_update(client: TestClient, auth_headers):
     assert upd.json()["date_format"] == "YYYY-MM-DD"
 
 
+def test_config_enterprise_branding_fields(client: TestClient, auth_headers):
+    upd = client.put(
+        "/api/admin/config",
+        headers=auth_headers,
+        json={
+            "enterprise_display_name": "Acme Salud",
+            "enterprise_logo_url": "https://example.test/logo.svg",
+            "enterprise_accent_color": "#1d4ed8",
+        },
+    )
+    assert upd.status_code == 200
+    body = upd.json()
+    assert body["enterprise_display_name"] == "Acme Salud"
+    assert body["enterprise_logo_url"] == "https://example.test/logo.svg"
+    assert body["enterprise_accent_color"] == "#1d4ed8"
+
+
 def test_invalid_timezone_rejected(client: TestClient, auth_headers):
     res = client.put(
         "/api/admin/organization",
@@ -225,9 +242,20 @@ def test_security_summary(client: TestClient, auth_headers):
 def test_password_reset_audit_no_secret(client: TestClient, auth_headers):
     db = TestingSessionLocal()
     try:
-        listed = client.get("/api/admin/users", headers=auth_headers).json()
-        target = next(u for u in listed if u["username"] != "admin")
-        user_id = target["id"]
+        admin = db.query(User).filter(User.username == "admin").one()
+        target_username = f"pwdreset-{uuid.uuid4().hex[:6]}"
+        db.add(
+            User(
+                organization_id=admin.organization_id,
+                username=target_username,
+                password_hash=hash_password("ResetMe*1"),
+                role="viewer",
+                status="ACTIVE",
+                is_active=True,
+            )
+        )
+        db.commit()
+        user_id = db.query(User).filter(User.username == target_username).one().id
     finally:
         db.close()
 

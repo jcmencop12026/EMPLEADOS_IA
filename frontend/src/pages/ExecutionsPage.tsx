@@ -32,7 +32,11 @@ export function ExecutionsPage() {
         <p className="muted">Planes de trabajo y resultados</p>
       </header>
       {items.length === 0 ? (
-        <EmptyState title="Sin ejecuciones" message="Aún no hay planes de trabajo registrados." />
+        <EmptyState
+          title="Sin ejecuciones"
+          message="Las ejecuciones aparecen cuando EIAAX procesa solicitudes de trabajo, empleados IA o automatizaciones autorizadas."
+          action={<Link to="/operaciones/solicitud" className="btn primary">Nueva solicitud</Link>}
+        />
       ) : (
         <div className="panel table-wrap">
           <table className="data-table">

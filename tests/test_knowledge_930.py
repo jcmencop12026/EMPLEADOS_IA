@@ -119,6 +119,55 @@ def test_download_and_delete(client, token):
     assert missing.status_code == 404
 
 
+def test_download_without_token_rejected(client, token):
+    created = _create_text_doc(client, token, "Sin token", "contenido").json()
+    download = client.get(f"/api/knowledge/{created['id']}/download")
+    assert download.status_code == 401
+
+
+def test_download_cross_tenant_denied(client):
+    token_a = _create_org_user(client, "Org DL A", f"da-{uuid.uuid4().hex[:6]}", "DlA930*")
+    token_b = _create_org_user(client, "Org DL B", f"db-{uuid.uuid4().hex[:6]}", "DlB930*")
+    doc = _create_text_doc(client, token_a, "Privado descarga", "Solo org A descarga").json()
+    denied = client.get(f"/api/knowledge/{doc['id']}/download", headers=auth_header(token_b))
+    assert denied.status_code == 404
+
+
+def test_download_without_knowledge_view_permission_denied(client, token):
+    created = _create_text_doc(client, token, "Restringido", "contenido restringido").json()
+    db = TestingSessionLocal()
+    admin = db.query(User).filter(User.username == "admin").one()
+    uname = f"guest-{uuid.uuid4().hex[:6]}"
+    db.add(
+        User(
+            organization_id=admin.organization_id,
+            username=uname,
+            password_hash=hash_password("Guest*930"),
+            role="guest",
+            status="ACTIVE",
+            is_active=True,
+        )
+    )
+    db.commit()
+    db.close()
+    guest_login = client.post("/api/auth/login", json={"username": uname, "password": "Guest*930"})
+    assert guest_login.status_code == 200
+    denied = client.get(
+        f"/api/knowledge/{created['id']}/download",
+        headers=auth_header(guest_login.json()["access_token"]),
+    )
+    assert denied.status_code == 403
+
+
+def test_download_with_invalid_token_rejected(client, token):
+    created = _create_text_doc(client, token, "Token inválido", "contenido").json()
+    download = client.get(
+        f"/api/knowledge/{created['id']}/download",
+        headers={"Authorization": "Bearer token-invalido-prerelease"},
+    )
+    assert download.status_code == 401
+
+
 def test_tenant_isolation(client):
     token_a = _create_org_user(client, "Org A 930", f"a-{uuid.uuid4().hex[:6]}", "AdminA930*")
     token_b = _create_org_user(client, "Org B 930", f"b-{uuid.uuid4().hex[:6]}", "AdminB930*")

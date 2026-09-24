@@ -7,7 +7,7 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.finops_models import FinOpsBudget, FinOpsRate, FinOpsValueRecord
 from app.models import User
-from app.orchestration_models import FinOpsRecord, AIEmployee, WorkPlan
+from app.orchestration_models import AIEmployee, FinOpsRecord, WorkPlan
 from app.permissions import check_permission
 from app.schemas_finops import (
     BudgetIn,
@@ -17,12 +17,20 @@ from app.schemas_finops import (
     ConsumptionOut,
     DashboardSummary,
     DrillDownNode,
+    OpportunityEconomicsOut,
     RateIn,
     RateOut,
     RatePatch,
     ValueIn,
     ValueOut,
 )
+from app.schemas_consumption_planner import (
+    PlannerCompareIn,
+    PlannerConfigPatch,
+    PlannerSimulateIn,
+    TransversalPatch,
+)
+from app.services import consumption_planner_service as planner_svc
 from app.services import finops_service as svc
 from app.audit import write_audit
 
@@ -44,21 +52,31 @@ def get_dashboard(
 def list_consumptions(
     employee_id: str | None = None,
     work_plan_id: str | None = None,
+    opportunity_id: str | None = None,
+    provider: str | None = None,
+    model_name: str | None = None,
+    category: str | None = None,
+    period_start: datetime | None = None,
+    period_end: datetime | None = None,
     limit: int = Query(100, le=500),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     check_permission(user, "finops.view", db)
-    query = (
-        db.query(FinOpsRecord)
-        .filter(FinOpsRecord.organization_id == user.organization_id)
-        .order_by(FinOpsRecord.created_at.desc())
+    rows = svc.query_consumptions(
+        db,
+        user.organization_id,
+        employee_id=employee_id,
+        work_plan_id=work_plan_id,
+        opportunity_id=opportunity_id,
+        provider=provider,
+        model_name=model_name,
+        category=category,
+        period_start=period_start,
+        period_end=period_end,
+        limit=limit,
     )
-    if employee_id:
-        query = query.filter(FinOpsRecord.employee_id == employee_id)
-    if work_plan_id:
-        query = query.filter(FinOpsRecord.work_plan_id == work_plan_id)
-    return [svc.serialize_consumption(r) for r in query.limit(limit).all()]
+    return [svc.serialize_consumption(r) for r in rows]
 
 
 @router.post("/consumptions", response_model=ConsumptionOut)
@@ -76,6 +94,7 @@ def create_consumption(
             employee_id=body.employee_id,
             work_plan_id=body.work_plan_id,
             task_id=body.task_id,
+            opportunity_id=body.opportunity_id,
             execution_ref=body.execution_ref,
             provider=body.provider,
             model_name=body.model_name,
@@ -91,7 +110,22 @@ def create_consumption(
         )
     except svc.FinOpsValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except svc.FinOpsBudgetBlockedError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     return svc.serialize_consumption(record)
+
+
+@router.get("/opportunities/{opportunity_id}/economics", response_model=OpportunityEconomicsOut)
+def opportunity_economics(
+    opportunity_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "finops.view", db)
+    try:
+        return svc.summarize_opportunity_economics(db, user.organization_id, opportunity_id)
+    except svc.FinOpsValidationError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/rates", response_model=list[RateOut])
@@ -152,15 +186,20 @@ def patch_rate(
 
 
 @router.get("/values", response_model=list[ValueOut])
-def list_values(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def list_values(
+    opportunity_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     check_permission(user, "finops.view", db)
-    return (
+    query = (
         db.query(FinOpsValueRecord)
         .filter(FinOpsValueRecord.organization_id == user.organization_id)
         .order_by(FinOpsValueRecord.created_at.desc())
-        .limit(200)
-        .all()
     )
+    if opportunity_id:
+        query = query.filter(FinOpsValueRecord.opportunity_id == opportunity_id)
+    return query.limit(200).all()
 
 
 @router.post("/values", response_model=ValueOut)
@@ -177,26 +216,6 @@ def create_value(body: ValueIn, db: Session = Depends(get_db), user: User = Depe
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-def _budget_out(db: Session, org_id: str, row: FinOpsBudget) -> dict:
-    spent = svc.budget_spent_for_scope(db, row)
-    return {
-        "id": row.id,
-        "organization_id": row.organization_id,
-        "scope_type": row.scope_type,
-        "scope_id": row.scope_id,
-        "period_start": row.period_start,
-        "period_end": row.period_end,
-        "amount_limit": row.amount_limit,
-        "currency": row.currency,
-        "policy": row.policy,
-        "name": row.name,
-        "active": row.active,
-        "spent": spent,
-        "state": svc.budget_state(spent, row.amount_limit),
-        "projection": svc.project_budget_spend(db, row),
-    }
-
-
 @router.get("/budgets", response_model=list[BudgetOut])
 def list_budgets(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     check_permission(user, "finops.budget", db)
@@ -206,7 +225,7 @@ def list_budgets(db: Session = Depends(get_db), user: User = Depends(get_current
         .order_by(FinOpsBudget.period_start.desc())
         .all()
     )
-    return [_budget_out(db, user.organization_id, row) for row in rows]
+    return [svc.serialize_budget_detail(db, row) for row in rows]
 
 
 @router.post("/budgets", response_model=BudgetOut)
@@ -223,7 +242,7 @@ def create_budget(body: BudgetIn, db: Session = Depends(get_db), user: User = De
         user_id=user.id,
         detail=f"presupuesto:{row.id}",
     )
-    return _budget_out(db, user.organization_id, row)
+    return svc.serialize_budget_detail(db, row)
 
 
 @router.patch("/budgets/{budget_id}", response_model=BudgetOut)
@@ -252,7 +271,7 @@ def patch_budget(
         user_id=user.id,
         detail=f"presupuesto:{row.id}",
     )
-    return _budget_out(db, user.organization_id, row)
+    return svc.serialize_budget_detail(db, row)
 
 
 @router.get("/drill-down", response_model=list[DrillDownNode])
@@ -280,3 +299,191 @@ def drill_down(
         if not employee:
             raise HTTPException(status_code=404, detail="Empleado IA no encontrado")
     return svc.build_drill_down(db, user.organization_id, employee_id=employee_id, work_plan_id=work_plan_id)
+
+
+def _planner_org_id(db: Session, user: User, organization_id: str | None) -> str:
+    try:
+        return planner_svc.resolve_organization_id(db, user, organization_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/planner/resumen")
+def planner_resumen(
+    organization_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "finops.view", db)
+    org_id = _planner_org_id(db, user, organization_id)
+    return planner_svc.org_resumen(db, org_id)
+
+
+@router.get("/planner/config")
+def planner_config(
+    organization_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "finops.view", db)
+    org_id = _planner_org_id(db, user, organization_id)
+    row = planner_svc.get_or_create_org_config(db, org_id)
+    return planner_svc.org_config_to_dict(row)
+
+
+@router.patch("/planner/config")
+def planner_config_patch(
+    body: PlannerConfigPatch,
+    organization_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "finops.planner.configure", db)
+    org_id = _planner_org_id(db, user, organization_id)
+    if body.model_distribution is not None:
+        try:
+            planner_svc.validate_distribution(body.model_distribution)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    row = planner_svc.update_org_config(db, org_id, body.model_dump(exclude_unset=True), user)
+    db.commit()
+    return planner_svc.org_config_to_dict(row)
+
+
+@router.post("/planner/simular")
+def planner_simular(
+    body: PlannerSimulateIn,
+    organization_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "finops.planner.simulate", db)
+    org_id = _planner_org_id(db, user, organization_id)
+    params = body.model_dump(exclude_unset=True)
+    if params.get("model_distribution"):
+        try:
+            planner_svc.validate_distribution(params["model_distribution"])
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    result = planner_svc.simulate(db, org_id, params)
+    if body.save_as:
+        planner_svc.save_simulation(db, org_id, user, body.save_as, params, result)
+        db.commit()
+    return result
+
+
+@router.get("/planner/capacidad")
+def planner_capacidad(
+    organization_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "finops.view", db)
+    org_id = _planner_org_id(db, user, organization_id)
+    sim = planner_svc.simulate(db, org_id, {"active_employees": 25, "executions_per_day": 20, "days": 30})
+    return sim["capacity"]
+
+
+@router.get("/planner/presupuesto")
+def planner_presupuesto(
+    organization_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "finops.view", db)
+    org_id = _planner_org_id(db, user, organization_id)
+    return planner_svc.presupuesto_summary(db, org_id)
+
+
+@router.post("/planner/comparar")
+def planner_comparar(
+    body: PlannerCompareIn,
+    organization_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "finops.view", db)
+    org_id = _planner_org_id(db, user, organization_id)
+    scenarios = [s.model_dump() for s in body.scenarios]
+    return planner_svc.compare_providers(db, org_id, scenarios, tokens_in=body.tokens_in, tokens_out=body.tokens_out)
+
+
+@router.get("/planner/empleado/{employee_id}")
+def planner_empleado(
+    employee_id: str,
+    days: int = Query(30, ge=1, le=365),
+    organization_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "finops.view", db)
+    org_id = _planner_org_id(db, user, organization_id)
+    try:
+        return planner_svc.employee_cost_detail(db, org_id, employee_id, days=days)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/planner/transversal")
+def planner_transversal_list(
+    organization_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "finops.view", db)
+    org_id = _planner_org_id(db, user, organization_id)
+    rows = planner_svc.list_transversal(db, org_id)
+    return [planner_svc.transversal_to_dict(r) for r in rows]
+
+
+@router.patch("/planner/transversal/{transversal_id}")
+def planner_transversal_patch(
+    transversal_id: str,
+    body: TransversalPatch,
+    organization_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "finops.planner.configure", db)
+    org_id = _planner_org_id(db, user, organization_id)
+    try:
+        row = planner_svc.update_transversal(db, org_id, transversal_id, body.model_dump(exclude_unset=True), user)
+        db.commit()
+        return planner_svc.transversal_to_dict(row)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/planner/margen")
+def planner_margen(
+    organization_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "finops.margin.view", db)
+    org_id = _planner_org_id(db, user, organization_id)
+    config = planner_svc.get_or_create_org_config(db, org_id)
+    resumen = planner_svc.org_resumen(db, org_id)
+    return resumen["margin"]
+
+
+@router.get("/planner/contrato-centro-control")
+def planner_contrato_centro_control(
+    organization_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "finops.view", db)
+    org_id = _planner_org_id(db, user, organization_id)
+    return planner_svc.centro_control_contract(db, org_id)
+
+
+@router.get("/planner/alertas")
+def planner_alertas(
+    organization_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    check_permission(user, "finops.view", db)
+    org_id = _planner_org_id(db, user, organization_id)
+    return planner_svc.prepare_alert_contracts(db, org_id)

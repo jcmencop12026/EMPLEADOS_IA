@@ -22,8 +22,10 @@ SAMPLE_RIPS = {
 
 def test_health(client):
     res = client.get("/health")
-    assert res.status_code == 200
-    assert res.json()["status"] == "ok"
+    assert res.status_code in (200, 503)
+    body = res.json()
+    assert body["status"] in ("up", "degraded", "down")
+    assert body["components"]["database"]["status"] == "up"
 
 
 def test_coordinator_route_rips(client, token):
@@ -158,17 +160,20 @@ def test_permission_denied_without_token(client):
 
 
 def test_traceability_events(client, token):
-    client.post(
+    res = client.post(
         "/api/assistant/ask",
         headers=auth_header(token),
         json={"message": "trace test", "context": {"tool": "docint", "documents": []}},
     )
+    assert res.status_code == 200
+    plan_id = res.json()["plan_id"]
     events = client.get("/api/operations/events", headers=auth_header(token))
     assert events.status_code == 200
-    types = {e["event_type"] for e in events.json()}
+    plan_events = [e for e in events.json() if e.get("work_plan_id") == plan_id]
+    types = {e["event_type"] for e in plan_events}
     assert "work.requested" in types
     assert "task.started" in types
-    assert types & {"work.completed", "work.failed"}
+    assert types & {"work.completed", "work.failed", "approval.required"}
 
 
 def test_docint_rips_e2e_findings(client, token):

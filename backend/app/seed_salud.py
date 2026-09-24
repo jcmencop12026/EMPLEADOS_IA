@@ -53,7 +53,7 @@ IPS_TOOLS = [
 ]
 
 
-def bootstrap_salud(db: Session, organization_id: str) -> None:
+def bootstrap_salud(db: Session, organization_id: str, *, commit: bool = True) -> None:
     """Idempotente: agrega capacidades/herramientas/especialistas IPS."""
     cap_map: dict[str, Capability] = {}
 
@@ -152,7 +152,8 @@ def bootstrap_salud(db: Session, organization_id: str) -> None:
         ))
 
     _seed_ips_templates(db, organization_id)
-    db.commit()
+    if commit:
+        db.commit()
 
 
 def _seed_ips_templates(db: Session, organization_id: str) -> None:

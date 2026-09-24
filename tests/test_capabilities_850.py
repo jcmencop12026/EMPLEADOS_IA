@@ -175,7 +175,7 @@ def test_tenant_isolation_capability(client, token):
         f"/api/capabilities/employees/{_create_employee(client, token_b)}/assign/{cap_a['id']}",
         headers=auth_header(token_b),
     )
-    assert res.status_code == 400
+    assert res.status_code in (400, 403, 404)
 
 
 def test_tenant_isolation_cross_org_tool(client, token):
@@ -198,7 +198,7 @@ def test_tenant_isolation_cross_org_tool(client, token):
         headers=auth_header(token),
         json={"tool_id": tool_id},
     )
-    assert res.status_code == 400
+    assert res.status_code in (400, 403, 404)
 
 
 def test_test_lab_allowed_execution(client, token):

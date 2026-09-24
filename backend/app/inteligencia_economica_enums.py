@@ -1,0 +1,28 @@
+"""Enums — Inteligencia económica + simulación + valor empresarial (1740)."""
+
+from __future__ import annotations
+
+from enum import StrEnum
+
+
+class TipoEscenarioComparacion(StrEnum):
+    ACTUAL = "ACTUAL"
+    OPTIMIZADO_SIN_IA = "OPTIMIZADO_SIN_IA"
+    AUTOMATIZADO = "AUTOMATIZADO"
+    ASISTIDO_POR_IA = "ASISTIDO_POR_IA"
+    EMPLEADO_IA = "EMPLEADO_IA"
+    SOLUCION_COMBINADA = "SOLUCION_COMBINADA"
+
+
+class TipoCompromisoGarantiaEconomica(StrEnum):
+    CONTROL_NUESTRO = "CONTROL_NUESTRO"
+    RESULTADO_COMPARTIDO = "RESULTADO_COMPARTIDO"
+    RESULTADO_EXTERNO = "RESULTADO_EXTERNO"
+
+
+class ModoDimensionamiento(StrEnum):
+    REDUCCION_PERSONAL = "REDUCCION_PERSONAL"
+    CAPACIDAD_LIBERADA = "CAPACIDAD_LIBERADA"
+    REASIGNACION = "REASIGNACION"
+    CRECIMIENTO_SIN_CONTRATAR = "CRECIMIENTO_SIN_CONTRATAR"
+    REDUCCION_REPROCESOS = "REDUCCION_REPROCESOS"

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import type { OperationItem, OperationSummary } from "../api";
 import { cancelOperation, fetchOperationsCenter, fetchOperationsSummary } from "../api";
 
@@ -13,6 +13,8 @@ const BUCKETS: Array<{ key: keyof OperationSummary; label: string }> = [
 ];
 
 export function OperationsHubPage() {
+  const [searchParams] = useSearchParams();
+  const expedienteFilter = searchParams.get("expediente") ?? "";
   const [rows, setRows] = useState<OperationItem[]>([]);
   const [summary, setSummary] = useState<OperationSummary | null>(null);
   const [search, setSearch] = useState("");
@@ -35,6 +37,7 @@ export function OperationsHubPage() {
       if (vencimientoFiltro) params.set("vencimiento_filtro", vencimientoFiltro);
       if (orden) params.set("orden", orden);
       if (activeBucket) params.set("bucket", activeBucket);
+      if (expedienteFilter) params.set("expediente", expedienteFilter);
       const [items, stats] = await Promise.all([
         fetchOperationsCenter(params.toString()),
         fetchOperationsSummary(),
@@ -50,16 +53,34 @@ export function OperationsHubPage() {
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [expedienteFilter]);
 
   const filtered = useMemo(() => rows, [rows]);
 
   return (
     <div className="ops-page">
-      <header className="page-header">
-        <h1>Operaciones</h1>
-        <p className="muted">Supervisión de trabajos, ejecuciones y aprobaciones de la plataforma.</p>
+      <header className="page-header compact">
+        <h1>Centro de Operaciones</h1>
+        <p className="muted">
+          Consola operativa complementaria al Centro de Control — trabajos, ejecuciones, aprobaciones e incidencias.
+          {expedienteFilter && <> · Filtrado por contexto de empresa</>}
+        </p>
       </header>
+
+      <section className="panel compact-panel ops-console-strip">
+        <h2 className="section-title">Acceso rápido</h2>
+        <div className="ops-console-links">
+          <Link to="/" className="btn small secondary">Centro de Control</Link>
+          <Link to="/operaciones/solicitud" className="btn small primary">Nueva solicitud</Link>
+          <Link to="/ejecuciones" className="btn small secondary">Ejecuciones</Link>
+          <Link to="/aprobaciones" className="btn small secondary">Aprobaciones</Link>
+          <Link to="/automatizaciones" className="btn small secondary">Automatizaciones</Link>
+          <Link to="/directorio" className="btn small secondary">Empleados IA</Link>
+          <Link to="/trabajo" className="btn small secondary">Mi trabajo</Link>
+          <Link to="/soporte" className="btn small secondary">Incidencias</Link>
+          <Link to="/empresas" className="btn small secondary">Empresas</Link>
+        </div>
+      </section>
 
       <div className="ops-actions">
         <Link className="btn primary" to="/operaciones/solicitud" title="Nueva solicitud de trabajo">
@@ -135,8 +156,8 @@ export function OperationsHubPage() {
         <p className="muted">No hay operaciones para los filtros seleccionados.</p>
       )}
 
-      <div className="panel table-wrap">
-        <table className="data-table">
+      <div className="panel table-wrap ops-table-panel">
+        <table className="data-table ops-hub-table">
           <thead>
             <tr>
               <th>Trabajo</th>

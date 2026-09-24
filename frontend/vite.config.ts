@@ -6,9 +6,11 @@ export default defineConfig({
   server: {
     host: "127.0.0.1",
     port: 5180,
+    strictPort: true,
+    allowedHosts: ['.trycloudflare.com'],
     proxy: {
-      "/api": "http://127.0.0.1:8000",
-      "/health": "http://127.0.0.1:8000",
+      "/api": "http://127.0.0.1:8010",
+      "/health": "http://127.0.0.1:8010",
     },
   },
 });
