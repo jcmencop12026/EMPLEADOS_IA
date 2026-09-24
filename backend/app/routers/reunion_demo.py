@@ -243,7 +243,7 @@ def estado_acceso_sala(code: str, user: User = Depends(get_current_user)):
     except HTTPException as exc:
         return {"estado":"CAIDO","guest_url":None,"expires_at":room["expires_at"],"detalle":exc.detail}
     status = _tunnel_status(base)
-    return {"estado":status,"guest_url":f"{base}/sala-demo/{room[\'codigo\']}?token={room[\'token\']}" if status == "ACTIVO" else None,"expires_at":room["expires_at"]}
+    return {"estado":status,"guest_url":f"{base}/sala-demo/{room['codigo']}?token={room['token']}" if status == "ACTIVO" else None,"expires_at":room["expires_at"]}
 
 
 @router.patch("/salas/{code}")
