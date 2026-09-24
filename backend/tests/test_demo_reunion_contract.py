@@ -215,3 +215,14 @@ def test_controlled_visible_allows_only_public_methodology_and_level():
     assert visible["metodologia"] == ["Conocer","Validar","Implementar"]
     assert "metodologia_privada" not in visible
     assert "formula" not in visible
+
+
+def test_quick_tunnel_runtime_url_wins_over_stale_environment(monkeypatch, tmp_path):
+    original_file = reunion_demo._PUBLIC_URL_FILE
+    try:
+        reunion_demo._PUBLIC_URL_FILE = tmp_path / "eiaax_public_url.txt"
+        reunion_demo._PUBLIC_URL_FILE.write_text("https://nuevo-vigente.trycloudflare.com", encoding="utf-8")
+        monkeypatch.setenv("EIIAX_PUBLIC_URL", "https://viejo-caido.trycloudflare.com")
+        assert reunion_demo._manager_public_base() == "https://nuevo-vigente.trycloudflare.com"
+    finally:
+        reunion_demo._PUBLIC_URL_FILE = original_file
