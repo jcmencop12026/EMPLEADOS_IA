@@ -9,11 +9,19 @@ $urlFile=Join-Path $runtime "eiaax_public_url.txt"
 $refreshFile=Join-Path $runtime "eiaax_tunnel_refresh.request"
 $statusFile=Join-Path $runtime "eiaax_tunnel_status.txt"
 $healthUrl="http://127.0.0.1:5180/"
+$lockFile=Join-Path $runtime "eiaax_tunnel_monitor.lock"
+if(Test-Path $lockFile){
+  $existing=Get-Content $lockFile -ErrorAction SilentlyContinue | Select-Object -First 1
+  if($existing -and (Get-Process -Id $existing -ErrorAction SilentlyContinue)){ Write-Host "[EIIAX] Monitor remoto ya activo." -ForegroundColor Yellow; exit 0 }
+  Remove-Item $lockFile -Force -ErrorAction SilentlyContinue
+}
+Set-Content -Path $lockFile -Value $PID -Encoding ascii
 function Test-TunnelAlive([string]$u){
   if([string]::IsNullOrWhiteSpace($u)){return $false}
   try { $r=Invoke-WebRequest -Uri $u -Method Head -TimeoutSec 6 -UseBasicParsing -ErrorAction Stop; return ($r.StatusCode -ge 200 -and $r.StatusCode -lt 500) }
   catch { return $false }
 }
+try {
 while($true){
   Remove-Item $refreshFile -Force -ErrorAction SilentlyContinue
   Set-Content -Path $statusFile -Value "RENOVANDO" -Encoding ascii
@@ -42,4 +50,7 @@ while($true){
   Set-Content -Path $statusFile -Value "CAIDO" -Encoding ascii
   Write-Host "[EIIAX] Canal remoto interrumpido. Renovando automaticamente..." -ForegroundColor Yellow
   Start-Sleep 2
+}
+} finally {
+  Remove-Item $lockFile -Force -ErrorAction SilentlyContinue
 }
