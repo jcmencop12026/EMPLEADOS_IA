@@ -3226,3 +3226,14 @@ body:has(.espacio-externo-portal) .eiaax-help-layer,body:has(.espacio-externo-po
 .guest-presenter-share{border-left:4px solid #7048c7!important;box-shadow:0 7px 20px rgba(83,55,145,.1)!important}
 .guest-presenter-share>div{display:flex;align-items:center;justify-content:space-between;gap:8px}.guest-presenter-share p{margin-bottom:0!important}
 @media(max-width:1050px){.guest-v10-command{grid-template-columns:1fr!important}.guest-v10-grid{grid-template-columns:repeat(2,1fr)!important}.guest-actionbar-v15{overflow:auto!important}.guest-actionbar-v15 .guest-live-share{margin-left:0!important}}
+
+
+/* EIIAX V15 — preparación ejecutiva: primer viewport útil */
+.meeting-prep.meeting-prep{padding:9px 11px!important;margin-top:4px!important}
+.meeting-prep-grid-v15{grid-template-columns:minmax(180px,.34fr) minmax(0,1.66fr)!important;gap:10px!important}
+.meeting-prep-grid-v15 .meeting-topic-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important}
+.meeting-prep-grid-v15 .meeting-topic-card{min-height:52px!important;padding:6px 7px!important}
+.meeting-topic-detail-v15{grid-template-columns:1fr 1fr!important;max-height:128px!important;overflow:auto!important;margin:5px 0!important;padding:6px 8px!important}
+.meeting-topic-detail-v15 h3{font-size:.76rem!important;margin:3px 0!important}.meeting-topic-detail-v15 li{font-size:.66rem!important;line-height:1.2!important}
+.meeting-prep .executive-value-strip{font-size:.68rem!important}.meeting-prep .info-box{font-size:.68rem!important}
+@media(max-width:900px){.meeting-prep-grid-v15{grid-template-columns:1fr!important}.meeting-topic-detail-v15{max-height:none!important}}
