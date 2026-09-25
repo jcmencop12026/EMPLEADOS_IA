@@ -4,7 +4,7 @@ import { fetchDemoSalaPublic, sendDemoGuestInterest, type DemoSala } from "../ap
 import { DEMO_MEETING_TOPICS } from "../lib/demoMeetingCatalog";
 import { DemoDomainVisuals } from "../components/DemoDomainVisuals";
 
-const IMPACTS=[["↗","Ingresos"],["↘","Pérdidas"],["◉","Costos"],["⚡","Productividad"],["◇","Riesgos"]] as const;
+const IMPACTS=[["↗","Ingresos","+$185 M"],["↘","Pérdidas","$128 M"],["◉","Costos","$54 M"],["⚡","Productividad","$96 M"],["◇","Riesgos","$742 M"]] as const;
 const IMPACT_DETAIL:any={Ingresos:{value:"+$185 M",title:"Nuevos ingresos",text:"Capacidad disponible y demanda no capturada."},"Pérdidas":{value:"$128 M",title:"Caja recuperable",text:"Segmento priorizado dentro de la cartera bajo análisis."},Costos:{value:"$54 M",title:"Costos evitables",text:"Reprocesos y actividades con oportunidad de eficiencia."},Productividad:{value:"18,7 días",title:"Ciclo factura → radicación",text:"Reducir tiempos acelera el ingreso y libera capacidad."},Riesgos:{value:"$742 M",title:"Cartera >90 días",text:"Exposición que requiere segmentación y gestión."}};
 const EXECUTIVE_OPPORTUNITIES=[
  {icon:"↗",value:"+$185 M",title:"Capacidad disponible que podría convertirse en nuevos ingresos",priority:"ALTA",impact:"Ingresos"},
@@ -37,7 +37,7 @@ export function DemoGuestRoomPage(){
   <header className="guest-executive-header">
    <div className="guest-logo-plate"><img src="/assets/identity/eiaax-logo-approved.png" alt="EIIAX"/></div>
    <div className="guest-executive-title"><span className="semantic-badge hecho">● EN VIVO · {v?.nivel||"DEMO"}</span><h1>{v?.titulo||topic.label}</h1><p>IA aplicada para convertir evidencia en decisiones con impacto.</p></div>
-   <div className="guest-impact guest-impact-top">{IMPACTS.map(([i,l])=><button key={l} className={impact===l?"active":""} onClick={()=>selectImpact(l)}><b>{i}</b>{l}</button>)}</div>
+   <div className="guest-impact guest-impact-top">{IMPACTS.map(([i,l,v])=><button key={l} className={impact===l?"active":""} onClick={()=>selectImpact(l)}><b>{i}</b><span><strong>{v}</strong><small>{l}</small></span></button>)}</div>
   </header>
   <section className="guest-v20-summary">
    <button className="guest-v20-total" onClick={()=>setPanel("evidencia")}><span>{v?.nivel||"DEMO"} · POTENCIAL / SEÑALES</span><strong>{topic.indicadores[0]||"$463 M"}</strong><small>{topic.label}</small></button>
