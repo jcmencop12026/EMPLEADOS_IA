@@ -3199,3 +3199,30 @@ body:has(.espacio-externo-portal) .eiaax-help-layer,body:has(.espacio-externo-po
 .guest-footer-v7{font-size:.52rem!important}
 @media(max-height:800px){.guest-v10-command{grid-template-columns:minmax(280px,.62fr) minmax(600px,1.8fr)!important}.guest-v10-hero{padding:10px 13px!important}.guest-v10-hero h2{font-size:1.08rem!important}.guest-v10-grid button{padding:6px 8px!important}.guest-question-box{min-height:38px!important;padding:5px 8px!important}}
 @media(max-width:1050px){.guest-v10-command{grid-template-columns:1fr!important;overflow:auto!important}.guest-v10-hero{min-height:190px!important}.guest-v10-grid{grid-template-columns:repeat(2,1fr)!important}.guest-question-box{grid-column:1!important}}
+
+
+/* EIIAX V15 — gerente: oportunidades primero, iconos funcionales y radar lateral */
+.guest-room-v8 .guest-executive-title h1{font-size:1.08rem!important;line-height:1.15!important;margin:3px 0!important}
+.guest-room-v8 .guest-executive-title p{font-size:.66rem!important;margin:1px 0!important}
+.guest-impact-top button{display:flex!important;align-items:center!important;gap:5px!important;min-height:31px!important;padding:5px 8px!important}
+.guest-impact-top button b{display:grid;place-items:center;width:20px;height:20px;border-radius:6px;background:rgba(18,103,207,.08);font-size:.76rem}
+.guest-impact-top button.active b{background:rgba(255,255,255,.18)}
+.guest-decision-strip-v15{display:grid!important;grid-template-columns:1fr auto!important;align-items:center!important}
+.guest-decision-strip-v15>div{display:grid!important;grid-template-columns:auto auto 1fr!important;gap:5px 10px!important;align-items:center!important}
+.guest-decision-strip-v15>div span{grid-row:1!important}.guest-decision-strip-v15>div strong{font-size:1rem!important}.guest-decision-strip-v15>div p{margin:0!important;font-size:.72rem!important;font-weight:800!important}.guest-decision-strip-v15>div small{grid-column:2/4!important;font-size:.57rem!important}
+.guest-decision-strip-v15>button{padding:6px 9px!important;font-size:.6rem!important}
+.guest-actionbar-v15{display:flex!important;justify-content:flex-start!important;gap:5px!important;width:100%!important}
+.guest-actionbar-v15 button{display:flex!important;align-items:center!important;gap:5px!important;min-width:0!important;padding:6px 10px!important;font-size:.64rem!important}
+.guest-actionbar-v15 .guest-live-share{margin-left:auto!important;border-color:#8b6bd6!important;background:#f7f3ff!important;color:#6035b2!important}
+.guest-actionbar-v15 .guest-live-share b{padding:2px 5px;border-radius:999px;background:#6f43c1;color:#fff;font-size:.48rem}
+.guest-v10-command{grid-template-columns:minmax(340px,.86fr) minmax(590px,1.48fr)!important}
+.guest-v10-hero{background:linear-gradient(145deg,#f8fbff,#eef5fd)!important;color:#173b5c!important;border:1px solid #cbddef!important;box-shadow:0 8px 24px rgba(30,75,120,.08)!important}
+.guest-v10-hero>span{color:#1764ae!important}.guest-v10-hero h2{color:#102f4d!important;font-size:clamp(1rem,1.35vw,1.3rem)!important;max-width:none!important}
+.guest-v10-hero>p{color:#536d84!important;max-width:none!important}.guest-v10-hero .guest-story-impact small{color:#526b82!important}
+.guest-v10-hero .guest-story-actions button{background:#fff!important;color:#155b9c!important;border-color:#b8cfe6!important}.guest-v10-hero .guest-story-actions button+button{background:#edf5ff!important;color:#155b9c!important}
+.guest-v10-discovery{order:2!important}.guest-v10-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(3,minmax(0,1fr))!important}
+.guest-v10-grid button{grid-template-columns:30px 1fr!important;grid-template-rows:auto 1fr auto!important;min-height:0!important}
+.guest-v10-grid button b{grid-row:1/4!important}.guest-v10-grid button em{display:none!important}
+.guest-presenter-share{border-left:4px solid #7048c7!important;box-shadow:0 7px 20px rgba(83,55,145,.1)!important}
+.guest-presenter-share>div{display:flex;align-items:center;justify-content:space-between;gap:8px}.guest-presenter-share p{margin-bottom:0!important}
+@media(max-width:1050px){.guest-v10-command{grid-template-columns:1fr!important}.guest-v10-grid{grid-template-columns:repeat(2,1fr)!important}.guest-actionbar-v15{overflow:auto!important}.guest-actionbar-v15 .guest-live-share{margin-left:0!important}}
