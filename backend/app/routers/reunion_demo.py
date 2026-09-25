@@ -5,7 +5,6 @@ import json
 import os
 import secrets
 import threading
-import time
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -51,19 +50,39 @@ def _tunnel_status(base: str | None = None) -> str:
         raw = _TUNNEL_STATUS_FILE.read_text(encoding="ascii").strip().upper()
     except OSError:
         raw = ""
-    if raw == "RENOVANDO":
-        return "RENOVANDO"
+    status_aliases = {
+        "RENOVANDO": "RECUPERANDO",
+        "RECUPERANDO": "RECUPERANDO",
+        "RATE_LIMITED": "RATE_LIMITED",
+        "CAIDO": "NO_DISPONIBLE",
+        "NO_DISPONIBLE": "NO_DISPONIBLE",
+    }
+    # El estado del monitor aplica al Quick Tunnel; una URL estable configurable
+    # se valida por separado y no hereda el cooldown de Cloudflare Quick Tunnel.
+    if raw in status_aliases and (not base or "trycloudflare.com" in base.lower()):
+        return status_aliases[raw]
     if not base:
         try:
             base = _manager_public_base()
         except HTTPException:
-            return "CAIDO"
+            return "NO_DISPONIBLE"
     try:
         req = urllib.request.Request(base + "/", method="HEAD", headers={"User-Agent": "EIIAX-health/1.0"})
         with urllib.request.urlopen(req, timeout=5) as response:
-            return "ACTIVO" if 200 <= response.status < 500 else "CAIDO"
+            return "ACTIVO" if 200 <= response.status < 500 else "NO_DISPONIBLE"
     except (OSError, urllib.error.URLError, ValueError):
-        return "CAIDO"
+        return "NO_DISPONIBLE"
+
+
+def _request_tunnel_recovery() -> bool:
+    """Solicita una recuperación una sola vez, incluso con llamadas concurrentes."""
+    _RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        with _TUNNEL_REFRESH_FILE.open("x", encoding="ascii") as request:
+            request.write(datetime.now(timezone.utc).isoformat())
+        return True
+    except FileExistsError:
+        return False
 
 
 router = APIRouter(prefix="/api/reunion-demo", tags=["reunion-demo"])
@@ -175,7 +194,10 @@ def _get(code: str) -> dict:
 
 @router.post("/salas")
 def crear_sala(body: SalaCreate, user: User = Depends(get_current_user)):
-    public_url = _manager_public_base()
+    try:
+        public_url = _manager_public_base()
+    except HTTPException:
+        public_url = None
     code = secrets.token_hex(3).upper()
     token = secrets.token_urlsafe(24)
     now = datetime.now(timezone.utc)
@@ -187,12 +209,13 @@ def crear_sala(body: SalaCreate, user: User = Depends(get_current_user)):
         _ROOMS[code] = room
         _persist_rooms()
     result = {**_public(room), "guest_token": token}
-    result["guest_url"] = f"{public_url}/sala-demo/{code}?token={token}"
+    result["guest_url"] = f"{public_url}/sala-demo/{code}?token={token}" if public_url else None
+    result["remote_status"] = _tunnel_status(public_url)
     return result
 
 @router.post("/salas/{code}/renovar")
 def renovar_acceso_sala(code: str, body: SalaRenew, user: User = Depends(get_current_user)):
-    """Renueva la sala y solo reemplaza el Quick Tunnel cuando hace falta."""
+    """Renueva sin bloquear el worker ni destruir un transporte saludable."""
     room = _get(code)
     if room["organization_id"] != user.organization_id:
         raise HTTPException(403, "Sala de otra organización")
@@ -208,33 +231,21 @@ def renovar_acceso_sala(code: str, body: SalaRenew, user: User = Depends(get_cur
     if old_base and _tunnel_status(old_base) == "ACTIVO":
         base = old_base
     else:
-        base = None
-        if body.refresh_tunnel:
-            _RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+        status = _tunnel_status(old_base)
+        if body.refresh_tunnel and status != "RATE_LIMITED":
             try:
-                _TUNNEL_REFRESH_FILE.write_text(datetime.now(timezone.utc).isoformat(), encoding="ascii")
+                _request_tunnel_recovery()
             except OSError as exc:
                 raise HTTPException(503, f"No fue posible solicitar recuperación del acceso remoto: {exc}") from exc
-
-            deadline = time.monotonic() + 35
-            while time.monotonic() < deadline:
-                time.sleep(1)
-                try:
-                    candidate = _manager_public_base()
-                except HTTPException:
-                    continue
-                if candidate and candidate != old_base and _tunnel_status(candidate) == "ACTIVO":
-                    base = candidate
-                    break
-
-        if not base:
-            raise HTTPException(503, "El acceso remoto no respondió. La sala existente se conservó sin cambios.")
+            status = "RECUPERANDO"
+        return {
+            **_public(room), "guest_token": room["token"], "guest_url": None,
+            "remote_status": status,
+            "detail": "La sala local sigue disponible; el transporte remoto se recupera en segundo plano.",
+        }
 
     with _LOCK:
-        # Mantener el token conserva enlaces ya enviados. Solo rotarlo cuando se pidió
-        # expresamente y el túnel tuvo que ser recuperado.
-        if body.rotate_token and (not old_base or base != old_base):
-            room["token"] = secrets.token_urlsafe(24)
+        # Un transporte saludable no requiere invalidar enlaces ya enviados.
         room["expires_at"] = datetime.now(timezone.utc) + timedelta(hours=body.hours)
         room["estado"] = "ABIERTA"
         room["revision"] += 1
@@ -253,7 +264,7 @@ def estado_acceso_sala(code: str, user: User = Depends(get_current_user)):
     try:
         base = _manager_public_base()
     except HTTPException as exc:
-        return {"estado":"CAIDO","guest_url":None,"expires_at":room["expires_at"],"detalle":exc.detail}
+        return {"estado":"NO_DISPONIBLE","guest_url":None,"expires_at":room["expires_at"],"detalle":exc.detail}
     status = _tunnel_status(base)
     return {"estado":status,"guest_url":f"{base}/sala-demo/{room['codigo']}?token={room['token']}" if status == "ACTIVO" else None,"expires_at":room["expires_at"]}
 

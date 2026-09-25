@@ -5297,7 +5297,7 @@ export async function askDemoReunion(expedienteId:string, pregunta:string, temaA
   return api<DemoReunionRespuesta>(`/api/demo-comercial/presentacion/${expedienteId}/preguntar`, { method:"POST", body: JSON.stringify({ pregunta, tema_activo: temaActivo }) });
 }
 
-export type DemoSala={codigo:string;guest_token?:string;guest_url?:string;expediente_id:string;tema:string;proposito:string;estado:string;visible?:Record<string,unknown>|null;intereses?:Array<{accion:string;tema:string;detalle:string;fecha:string}>;revision:number};
+export type DemoSala={codigo:string;guest_token?:string;guest_url?:string|null;remote_status?:"ACTIVO"|"RECUPERANDO"|"NO_DISPONIBLE"|"RATE_LIMITED";detail?:string;expediente_id:string;tema:string;proposito:string;estado:string;visible?:Record<string,unknown>|null;intereses?:Array<{accion:string;tema:string;detalle:string;fecha:string}>;revision:number};
 export const createDemoSala=(expediente_id:string,tema:string,proposito:string):Promise<DemoSala>=>api<DemoSala>('/api/reunion-demo/salas',{method:'POST',body:JSON.stringify({expediente_id,tema,proposito})});
 export const updateDemoSala=(codigo:string,body:Record<string,unknown>):Promise<DemoSala>=>api<DemoSala>(`/api/reunion-demo/salas/${codigo}`,{method:'PATCH',body:JSON.stringify(body)});
 export async function fetchDemoSalaPublic(codigo:string,token:string):Promise<DemoSala>{const r=await fetch(`/api/reunion-demo/sala/${codigo}?token=${encodeURIComponent(token)}`,{cache:'no-store',credentials:'omit'});if(!r.ok)throw new Error('Sala no disponible');return r.json();}

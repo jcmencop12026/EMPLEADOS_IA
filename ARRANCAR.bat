@@ -36,9 +36,11 @@ echo Login: admin / Admin2026*
 
 rem Arrancar primero API y Web. El backend lee EIIAX_PUBLIC_URL tambien
 rem desde runtime\eiaax_public_url.txt para permitir que el tunel nazca despues.
-start "EMPLEADOS_IA API" cmd /k "cd /d %~dp0backend && call ..\.venv\Scripts\activate.bat && python -m uvicorn app.main:app --host 127.0.0.1 --port 8010 --reload"
+netstat -ano | findstr /r /c:":8010 .*LISTENING" >nul 2>&1
+if errorlevel 1 start "EMPLEADOS_IA API" cmd /k "cd /d %~dp0backend && call ..\.venv\Scripts\activate.bat && python -m uvicorn app.main:app --host 127.0.0.1 --port 8010 --reload"
 timeout /t 3 /nobreak >nul
-start "EMPLEADOS_IA WEB" cmd /k "cd /d %~dp0frontend && npm run dev -- --host 127.0.0.1"
+netstat -ano | findstr /r /c:":5180 .*LISTENING" >nul 2>&1
+if errorlevel 1 start "EMPLEADOS_IA WEB" cmd /k "cd /d %~dp0frontend && npm run dev -- --host 127.0.0.1"
 timeout /t 3 /nobreak >nul
 
 if not defined EIIAX_CLOUDFLARED (
@@ -49,14 +51,12 @@ if not defined EIIAX_CLOUDFLARED (
   goto :LOCAL
 )
 
-del /q "%EIIAX_TUNNEL_LOG%" >nul 2>&1
-del /q "%~dp0runtime\eiaax_public_url.txt" >nul 2>&1
 start "EIIAX TUNEL HTTPS" powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\MONITOR_TUNEL_EIIAX.ps1" -Cloudflared "%EIIAX_CLOUDFLARED%" -Root "%~dp0"
 
 echo.
 echo [EIIAX] Creando acceso HTTPS temporal para el Gerente...
 for /l %%N in (1,1,30) do (
-  for /f "usebackq delims=" %%U in (`powershell -NoProfile -Command "$p='%EIIAX_TUNNEL_LOG%'; if(Test-Path $p){$m=Select-String -Path $p -Pattern 'https://[a-zA-Z0-9-]+\.trycloudflare\.com' -AllMatches | Select-Object -Last 1; if($m){$m.Matches.Value | Select-Object -Last 1}}"`) do set "EIIAX_PUBLIC_URL=%%U"
+  for /f "usebackq delims=" %%U in (`powershell -NoProfile -Command "$s='%~dp0runtime\eiaax_tunnel_status.txt';$u='%~dp0runtime\eiaax_public_url.txt';if((Test-Path $s)-and((Get-Content $s -Raw).Trim()-eq'ACTIVO')-and(Test-Path $u)){(Get-Content $u -Raw).Trim()}"`) do set "EIIAX_PUBLIC_URL=%%U"
   if defined EIIAX_PUBLIC_URL goto :TUNNEL_OK
   timeout /t 1 /nobreak >nul
 )
@@ -66,7 +66,6 @@ echo [EIIAX] Revise: %EIIAX_TUNNEL_LOG%
 goto :LOCAL
 
 :TUNNEL_OK
-> "%~dp0runtime\eiaax_public_url.txt" echo !EIIAX_PUBLIC_URL!
 echo.
 echo ============================================================
 echo EIIAX REMOTO LISTO

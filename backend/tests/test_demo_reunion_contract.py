@@ -27,17 +27,22 @@ def test_topic_detection_preserves_domain(question, active, expected):
     assert expected in copilot._topics(question, active)
 
 
-def test_external_invite_requires_configured_public_url(monkeypatch):
+def test_external_invite_requires_configured_public_url(monkeypatch, tmp_path):
     monkeypatch.delenv("EIIAX_PUBLIC_URL", raising=False)
+    original_public = reunion_demo._PUBLIC_URL_FILE
+    reunion_demo._PUBLIC_URL_FILE = tmp_path / "missing-public-url.txt"
     original = dict(reunion_demo._ROOMS)
     reunion_demo._ROOMS.clear()
     now = datetime.now(timezone.utc)
     reunion_demo._ROOMS["INV001"] = {"codigo":"INV001","token":"t","expires_at":now+timedelta(hours=1),"organization_id":"org1"}
     user = SimpleNamespace(id="u1", organization_id="org1")
-    with pytest.raises(HTTPException) as exc:
-        reunion_demo.invitar_sala("INV001", reunion_demo.SalaInvite(email="gerencia@example.com"), None, user)
-    assert exc.value.status_code == 503
-    reunion_demo._ROOMS.clear(); reunion_demo._ROOMS.update(original)
+    try:
+        with pytest.raises(HTTPException) as exc:
+            reunion_demo.invitar_sala("INV001", reunion_demo.SalaInvite(email="gerencia@example.com"), None, user)
+        assert exc.value.status_code == 503
+    finally:
+        reunion_demo._PUBLIC_URL_FILE = original_public
+        reunion_demo._ROOMS.clear(); reunion_demo._ROOMS.update(original)
 
 
 def test_room_create_update_public_and_token(tmp_path):
@@ -85,6 +90,26 @@ def test_room_create_update_public_and_token(tmp_path):
     reunion_demo._ROOMS.clear()
     reunion_demo._ROOM_STORE = original_store
     reunion_demo._load_rooms()
+
+
+def test_room_creation_keeps_local_flow_when_transport_is_down(monkeypatch, tmp_path):
+    original_store, original_public = reunion_demo._ROOM_STORE, reunion_demo._PUBLIC_URL_FILE
+    original_rooms = dict(reunion_demo._ROOMS)
+    try:
+        reunion_demo._ROOM_STORE = tmp_path / "rooms.json"
+        reunion_demo._PUBLIC_URL_FILE = tmp_path / "missing-url.txt"
+        reunion_demo._ROOMS.clear()
+        monkeypatch.delenv("EIIAX_PUBLIC_URL", raising=False)
+        created = reunion_demo.crear_sala(
+            reunion_demo.SalaCreate(expediente_id="EVA-LOCAL"),
+            SimpleNamespace(id="u1", organization_id="org1"),
+        )
+        assert created["guest_url"] is None
+        assert created["remote_status"] == "NO_DISPONIBLE"
+        assert reunion_demo.ver_sala_publica(created["codigo"], created["guest_token"])["codigo"] == created["codigo"]
+    finally:
+        reunion_demo._ROOMS.clear(); reunion_demo._ROOMS.update(original_rooms)
+        reunion_demo._ROOM_STORE, reunion_demo._PUBLIC_URL_FILE = original_store, original_public
 
 
 def test_public_commitments_are_allowed_without_private_methodology():
@@ -257,3 +282,91 @@ def test_renew_healthy_tunnel_is_non_destructive(monkeypatch, tmp_path):
         reunion_demo._ROOMS.update(original_rooms)
         reunion_demo._ROOM_STORE = original_store
         reunion_demo._TUNNEL_REFRESH_FILE = original_refresh
+
+
+def _install_renew_room(tmp_path):
+    reunion_demo._ROOM_STORE = tmp_path / "rooms.json"
+    reunion_demo._ROOMS.clear()
+    reunion_demo._ROOMS["REN002"] = {
+        "codigo":"REN002","token":"tok","expediente_id":"E1","tema":"facturacion",
+        "proposito":"DEMO_INTEGRAL","estado":"ABIERTA","visible":None,"intereses":[],
+        "revision":1,"created_at":datetime.now(timezone.utc),
+        "expires_at":datetime.now(timezone.utc)+timedelta(hours=1),
+        "organization_id":"org1","operator_id":"u1",
+    }
+
+
+def test_dead_url_requests_one_non_blocking_recovery(monkeypatch, tmp_path):
+    original_store, original_refresh = reunion_demo._ROOM_STORE, reunion_demo._TUNNEL_REFRESH_FILE
+    original_rooms = dict(reunion_demo._ROOMS)
+    try:
+        _install_renew_room(tmp_path)
+        reunion_demo._TUNNEL_REFRESH_FILE = tmp_path / "refresh.request"
+        monkeypatch.setattr(reunion_demo, "_manager_public_base", lambda: "https://dead.trycloudflare.com")
+        monkeypatch.setattr(reunion_demo, "_tunnel_status", lambda base=None: "NO_DISPONIBLE")
+        user = SimpleNamespace(id="u1", organization_id="org1")
+        first = reunion_demo.renovar_acceso_sala("REN002", reunion_demo.SalaRenew(), user)
+        second = reunion_demo.renovar_acceso_sala("REN002", reunion_demo.SalaRenew(), user)
+        assert first["remote_status"] == second["remote_status"] == "RECUPERANDO"
+        assert first["guest_url"] is None and second["guest_url"] is None
+        assert reunion_demo._TUNNEL_REFRESH_FILE.exists()
+        assert reunion_demo._ROOMS["REN002"]["revision"] == 1
+    finally:
+        reunion_demo._ROOMS.clear(); reunion_demo._ROOMS.update(original_rooms)
+        reunion_demo._ROOM_STORE, reunion_demo._TUNNEL_REFRESH_FILE = original_store, original_refresh
+
+
+def test_rate_limited_does_not_enqueue_retry(monkeypatch, tmp_path):
+    original_store, original_refresh = reunion_demo._ROOM_STORE, reunion_demo._TUNNEL_REFRESH_FILE
+    original_rooms = dict(reunion_demo._ROOMS)
+    try:
+        _install_renew_room(tmp_path)
+        reunion_demo._TUNNEL_REFRESH_FILE = tmp_path / "refresh.request"
+        monkeypatch.setattr(reunion_demo, "_manager_public_base", lambda: "https://dead.trycloudflare.com")
+        monkeypatch.setattr(reunion_demo, "_tunnel_status", lambda base=None: "RATE_LIMITED")
+        out = reunion_demo.renovar_acceso_sala("REN002", reunion_demo.SalaRenew(), SimpleNamespace(id="u1", organization_id="org1"))
+        assert out["remote_status"] == "RATE_LIMITED"
+        assert out["guest_url"] is None
+        assert not reunion_demo._TUNNEL_REFRESH_FILE.exists()
+    finally:
+        reunion_demo._ROOMS.clear(); reunion_demo._ROOMS.update(original_rooms)
+        reunion_demo._ROOM_STORE, reunion_demo._TUNNEL_REFRESH_FILE = original_store, original_refresh
+
+
+def test_access_never_publishes_dead_url(monkeypatch, tmp_path):
+    original_store, original_rooms = reunion_demo._ROOM_STORE, dict(reunion_demo._ROOMS)
+    try:
+        _install_renew_room(tmp_path)
+        monkeypatch.setattr(reunion_demo, "_manager_public_base", lambda: "https://dead.trycloudflare.com")
+        monkeypatch.setattr(reunion_demo, "_tunnel_status", lambda base=None: "NO_DISPONIBLE")
+        out = reunion_demo.estado_acceso_sala("REN002", SimpleNamespace(id="u1", organization_id="org1"))
+        assert out["estado"] == "NO_DISPONIBLE"
+        assert out["guest_url"] is None
+    finally:
+        reunion_demo._ROOMS.clear(); reunion_demo._ROOMS.update(original_rooms)
+        reunion_demo._ROOM_STORE = original_store
+
+
+def test_stable_configured_transport_ignores_quick_tunnel_cooldown(monkeypatch, tmp_path):
+    original_status = reunion_demo._TUNNEL_STATUS_FILE
+    try:
+        reunion_demo._TUNNEL_STATUS_FILE = tmp_path / "status.txt"
+        reunion_demo._TUNNEL_STATUS_FILE.write_text("RATE_LIMITED", encoding="ascii")
+        class Response:
+            status = 200
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+        monkeypatch.setattr(reunion_demo.urllib.request, "urlopen", lambda *args, **kwargs: Response())
+        assert reunion_demo._tunnel_status("https://demo.example.com") == "ACTIVO"
+    finally:
+        reunion_demo._TUNNEL_STATUS_FILE = original_status
+
+
+def test_monitor_has_rate_limit_cooldown_and_safe_publication():
+    script = (reunion_demo.DATA_DIR.parent / "scripts" / "MONITOR_TUNEL_EIIAX.ps1").read_text(encoding="utf-8")
+    assert "status 429" in script and "1015" in script
+    assert "$rateLimitBackoff=300" in script
+    assert 'Set-TunnelState "RATE_LIMITED"' in script
+    assert "FileMode]::CreateNew" in script
+    assert "Stop-StaleQuickTunnels" in script
+    assert script.index("Test-TunnelAlive $candidate") < script.index("Set-Content -LiteralPath $urlFile -Value $candidate")

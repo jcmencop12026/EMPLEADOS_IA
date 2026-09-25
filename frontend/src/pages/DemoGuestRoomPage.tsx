@@ -14,12 +14,13 @@ export function DemoGuestRoomPage(){
  const v=sala?.visible as any; const topic=useMemo(()=>DEMO_MEETING_TOPICS.find(t=>t.id===sala?.tema)||DEMO_MEETING_TOPICS[0],[sala?.tema]); const findings=Array.isArray(v?.contenido)&&v.contenido.length?v.contenido:topic.hallazgos;
  const registrar=async(accion:string,detalle:string)=>{try{await sendDemoGuestInterest(codigo,token,accion,topic.label,detalle);setInterestMsg(accion==="PREGUNTA_AUDIENCIA"?"✓ Pregunta enviada al presentador":"✓ Interés enviado al presentador");setTimeout(()=>setInterestMsg(null),3000)}catch{setInterestMsg("No fue posible enviar la interacción")}};
  const enviarPregunta=async(e:React.FormEvent)=>{e.preventDefault();const q=guestQuestion.trim();if(!q)return;await registrar("PREGUNTA_AUDIENCIA",q);setGuestQuestion("")};
- if(error)return <main className="guest-room"><h1>EIIAX · Sala ejecutiva</h1><p className="error">{error}</p></main>;
+ if(error&&!sala)return <main className="guest-room"><h1>EIIAX · Sala ejecutiva</h1><p className="error">{error}</p></main>;
  if(!sala)return <main className="guest-room"><h1>EIIAX · Sala ejecutiva</h1><p>Conectando con la reunión…</p></main>;
  const current=findings[Math.min(focus,findings.length-1)]||topic.oportunidades[0];
  const narrative=topic.narrativa[focus%topic.narrativa.length];
  const openFinding=(i:number)=>{setFocus(i);setDetailOpen(true)};
  return <main className="guest-room guest-room-v8">
+  {error&&<div className="info-box" role="status">Conexión temporalmente inestable. Se conserva la última vista y se reintenta automáticamente.</div>}
   <header className="guest-executive-header">
    <div className="guest-logo-plate"><img src="/assets/identity/eiaax-logo-approved.png" alt="EIIAX"/></div>
    <div className="guest-executive-title"><span className="semantic-badge hecho">● EN VIVO · {v?.nivel||"DEMO"}</span><h1>{v?.titulo||topic.label}</h1><p>IA aplicada para convertir evidencia en decisiones con impacto.</p></div>
