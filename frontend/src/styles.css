@@ -3237,3 +3237,41 @@ body:has(.espacio-externo-portal) .eiaax-help-layer,body:has(.espacio-externo-po
 .meeting-topic-detail-v15 h3{font-size:.76rem!important;margin:3px 0!important}.meeting-topic-detail-v15 li{font-size:.66rem!important;line-height:1.2!important}
 .meeting-prep .executive-value-strip{font-size:.68rem!important}.meeting-prep .info-box{font-size:.68rem!important}
 @media(max-width:900px){.meeting-prep-grid-v15{grid-template-columns:1fr!important}.meeting-topic-detail-v15{max-height:none!important}}
+
+
+/* EIIAX V16 FINAL — reemplazo visual limpio de la pantalla gerente */
+.guest-room-v8{background:#f6f9fc!important}
+.guest-room-v8 .guest-executive-header{min-height:72px!important;padding:8px 12px!important;border-radius:16px!important}
+.guest-room-v8 .guest-logo-plate{width:180px!important;min-width:180px!important;height:58px!important}
+.guest-room-v8 .guest-executive-title h1{font-size:1rem!important;line-height:1.15!important}
+.guest-room-v8 .guest-welcome-ribbon{padding:5px 10px!important;min-height:35px!important}
+.guest-room-v8 .guest-welcome-ribbon strong{font-size:.68rem!important}
+.guest-room-v8 .guest-decision-strip{padding:6px 10px!important;min-height:40px!important}
+.guest-room-v8 .guest-actionbar{min-height:38px!important;padding:4px 10px!important}
+.guest-room-v8 .guest-workspace{padding:6px 0 0!important}
+.guest-room-v8 .guest-v10-command{display:grid!important;grid-template-columns:minmax(390px,42%) minmax(520px,58%)!important;gap:10px!important;align-items:stretch!important}
+.guest-room-v8 .guest-story-v8.guest-v10-hero{background:#fff!important;color:#16324a!important;border:1px solid #d8e3ed!important;border-left:5px solid #2f73b8!important;border-radius:14px!important;min-height:310px!important;height:auto!important;padding:18px 20px!important;box-shadow:0 5px 18px rgba(22,50,74,.07)!important}
+.guest-room-v8 .guest-story-v8.guest-v10-hero>span{font-size:.62rem!important;color:#2b6da9!important;letter-spacing:.08em!important}
+.guest-room-v8 .guest-story-v8.guest-v10-hero h2{font-size:1.42rem!important;line-height:1.14!important;color:#17354f!important;margin:10px 0 8px!important;max-width:520px!important}
+.guest-room-v8 .guest-story-v8.guest-v10-hero>p{font-size:.75rem!important;line-height:1.45!important;color:#62788c!important;max-width:520px!important}
+.guest-room-v8 .guest-story-impact{margin-top:auto!important;padding-top:14px!important}
+.guest-room-v8 .guest-story-impact b{font-size:1.35rem!important;color:#155fa5!important}
+.guest-room-v8 .guest-story-impact small{font-size:.62rem!important;color:#60768a!important}
+.guest-room-v8 .guest-story-actions{margin-top:12px!important;display:flex!important;gap:7px!important}
+.guest-room-v8 .guest-story-actions button{font-size:.64rem!important;padding:7px 10px!important;border-radius:8px!important}
+.guest-room-v8 .guest-v10-discovery{background:#fff!important;border:1px solid #d8e3ed!important;border-radius:14px!important;padding:10px!important;box-shadow:0 5px 18px rgba(22,50,74,.06)!important}
+.guest-room-v8 .guest-v10-discovery>header{min-height:34px!important;margin-bottom:7px!important}
+.guest-room-v8 .guest-v10-discovery>header span{font-size:.65rem!important}
+.guest-room-v8 .guest-v10-discovery>header strong{font-size:.57rem!important}
+.guest-room-v8 .guest-v10-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(3,minmax(82px,1fr))!important;gap:7px!important}
+.guest-room-v8 .guest-v10-grid button{min-height:82px!important;height:auto!important;padding:9px!important;border-radius:11px!important;background:#fbfdff!important;border:1px solid #dce6ef!important;box-shadow:none!important;display:grid!important;grid-template-columns:38px 1fr!important;grid-template-rows:1fr auto!important;gap:4px 7px!important;text-align:left!important}
+.guest-room-v8 .guest-v10-grid button:nth-child(n){background:#fbfdff!important}
+.guest-room-v8 .guest-v10-grid button.active{border:2px solid #2d7dd2!important;background:#f1f7fe!important}
+.guest-room-v8 .guest-v10-grid button b{grid-row:1/3!important;align-self:start!important;font-size:.6rem!important;color:#2269ad!important;background:#edf5fd!important;border-radius:8px!important;padding:7px 5px!important;text-align:center!important}
+.guest-room-v8 .guest-v10-grid button span{font-size:.65rem!important;line-height:1.25!important;color:#17354f!important;font-weight:700!important}
+.guest-room-v8 .guest-v10-grid button small{font-size:.5rem!important;color:#b05a00!important;letter-spacing:.06em!important}
+.guest-room-v8 .guest-v10-grid button em{display:none!important}
+.guest-room-v8 .guest-v10-detail{position:absolute!important;inset:0 0 0 42%!important;z-index:5!important;border-radius:14px!important;overflow:auto!important}
+.guest-room-v8 .guest-presenter-share{margin:8px 0!important;padding:10px 12px!important;background:#faf8ff!important}
+.guest-room-v8 .guest-question-box{margin-top:8px!important}
+@media(max-width:1050px){.guest-room-v8 .guest-v10-command{grid-template-columns:1fr!important}.guest-room-v8 .guest-v10-detail{position:relative!important;inset:auto!important}.guest-room-v8 .guest-impact-top{overflow:auto!important}}
