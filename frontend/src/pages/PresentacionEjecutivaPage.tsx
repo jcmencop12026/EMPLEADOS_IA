@@ -108,8 +108,18 @@ export function PresentacionEjecutivaPage() {
 
   async function abrirSala() {
     if (!expedienteId) return;
-    try { const r=await createDemoSala(expedienteId, temaEnVivo, tipoReunion); setSala(r); setSalaError(null); }
-    catch(e){setSalaError(e instanceof Error?e.message:"No se pudo abrir la sala");}
+    try { const r=await createDemoSala(expedienteId, temaEnVivo, tipoReunion); setSala(r); setSalaError(null); return r; }
+    catch(e){setSalaError(e instanceof Error?e.message:"No se pudo abrir la sala"); return null;}
+  }
+  async function iniciarReunion() {
+    const focused = DEMO_MEETING_TOPICS.find((t) => t.id===temaDetalle && temasActivos.includes(t.label));
+    const first = focused ?? DEMO_MEETING_TOPICS.find((t) => temasActivos.includes(t.label));
+    if (!first) return;
+    setTemaEnVivo(first.id); setVistaReunion("TEMA"); setReunionIniciada(true); window.scrollTo({top:0,behavior:"smooth"});
+    if (!sala && expedienteId) {
+      try { const r=await createDemoSala(expedienteId, first.id, tipoReunion); setSala(r); setSalaError(null); }
+      catch(e){setSalaError(e instanceof Error?e.message:"La reunión inició; el acceso del gerente no pudo prepararse automáticamente.");}
+    }
   }
   async function renovarAccesoGerente(){ if(!sala||renovandoAcceso)return; setRenovandoAcceso(true);setSalaError(null); try{const r=await renewDemoSala(sala.codigo,4);setSala(prev=>prev?{...prev,...r}:r);setInviteEstado(r.remote_status==="ACTIVO"?"Acceso verificado. Se conserva el enlace vigente.":r.remote_status==="RATE_LIMITED"?"Cloudflare limitó temporalmente nuevos túneles. La sala local sigue disponible.":"Recuperación solicitada. EIIAX publicará el enlace cuando esté saludable.");}catch(e){setSalaError(e instanceof ApiError?e.detail:e instanceof Error?e.message:"No se pudo renovar el acceso");}finally{setRenovandoAcceso(false)}}
   async function enviarInvitacionSala() {
@@ -152,12 +162,12 @@ export function PresentacionEjecutivaPage() {
 
       {preparar && !reunionIniciada && (
         <section className="panel compact-panel meeting-prep">
-          <div className="section-header meeting-prep-head"><div><h2>Preparar reunión</h2><p className="muted">EIIAX prepara el escenario, los mínimos requeridos y los paquetes ficticios antes de iniciar.</p></div><button type="button" className="btn primary meeting-start-top" disabled={temasActivos.length === 0} onClick={() => { const focused = DEMO_MEETING_TOPICS.find((t) => t.id===temaDetalle && temasActivos.includes(t.label)); const first = focused ?? DEMO_MEETING_TOPICS.find((t) => temasActivos.includes(t.label)); if (first) setTemaEnVivo(first.id); setVistaReunion("TEMA"); setReunionIniciada(true); window.scrollTo({top:0,behavior:"smooth"}); }}>▶ Iniciar reunión</button></div>
-          <div className="meeting-prep-grid">
+          <div className="section-header meeting-prep-head"><div><h2>Preparar reunión</h2><p className="muted">EIIAX prepara el escenario, los mínimos requeridos y los paquetes ficticios antes de iniciar.</p></div><button type="button" className="btn primary meeting-start-top" disabled={temasActivos.length === 0} onClick={iniciarReunion}>▶ Iniciar reunión</button></div>
+          <div className="meeting-prep-grid meeting-prep-grid-v15">
             <label><strong>Propósito</strong><select value={tipoReunion} onChange={(e) => setTipoReunion(e.target.value)}><option value="DEMO_INTEGRAL">Demostración integral</option><option value="DEMO_TEMATICA">Demostración temática</option><option value="RESULTADOS">Evaluación / presentación de resultados</option><option value="PROPUESTA">Propuesta / contratación</option><option value="IMPLEMENTACION">Implementación</option><option value="SEGUIMIENTO">Seguimiento</option></select></label>
             <div className="meeting-topic-picker"><div className="meeting-topic-picker-head"><div><strong>Áreas de exploración ejecutiva</strong><span className="muted small"> · Seleccione qué quiere demostrar.</span></div><div className="meeting-topic-actions"><button type="button" className="btn small" onClick={()=>setTemasActivos(DEMO_MEETING_TOPICS.map(t=>t.label))}>Todos</button><button type="button" className="btn small" onClick={()=>setTemasActivos([])}>Ninguno</button></div></div><div className="meeting-topic-grid">{DEMO_MEETING_TOPICS.map((tema) => {const selected=temasActivos.includes(tema.label); return <button type="button" key={tema.id} className={`meeting-topic-card ${selected ? "selected" : ""} ${temaDetalle === tema.id ? "focused" : ""}`} onClick={()=>setTemaDetalle(tema.id)}><span className="meeting-topic-check" aria-hidden="true" onClick={(e)=>{e.stopPropagation();setTemasActivos(prev=>selected?prev.filter(x=>x!==tema.label):[...prev,tema.label])}}>{selected?"✓":"+"}</span><strong>{tema.label}</strong><small>{tema.demuestra.slice(0,2).join(" · ")}</small></button>})}<div className="meeting-topic-card exploratory"><span className="meeting-topic-check">＋</span><strong>Otros temas</strong><small>EIIAX investiga, cruza procesos y detecta oportunidades adicionales.</small></div></div></div>
           </div>
-          {(() => { const tema = DEMO_MEETING_TOPICS.find((t) => t.id === temaDetalle)!; return <div className="meeting-topic-detail"><div><strong>{tema.label}</strong><span className="muted small"> · Paquete demo: {tema.paquete}</span><h3>Mínimos que pediríamos a la entidad</h3><ul>{tema.minimo.map((x) => <li key={x}>{x}</li>)}</ul></div><div><h3>Qué demostramos con el paquete ficticio</h3><ul>{tema.demuestra.map((x) => <li key={x}>{x}</li>)}</ul></div></div>; })()}
+          {(() => { const tema = DEMO_MEETING_TOPICS.find((t) => t.id === temaDetalle)!; return <div className="meeting-topic-detail meeting-topic-detail-v15"><div><strong>{tema.label}</strong><span className="muted small"> · Paquete demo: {tema.paquete}</span><h3>Mínimos que pediríamos a la entidad</h3><ul>{tema.minimo.map((x) => <li key={x}>{x}</li>)}</ul></div><div><h3>Qué demostramos con el paquete ficticio</h3><ul>{tema.demuestra.map((x) => <li key={x}>{x}</li>)}</ul></div></div>; })()}
           <div className="executive-value-strip"><strong>EIIAX busca impacto, no solo indicadores:</strong><span>↑ mayores ingresos</span><span>↓ pérdidas y glosas</span><span>↓ costos</span><span>↑ productividad</span><span>↔ procesos y cuellos de botella</span><span>⚠ riesgos y controles</span></div>
           <div className="info-box"><strong>{temasActivos.length} paquete(s) preparados.</strong> Son puertas de entrada, no límites: durante la reunión EIIAX puede cruzar áreas, revisar flujos completos e identificar otras oportunidades.</div>
         </section>
@@ -173,7 +183,7 @@ export function PresentacionEjecutivaPage() {
         if (!tema) return null;
         return (
           <section className={`panel demo-live-panel ${vistaReunion==="TEMA"?"meeting-main-active":"meeting-main-hidden"}`}>
-            <div className="section-header"><div><span className="semantic-badge hecho">REUNIÓN EN CURSO</span><h2>{tema.label}</h2><p className="muted">Caso ficticio preparado: {tema.paquete}</p></div><div className="meeting-room-controls">{!sala ? <button type="button" className="btn primary small" onClick={abrirSala}>Abrir sala para gerente</button> : <><span className="semantic-badge hecho">SALA {sala.codigo}</span><button type="button" className="btn small" disabled={!sala.guest_url||sala.remote_status!=="ACTIVO"} onClick={()=>sala.guest_url&&navigator.clipboard.writeText(sala.guest_url)}>Copiar enlace</button><button type="button" className="btn small primary" disabled={renovandoAcceso||sala.remote_status==="RECUPERANDO"} onClick={renovarAccesoGerente}>{renovandoAcceso||sala.remote_status==="RECUPERANDO"?"Recuperando…":"↻ Renovar acceso"}</button></>}</div></div>
+            <div className="section-header"><div><span className="semantic-badge hecho">REUNIÓN EN CURSO</span><h2>{tema.label}</h2><p className="muted">Caso ficticio preparado: {tema.paquete}</p></div><div className="meeting-room-controls">{!sala ? <span className="semantic-badge">Preparando acceso del gerente…</span> : <><span className="semantic-badge hecho">SALA {sala.codigo}</span><button type="button" className="btn small" disabled={!sala.guest_url||sala.remote_status!=="ACTIVO"} onClick={()=>sala.guest_url&&navigator.clipboard.writeText(sala.guest_url)}>Copiar enlace</button><button type="button" className="btn small primary" disabled={renovandoAcceso||sala.remote_status==="RECUPERANDO"} onClick={renovarAccesoGerente}>{renovandoAcceso||sala.remote_status==="RECUPERANDO"?"Recuperando…":"↻ Renovar acceso"}</button></>}</div></div>
             {salaError && <p className="error">{salaError}</p>}
             {sala && !sala.guest_url && <p className="info-box small">Sala creada y protegida. Para usarla desde otro computador falta configurar la URL pública vigente del entorno.</p>}
             {sala && sala.remote_status && sala.remote_status!=="ACTIVO" && <p className="info-box small" role="status">Transporte remoto: {sala.remote_status.replace("_"," ")}. La cabina y la sala local continúan disponibles.</p>}
