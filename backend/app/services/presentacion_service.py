@@ -123,6 +123,13 @@ def build_presentacion_core(
             },
             {"titulo": "Próximos pasos técnicos", "contenido": ["Conector a fuentes reales", "Ambiente piloto aislado"]},
         ]
+    elif audiencia == "RRHH":
+        base["secciones"] = [
+            {"titulo": "Personas y capacidad", "contenido": ["Carga, capacidad disponible, ausentismo, rotación y tareas repetitivas que consumen tiempo del equipo."]},
+            {"titulo": "Dónde puede apoyar EIIAX", "contenido": ["Automatización asistida de tareas repetitivas", "Seguimiento de capacidad y cargas", "Alertas sobre desviaciones y cuellos de botella"]},
+            {"titulo": "Qué debe aportar la entidad", "contenido": ["Estructura de cargos y turnos", "Volúmenes de trabajo por proceso", "Ausentismo, rotación y horas extra agregadas"]},
+            {"titulo": "Resultado esperado", "contenido": ["Liberar capacidad para trabajo de mayor valor y medir productividad sin sustituir la responsabilidad humana."]},
+        ]
     else:
         lineas_fin = []
         for i in indicadores:
