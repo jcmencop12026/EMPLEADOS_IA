@@ -64,7 +64,9 @@ export function PresentacionEjecutivaPage() {
 
   useEffect(() => {
     if (!expedienteId) return;
-    setLoading(true);
+    const firstLoad = !data;
+    if (firstLoad) setLoading(true);
+    setError(null);
     fetchDemoPresentacion(expedienteId, audiencia)
       .then(setData)
       .catch((e) => setError(e instanceof Error ? e.message : "Error"))
@@ -80,10 +82,9 @@ export function PresentacionEjecutivaPage() {
       ...data,
       etiqueta: `${data.etiqueta} · ${tema.label}`,
       secciones: [
-        { titulo: `Lectura ejecutiva · ${tema.label}`, contenido: tema.narrativa },
-        { titulo: "Hallazgos demostrativos", contenido: tema.hallazgos },
-        { titulo: "Oportunidades priorizadas", contenido: tema.oportunidades },
-        { titulo: "Qué necesitaríamos para evaluarlo en su entidad", contenido: tema.minimo },
+        ...data.secciones,
+        { titulo: `Foco de la reunión · ${tema.label}`, contenido: tema.narrativa.slice(0,2) },
+        { titulo: "Datos mínimos para este foco", contenido: tema.minimo.slice(0,3) },
       ],
       indicadores: tema.series,
       graficos: {
@@ -216,7 +217,7 @@ export function PresentacionEjecutivaPage() {
       {error && <p className="error">{error}</p>}
       {loading && <p className="muted">Cargando presentación…</p>}
 
-      {data && !loading && (
+      {data && (
         <>
           {!reunionIniciada && <PresentacionView data={dataEnVivo ?? data} expedienteId={expedienteId} esDemo onDownloadPdf={onPdf} pdfLoading={pdfLoading} />}
           {reunionIniciada && vistaReunion==="IMPACTO" && <DemoExecutiveIntelligence topic={DEMO_MEETING_TOPICS.find(t=>t.id===temaEnVivo) ?? DEMO_MEETING_TOPICS[0]} onMetricSelect={(m)=>{setMetricPrivada(m);setVistaReunion("DETALLE")}} />}
