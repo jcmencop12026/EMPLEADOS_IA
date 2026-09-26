@@ -150,18 +150,11 @@ export function PresentacionEjecutivaPage() {
   return (
     <div className={`ops-page presentacion-ejecutiva-page ${reunionIniciada ? "meeting-mode" : ""}`}>
       {!reunionIniciada && <DemoBanner />}
-      {!reunionIniciada && <p><Link to="/demo">← Volver a demo comercial</Link></p>}
-
-      {!reunionIniciada && <header className="page-header">
-        <div className="page-header-row">
-          <div>
-            <h1>Presentación ejecutiva</h1>
-            <p className="muted">
-              {data?.empresa ?? "Empresa ficticia"} · {data?.expediente_codigo}
-            </p>
-          </div>
-          <ContextualHelp content={HELP_DEMO_COMERCIAL} />
-        </div>
+      {!reunionIniciada && <header className="presentation-compact-head-v22">
+        <Link to="/demo">← Demo comercial</Link>
+        <strong>Presentación ejecutiva</strong>
+        <span>{data?.empresa ?? "Empresa ficticia"} · {data?.expediente_codigo}</span>
+        <ContextualHelp content={HELP_DEMO_COMERCIAL} />
       </header>}
 
       {preparar && !reunionIniciada && (
