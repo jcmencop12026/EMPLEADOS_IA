@@ -3591,3 +3591,13 @@ body:has(.espacio-externo-portal) .eiaax-help-layer,body:has(.espacio-externo-po
  .action-personality-v256 .guest-decision-path-v24 article{align-content:center!important}
  .action-inline-buttons-v256{display:flex!important;gap:5px!important;margin-top:6px!important}.action-inline-buttons-v256 button{font-size:10.5px!important;padding:5px 7px!important;min-height:30px!important}
 }
+
+
+/* EIIAX V25.6.1 — conversación en vivo siempre editable */
+@media(min-width:1181px){
+ .manager-chat-v256{position:relative!important;z-index:20!important;pointer-events:auto!important}
+ .manager-chat-v256 form{position:relative!important;z-index:30!important;pointer-events:auto!important}
+ .manager-chat-v256 textarea{position:relative!important;z-index:31!important;pointer-events:auto!important;user-select:text!important;cursor:text!important;background:#fff!important;color:#123!important;opacity:1!important}
+ .manager-chat-v256 form button{position:relative!important;z-index:31!important;pointer-events:auto!important;cursor:pointer!important}
+ .guest-decision-v24:has(.manager-chat-v256){pointer-events:auto!important}
+}
