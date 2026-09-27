@@ -320,6 +320,7 @@ def _build_requirements_xlsx(topic: str) -> bytes:
         "Cartera":["Factura","Pagador","Saldo COP","Edad dias","Fecha vencimiento","Estado gestion","Ultima gestion"],
         "Produccion":["Servicio","Sede","Periodo","Capacidad disponible","Produccion","Demanda","Valor producido COP"],
         "Devoluciones":["Factura","Fecha","Pagador","Motivo","Valor COP","Estado","Reincidencia"],
+        "Glosas":["Factura","Fecha glosa","Pagador","Codigo glosa","Causal","Valor glosado COP","Valor aceptado COP","Valor ratificado COP","Estado","Fecha respuesta"],
         "Costos":["Area","Proceso","Periodo","Concepto","Costo COP","Horas","Reproceso"],
         "Instrucciones":["Campo","Indicacion"],
     }
