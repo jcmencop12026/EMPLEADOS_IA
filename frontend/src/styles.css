@@ -3500,3 +3500,27 @@ body:has(.espacio-externo-portal) .eiaax-help-layer,body:has(.espacio-externo-po
  .guest-decision-actions-v24{padding:10px!important;gap:5px!important}.guest-decision-actions-v24>span{font-size:10.5px!important}.guest-decision-actions-v24 h3{font-size:15px!important;margin:1px 0 3px!important}.guest-decision-actions-v24 button{font-size:12.5px!important;padding:7px 8px!important}.guest-decision-actions-v24 button small{font-size:11px!important}
  .guest-workspace-v20>.guest-v17-client{display:none!important}
 }
+
+
+/* EIIAX V25.3 — consolidación gerencial: una función por área, densidad ejecutiva y cero scroll */
+@media(min-width:1181px){
+ .guest-v20-nav{gap:4px!important}
+ .guest-v20-nav button{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:6px!important;border-radius:9px!important;font-size:11.5px!important;line-height:1.1!important}
+ .guest-workspace-v20{padding:0!important}
+ .guest-action-v8,.guest-data-v22,.guest-method-v22,.guest-next-v23,.guest-interaction-v23,.guest-progress-v9,.guest-v18-evidence,.impact-v24{height:100%!important;max-height:100%!important;overflow:hidden!important;box-sizing:border-box!important}
+ .guest-action-v8{display:grid!important;grid-template-columns:.82fr 1.45fr!important;grid-template-rows:auto 1fr!important;gap:8px!important}
+ .guest-action-copy{grid-column:1/-1!important;padding:11px 14px!important}
+ .guest-action-copy h2{font-size:18px!important;line-height:1.15!important;margin:4px 0!important}.guest-action-copy p{font-size:12px!important;line-height:1.25!important;margin:3px 0!important}
+ .guest-method-mini{padding:9px!important;gap:5px!important;align-content:start!important}.guest-method-mini span{font-size:11.5px!important;min-height:30px!important;padding:5px 7px!important}
+ .guest-next-actions-v7{display:grid!important;grid-template-columns:1fr!important;gap:6px!important;padding:0!important}
+ .guest-next-actions-v7 button{min-height:0!important;padding:9px 11px!important;text-align:left!important}.guest-next-actions-v7 button>b{font-size:15px!important}.guest-next-actions-v7 strong{font-size:13px!important}.guest-next-actions-v7 p{font-size:11.5px!important;line-height:1.2!important;margin:2px 0!important}.guest-next-actions-v7 em{font-size:11px!important}
+ .guest-data-v22 header,.guest-method-v22 header,.guest-next-v23 header,.guest-interaction-v23 header{padding:9px 12px!important}.guest-data-v22 header h2,.guest-method-v22 header h2,.guest-next-v23 header h2,.guest-interaction-v23 header h2{font-size:18px!important;line-height:1.15!important;margin:3px 0!important}.guest-data-v22 header p,.guest-method-v22 header p,.guest-next-v23 header p,.guest-interaction-v23 header p{font-size:11.5px!important;line-height:1.2!important;margin:2px 0!important}
+ .guest-data-requirements{gap:7px!important;margin:7px 0!important}.guest-data-requirements article{padding:9px!important}.guest-data-requirements span,.guest-data-requirements button{font-size:11.5px!important}
+ .guest-data-flow{padding:7px!important;gap:5px!important}.guest-data-flow span{font-size:10.5px!important}.guest-data-note{font-size:10.5px!important;margin:5px 0!important}
+ .method-v23>div{gap:5px!important}.method-v23 article{min-height:34px!important;padding:5px 7px!important}.method-v23 article strong{font-size:11.5px!important}.method-v23 article span{font-size:10px!important}.method-v23 footer{padding:7px!important;font-size:10.5px!important}
+ .guest-next-v23>div{gap:6px!important}.guest-next-v23 article{padding:8px!important}.guest-next-v23 article strong{font-size:12px!important}.guest-next-v23 article span{font-size:10.5px!important}
+ .guest-interaction-grid-v23{gap:7px!important}.guest-interaction-grid-v23 article,.guest-interaction-grid-v23 form{padding:10px!important}.guest-interaction-grid-v23 textarea{min-height:70px!important;max-height:90px!important}.guest-interaction-actions-v23{gap:6px!important;margin-top:6px!important}.guest-interaction-actions-v23 button{font-size:11.5px!important;padding:7px!important}
+ .evidence-v23 header{padding:7px 10px!important}.evidence-selector-v23{gap:5px!important;margin:5px 0!important}.evidence-selector-v23 button{min-height:38px!important;padding:5px!important}.guest-evidence-explain{gap:6px!important}.guest-evidence-explain>div{padding:7px!important}.guest-evidence-explain p{font-size:11px!important;line-height:1.2!important}
+ .impact-v24 header{padding:9px 12px!important}.impact-v24 header h2{font-size:18px!important;margin:2px 0!important}.impact-v24 header>strong{font-size:22px!important}.impact-scenario-v24{gap:6px!important}.impact-scenario-v24 article{padding:9px!important}.impact-scenario-v24 strong{font-size:12px!important}.impact-scenario-v24 span{font-size:10.5px!important}.impact-responsibility-v24{padding:8px!important;gap:6px!important}
+ .progress-v23{gap:6px!important}.guest-progress-head{padding:9px 12px!important}.guest-progress-head h2{font-size:18px!important;margin:3px 0!important}.guest-progress-head p{font-size:11.5px!important}.guest-progress-kpis{gap:5px!important}.guest-progress-kpis article{padding:7px!important}.guest-progress-kpis b{font-size:16px!important}.progress-roadmap-v23{gap:4px!important}.progress-roadmap-v23>div{padding:6px!important}.progress-roadmap-v23 span{font-size:10px!important}.progress-next-v23{padding:8px!important}
+}
