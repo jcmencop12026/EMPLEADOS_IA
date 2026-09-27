@@ -3569,3 +3569,20 @@ body:has(.espacio-externo-portal) .eiaax-help-layer,body:has(.espacio-externo-po
  .decision-v255{grid-template-rows:auto auto 1fr auto!important}.decision-v255 .decision-choice-v254{align-content:start!important}.decision-v255 .decision-choice-v254 button.active{border-color:#147fc1!important;background:#edf7fd!important}
  .inline-back-v255{align-self:stretch!important;min-height:32px!important;padding:5px 7px!important;font-size:10.5px!important}.inline-back-v255:disabled{opacity:.35!important;cursor:default!important}
 }
+
+
+/* EIIAX V25.6 — personalidad única gerente: acciones arriba, trabajo central, chat lateral */
+@media(min-width:1181px){
+ .guest-advance-v256{display:grid!important;grid-template-columns:170px repeat(4,minmax(130px,1fr)) 1.5fr!important;align-items:center!important;gap:5px!important;padding:5px 8px!important;min-height:38px!important}
+ .guest-advance-v256>b{font-size:11px!important;color:#075f96!important}.guest-advance-v256>button{min-height:30px!important;padding:4px 7px!important;font-size:11px!important;border-radius:7px!important}.guest-advance-v256>span{font-size:10px!important;color:#5c7284!important}
+ .manager-chat-v256{height:100%!important;display:grid!important;grid-template-rows:auto auto 1fr auto!important;gap:6px!important;padding:10px!important;box-sizing:border-box!important}
+ .manager-chat-v256>span{font-size:10px!important;font-weight:800!important;color:#076aa5!important}.manager-chat-v256 h3{font-size:15px!important;margin:0!important}
+ .chat-thread-v256{overflow:auto!important;display:flex!important;flex-direction:column!important;gap:6px!important;padding:3px!important}.chat-thread-v256>div{padding:7px!important;border-radius:8px!important;font-size:10.5px!important}.chat-thread-v256 p{margin:2px 0!important;line-height:1.25!important}.chat-eiaax-v256{background:#eef8f5!important}.chat-manager-v256{background:#eef5fb!important;margin-left:12px!important}
+ .manager-chat-v256 form{display:grid!important;grid-template-columns:1fr auto!important;gap:5px!important}.manager-chat-v256 textarea{resize:none!important;min-height:54px!important;max-height:70px!important;padding:7px!important;font-size:10.5px!important;border:1px solid #cbdce9!important;border-radius:7px!important}.manager-chat-v256 form button{min-width:58px!important;padding:5px!important;font-size:10.5px!important}
+ .executive-control-v256{margin:8px 0!important;padding:8px!important;border-left:3px solid #1684c2!important;background:#f3f8fc!important;font-size:11px!important;line-height:1.28!important}
+ .evidence-selector-v23 button{grid-template-columns:24px 1fr!important;text-align:left!important}.evidence-selector-v23 button span{display:grid!important;gap:1px!important}.evidence-selector-v23 button span strong{font-size:10.5px!important}.evidence-selector-v23 button span small{font-size:9px!important;line-height:1.05!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+ .data-real-v256 header p,.next-detail-v256 header p{font-size:11px!important;line-height:1.25!important;margin:3px 0!important}
+ .data-actions-v256{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;flex:1!important;align-content:center!important}.data-actions-v256 button{min-height:64px!important;padding:8px!important;text-align:left!important;display:grid!important;gap:3px!important}.data-actions-v256 b{font-size:11.5px!important}.data-actions-v256 small{font-size:10px!important;line-height:1.15!important}
+ .delivery-result-v256,.upload-result-v256{padding:7px!important;border-radius:7px!important;background:#eef8f5!important;display:grid!important;gap:2px!important;font-size:10px!important}.delivery-result-v256 small{overflow-wrap:anywhere!important}
+ .dv-bar>strong{display:flex!important;gap:3px!important;align-items:center!important;white-space:nowrap!important}.dv-bar>strong small{font-size:9px!important;font-weight:700!important;color:#075f96!important}
+}
