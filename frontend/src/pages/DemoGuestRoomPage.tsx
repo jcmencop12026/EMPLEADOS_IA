@@ -16,14 +16,14 @@ const EXECUTIVE_OPPORTUNITIES=[
 ] as const;
 export function DemoGuestRoomPage(){
  const {codigo=""}=useParams(); const [sp]=useSearchParams(); const token=sp.get("token")||"";
- const [sala,setSala]=useState<DemoSala|null>(null),[error,setError]=useState<string|null>(null),[interestMsg,setInterestMsg]=useState<string|null>(null),[guestQuestion,setGuestQuestion]=useState("");
+ const [sala,setSala]=useState<DemoSala|null>(null),[error,setError]=useState<string|null>(null),[interestMsg,setInterestMsg]=useState<string|null>(null),[guestQuestion,setGuestQuestion]=useState(""),[lastQuestion,setLastQuestion]=useState("");
  const [impact,setImpact]=useState("Ingresos"),[panel,setPanel]=useState<"hallazgo"|"evidencia"|"importa"|"accion"|"avance"|"datos"|"metodologia"|"siguiente"|"interaccion">("hallazgo"),[focus,setFocus]=useState(0),[evidenceFocus,setEvidenceFocus]=useState(0);
  useEffect(()=>{let stop=false;const load=()=>fetchDemoSalaPublic(codigo,token).then(x=>{if(!stop){setSala(x);setError(null)}}).catch(e=>{if(!stop)setError(e.message)});load();const id=setInterval(load,1500);return()=>{stop=true;clearInterval(id)}},[codigo,token]);
  const v=sala?.visible as any; const topic=useMemo(()=>DEMO_MEETING_TOPICS.find(t=>t.id===sala?.tema)||DEMO_MEETING_TOPICS[0],[sala?.tema]); const findings=Array.isArray(v?.contenido)&&v.contenido.length?v.contenido:topic.hallazgos;
  const topicMetrics=topic.indicadores.slice(0,4);
  const topicRadar=(topic.oportunidades.length?topic.oportunidades:topic.hallazgos).slice(0,6).map((title,i)=>({icon:["↗","💰","⏱","◉","⚠","⚡"][i]||"◆",value:topic.indicadores[i%Math.max(topic.indicadores.length,1)]||["+$185 M","$128 M","$96 M","$54 M","$742 M","18,7 días"][i],title:String(title).replace(/^Oportunidad:\s*/,""),priority:i<2?"ALTA":i<4?"MEDIA":"EXPLORAR"}));
  const registrar=async(accion:string,detalle:string)=>{try{await sendDemoGuestInterest(codigo,token,accion,topic.label,detalle);setInterestMsg(accion==="PREGUNTA_AUDIENCIA"?"✓ Pregunta enviada al presentador":"✓ Interés enviado al presentador");setTimeout(()=>setInterestMsg(null),3000)}catch{setInterestMsg("No fue posible enviar la interacción")}};
- const enviarPregunta=async(e:React.FormEvent)=>{e.preventDefault();const q=guestQuestion.trim();if(!q)return;await registrar("PREGUNTA_AUDIENCIA",q);setGuestQuestion("")};
+ const enviarPregunta=async(e:React.FormEvent)=>{e.preventDefault();const q=guestQuestion.trim();if(!q)return;await registrar("PREGUNTA_AUDIENCIA",q);setLastQuestion(q);setGuestQuestion("")};
  if(error&&!sala)return <main className="guest-room"><h1>EIIAX · Sala ejecutiva</h1><p className="error">{error}</p></main>;
  if(!sala)return <main className="guest-room"><h1>EIIAX · Sala ejecutiva</h1><p>Conectando con la reunión…</p></main>;
  const current=findings[Math.min(focus,findings.length-1)]||topic.oportunidades[0];
@@ -34,18 +34,18 @@ export function DemoGuestRoomPage(){
  const evidenceValues=topic.indicadores.slice(0,6).map((metric,i)=>({metric,label:topic.hallazgos[i%Math.max(topic.hallazgos.length,1)]||topic.label,pct:[92,76,61,48,35,24][i]||20,icon:["↗","💰","⏱","◉","⚠","⚡"][i]}));
  return <main className="guest-room guest-room-v8">
   {error&&<div className="info-box" role="status">Conexión temporalmente inestable. Se conserva la última vista y se reintenta automáticamente.</div>}
-  <header className="guest-executive-header guest-executive-header-v24">
+  <header className="guest-executive-header guest-header-v25">
    <div className="guest-logo-plate"><img src="/assets/identity/eiaax-logo-approved.png" alt="EIIAX"/></div>
-   <div className="guest-executive-title"><div className="guest-live-line"><span className="semantic-badge hecho">● EN VIVO · {v?.nivel||"DEMO"}</span><h1>{v?.titulo||topic.label}</h1></div><p>Decisiones ejecutivas soportadas por evidencia y datos.</p></div>
-   <div className="guest-impact guest-impact-top guest-impact-top-v24">{IMPACTS.map(([i,l,v])=><button key={l} className={impact===l?"active":""} onClick={()=>selectImpact(l)}><b>{i}</b><span><strong>{v}</strong><small>{l}</small></span></button>)}</div>
+   <div className="guest-executive-title"><div className="guest-live-line"><span className="semantic-badge hecho">● EN VIVO · {v?.nivel||"DEMO"}</span><h1>{v?.titulo||topic.label}</h1></div><p>Una conversación ejecutiva para decidir dónde profundizar, qué validar y cómo actuar.</p></div>
+   <div className="guest-lenses-v25">{IMPACTS.map(([i,l,val])=><button key={l} className={impact===l?"active":""} onClick={()=>selectImpact(l)}><b>{i}</b><span>{l}</span><strong>{val}</strong></button>)}</div>
   </header>
-  <section className="guest-conversation-strip-v24">
-   <article><b>↓ GERENTE PREGUNTA</b><span>{guestQuestion.trim()||"Sin pregunta pendiente. Use Interacción para consultar durante la reunión."}</span></article>
-   <article><b>↑ EIIAX / PRESENTADOR RESPONDE</b><span>{v?.respuesta||(Array.isArray(v?.contenido)?v.contenido[0]:"A la espera de una respuesta publicada desde la cabina.")}</span></article>
+  <section className="guest-dialog-v25">
+   <article><b>GERENTE</b><span>{lastQuestion||"Puede preguntar, solicitar evidencia o pedir una evaluación con datos reales."}</span><button onClick={()=>setPanel("interaccion")}>Preguntar →</button></article>
+   <article><b>EIIAX</b><span>{v?.respuesta||(Array.isArray(v?.contenido)?v.contenido[0]:"A la espera de una respuesta publicada desde la cabina.")}</span><em>{v?.respuesta?"RESPUESTA RECIBIDA":"EN ESPERA"}</em></article>
   </section>
-  <section className="guest-v20-summary guest-summary-v24">
-   <button className="guest-v20-total" onClick={()=>setPanel("evidencia")}><span>SEÑAL PRINCIPAL · {v?.nivel||"DEMO"}</span><strong>{topic.indicadores[0]||"$463 M"}</strong><small>{topic.hallazgos[0]}</small></button>
-   <div className="guest-v20-kpis">{topicMetrics.slice(1,4).map((metric,i)=><button key={metric} onClick={()=>{setEvidenceFocus(i+1);setFocus((i+1)%Math.max(topicRadar.length,1));setPanel("evidencia")}}><b>{["⏱","◉","⚠"][i]}</b><strong>{metric}</strong><span>{["Velocidad del ciclo","Exposición económica","Concentración / riesgo"][i]}</span></button>)}</div>
+  <section className="guest-signal-rail-v25">
+   <div><span>SEÑAL PRINCIPAL</span><strong>{topic.indicadores[0]}</strong><small>{topic.hallazgos[0]}</small></div>
+   {topicMetrics.slice(1,4).map((metric,i)=><button key={metric} onClick={()=>{setEvidenceFocus(i+1);setFocus((i+1)%Math.max(topicRadar.length,1));setPanel("evidencia")}}><strong>{metric}</strong><span>{["Velocidad del ingreso","Exposición de caja","Concentración del riesgo"][i]}</span></button>)}
   </section>
   <nav className="guest-actionbar guest-v20-nav"><button className={panel==="hallazgo"?"active":""} onClick={()=>setPanel("hallazgo")}>◈ Oportunidades</button><button className={panel==="evidencia"?"active":""} onClick={()=>setPanel("evidencia")}>▥ Evidencia</button><button className={panel==="importa"?"active":""} onClick={()=>setPanel("importa")}>◎ Impacto</button><button className={panel==="accion"?"active":""} onClick={()=>setPanel("accion")}>✓ Qué haríamos</button><button className={panel==="avance"?"active":""} onClick={()=>setPanel("avance")}>↗ Avances</button><button className={panel==="interaccion"?"active guest-live-share": "guest-live-share"} onClick={()=>setPanel("interaccion")}>✦ Interacción{v?.respuesta&&<b>NUEVO</b>}</button></nav>
   <section className="guest-workspace guest-workspace-v20">
