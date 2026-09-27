@@ -3524,3 +3524,30 @@ body:has(.espacio-externo-portal) .eiaax-help-layer,body:has(.espacio-externo-po
  .impact-v24 header{padding:9px 12px!important}.impact-v24 header h2{font-size:18px!important;margin:2px 0!important}.impact-v24 header>strong{font-size:22px!important}.impact-scenario-v24{gap:6px!important}.impact-scenario-v24 article{padding:9px!important}.impact-scenario-v24 strong{font-size:12px!important}.impact-scenario-v24 span{font-size:10.5px!important}.impact-responsibility-v24{padding:8px!important;gap:6px!important}
  .progress-v23{gap:6px!important}.guest-progress-head{padding:9px 12px!important}.guest-progress-head h2{font-size:18px!important;margin:3px 0!important}.guest-progress-head p{font-size:11.5px!important}.guest-progress-kpis{gap:5px!important}.guest-progress-kpis article{padding:7px!important}.guest-progress-kpis b{font-size:16px!important}.progress-roadmap-v23{gap:4px!important}.progress-roadmap-v23>div{padding:6px!important}.progress-roadmap-v23 span{font-size:10px!important}.progress-next-v23{padding:8px!important}
 }
+
+
+/* EIIAX V25.4 — ocupar el lienzo, eliminar vacío y navegación innecesaria */
+@media(min-width:1181px){
+ .guest-room-v8{padding-bottom:4px!important}
+ .guest-workspace-v20{height:calc(100vh - 178px)!important;min-height:470px!important}
+ .guest-decision-v24{grid-template-columns:.9fr 1.42fr .88fr!important;align-items:stretch!important}
+ .guest-decision-hero-v24,.guest-decision-path-v24,.decision-compact-v254{height:100%!important;min-height:0!important;box-sizing:border-box!important}
+ .guest-decision-hero-v24{display:grid!important;grid-template-rows:auto auto auto 1fr!important}
+ .guest-decision-hero-v24>div{align-self:end!important;margin-top:8px!important}
+ .guest-decision-path-v24{display:grid!important;grid-template-rows:repeat(3,1fr)!important;gap:6px!important}
+ .guest-decision-path-v24 article{height:auto!important;align-content:center!important}
+ .decision-compact-v254{display:grid!important;grid-template-rows:auto auto auto 1fr!important;gap:7px!important;padding:11px!important}
+ .decision-context-v254{font-size:11.5px!important;line-height:1.25!important;margin:0!important}
+ .decision-choice-v254{display:grid!important;grid-template-columns:1fr!important;gap:5px!important}
+ .decision-choice-v254 button{display:grid!important;grid-template-columns:25px 1fr!important;align-items:center!important;gap:6px!important;padding:7px!important;min-height:48px!important;text-align:left!important}
+ .decision-choice-v254 button>b{font-size:15px!important;text-align:center!important}
+ .decision-choice-v254 button span{display:grid!important;gap:1px!important}
+ .decision-choice-v254 button strong{font-size:12px!important}.decision-choice-v254 button small{font-size:10.5px!important;font-weight:500!important}
+ .decision-footer-v254{align-self:end!important;border-top:1px solid #d7e4ef!important;padding-top:8px!important;display:grid!important;gap:5px!important}
+ .decision-footer-v254>small{font-size:9.5px!important;font-weight:800!important;letter-spacing:.04em!important}
+ .decision-footer-v254>strong{font-size:12px!important;line-height:1.2!important}
+ .decision-footer-v254>button{min-height:34px!important;padding:6px 8px!important;font-size:11.5px!important}
+ .guest-footer-v7{min-height:22px!important;padding:2px 8px!important;font-size:9.5px!important}
+ html,body,#root{max-height:100vh!important}
+ body:has(.guest-room-v8){overflow:hidden!important}
+}
