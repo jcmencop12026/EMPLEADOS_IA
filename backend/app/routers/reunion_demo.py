@@ -8,8 +8,10 @@ import threading
 import urllib.request
 import urllib.error
 from pathlib import Path
+from io import BytesIO
+from fastapi.responses import StreamingResponse
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel, Field
 
 from app.deps import get_current_user
@@ -306,6 +308,60 @@ def invitar_sala(code: str, body: SalaInvite, db: Session = Depends(get_db), use
     result = comm_svc.send_direct_email(db, user.organization_id, destinatario=body.email.strip(), asunto=subject, contenido=text)
     if result.get("estado") != "ENVIADA": raise HTTPException(503, result.get("detalle") or "No se pudo enviar")
     return {"estado":"ENVIADA","email":body.email.strip(),"codigo":room["codigo"]}
+
+
+
+def _build_requirements_xlsx(topic: str) -> bytes:
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+    wb=Workbook(); wb.remove(wb.active)
+    sheets={
+        "Facturacion":["Factura","Fecha factura","Fecha radicacion","Pagador","Valor factura COP","Estado","Fecha pago","Valor pagado COP"],
+        "Cartera":["Factura","Pagador","Saldo COP","Edad dias","Fecha vencimiento","Estado gestion","Ultima gestion"],
+        "Produccion":["Servicio","Sede","Periodo","Capacidad disponible","Produccion","Demanda","Valor producido COP"],
+        "Devoluciones":["Factura","Fecha","Pagador","Motivo","Valor COP","Estado","Reincidencia"],
+        "Costos":["Area","Proceso","Periodo","Concepto","Costo COP","Horas","Reproceso"],
+        "Instrucciones":["Campo","Indicacion"],
+    }
+    for name,headers in sheets.items():
+        ws=wb.create_sheet(name); ws.freeze_panes="A2"
+        for col,header in enumerate(headers,1):
+            cell=ws.cell(1,col,header); cell.font=Font(bold=True,color="FFFFFF"); cell.fill=PatternFill("solid",fgColor="0B5F8A"); ws.column_dimensions[cell.column_letter].width=max(16,min(28,len(header)+4))
+        if name=="Instrucciones":
+            for row in [("Uso","Complete solo las hojas/areas que desee evaluar."),("Moneda","Registre valores en pesos colombianos (COP), sin simbolos ni separadores."),("Periodo","Preferible ultimos 6 meses; conserve fechas originales."),("Privacidad","No incluya datos personales no necesarios para el analisis."),("Calidad","No modifique nombres de columnas; deje vacio lo que no aplique."),("Tema sala",topic)]: ws.append(row)
+    out=BytesIO(); wb.save(out); return out.getvalue()
+
+@router.get("/sala/{code}/plantilla")
+def descargar_plantilla_publica(code: str, token: str):
+    room=_get(code)
+    if not secrets.compare_digest(token,room["token"]): raise HTTPException(403,"Enlace de sala invalido")
+    headers={"Content-Disposition":'attachment; filename="EIIAX_PLANTILLA_EVALUACION.xlsx"'}
+    return StreamingResponse(BytesIO(_build_requirements_xlsx(room.get("tema","evaluacion"))),media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",headers=headers)
+
+@router.post("/sala/{code}/carga")
+async def cargar_archivos_publicos(code: str, token: str, files: list[UploadFile] = File(...)):
+    room=_get(code)
+    if not secrets.compare_digest(token,room["token"]): raise HTTPException(403,"Enlace de sala invalido")
+    if not files or len(files)>10: raise HTTPException(400,"Seleccione entre 1 y 10 archivos")
+    allowed={".xlsx",".xls",".csv",".zip"}; root=DATA_DIR/"demo_uploads"/room["codigo"]; root.mkdir(parents=True,exist_ok=True); saved=[]
+    for upload in files:
+        suffix=Path(upload.filename or "").suffix.lower()
+        if suffix not in allowed: raise HTTPException(400,f"Formato no permitido: {suffix or 'sin extension'}")
+        data=await upload.read()
+        if len(data)>25*1024*1024: raise HTTPException(413,f"Archivo supera 25 MB: {upload.filename}")
+        safe=Path(upload.filename or "archivo").name; target=root/f"{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{secrets.token_hex(3)}_{safe}"; target.write_bytes(data); saved.append({"nombre":safe,"bytes":len(data)})
+    item={"accion":"ARCHIVOS_RECIBIDOS","tema":room.get("tema",""),"detalle":f"{len(saved)} archivo(s) recibidos: "+", ".join(x["nombre"] for x in saved),"fecha":datetime.now(timezone.utc).isoformat()}
+    with _LOCK:
+        room.setdefault("intereses",[]).append(item); room["intereses"]=room["intereses"][-20:]; room["revision"]+=1; _persist_rooms()
+    return {"estado":"RECIBIDO","archivos":saved,"revision":room["revision"]}
+
+@router.get("/sala/{code}/opciones-entrega")
+def opciones_entrega_publica(code: str, token: str):
+    room=_get(code)
+    if not secrets.compare_digest(token,room["token"]): raise HTTPException(403,"Enlace de sala invalido")
+    try: base=_manager_public_base()
+    except HTTPException: base=""
+    return {"carga_url":f"{base}/sala-demo/{room['codigo']}?token={room['token']}" if base else None,"vence":room["expires_at"],"correo_asistencia":os.getenv("EIIAX_ASSISTED_UPLOAD_EMAIL","").strip() or None}
 
 
 @router.post("/sala/{code}/interes")
