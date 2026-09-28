@@ -3659,3 +3659,27 @@ body:has(.espacio-externo-portal) .eiaax-help-layer,body:has(.espacio-externo-po
 .elia-global-fab-v263{position:fixed!important;right:22px;bottom:22px;z-index:10020;border:0;border-radius:999px;background:#6b36d8;color:#fff!important;font-weight:800;padding:12px 18px;box-shadow:0 7px 25px rgba(0,0,0,.25);font-size:14px!important}
 .elia-global-panel-v263{position:fixed;right:22px;bottom:74px;width:min(520px,calc(100vw - 210px));max-height:70vh;overflow:auto;z-index:10019;background:#fff;border:1px solid #bdaeea;border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.25);padding:12px}.elia-global-panel-v263 header{display:flex;justify-content:space-between;gap:12px;align-items:start}.elia-global-panel-v263 header div{display:grid}.elia-global-panel-v263 header span{font-size:12px;color:#667}.elia-global-panel-v263 header>button{border:0;background:#eee;border-radius:50%;width:28px;height:28px}.elia-global-panel-v263>p{font-size:13px}.elia-global-quick-v263{display:flex;gap:6px;flex-wrap:wrap}.elia-global-quick-v263 button{padding:6px 8px}.elia-global-panel-v263 form{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:8px}.elia-global-panel-v263 textarea{resize:vertical;min-height:68px}.elia-global-answer-v263{margin-top:8px;padding:9px;background:#f3f9f5;border-left:4px solid #21a35b}.elia-global-answer-v263 p{white-space:pre-wrap;font-size:13px}
 @media(max-width:1366px){.presentacion-ejecutiva-page.meeting-mode{font-size:14.5px!important}.impact-measure-grid-v263{grid-template-columns:repeat(3,minmax(0,1fr))}.elia-global-panel-v263{right:12px;bottom:68px;width:min(500px,calc(100vw - 185px))}}
+
+/* EIIAX V26.4 — cierre visual cabina: legibilidad real + navegación completa */
+.presentacion-ejecutiva-page.meeting-mode{height:auto!important;min-height:calc(100vh - 52px)!important;overflow-y:auto!important;overflow-x:hidden!important;padding:6px 8px 110px!important}
+.presentacion-ejecutiva-page.meeting-mode .meeting-main-active{height:auto!important;max-height:none!important;overflow:visible!important}
+.presentacion-ejecutiva-page.meeting-mode .meeting-command-deck__top span,
+.presentacion-ejecutiva-page.meeting-mode .meeting-command-deck__top small,
+.presentacion-ejecutiva-page.meeting-mode .meeting-command-deck__body article span,
+.presentacion-ejecutiva-page.meeting-mode .meeting-command-deck__elia>div:first-child span,
+.presentacion-ejecutiva-page.meeting-mode .live-topic-card small,
+.presentacion-ejecutiva-page.meeting-mode .meeting-command-deck__elia .meeting-copilot-dock__prompts button{font-size:12px!important;line-height:1.28!important}
+.presentacion-ejecutiva-page.meeting-mode .meeting-command-deck__top strong,
+.presentacion-ejecutiva-page.meeting-mode .meeting-command-deck__body article p,
+.presentacion-ejecutiva-page.meeting-mode .live-topic-card strong,
+.presentacion-ejecutiva-page.meeting-mode .demo-live-grid li,
+.presentacion-ejecutiva-page.meeting-mode .demo-live-grid p{font-size:13px!important;line-height:1.32!important}
+.presentacion-ejecutiva-page.meeting-mode .meeting-audience-switch button,
+.presentacion-ejecutiva-page.meeting-mode .meeting-coach-toggle,
+.presentacion-ejecutiva-page.meeting-mode .meeting-view-tabs button{font-size:13px!important;min-height:32px!important}
+.presentacion-ejecutiva-page.meeting-mode .meeting-command-deck__body{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.presentacion-ejecutiva-page.meeting-mode .demo-live-topicbar{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.presentacion-ejecutiva-page.meeting-mode .live-topic-card{min-height:48px!important;padding:7px 9px!important}
+.presentacion-ejecutiva-page.meeting-mode .elia-audience-radar-v262 button{font-size:12.5px!important;min-height:38px!important;padding:7px 9px!important}
+.presentacion-ejecutiva-page.meeting-mode .meeting-view-tabs{position:sticky!important;top:0!important;z-index:30!important}
+.presentacion-ejecutiva-page.meeting-mode .elia-global-fab-v263{display:block!important;visibility:visible!important;opacity:1!important}
