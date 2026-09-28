@@ -3633,3 +3633,8 @@ body:has(.espacio-externo-portal) .eiaax-help-layer,body:has(.espacio-externo-po
 .elia-chat-trace-v260 .from-manager{background:#eef4ff!important}.elia-chat-trace-v260 .from-elia{background:#edf8f2!important}
 .elia-chat-trace-v260 b{font-size:10px!important}.elia-chat-trace-v260 span{font-size:12px!important}
 @media(max-width:1366px){.presentacion-ejecutiva-page.meeting-mode{font-size:13.5px!important}.meeting-command-deck__elia{min-width:0!important}.meeting-command-draft{max-height:36vh!important}}
+
+/* EIIAX V26.1 — tema libre en cabina */
+.meeting-free-topic-v261{display:grid;gap:6px;margin:7px 0;padding:8px 10px;border:1px solid #b9d4ea;border-radius:9px;background:#f7fbff}
+.meeting-free-topic-v261>div:first-child{display:flex;gap:8px;align-items:center}.meeting-free-topic-v261>div:first-child b{color:#075d9b;font-size:12px}.meeting-free-topic-v261>div:first-child span{font-size:12px}
+.meeting-free-topic-row{display:grid;grid-template-columns:minmax(260px,1fr) auto auto;gap:6px}.meeting-free-topic-row input{min-width:0;padding:7px 9px;border:1px solid #b8cce0;border-radius:6px}.meeting-free-topic-row button{padding:7px 10px;border:1px solid #8db7da;border-radius:6px;background:#fff;color:#075d9b;font-weight:800;cursor:pointer}.meeting-free-topic-row button:last-child{background:#0b67b2;color:#fff}.meeting-free-topic-v261 small{font-size:11px;color:#49657d}
