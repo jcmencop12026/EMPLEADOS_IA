@@ -24,6 +24,7 @@ export function DemoGuestRoomPage(){
  const audienceLabel=({GERENCIA:"Gerencia",FINANCIERO:"Financiero",OPERACION:"Operación",RRHH:"RR. HH.",SISTEMAS:"Sistemas"} as Record<string,string>)[audience]||audience;
  const impacts=IMPACTS_BY_TOPIC[topic.id]||IMPACTS_BY_TOPIC.facturacion;
  const topicMetrics=topic.indicadores.slice(0,4);
+ useEffect(()=>{setImpact((IMPACTS_BY_TOPIC[topic.id]||IMPACTS_BY_TOPIC.facturacion)[0][1]);setFocus(0);setEvidenceFocus(0);setInlineAction("resumen");},[topic.id,audience]);
  const topicRadar=(topic.oportunidades.length?topic.oportunidades:topic.hallazgos).slice(0,6).map((title,i)=>({icon:["↗","💰","⏱","◉","⚠","⚡"][i]||"◆",value:topic.indicadores[i%Math.max(topic.indicadores.length,1)]||["+$185 M","$128 M","$96 M","$54 M","$742 M","18,7 días"][i],title:String(title).replace(/^Oportunidad:\s*/,""),priority:i<2?"ALTA":i<4?"MEDIA":"EXPLORAR"}));
  const registrar=async(accion:string,detalle:string)=>{try{await sendDemoGuestInterest(codigo,token,accion,topic.label,detalle);setInterestMsg(accion==="PREGUNTA_AUDIENCIA"?"✓ Pregunta enviada al presentador":"✓ Interés enviado al presentador");setTimeout(()=>setInterestMsg(null),3000)}catch{setInterestMsg("No fue posible enviar la interacción")}};
  const enviarPregunta=async(e:React.FormEvent)=>{e.preventDefault();const q=guestQuestion.trim();if(!q)return;await registrar("PREGUNTA_AUDIENCIA",q);setLastQuestion(q);setGuestQuestion("")};
@@ -38,7 +39,7 @@ export function DemoGuestRoomPage(){
  const narrative=topic.narrativa[focus%topic.narrativa.length];
  const selectedRadar=topicRadar[Math.min(focus,Math.max(topicRadar.length-1,0))];
  const openFinding=(i:number)=>{setFocus(i);setPanel("hallazgo")};
- const selectImpact=(label:string)=>{setImpact(label);const map:any={Ingresos:0,"Pérdidas":1,Costos:3,Productividad:2,Riesgos:4};const i=Math.min(map[label]??0,Math.max(topicRadar.length-1,0));setFocus(i);setEvidenceFocus(i);setPanel("importa")};
+ const selectImpact=(label:string)=>{setImpact(label);const idx=impacts.findIndex(x=>x[1]===label);const i=Math.min(idx<0?0:idx,Math.max(topicRadar.length-1,0));setFocus(i);setEvidenceFocus(i);setPanel("importa");setInlineAction("resumen")};
  const evidenceValues=topic.indicadores.slice(0,6).map((metric,i)=>({metric,label:topic.hallazgos[i%Math.max(topic.hallazgos.length,1)]||topic.label,pct:[92,76,61,48,35,24][i]||20,icon:["↗","💰","⏱","◉","⚠","⚡"][i]}));
  return <main className="guest-room guest-room-v8">
   {error&&<div className="info-box" role="status">Conexión temporalmente inestable. Se conserva la última vista y se reintenta automáticamente.</div>}
