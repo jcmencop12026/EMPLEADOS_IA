@@ -4,7 +4,7 @@ import { fetchDemoSalaPublic, sendDemoGuestInterest, type DemoSala } from "../ap
 import { DEMO_MEETING_TOPICS } from "../lib/demoMeetingCatalog";
 import { DemoDomainVisuals } from "../components/DemoDomainVisuals";
 
-const IMPACTS=[["↗","Ingresos","+$185 M"],["↘","Pérdidas","$128 M"],["◉","Costos","$54 M"],["⚡","Productividad","$96 M"],["◇","Riesgos","$742 M"]] as const;
+const IMPACTS_BY_TOPIC:Record<string,readonly (readonly [string,string,string])[]>={facturacion:[["↗","Ingresos","+$185 M"],["↘","Pérdidas","$128 M"],["◉","Costos","$54 M"],["⚡","Productividad","$96 M"],["◇","Riesgos","$742 M"]],glosas:[["↗","Recuperación","$286 M"],["↘","Glosas","$624 M"],["◉","Reincidencia","42%"],["⚡","Respuesta","11,4 días"],["◇","Riesgo","$338 M"]],rrhh:[["↗","Capacidad","132 h/mes"],["↘","Ausentismo","6,8%"],["◉","Rotación","14,2%"],["⚡","Productividad","1.240 h/mes"],["◇","Costo","$54 M"]],operaciones:[["↗","Capacidad","73%"],["↘","Reproceso","11%"],["◉","Cuellos","4 críticos"],["⚡","Procesos","7 críticos"],["◇","Impacto","$96 M"]],sistemas:[["↗","Aplicaciones","14"],["↘","Interfaces","9 manuales"],["◉","Trabajo manual","126 h/mes"],["⚡","Integración","4 flujos"],["◇","Riesgos","5 críticos"]],compras:[["↗","Ahorro","$118 M"],["↘","Inventario","$74 M"],["◉","Quiebres","11%"],["⚡","Proveedores","3 críticos"],["◇","Riesgo","$64 M"]]};
 const IMPACT_DETAIL:any={Ingresos:{value:"+$185 M",title:"Nuevos ingresos",text:"Capacidad disponible y demanda no capturada."},"Pérdidas":{value:"$128 M",title:"Caja recuperable",text:"Segmento priorizado dentro de la cartera bajo análisis."},Costos:{value:"$54 M",title:"Costos evitables",text:"Reprocesos y actividades con oportunidad de eficiencia."},Productividad:{value:"18,7 días",title:"Ciclo factura → radicación",text:"Reducir tiempos acelera el ingreso y libera capacidad."},Riesgos:{value:"$742 M",title:"Cartera >90 días",text:"Exposición que requiere segmentación y gestión."}};
 const EXECUTIVE_OPPORTUNITIES=[
  {icon:"↗",value:"+$185 M",title:"Capacidad disponible que podría convertirse en nuevos ingresos",priority:"ALTA",impact:"Ingresos"},
@@ -22,6 +22,7 @@ export function DemoGuestRoomPage(){
  const v=sala?.visible as any; const topic=useMemo(()=>DEMO_MEETING_TOPICS.find(t=>t.id===sala?.tema)||DEMO_MEETING_TOPICS[0],[sala?.tema]); const findings=Array.isArray(v?.contenido)&&v.contenido.length?v.contenido:topic.hallazgos;
  const audience=String(v?.audiencia||"GERENCIA");
  const audienceLabel=({GERENCIA:"Gerencia",FINANCIERO:"Financiero",OPERACION:"Operación",RRHH:"RR. HH.",SISTEMAS:"Sistemas"} as Record<string,string>)[audience]||audience;
+ const impacts=IMPACTS_BY_TOPIC[topic.id]||IMPACTS_BY_TOPIC.facturacion;
  const topicMetrics=topic.indicadores.slice(0,4);
  const topicRadar=(topic.oportunidades.length?topic.oportunidades:topic.hallazgos).slice(0,6).map((title,i)=>({icon:["↗","💰","⏱","◉","⚠","⚡"][i]||"◆",value:topic.indicadores[i%Math.max(topic.indicadores.length,1)]||["+$185 M","$128 M","$96 M","$54 M","$742 M","18,7 días"][i],title:String(title).replace(/^Oportunidad:\s*/,""),priority:i<2?"ALTA":i<4?"MEDIA":"EXPLORAR"}));
  const registrar=async(accion:string,detalle:string)=>{try{await sendDemoGuestInterest(codigo,token,accion,topic.label,detalle);setInterestMsg(accion==="PREGUNTA_AUDIENCIA"?"✓ Pregunta enviada al presentador":"✓ Interés enviado al presentador");setTimeout(()=>setInterestMsg(null),3000)}catch{setInterestMsg("No fue posible enviar la interacción")}};
@@ -44,7 +45,7 @@ export function DemoGuestRoomPage(){
   <header className="guest-executive-header guest-header-v25">
    <div className="guest-logo-plate"><img src="/assets/identity/eiaax-logo-approved.png" alt="EIIAX"/></div>
    <div className="guest-executive-title"><div className="guest-live-line"><span className="semantic-badge hecho">● EN VIVO · {v?.nivel||"DEMO"}</span><h1>{v?.titulo||topic.label}</h1></div><p>Una conversación ejecutiva para decidir dónde profundizar, qué validar y cómo actuar.</p></div>
-   <div className="guest-lenses-v25">{IMPACTS.map(([i,l,val])=><button key={l} className={impact===l?"active":""} onClick={()=>selectImpact(l)}><b>{i}</b><span>{l}</span><strong>{val}</strong></button>)}</div>
+   <div className="guest-lenses-v25">{impacts.map(([i,l,val])=><button key={l} className={impact===l?"active":""} onClick={()=>selectImpact(l)}><b>{i}</b><span>{l}</span><strong>{val}</strong></button>)}</div>
   </header>
   <section className="guest-dialog-v25 guest-advance-v256"><b>DECIDA CÓMO AVANZAR</b><button onClick={()=>goInline("datos")}>◫ Evaluar con mis datos</button><button onClick={()=>goInline("siguiente")}>↗ Siguiente paso</button><button onClick={()=>goInline("intervencion")}>✓ Intervención</button><button onClick={()=>setPanel("evidencia")}>▥ Evidencia</button><span>La conversación permanece disponible en el panel derecho.</span></section>
   <section className="guest-signal-rail-v25">
