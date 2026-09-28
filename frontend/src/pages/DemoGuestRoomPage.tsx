@@ -22,8 +22,8 @@ export function DemoGuestRoomPage(){
  const v=sala?.visible as any; const topic=useMemo(()=>DEMO_MEETING_TOPICS.find(t=>t.id===sala?.tema)||DEMO_MEETING_TOPICS[0],[sala?.tema]); const findings=Array.isArray(v?.contenido)&&v.contenido.length?v.contenido:topic.hallazgos;
  const audience=String(v?.audiencia||"GERENCIA");
  const audienceLabel=({GERENCIA:"Gerencia",FINANCIERO:"Financiero",OPERACION:"Operación",RRHH:"RR. HH.",SISTEMAS:"Sistemas"} as Record<string,string>)[audience]||audience;
- const impacts=IMPACTS_BY_TOPIC[topic.id]||IMPACTS_BY_TOPIC.facturacion;
- const topicMetrics=topic.indicadores.slice(0,4);
+ const customTopic=Boolean(v?.subtitulo?.includes("Tema solicitado durante la reunión")); const impacts=customTopic?([["◇","Línea base","Por definir"],["↗","Impacto","Por calcular"],["✓","Resultado","Por verificar"]] as const):(IMPACTS_BY_TOPIC[topic.id]||IMPACTS_BY_TOPIC.facturacion);
+ const topicMetrics=customTopic?["Datos reales de la entidad pendientes","Proyección condicionada a línea base","Sin cifras económicas inventadas"]:topic.indicadores.slice(0,4);
  useEffect(()=>{setImpact((IMPACTS_BY_TOPIC[topic.id]||IMPACTS_BY_TOPIC.facturacion)[0][1]);setFocus(0);setEvidenceFocus(0);setInlineAction("resumen");},[topic.id,audience]);
  const topicRadar=(topic.oportunidades.length?topic.oportunidades:topic.hallazgos).slice(0,6).map((title,i)=>({icon:["↗","💰","⏱","◉","⚠","⚡"][i]||"◆",value:topic.indicadores[i%Math.max(topic.indicadores.length,1)]||["+$185 M","$128 M","$96 M","$54 M","$742 M","18,7 días"][i],title:String(title).replace(/^Oportunidad:\s*/,""),priority:i<2?"ALTA":i<4?"MEDIA":"EXPLORAR"}));
  const registrar=async(accion:string,detalle:string)=>{try{await sendDemoGuestInterest(codigo,token,accion,topic.label,detalle);setInterestMsg(accion==="PREGUNTA_AUDIENCIA"?"✓ Pregunta enviada al presentador":"✓ Interés enviado al presentador");setTimeout(()=>setInterestMsg(null),3000)}catch{setInterestMsg("No fue posible enviar la interacción")}};
