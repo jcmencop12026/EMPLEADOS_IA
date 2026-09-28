@@ -50,6 +50,17 @@ def build_presentacion_core(
     empresa = DEMO_EMPRESA_FICTICIA if es_demo else exp.entidad_nombre
     etiqueta = "DEMO — DATOS SIMULADOS" if es_demo else "PRESENTACIÓN EJECUTIVA"
 
+    # En DEMO cada audiencia usa un paquete propio; evita reciclar los KPI de facturación/glosas.
+    demo_audience_series = {
+        "GERENCIA": [("Ingresos / facturación", "M COP", 4860.0, 5350.0), ("Cartera >90 días", "M COP", 742.0, 520.0), ("Días factura→radicación", "días", 18.7, 9.0)],
+        "OPERACION": [("Reproceso", "%", 22.0, 11.0), ("Uso de capacidad", "%", 76.0, 86.0), ("SLA incumplidos", "#", 3.0, 1.0)],
+        "SISTEMAS": [("Intercambios manuales", "#", 6.0, 2.0), ("Incidentes", "#/trim", 184.0, 110.0), ("Doble digitación", "h/mes", 390.0, 90.0)],
+        "FINANCIERO": [("Tasa de glosa", "%", 7.9, 5.2), ("Respuesta promedio", "días", 11.4, 6.0), ("Recuperación", "%", 48.0, 68.0)],
+        "RRHH": [("Ausentismo", "%", 8.6, 6.2), ("Horas repetitivas", "h/mes", 1240.0, 520.0), ("Rotación", "%", 14.2, 10.5)],
+    }
+    if es_demo:
+        indicadores = [{"nombre": n, "unidad": u, "antes": a, "proyectado": p, "real": None, "simulado": True} for n,u,a,p in demo_audience_series[audiencia]]
+
     base: dict[str, Any] = {
         "es_demo": es_demo,
         "etiqueta": etiqueta,
