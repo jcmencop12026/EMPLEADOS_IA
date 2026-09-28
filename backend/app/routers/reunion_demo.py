@@ -161,7 +161,7 @@ PUBLIC_ROOM_FIELDS = {
     "codigo", "expediente_id", "tema", "proposito", "estado",
     "visible", "revision", "created_at", "expires_at", "intereses",
 }
-PUBLIC_VISIBLE_FIELDS = {"titulo", "subtitulo", "contenido", "respuesta", "nota", "tipo", "compromisos", "nivel", "metodologia"}
+PUBLIC_VISIBLE_FIELDS = {"titulo", "subtitulo", "contenido", "respuesta", "nota", "tipo", "compromisos", "nivel", "metodologia", "audiencia"}
 
 
 COMMITMENT_FIELDS = {"responsable", "descripcion", "evidencia", "estado", "fecha", "beneficio"}
