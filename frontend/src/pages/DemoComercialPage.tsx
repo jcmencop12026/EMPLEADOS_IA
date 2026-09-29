@@ -9,6 +9,7 @@ import { ContextualHelp } from "../components/ContextualHelp";
 import { DemoBanner } from "../components/DemoBanner";
 import { usePermissions } from "../hooks/usePermissions";
 import { HELP_DEMO_COMERCIAL } from "../lib/demoComercialHelp";
+import "../demo-j-integral.css";
 
 type DemoStep = {
   titulo: string;
@@ -75,7 +76,7 @@ export function DemoComercialPage() {
     {
       titulo: "5. Presentación por audiencia",
       descripcion: "Gerencia, Operación, Sistemas o Financiero — misma fuente, distinto énfasis",
-      to: enlaces.presentacion ?? "/demo",
+      to: manifest?.expediente_id ? `/demo/presentacion/${manifest.expediente_id}?preparar=1` : "/demo",
     },
     {
       titulo: "6. Valor y comercial",
@@ -122,7 +123,7 @@ export function DemoComercialPage() {
         </section>
       )}
 
-      <section className="panel demo-story">
+      <section className="panel demo-story demo-j-story">
         <h2>Historia de la demo</h2>
         <dl className="detail-dl">
           <dt>Empresa ficticia</dt>
@@ -138,9 +139,9 @@ export function DemoComercialPage() {
         </dl>
       </section>
 
-      <section className="panel">
-        <h2>Recorrido guiado</h2>
-        <ol className="demo-steps-list">
+      <section className="panel demo-j-route">
+        <div className="demo-j-route-head"><h2>Recorrido guiado</h2>{manifest?.expediente_id && <Link className="btn primary" to={`/demo/presentacion/${manifest.expediente_id}?preparar=1`}>Preparar reunión · Cabina ELIA</Link>}</div>
+        <ol className="demo-steps-list demo-j-steps">
           {pasos.map((p) => (
             <li key={p.titulo} className="demo-step-card">
               <h3>{p.titulo}</h3>
