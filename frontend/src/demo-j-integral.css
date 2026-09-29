@@ -1,0 +1,12 @@
+/* INGENIERIA-J: demo comercial compacta; estilos aislados. */
+.demo-j-story .detail-dl{display:grid;grid-template-columns:minmax(120px,auto) 1fr;gap:4px 12px;margin:0}
+.demo-j-story .detail-dl dt,.demo-j-story .detail-dl dd{margin:0}
+.demo-j-route-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.demo-j-route-head h2{margin:0}
+.demo-j-steps{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.demo-j-steps .demo-step-card{min-width:0;display:flex;flex-direction:column;gap:7px;padding:12px;border:1px solid var(--border,#d8e0e9);border-radius:10px}
+.demo-j-steps .demo-step-card h3{font-size:13px;line-height:1.25;margin:0}
+.demo-j-steps .demo-step-card p{font-size:12px;line-height:1.35;margin:0;flex:1}
+.demo-j-steps .demo-step-card .btn{align-self:flex-start;margin-top:auto}
+@media(max-width:1000px){.demo-j-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.demo-j-steps{grid-template-columns:1fr}}
