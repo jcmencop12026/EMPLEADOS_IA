@@ -81,8 +81,12 @@ export function CentroControlPage() {
 
   const cabinaPath = useMemo(() => {
     if (!expedienteContext) return null;
-    return `/demo/presentacion/${expedienteContext}?preparar=1`;
-  }, [expedienteContext]);
+    const match = evaluaciones.find((e) => e.id === expedienteContext);
+    const isDemo = Boolean(match?.entidad_nombre?.startsWith("[DEMO]"));
+    return isDemo
+      ? `/demo/presentacion/${expedienteContext}?preparar=1`
+      : `/presentacion/${expedienteContext}`;
+  }, [expedienteContext, evaluaciones]);
 
   function setExpedienteContext(id: string) {
     const next = new URLSearchParams(searchParams);
@@ -129,12 +133,8 @@ export function CentroControlPage() {
               <span className="cc-context-pill__label">Sesión</span>
               <strong>{homeOrganizationName || effectiveOrganizationName}</strong>
             </span>
-            <span className="cc-context-pill cc-context-pill--emphasis" title="Empresa o prospecto en análisis operativo">
-              <span className="cc-context-pill__label">Análisis</span>
-              <strong>{contextoLabel}</strong>
-            </span>
             <label className="cc-context-select cc-context-select--inline">
-              <span className="cc-context-pill__label">Empresa / prospecto</span>
+              <span className="cc-context-pill__label">Análisis / empresa</span>
               <select
                 value={expedienteContext}
                 onChange={(e) => setExpedienteContext(e.target.value)}
@@ -166,7 +166,7 @@ export function CentroControlPage() {
             </button>
             {expedienteContext && (
               <>
-                <Link to={cabinaPath ?? `/demo/presentacion/${expedienteContext}?preparar=1`} className="btn primary small" data-help="Abre la cabina única de reunión: presentación, ELIA privada, temas y control del acceso del gerente.">Abrir cabina</Link>
+                <Link to={cabinaPath ?? `/presentacion/${expedienteContext}`} className="btn primary small" data-help="Abre la cabina única de reunión: presentación, ELIA privada, temas y control del acceso del gerente.">Abrir cabina</Link>
                 <Link to={`/evaluaciones/${expedienteContext}?tab=vista-empresa`} className="btn secondary small" data-help="Abre la Vista Empresa tal como se presenta al cliente autorizado.">Ver empresa</Link>
               </>
             )}
