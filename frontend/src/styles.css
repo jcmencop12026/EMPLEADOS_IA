@@ -3199,3 +3199,16 @@ body:has(.espacio-externo-portal) .eiaax-help-layer,body:has(.espacio-externo-po
 .guest-footer-v7{font-size:.52rem!important}
 @media(max-height:800px){.guest-v10-command{grid-template-columns:minmax(280px,.62fr) minmax(600px,1.8fr)!important}.guest-v10-hero{padding:10px 13px!important}.guest-v10-hero h2{font-size:1.08rem!important}.guest-v10-grid button{padding:6px 8px!important}.guest-question-box{min-height:38px!important;padding:5px 8px!important}}
 @media(max-width:1050px){.guest-v10-command{grid-template-columns:1fr!important;overflow:auto!important}.guest-v10-hero{min-height:190px!important}.guest-v10-grid{grid-template-columns:repeat(2,1fr)!important}.guest-question-box{grid-column:1!important}}
+
+
+/* INGENIERIA-J — cabina unificada 70/30, controles críticos sin scroll */
+.meeting-unified-cockpit{display:grid;grid-template-columns:minmax(0,7fr) minmax(300px,3fr);gap:8px;align-items:start;min-height:0}
+.meeting-unified-main{min-width:0}
+.meeting-unified-side{position:sticky;top:6px;max-height:calc(100vh - 24px);overflow:auto;display:flex;flex-direction:column;gap:7px;padding:9px;border:1px solid #c9d9ec;border-radius:13px;background:linear-gradient(160deg,#f8fbff,#f7f3ff);box-shadow:0 8px 22px rgba(28,65,108,.10)}
+.meeting-side-head{display:flex;justify-content:space-between;gap:8px;align-items:center;padding-bottom:6px;border-bottom:1px solid #d9e4f1}.meeting-side-head>div{display:flex;flex-direction:column}.meeting-side-head span{font-size:.58rem;font-weight:900;letter-spacing:.08em;color:#6d3bd1}.meeting-side-head strong{font-size:.76rem;color:#173b61}.meeting-side-head small{font-size:.55rem;color:#718296}
+.meeting-side-elia,.meeting-side-room,.meeting-side-signal{display:flex;flex-direction:column;gap:5px;padding:7px;border:1px solid #dbe5f1;border-radius:9px;background:#fff}
+.meeting-side-elia .meeting-copilot-dock__prompts{display:flex;gap:4px;overflow:auto}.meeting-side-elia .meeting-copilot-dock__prompts button{padding:5px 6px;font-size:.57rem}.meeting-side-elia .meeting-copilot-dock__ask{min-width:0;display:grid;grid-template-columns:1fr auto}.meeting-side-elia .meeting-copilot-dock__ask input,.meeting-side-room input,.meeting-side-answer textarea{min-width:0;width:100%;box-sizing:border-box;padding:6px 7px;border:1px solid #c8d8eb;border-radius:7px;font-size:.62rem}
+.meeting-side-answer{display:flex;flex-direction:column;gap:5px;padding-top:5px;border-top:1px solid #e2e9f2}.meeting-side-answer b,.meeting-side-room>strong,.meeting-side-signal>strong{font-size:.62rem;color:#254d73}.meeting-side-actions{display:grid;grid-template-columns:1fr 1fr;gap:4px}.meeting-side-signal span{font-size:.6rem;color:#536d85}
+.meeting-unified-main .meeting-command-deck__elia{display:none!important}
+.meeting-unified-main .elia-meeting-copilot{display:none!important}
+@media(max-width:1050px){.meeting-unified-cockpit{grid-template-columns:1fr}.meeting-unified-side{position:static;max-height:none}}
