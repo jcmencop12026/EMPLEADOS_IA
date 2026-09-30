@@ -79,14 +79,10 @@ export function CentroControlPage() {
       .catch(() => undefined);
   }, [has]);
 
-  const presentacionPath = useMemo(() => {
+  const cabinaPath = useMemo(() => {
     if (!expedienteContext) return null;
-    const match = evaluaciones.find((e) => e.id === expedienteContext);
-    if (match?.entidad_nombre?.startsWith("[DEMO]")) {
-      return `/demo/presentacion/${expedienteContext}`;
-    }
-    return `/presentacion/${expedienteContext}`;
-  }, [expedienteContext, evaluaciones]);
+    return `/demo/presentacion/${expedienteContext}?preparar=1`;
+  }, [expedienteContext]);
 
   function setExpedienteContext(id: string) {
     const next = new URLSearchParams(searchParams);
@@ -170,7 +166,7 @@ export function CentroControlPage() {
             </button>
             {expedienteContext && (
               <>
-                <Link to={`${presentacionPath ?? `/presentacion/${expedienteContext}`}?preparar=1`} className="btn primary small" data-help="Prepara el propósito, los temas disponibles y el paquete de datos antes de iniciar la reunión.">Preparar reunión</Link>
+                <Link to={cabinaPath ?? `/demo/presentacion/${expedienteContext}?preparar=1`} className="btn primary small" data-help="Abre la cabina única de reunión: presentación, ELIA privada, temas y control del acceso del gerente.">Abrir cabina</Link>
                 <Link to={`/evaluaciones/${expedienteContext}?tab=vista-empresa`} className="btn secondary small" data-help="Abre la Vista Empresa tal como se presenta al cliente autorizado.">Ver empresa</Link>
               </>
             )}
