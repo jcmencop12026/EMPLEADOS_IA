@@ -3212,3 +3212,9 @@ body:has(.espacio-externo-portal) .eiaax-help-layer,body:has(.espacio-externo-po
 .meeting-unified-main .meeting-command-deck__elia{display:none!important}
 .meeting-unified-main .elia-meeting-copilot{display:none!important}
 @media(max-width:1050px){.meeting-unified-cockpit{grid-template-columns:1fr}.meeting-unified-side{position:static;max-height:none}}
+
+/* INGENIERIA-J — Centro de Control: ciclo compacto y contexto sin duplicación */
+.cc-cycle-compact{padding:7px 10px!important}
+.cc-cycle-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none}
+.cc-cycle-summary::-webkit-details-marker{display:none}.cc-cycle-summary>span{display:flex;align-items:baseline;gap:9px;min-width:0}.cc-cycle-summary strong{font-size:.72rem;color:#173b61}.cc-cycle-summary small{font-size:.58rem;color:#718296;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cc-cycle-summary>b{font-size:.58rem;color:#1766b4;white-space:nowrap}
+.cc-cycle-compact[open] .cc-cycle-summary{margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid #e1e8f1}
