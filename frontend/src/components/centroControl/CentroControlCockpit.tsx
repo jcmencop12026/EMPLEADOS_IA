@@ -54,20 +54,18 @@ export function CentroControlCockpit({ data, periodo, expedienteId, compact = fa
 
   return (
     <div className={`cc-cockpit ${compact ? "cc-cockpit--compact" : ""}`}>
-      <section className="panel compact-panel v1-cc-command" aria-label="Ciclo operativo">
-        <div className="v1-cc-command__head">
-          <div>
-            <h2 className="section-title">Ciclo operativo EIAAX</h2>
-            <p className="muted small">De conocer a mejorar — navegue por etapa con contexto conservado</p>
-          </div>
-        </div>
+      <details className="panel compact-panel v1-cc-command cc-cycle-compact" open={!compact}>
+        <summary className="cc-cycle-summary">
+          <span><strong>Ciclo operativo EIAAX</strong><small>Conocer → evaluar → decidir → implementar → medir → mejorar</small></span>
+          <b>{etapaActualIdx >= 0 ? `Etapa ${etapaActualIdx + 1}` : "Vista general"}</b>
+        </summary>
         <CycleStepper
           currentIndex={etapaActualIdx}
           expedienteId={expedienteId}
           isDemo={isDemoExpediente}
-          compact={compact}
+          compact
         />
-      </section>
+      </details>
 
       {!compact && <section className="cc-first-viewport panel compact-panel">
         <div className="cc-first-head">
