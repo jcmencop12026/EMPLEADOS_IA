@@ -14,6 +14,7 @@ from app.audit import write_audit
 from app.models import Organization, Permission, Role, RolePermission, User
 from app.permissions import SYSTEM_ROLE_CODES, assert_permission_subset, assert_role_assignable, is_system_role, user_permissions
 from app.security import hash_password
+from app.services.auth_service import invalidate_user_sessions
 
 USER_STATUS_ACTIVE = "ACTIVE"
 USER_STATUS_INACTIVE = "INACTIVE"
@@ -131,6 +132,8 @@ def update_user(
             assert_role_assignable(actor, role, user.organization_id, db)
         else:
             get_role_for_org(db, role, user.organization_id)
+        if user.role != role:
+            invalidate_user_sessions(db, user)
         user.role = role
     if email is not None:
         user.email = email.strip() or None
@@ -157,6 +160,8 @@ def set_user_status(db: Session, *, user: User, actor_id: str, status_value: str
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Estado no válido")
     user.status = status_value
     user.is_active = status_value == USER_STATUS_ACTIVE
+    if status_value != USER_STATUS_ACTIVE:
+        invalidate_user_sessions(db, user)
     user.updated_by_id = actor_id
     user.updated_at = _utcnow()
     db.commit()
@@ -177,6 +182,9 @@ def set_user_status(db: Session, *, user: User, actor_id: str, status_value: str
 def reset_user_password(db: Session, *, user: User, actor_id: str, new_password: str | None = None) -> str:
     temp = new_password or _generate_temp_password()
     user.password_hash = hash_password(temp)
+    invalidate_user_sessions(db, user)
+    user.failed_login_count = 0
+    user.locked_until = None
     user.updated_by_id = actor_id
     user.updated_at = _utcnow()
     db.commit()
@@ -415,6 +423,8 @@ def security_summary(db: Session, org_id: str) -> dict:
                     "admin.organization.updated",
                     "admin.config.updated",
                     "auth.login",
+                    "auth.login.failed",
+                    "auth.logout",
                 ]
             ),
         )

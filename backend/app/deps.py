@@ -21,4 +21,7 @@ def get_current_user(
     user = db.query(User).filter(User.id == payload["sub"]).first()
     if not user or not user.is_active or user.status != "ACTIVE":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no válido")
+    token_tv = int(payload.get("tv", 0))
+    if int(user.token_version or 0) != token_tv:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sesión revocada")
     return user

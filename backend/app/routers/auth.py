@@ -1,50 +1,28 @@
-from datetime import datetime, timezone
-
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.audit import write_audit
 from app.database import get_db
 from app.deps import get_current_user
-from app.events.bus import EventMessage, publish
 from app.models import Organization, User
 from app.permissions import user_permissions
 from app.schemas import LoginRequest, TokenResponse, UserMe
-from app.security import create_access_token, verify_password
+from app.services.auth_service import authenticate_user, logout_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == body.username).first()
-    if not user or not verify_password(body.password, user.password_hash):
-        if user:
-            publish(
-                EventMessage(
-                    event_type="TENANT_SECURITY_EVENT",
-                    organization_id=user.organization_id,
-                    user_id=user.id,
-                    payload={"kind": "invalid_login", "username": body.username},
-                ),
-                db,
-            )
-            db.commit()
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales incorrectas")
-    if not user.is_active or user.status != "ACTIVE":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario inactivo o bloqueado")
-    token = create_access_token(user.id, {"role": user.role, "org": user.organization_id})
-    user.last_login_at = datetime.now(timezone.utc)
-    db.commit()
-    write_audit(
-        db,
-        action="auth.login",
-        organization_id=user.organization_id,
-        user_id=user.id,
-        detail=user.username,
-    )
-    db.commit()
+    _user, token = authenticate_user(db, body.username, body.password)
     return TokenResponse(access_token=token)
+
+
+@router.post("/logout", status_code=204)
+def logout(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    logout_user(db, user)
 
 
 @router.get("/me", response_model=UserMe)
