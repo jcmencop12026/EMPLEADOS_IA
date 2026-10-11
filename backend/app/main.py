@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.config import settings
+from app.config import settings, validate_security_settings
 from app.database import Base, SessionLocal, engine
 from app import automation_models  # noqa: F401
 from app import finops_models  # noqa: F401
@@ -43,6 +43,7 @@ from app.services.authorization import AuthorizationError
 async def lifespan(_app: FastAPI):
     from scripts.migration_control import MigrationControlError, run_database_preflight
 
+    validate_security_settings()
     try:
         run_database_preflight(settings.database_url)
     except MigrationControlError as exc:

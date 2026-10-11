@@ -21,7 +21,14 @@ export function clearSession(): void {
   sessionStorage.removeItem(USER_KEY);
 }
 
-export function logout(): void {
+export async function logout(): Promise<void> {
+  try {
+    if (getToken()) {
+      await api<void>("/api/auth/logout", { method: "POST" });
+    }
+  } catch {
+    /* revocación best-effort; limpiar cliente de todas formas */
+  }
   clearSession();
   window.location.href = "/login";
 }

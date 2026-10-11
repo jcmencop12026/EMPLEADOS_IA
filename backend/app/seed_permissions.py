@@ -9,6 +9,7 @@ ROLE_LABELS = {
     "admin": "Administrador",
     "operator": "Operador",
     "viewer": "Consulta",
+    "auditor": "Auditor / certificación",
 }
 
 

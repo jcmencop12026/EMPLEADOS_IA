@@ -198,7 +198,7 @@ ALL_PERMISSIONS: dict[str, tuple[str, str]] = {
     "oportunidades.activate": ("Oportunidades", "Activar oportunidades"),
 }
 
-SYSTEM_ROLE_CODES = {"admin", "operator", "viewer"}
+SYSTEM_ROLE_CODES = {"admin", "operator", "viewer", "auditor"}
 
 PROTECTED_ASSIGNMENT_ROLE_CODES = {"superadmin", "platform_admin", "SUPERADMIN"}
 
@@ -279,6 +279,26 @@ ROLE_PERMISSIONS_FALLBACK: dict[str, set[str]] = {
         "test_lab.view",
         "finops.view",
         "salud.consultar_diagnostico",
+        "oportunidades.view",
+    },
+    "auditor": {
+        "employee.view",
+        "employee.test",
+        "employee.certify",
+        "notification.view",
+        "operations.view",
+        "automation.view",
+        "automation.view_runs",
+        "audit.view",
+        "admin.organization.view",
+        "admin.security.view",
+        "capability.view",
+        "tool.view",
+        "knowledge.view",
+        "knowledge.use",
+        "test_lab.view",
+        "test_lab.run",
+        "finops.view",
         "oportunidades.view",
     },
 }
